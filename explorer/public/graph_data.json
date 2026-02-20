@@ -1,0 +1,1187 @@
+{
+  "nodes": [
+    {
+      "id": "analyst/analyzer.py::NodeInfo",
+      "type": "custom",
+      "data": {
+        "label": "NodeInfo",
+        "nodeType": "class",
+        "file": "analyst/analyzer.py",
+        "lineno": 18,
+        "source": "class NodeInfo:\n    id: str\n    label: str\n    node_type: str          # \"function\" | \"class\" | \"entry\"\n    file: str\n    lineno: int\n    source: str = \"\"        # raw source lines for that function/class\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::EdgeInfo",
+      "type": "custom",
+      "data": {
+        "label": "EdgeInfo",
+        "nodeType": "class",
+        "file": "analyst/analyzer.py",
+        "lineno": 28,
+        "source": "class EdgeInfo:\n    source: str\n    target: str\n    cross_file: bool = False\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::CallGraph",
+      "type": "custom",
+      "data": {
+        "label": "CallGraph",
+        "nodeType": "class",
+        "file": "analyst/analyzer.py",
+        "lineno": 35,
+        "source": "class CallGraph:\n    nodes: Dict[str, NodeInfo] = field(default_factory=dict)\n    edges: List[EdgeInfo] = field(default_factory=list)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::_FileVisitor",
+      "type": "custom",
+      "data": {
+        "label": "_FileVisitor",
+        "nodeType": "class",
+        "file": "analyst/analyzer.py",
+        "lineno": 40,
+        "source": "class _FileVisitor(ast.NodeVisitor):\n    \"\"\"Visits a single Python file and collects nodes/calls.\"\"\"\n\n    def __init__(self, file_path: str, source_lines: List[str]):\n        self.file_path = file_path\n        self.source_lines = source_lines\n        self.nodes: Dict[str, NodeInfo] = {}\n        self.calls: List[tuple] = []           # (caller_id, callee_name)\n        self._scope_stack: List[str] = []      # stack of current scope ids\n\n    # ------------------------------------------------------------------\n    # Helpers\n    # ------------------------------------------------------------------\n\n    def _qualified_id(self, name: str) -> str:\n        return f\"{self.file_path}::{name}\"\n\n    def _current_scope(self) -> Optional[str]:\n        return self._scope_stack[-1] if self._scope_stack else None\n\n    def _extract_source(self, node: ast.AST) -> str:\n        start = node.lineno - 1\n        end = node.end_lineno if hasattr(node, \"end_lineno\") else start + 1\n        return \"\".join(self.source_lines[start:end])\n\n    # ------------------------------------------------------------------\n    # Visitors\n    # ------------------------------------------------------------------\n\n    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:\n        node_id = self._qualified_id(node.name)\n        self.nodes[node_id] = NodeInfo(\n            id=node_id,\n            label=node.name,\n            node_type=\"function\",\n            file=self.file_path,\n            lineno=node.lineno,\n            source=self._extract_source(node),\n        )\n        self._scope_stack.append(node_id)\n        self.generic_visit(node)\n        self._scope_stack.pop()\n\n    visit_AsyncFunctionDef = visit_FunctionDef\n\n    def visit_ClassDef(self, node: ast.ClassDef) -> None:\n        node_id = self._qualified_id(node.name)\n        self.nodes[node_id] = NodeInfo(\n            id=node_id,\n            label=node.name,\n            node_type=\"class\",\n            file=self.file_path,\n            lineno=node.lineno,\n            source=self._extract_source(node),\n        )\n        self._scope_stack.append(node_id)\n        self.generic_visit(node)\n        self._scope_stack.pop()\n\n    def visit_Call(self, node: ast.Call) -> None:\n        caller = self._current_scope()\n        if caller is None:\n            self.generic_visit(node)\n            return\n\n        # Resolve callee name\n        if isinstance(node.func, ast.Name):\n            callee_name = node.func.id\n        elif isinstance(node.func, ast.Attribute):\n            callee_name = node.func.attr\n        else:\n            callee_name = None\n\n        if callee_name:\n            self.calls.append((caller, callee_name))\n\n        self.generic_visit(node)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::__init__",
+      "type": "custom",
+      "data": {
+        "label": "__init__",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 122,
+        "source": "    def __init__(self, project_path: str):\n        self.project_path = Path(project_path).resolve()\n        self.graph = CallGraph()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::_qualified_id",
+      "type": "custom",
+      "data": {
+        "label": "_qualified_id",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 54,
+        "source": "    def _qualified_id(self, name: str) -> str:\n        return f\"{self.file_path}::{name}\"\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::_current_scope",
+      "type": "custom",
+      "data": {
+        "label": "_current_scope",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 57,
+        "source": "    def _current_scope(self) -> Optional[str]:\n        return self._scope_stack[-1] if self._scope_stack else None\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::_extract_source",
+      "type": "custom",
+      "data": {
+        "label": "_extract_source",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 60,
+        "source": "    def _extract_source(self, node: ast.AST) -> str:\n        start = node.lineno - 1\n        end = node.end_lineno if hasattr(node, \"end_lineno\") else start + 1\n        return \"\".join(self.source_lines[start:end])\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_FunctionDef",
+      "type": "custom",
+      "data": {
+        "label": "visit_FunctionDef",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 69,
+        "source": "    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:\n        node_id = self._qualified_id(node.name)\n        self.nodes[node_id] = NodeInfo(\n            id=node_id,\n            label=node.name,\n            node_type=\"function\",\n            file=self.file_path,\n            lineno=node.lineno,\n            source=self._extract_source(node),\n        )\n        self._scope_stack.append(node_id)\n        self.generic_visit(node)\n        self._scope_stack.pop()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_ClassDef",
+      "type": "custom",
+      "data": {
+        "label": "visit_ClassDef",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 85,
+        "source": "    def visit_ClassDef(self, node: ast.ClassDef) -> None:\n        node_id = self._qualified_id(node.name)\n        self.nodes[node_id] = NodeInfo(\n            id=node_id,\n            label=node.name,\n            node_type=\"class\",\n            file=self.file_path,\n            lineno=node.lineno,\n            source=self._extract_source(node),\n        )\n        self._scope_stack.append(node_id)\n        self.generic_visit(node)\n        self._scope_stack.pop()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_Call",
+      "type": "custom",
+      "data": {
+        "label": "visit_Call",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 99,
+        "source": "    def visit_Call(self, node: ast.Call) -> None:\n        caller = self._current_scope()\n        if caller is None:\n            self.generic_visit(node)\n            return\n\n        # Resolve callee name\n        if isinstance(node.func, ast.Name):\n            callee_name = node.func.id\n        elif isinstance(node.func, ast.Attribute):\n            callee_name = node.func.attr\n        else:\n            callee_name = None\n\n        if callee_name:\n            self.calls.append((caller, callee_name))\n\n        self.generic_visit(node)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::CodeAnalyzer",
+      "type": "custom",
+      "data": {
+        "label": "CodeAnalyzer",
+        "nodeType": "class",
+        "file": "analyst/analyzer.py",
+        "lineno": 119,
+        "source": "class CodeAnalyzer:\n    \"\"\"Analyzes a Python project directory and builds a CallGraph.\"\"\"\n\n    def __init__(self, project_path: str):\n        self.project_path = Path(project_path).resolve()\n        self.graph = CallGraph()\n\n    def analyze(self) -> CallGraph:\n        visitors: List[_FileVisitor] = []\n\n        for py_file in sorted(self.project_path.rglob(\"*.py\")):\n            # Skip common non-project directories\n            parts = py_file.parts\n            if any(p in parts for p in (\"__pycache__\", \".venv\", \"venv\", \"node_modules\")):\n                continue\n\n            rel_path = str(py_file.relative_to(self.project_path))\n            try:\n                source = py_file.read_text(encoding=\"utf-8\")\n                tree = ast.parse(source, filename=rel_path)\n            except (SyntaxError, UnicodeDecodeError):\n                continue\n\n            source_lines = source.splitlines(keepends=True)\n            visitor = _FileVisitor(rel_path, source_lines)\n            visitor.visit(tree)\n            visitors.append(visitor)\n\n            # Add nodes from this file\n            for node in visitor.nodes.values():\n                self.graph.nodes[node.id] = node\n\n            # Detect top-level entry point (if __name__ == \"__main__\")\n            for stmt in tree.body:\n                if (\n                    isinstance(stmt, ast.If)\n                    and isinstance(stmt.test, ast.Compare)\n                    and isinstance(stmt.test.left, ast.Name)\n                    and stmt.test.left.id == \"__name__\"\n                ):\n                    entry_id = f\"{rel_path}::__main__\"\n                    self.graph.nodes[entry_id] = NodeInfo(\n                        id=entry_id,\n                        label=\"__main__\",\n                        node_type=\"entry\",\n                        file=rel_path,\n                        lineno=stmt.lineno,\n                        source=\"\".join(source_lines[stmt.lineno - 1 : getattr(stmt, \"end_lineno\", stmt.lineno)]),\n                    )\n\n        # Build name \u2192 id lookup\n        name_to_ids: Dict[str, List[str]] = {}\n        for node_id, node in self.graph.nodes.items():\n            name_to_ids.setdefault(node.label, []).append(node_id)\n\n        # Resolve calls to edges\n        seen_edges: Set[tuple] = set()\n        for visitor in visitors:\n            caller_file = visitor.file_path\n            for caller_id, callee_name in visitor.calls:\n                if callee_name not in name_to_ids:\n                    continue\n                for target_id in name_to_ids[callee_name]:\n                    if (caller_id, target_id) in seen_edges:\n                        continue\n                    seen_edges.add((caller_id, target_id))\n                    target_node = self.graph.nodes[target_id]\n                    self.graph.edges.append(\n                        EdgeInfo(\n                            source=caller_id,\n                            target=target_id,\n                            cross_file=target_node.file != caller_file,\n                        )\n                    )\n\n        return self.graph\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::analyze",
+      "type": "custom",
+      "data": {
+        "label": "analyze",
+        "nodeType": "function",
+        "file": "analyst/analyzer.py",
+        "lineno": 126,
+        "source": "    def analyze(self) -> CallGraph:\n        visitors: List[_FileVisitor] = []\n\n        for py_file in sorted(self.project_path.rglob(\"*.py\")):\n            # Skip common non-project directories\n            parts = py_file.parts\n            if any(p in parts for p in (\"__pycache__\", \".venv\", \"venv\", \"node_modules\")):\n                continue\n\n            rel_path = str(py_file.relative_to(self.project_path))\n            try:\n                source = py_file.read_text(encoding=\"utf-8\")\n                tree = ast.parse(source, filename=rel_path)\n            except (SyntaxError, UnicodeDecodeError):\n                continue\n\n            source_lines = source.splitlines(keepends=True)\n            visitor = _FileVisitor(rel_path, source_lines)\n            visitor.visit(tree)\n            visitors.append(visitor)\n\n            # Add nodes from this file\n            for node in visitor.nodes.values():\n                self.graph.nodes[node.id] = node\n\n            # Detect top-level entry point (if __name__ == \"__main__\")\n            for stmt in tree.body:\n                if (\n                    isinstance(stmt, ast.If)\n                    and isinstance(stmt.test, ast.Compare)\n                    and isinstance(stmt.test.left, ast.Name)\n                    and stmt.test.left.id == \"__name__\"\n                ):\n                    entry_id = f\"{rel_path}::__main__\"\n                    self.graph.nodes[entry_id] = NodeInfo(\n                        id=entry_id,\n                        label=\"__main__\",\n                        node_type=\"entry\",\n                        file=rel_path,\n                        lineno=stmt.lineno,\n                        source=\"\".join(source_lines[stmt.lineno - 1 : getattr(stmt, \"end_lineno\", stmt.lineno)]),\n                    )\n\n        # Build name \u2192 id lookup\n        name_to_ids: Dict[str, List[str]] = {}\n        for node_id, node in self.graph.nodes.items():\n            name_to_ids.setdefault(node.label, []).append(node_id)\n\n        # Resolve calls to edges\n        seen_edges: Set[tuple] = set()\n        for visitor in visitors:\n            caller_file = visitor.file_path\n            for caller_id, callee_name in visitor.calls:\n                if callee_name not in name_to_ids:\n                    continue\n                for target_id in name_to_ids[callee_name]:\n                    if (caller_id, target_id) in seen_edges:\n                        continue\n                    seen_edges.add((caller_id, target_id))\n                    target_node = self.graph.nodes[target_id]\n                    self.graph.edges.append(\n                        EdgeInfo(\n                            source=caller_id,\n                            target=target_id,\n                            cross_file=target_node.file != caller_file,\n                        )\n                    )\n\n        return self.graph\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/exporter.py::graph_to_dict",
+      "type": "custom",
+      "data": {
+        "label": "graph_to_dict",
+        "nodeType": "function",
+        "file": "analyst/exporter.py",
+        "lineno": 41,
+        "source": "def graph_to_dict(graph: CallGraph) -> dict:\n    \"\"\"Convert a CallGraph to the React Flow JSON dict.\"\"\"\n    nodes = []\n    for node in graph.nodes.values():\n        nodes.append({\n            \"id\": node.id,\n            \"type\": \"custom\",\n            \"data\": {\n                \"label\": node.label,\n                \"nodeType\": node.node_type,\n                \"file\": node.file,\n                \"lineno\": node.lineno,\n                \"source\": node.source,\n            },\n            \"position\": {\"x\": 0, \"y\": 0},\n        })\n\n    edges = []\n    for edge in graph.edges:\n        edges.append({\n            \"id\": f\"{edge.source}->{edge.target}\",\n            \"source\": edge.source,\n            \"target\": edge.target,\n            \"data\": {\"crossFile\": edge.cross_file},\n        })\n\n    return {\"nodes\": nodes, \"edges\": edges}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyst/exporter.py::export_graph",
+      "type": "custom",
+      "data": {
+        "label": "export_graph",
+        "nodeType": "function",
+        "file": "analyst/exporter.py",
+        "lineno": 70,
+        "source": "def export_graph(\n    graph: Optional[CallGraph] = None,\n    output_path: str = \"explorer/public/graph_data.json\",\n) -> None:\n    \"\"\"Serialize *graph* to JSON and write to *output_path*.\n\n    If *graph* is None, writes an empty graph so the frontend still loads.\n    \"\"\"\n    if graph is None:\n        data = {\"nodes\": [], \"edges\": []}\n    else:\n        data = graph_to_dict(graph)\n\n    out = Path(output_path)\n    out.parent.mkdir(parents=True, exist_ok=True)\n    out.write_text(json.dumps(data, indent=2), encoding=\"utf-8\")\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::cmd_analyze",
+      "type": "custom",
+      "data": {
+        "label": "cmd_analyze",
+        "nodeType": "function",
+        "file": "main.py",
+        "lineno": 16,
+        "source": "def cmd_analyze(args: argparse.Namespace) -> None:\n    analyzer = CodeAnalyzer(args.path)\n    analyzer.analyze()\n    export_graph(analyzer.graph, output_path=\"explorer/public/graph_data.json\")\n    print(f\"[VibeGraph] Analysis complete. Graph written to explorer/public/graph_data.json\")\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::cmd_export",
+      "type": "custom",
+      "data": {
+        "label": "cmd_export",
+        "nodeType": "function",
+        "file": "main.py",
+        "lineno": 23,
+        "source": "def cmd_export(_args: argparse.Namespace) -> None:\n    export_graph(output_path=\"explorer/public/graph_data.json\")\n    print(\"[VibeGraph] Export complete.\")\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::cmd_start",
+      "type": "custom",
+      "data": {
+        "label": "cmd_start",
+        "nodeType": "function",
+        "file": "main.py",
+        "lineno": 28,
+        "source": "def cmd_start(args: argparse.Namespace) -> None:\n    import uvicorn\n    uvicorn.run(\n        \"serve:app\",\n        host=args.host,\n        port=args.port,\n        reload=args.reload,\n    )\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::build_parser",
+      "type": "custom",
+      "data": {
+        "label": "build_parser",
+        "nodeType": "function",
+        "file": "main.py",
+        "lineno": 38,
+        "source": "def build_parser() -> argparse.ArgumentParser:\n    parser = argparse.ArgumentParser(\n        prog=\"vibegraph\",\n        description=\"VibeGraph \u2014 AI-powered code visualization & learning system\",\n    )\n    sub = parser.add_subparsers(dest=\"command\")\n\n    # analyze\n    p_analyze = sub.add_parser(\"analyze\", help=\"Analyze a Python codebase\")\n    p_analyze.add_argument(\"path\", help=\"Path to the Python project root\")\n    p_analyze.set_defaults(func=cmd_analyze)\n\n    # export\n    p_export = sub.add_parser(\"export\", help=\"Re-export last analysis to graph_data.json\")\n    p_export.set_defaults(func=cmd_export)\n\n    # start\n    p_start = sub.add_parser(\"start\", help=\"Start the VibeGraph web server\")\n    p_start.add_argument(\"--host\", default=\"0.0.0.0\", help=\"Bind host (default: 0.0.0.0)\")\n    p_start.add_argument(\"--port\", type=int, default=8000, help=\"Port (default: 8000)\")\n    p_start.add_argument(\"--reload\", action=\"store_true\", help=\"Enable auto-reload\")\n    p_start.set_defaults(func=cmd_start)\n\n    return parser\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::main",
+      "type": "custom",
+      "data": {
+        "label": "main",
+        "nodeType": "function",
+        "file": "main.py",
+        "lineno": 64,
+        "source": "def main() -> None:\n    parser = build_parser()\n    args = parser.parse_args()\n\n    if not args.command:\n        parser.print_help()\n        sys.exit(0)\n\n    args.func(args)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main.py::__main__",
+      "type": "custom",
+      "data": {
+        "label": "__main__",
+        "nodeType": "entry",
+        "file": "main.py",
+        "lineno": 75,
+        "source": "if __name__ == \"__main__\":\n    main()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "serve.py::get_graph",
+      "type": "custom",
+      "data": {
+        "label": "get_graph",
+        "nodeType": "function",
+        "file": "serve.py",
+        "lineno": 41,
+        "source": "async def get_graph():\n    if not GRAPH_DATA_PATH.exists():\n        raise HTTPException(status_code=404, detail=\"graph_data.json not found. Run 'python main.py analyze <path>' first.\")\n    return JSONResponse(content=json.loads(GRAPH_DATA_PATH.read_text()))\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "serve.py::ExplainRequest",
+      "type": "custom",
+      "data": {
+        "label": "ExplainRequest",
+        "nodeType": "class",
+        "file": "serve.py",
+        "lineno": 47,
+        "source": "class ExplainRequest(BaseModel):\n    node_id: str\n    node_label: str\n    source_code: str\n    level: str = \"beginner\"   # beginner | intermediate | advanced\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "serve.py::explain_node",
+      "type": "custom",
+      "data": {
+        "label": "explain_node",
+        "nodeType": "function",
+        "file": "serve.py",
+        "lineno": 55,
+        "source": "async def explain_node(req: ExplainRequest):\n    agent = GroqAgent()\n    try:\n        result = agent.explain(\n            node_label=req.node_label,\n            source_code=req.source_code,\n            level=req.level,\n        )\n    except Exception as exc:\n        raise HTTPException(status_code=500, detail=str(exc))\n    return {\"explanation\": result}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "serve.py::get_report",
+      "type": "custom",
+      "data": {
+        "label": "get_report",
+        "nodeType": "function",
+        "file": "serve.py",
+        "lineno": 69,
+        "source": "async def get_report():\n    if not GRAPH_DATA_PATH.exists():\n        raise HTTPException(status_code=404, detail=\"graph_data.json not found. Run 'python main.py analyze <path>' first.\")\n    graph_data = json.loads(GRAPH_DATA_PATH.read_text())\n    reporter = BasicReporter(graph_data)\n    markdown = reporter.generate()\n    return {\"report\": markdown}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "serve.py::serve_spa",
+      "type": "custom",
+      "data": {
+        "label": "serve_spa",
+        "nodeType": "function",
+        "file": "serve.py",
+        "lineno": 86,
+        "source": "    async def serve_spa(full_path: str):\n        file_path = DIST_PATH / full_path\n        if file_path.is_file():\n            return FileResponse(str(file_path))\n        return FileResponse(str(DIST_PATH / \"index.html\"))\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::BasicReporter",
+      "type": "custom",
+      "data": {
+        "label": "BasicReporter",
+        "nodeType": "class",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 10,
+        "source": "class BasicReporter:\n    \"\"\"Generates a Markdown report from React Flow graph data (dict).\"\"\"\n\n    def __init__(self, graph_data: dict):\n        self.nodes: List[dict] = graph_data.get(\"nodes\", [])\n        self.edges: List[dict] = graph_data.get(\"edges\", [])\n\n    # ------------------------------------------------------------------\n    # Public API\n    # ------------------------------------------------------------------\n\n    def generate(self) -> str:\n        sections = [\n            \"# VibeGraph \u2014 Code Analysis Report\\n\",\n            self._summary_section(),\n            self._nodes_by_file_section(),\n            self._edges_section(),\n        ]\n        return \"\\n\".join(sections)\n\n    # ------------------------------------------------------------------\n    # Private helpers\n    # ------------------------------------------------------------------\n\n    def _summary_section(self) -> str:\n        num_nodes = len(self.nodes)\n        num_edges = len(self.edges)\n        files = {n[\"data\"][\"file\"] for n in self.nodes}\n        return (\n            f\"## Summary\\n\\n\"\n            f\"| Metric | Count |\\n\"\n            f\"|--------|-------|\\n\"\n            f\"| Files analyzed | {len(files)} |\\n\"\n            f\"| Nodes (functions + classes + entries) | {num_nodes} |\\n\"\n            f\"| Call edges | {num_edges} |\\n\"\n        )\n\n    def _nodes_by_file_section(self) -> str:\n        by_file: Dict[str, List[dict]] = {}\n        for node in self.nodes:\n            f = node[\"data\"][\"file\"]\n            by_file.setdefault(f, []).append(node)\n\n        lines = [\"## Nodes by File\\n\"]\n        for file_path, nodes in sorted(by_file.items()):\n            lines.append(f\"### `{file_path}`\\n\")\n            for node in sorted(nodes, key=lambda n: n[\"data\"][\"lineno\"]):\n                icon = {\"function\": \"\u26a1\", \"class\": \"\ud83c\udfd7\ufe0f\", \"entry\": \"\ud83d\ude80\"}.get(\n                    node[\"data\"][\"nodeType\"], \"\u2022\"\n                )\n                lines.append(\n                    f\"- {icon} **{node['data']['label']}** (line {node['data']['lineno']})\"\n                )\n            lines.append(\"\")\n\n        return \"\\n\".join(lines)\n\n    def _edges_section(self) -> str:\n        if not self.edges:\n            return \"## Call Edges\\n\\n*No call relationships found.*\\n\"\n\n        id_to_label = {n[\"id\"]: n[\"data\"][\"label\"] for n in self.nodes}\n\n        lines = [\"## Call Edges\\n\"]\n        for edge in self.edges:\n            src_label = id_to_label.get(edge[\"source\"], edge[\"source\"])\n            tgt_label = id_to_label.get(edge[\"target\"], edge[\"target\"])\n            cross = \" *(cross-file)*\" if edge.get(\"data\", {}).get(\"crossFile\") else \"\"\n            lines.append(f\"- `{src_label}` \u2192 `{tgt_label}`{cross}\")\n\n        lines.append(\"\")\n        return \"\\n\".join(lines)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::__init__",
+      "type": "custom",
+      "data": {
+        "label": "__init__",
+        "nodeType": "function",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 13,
+        "source": "    def __init__(self, graph_data: dict):\n        self.nodes: List[dict] = graph_data.get(\"nodes\", [])\n        self.edges: List[dict] = graph_data.get(\"edges\", [])\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::generate",
+      "type": "custom",
+      "data": {
+        "label": "generate",
+        "nodeType": "function",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 21,
+        "source": "    def generate(self) -> str:\n        sections = [\n            \"# VibeGraph \u2014 Code Analysis Report\\n\",\n            self._summary_section(),\n            self._nodes_by_file_section(),\n            self._edges_section(),\n        ]\n        return \"\\n\".join(sections)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::_summary_section",
+      "type": "custom",
+      "data": {
+        "label": "_summary_section",
+        "nodeType": "function",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 34,
+        "source": "    def _summary_section(self) -> str:\n        num_nodes = len(self.nodes)\n        num_edges = len(self.edges)\n        files = {n[\"data\"][\"file\"] for n in self.nodes}\n        return (\n            f\"## Summary\\n\\n\"\n            f\"| Metric | Count |\\n\"\n            f\"|--------|-------|\\n\"\n            f\"| Files analyzed | {len(files)} |\\n\"\n            f\"| Nodes (functions + classes + entries) | {num_nodes} |\\n\"\n            f\"| Call edges | {num_edges} |\\n\"\n        )\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::_nodes_by_file_section",
+      "type": "custom",
+      "data": {
+        "label": "_nodes_by_file_section",
+        "nodeType": "function",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 47,
+        "source": "    def _nodes_by_file_section(self) -> str:\n        by_file: Dict[str, List[dict]] = {}\n        for node in self.nodes:\n            f = node[\"data\"][\"file\"]\n            by_file.setdefault(f, []).append(node)\n\n        lines = [\"## Nodes by File\\n\"]\n        for file_path, nodes in sorted(by_file.items()):\n            lines.append(f\"### `{file_path}`\\n\")\n            for node in sorted(nodes, key=lambda n: n[\"data\"][\"lineno\"]):\n                icon = {\"function\": \"\u26a1\", \"class\": \"\ud83c\udfd7\ufe0f\", \"entry\": \"\ud83d\ude80\"}.get(\n                    node[\"data\"][\"nodeType\"], \"\u2022\"\n                )\n                lines.append(\n                    f\"- {icon} **{node['data']['label']}** (line {node['data']['lineno']})\"\n                )\n            lines.append(\"\")\n\n        return \"\\n\".join(lines)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::_edges_section",
+      "type": "custom",
+      "data": {
+        "label": "_edges_section",
+        "nodeType": "function",
+        "file": "teacher/basic_reporter.py",
+        "lineno": 67,
+        "source": "    def _edges_section(self) -> str:\n        if not self.edges:\n            return \"## Call Edges\\n\\n*No call relationships found.*\\n\"\n\n        id_to_label = {n[\"id\"]: n[\"data\"][\"label\"] for n in self.nodes}\n\n        lines = [\"## Call Edges\\n\"]\n        for edge in self.edges:\n            src_label = id_to_label.get(edge[\"source\"], edge[\"source\"])\n            tgt_label = id_to_label.get(edge[\"target\"], edge[\"target\"])\n            cross = \" *(cross-file)*\" if edge.get(\"data\", {}).get(\"crossFile\") else \"\"\n            lines.append(f\"- `{src_label}` \u2192 `{tgt_label}`{cross}\")\n\n        lines.append(\"\")\n        return \"\\n\".join(lines)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/groq_agent.py::GroqAgent",
+      "type": "custom",
+      "data": {
+        "label": "GroqAgent",
+        "nodeType": "class",
+        "file": "teacher/groq_agent.py",
+        "lineno": 34,
+        "source": "class GroqAgent:\n    \"\"\"Wraps the Groq SDK to explain Python code snippets.\"\"\"\n\n    def __init__(self, model: str = \"llama3-8b-8192\"):\n        self.model = model\n        api_key = os.getenv(\"GROQ_API_KEY\")\n        if Groq is None:\n            raise RuntimeError(\n                \"The 'groq' package is not installed. Run: pip install groq\"\n            )\n        if not api_key:\n            raise RuntimeError(\n                \"GROQ_API_KEY is not set. Add it to your .env file.\"\n            )\n        self.client = Groq(api_key=api_key)\n\n    def explain(\n        self,\n        node_label: str,\n        source_code: str,\n        level: str = \"beginner\",\n    ) -> str:\n        \"\"\"Return a natural-language explanation of *source_code*.\n\n        Parameters\n        ----------\n        node_label:\n            Human-readable name of the function/class being explained.\n        source_code:\n            The raw Python source code to explain.\n        level:\n            One of ``\"beginner\"``, ``\"intermediate\"``, or ``\"advanced\"``.\n        \"\"\"\n        system_prompt = _LEVEL_PROMPTS.get(level, _LEVEL_PROMPTS[\"beginner\"])\n        user_message = (\n            f\"Please explain this Python code (function/class: `{node_label}`):\\n\\n\"\n            f\"```python\\n{source_code}\\n```\"\n        )\n\n        response = self.client.chat.completions.create(\n            model=self.model,\n            messages=[\n                {\"role\": \"system\", \"content\": system_prompt},\n                {\"role\": \"user\", \"content\": user_message},\n            ],\n            temperature=0.5,\n            max_tokens=512,\n        )\n        return response.choices[0].message.content.strip()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/groq_agent.py::__init__",
+      "type": "custom",
+      "data": {
+        "label": "__init__",
+        "nodeType": "function",
+        "file": "teacher/groq_agent.py",
+        "lineno": 37,
+        "source": "    def __init__(self, model: str = \"llama3-8b-8192\"):\n        self.model = model\n        api_key = os.getenv(\"GROQ_API_KEY\")\n        if Groq is None:\n            raise RuntimeError(\n                \"The 'groq' package is not installed. Run: pip install groq\"\n            )\n        if not api_key:\n            raise RuntimeError(\n                \"GROQ_API_KEY is not set. Add it to your .env file.\"\n            )\n        self.client = Groq(api_key=api_key)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "teacher/groq_agent.py::explain",
+      "type": "custom",
+      "data": {
+        "label": "explain",
+        "nodeType": "function",
+        "file": "teacher/groq_agent.py",
+        "lineno": 50,
+        "source": "    def explain(\n        self,\n        node_label: str,\n        source_code: str,\n        level: str = \"beginner\",\n    ) -> str:\n        \"\"\"Return a natural-language explanation of *source_code*.\n\n        Parameters\n        ----------\n        node_label:\n            Human-readable name of the function/class being explained.\n        source_code:\n            The raw Python source code to explain.\n        level:\n            One of ``\"beginner\"``, ``\"intermediate\"``, or ``\"advanced\"``.\n        \"\"\"\n        system_prompt = _LEVEL_PROMPTS.get(level, _LEVEL_PROMPTS[\"beginner\"])\n        user_message = (\n            f\"Please explain this Python code (function/class: `{node_label}`):\\n\\n\"\n            f\"```python\\n{source_code}\\n```\"\n        )\n\n        response = self.client.chat.completions.create(\n            model=self.model,\n            messages=[\n                {\"role\": \"system\", \"content\": system_prompt},\n                {\"role\": \"user\", \"content\": user_message},\n            ],\n            temperature=0.5,\n            max_tokens=512,\n        )\n        return response.choices[0].message.content.strip()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::_make_graph",
+      "type": "custom",
+      "data": {
+        "label": "_make_graph",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 18,
+        "source": "def _make_graph() -> CallGraph:\n    g = CallGraph()\n    g.nodes[\"a.py::foo\"] = NodeInfo(\n        id=\"a.py::foo\",\n        label=\"foo\",\n        node_type=\"function\",\n        file=\"a.py\",\n        lineno=1,\n        source=\"def foo(): pass\",\n    )\n    g.nodes[\"a.py::Bar\"] = NodeInfo(\n        id=\"a.py::Bar\",\n        label=\"Bar\",\n        node_type=\"class\",\n        file=\"a.py\",\n        lineno=5,\n        source=\"class Bar: pass\",\n    )\n    g.nodes[\"b.py::__main__\"] = NodeInfo(\n        id=\"b.py::__main__\",\n        label=\"__main__\",\n        node_type=\"entry\",\n        file=\"b.py\",\n        lineno=10,\n        source='if __name__ == \"__main__\": foo()',\n    )\n    g.edges.append(EdgeInfo(source=\"b.py::__main__\", target=\"a.py::foo\", cross_file=True))\n    return g\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::TestGraphToDict",
+      "type": "custom",
+      "data": {
+        "label": "TestGraphToDict",
+        "nodeType": "class",
+        "file": "tests/test_export.py",
+        "lineno": 52,
+        "source": "class TestGraphToDict:\n    def test_node_count(self):\n        data = graph_to_dict(_make_graph())\n        assert len(data[\"nodes\"]) == 3\n\n    def test_edge_count(self):\n        data = graph_to_dict(_make_graph())\n        assert len(data[\"edges\"]) == 1\n\n    def test_node_shape(self):\n        data = graph_to_dict(_make_graph())\n        node = next(n for n in data[\"nodes\"] if n[\"id\"] == \"a.py::foo\")\n        assert node[\"type\"] == \"custom\"\n        assert node[\"data\"][\"label\"] == \"foo\"\n        assert node[\"data\"][\"nodeType\"] == \"function\"\n        assert node[\"data\"][\"file\"] == \"a.py\"\n        assert node[\"data\"][\"lineno\"] == 1\n        assert \"source\" in node[\"data\"]\n        assert \"position\" in node\n        assert node[\"position\"] == {\"x\": 0, \"y\": 0}\n\n    def test_class_node_type(self):\n        data = graph_to_dict(_make_graph())\n        bar = next(n for n in data[\"nodes\"] if n[\"id\"] == \"a.py::Bar\")\n        assert bar[\"data\"][\"nodeType\"] == \"class\"\n\n    def test_entry_node_type(self):\n        data = graph_to_dict(_make_graph())\n        entry = next(n for n in data[\"nodes\"] if n[\"id\"] == \"b.py::__main__\")\n        assert entry[\"data\"][\"nodeType\"] == \"entry\"\n\n    def test_edge_shape(self):\n        data = graph_to_dict(_make_graph())\n        edge = data[\"edges\"][0]\n        assert edge[\"source\"] == \"b.py::__main__\"\n        assert edge[\"target\"] == \"a.py::foo\"\n        assert edge[\"data\"][\"crossFile\"] is True\n        assert edge[\"id\"] == \"b.py::__main__->a.py::foo\"\n\n    def test_empty_graph(self):\n        data = graph_to_dict(CallGraph())\n        assert data == {\"nodes\": [], \"edges\": []}\n\n    def test_serializable(self):\n        data = graph_to_dict(_make_graph())\n        # Should not raise\n        json.dumps(data)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_count",
+      "type": "custom",
+      "data": {
+        "label": "test_node_count",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 53,
+        "source": "    def test_node_count(self):\n        data = graph_to_dict(_make_graph())\n        assert len(data[\"nodes\"]) == 3\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_count",
+      "type": "custom",
+      "data": {
+        "label": "test_edge_count",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 57,
+        "source": "    def test_edge_count(self):\n        data = graph_to_dict(_make_graph())\n        assert len(data[\"edges\"]) == 1\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_shape",
+      "type": "custom",
+      "data": {
+        "label": "test_node_shape",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 61,
+        "source": "    def test_node_shape(self):\n        data = graph_to_dict(_make_graph())\n        node = next(n for n in data[\"nodes\"] if n[\"id\"] == \"a.py::foo\")\n        assert node[\"type\"] == \"custom\"\n        assert node[\"data\"][\"label\"] == \"foo\"\n        assert node[\"data\"][\"nodeType\"] == \"function\"\n        assert node[\"data\"][\"file\"] == \"a.py\"\n        assert node[\"data\"][\"lineno\"] == 1\n        assert \"source\" in node[\"data\"]\n        assert \"position\" in node\n        assert node[\"position\"] == {\"x\": 0, \"y\": 0}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_class_node_type",
+      "type": "custom",
+      "data": {
+        "label": "test_class_node_type",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 73,
+        "source": "    def test_class_node_type(self):\n        data = graph_to_dict(_make_graph())\n        bar = next(n for n in data[\"nodes\"] if n[\"id\"] == \"a.py::Bar\")\n        assert bar[\"data\"][\"nodeType\"] == \"class\"\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_entry_node_type",
+      "type": "custom",
+      "data": {
+        "label": "test_entry_node_type",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 78,
+        "source": "    def test_entry_node_type(self):\n        data = graph_to_dict(_make_graph())\n        entry = next(n for n in data[\"nodes\"] if n[\"id\"] == \"b.py::__main__\")\n        assert entry[\"data\"][\"nodeType\"] == \"entry\"\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_shape",
+      "type": "custom",
+      "data": {
+        "label": "test_edge_shape",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 83,
+        "source": "    def test_edge_shape(self):\n        data = graph_to_dict(_make_graph())\n        edge = data[\"edges\"][0]\n        assert edge[\"source\"] == \"b.py::__main__\"\n        assert edge[\"target\"] == \"a.py::foo\"\n        assert edge[\"data\"][\"crossFile\"] is True\n        assert edge[\"id\"] == \"b.py::__main__->a.py::foo\"\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_empty_graph",
+      "type": "custom",
+      "data": {
+        "label": "test_empty_graph",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 91,
+        "source": "    def test_empty_graph(self):\n        data = graph_to_dict(CallGraph())\n        assert data == {\"nodes\": [], \"edges\": []}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_serializable",
+      "type": "custom",
+      "data": {
+        "label": "test_serializable",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 95,
+        "source": "    def test_serializable(self):\n        data = graph_to_dict(_make_graph())\n        # Should not raise\n        json.dumps(data)\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::TestExportGraph",
+      "type": "custom",
+      "data": {
+        "label": "TestExportGraph",
+        "nodeType": "class",
+        "file": "tests/test_export.py",
+        "lineno": 105,
+        "source": "class TestExportGraph:\n    def test_creates_file(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        assert out.exists()\n\n    def test_valid_json(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        data = json.loads(out.read_text())\n        assert \"nodes\" in data\n        assert \"edges\" in data\n\n    def test_creates_parent_dirs(self, tmp_path):\n        nested = tmp_path / \"a\" / \"b\" / \"graph.json\"\n        export_graph(_make_graph(), output_path=str(nested))\n        assert nested.exists()\n\n    def test_none_graph_writes_empty(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(None, output_path=str(out))\n        data = json.loads(out.read_text())\n        assert data == {\"nodes\": [], \"edges\": []}\n\n    def test_node_data_in_file(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        data = json.loads(out.read_text())\n        labels = {n[\"data\"][\"label\"] for n in data[\"nodes\"]}\n        assert labels == {\"foo\", \"Bar\", \"__main__\"}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_file",
+      "type": "custom",
+      "data": {
+        "label": "test_creates_file",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 106,
+        "source": "    def test_creates_file(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        assert out.exists()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_valid_json",
+      "type": "custom",
+      "data": {
+        "label": "test_valid_json",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 111,
+        "source": "    def test_valid_json(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        data = json.loads(out.read_text())\n        assert \"nodes\" in data\n        assert \"edges\" in data\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_parent_dirs",
+      "type": "custom",
+      "data": {
+        "label": "test_creates_parent_dirs",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 118,
+        "source": "    def test_creates_parent_dirs(self, tmp_path):\n        nested = tmp_path / \"a\" / \"b\" / \"graph.json\"\n        export_graph(_make_graph(), output_path=str(nested))\n        assert nested.exists()\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_none_graph_writes_empty",
+      "type": "custom",
+      "data": {
+        "label": "test_none_graph_writes_empty",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 123,
+        "source": "    def test_none_graph_writes_empty(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(None, output_path=str(out))\n        data = json.loads(out.read_text())\n        assert data == {\"nodes\": [], \"edges\": []}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_data_in_file",
+      "type": "custom",
+      "data": {
+        "label": "test_node_data_in_file",
+        "nodeType": "function",
+        "file": "tests/test_export.py",
+        "lineno": 129,
+        "source": "    def test_node_data_in_file(self, tmp_path):\n        out = tmp_path / \"graph_data.json\"\n        export_graph(_make_graph(), output_path=str(out))\n        data = json.loads(out.read_text())\n        labels = {n[\"data\"][\"label\"] for n in data[\"nodes\"]}\n        assert labels == {\"foo\", \"Bar\", \"__main__\"}\n"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "analyst/analyzer.py::visit_FunctionDef->analyst/analyzer.py::_qualified_id",
+      "source": "analyst/analyzer.py::visit_FunctionDef",
+      "target": "analyst/analyzer.py::_qualified_id",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_FunctionDef->analyst/analyzer.py::NodeInfo",
+      "source": "analyst/analyzer.py::visit_FunctionDef",
+      "target": "analyst/analyzer.py::NodeInfo",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_FunctionDef->analyst/analyzer.py::_extract_source",
+      "source": "analyst/analyzer.py::visit_FunctionDef",
+      "target": "analyst/analyzer.py::_extract_source",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_ClassDef->analyst/analyzer.py::_qualified_id",
+      "source": "analyst/analyzer.py::visit_ClassDef",
+      "target": "analyst/analyzer.py::_qualified_id",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_ClassDef->analyst/analyzer.py::NodeInfo",
+      "source": "analyst/analyzer.py::visit_ClassDef",
+      "target": "analyst/analyzer.py::NodeInfo",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_ClassDef->analyst/analyzer.py::_extract_source",
+      "source": "analyst/analyzer.py::visit_ClassDef",
+      "target": "analyst/analyzer.py::_extract_source",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::visit_Call->analyst/analyzer.py::_current_scope",
+      "source": "analyst/analyzer.py::visit_Call",
+      "target": "analyst/analyzer.py::_current_scope",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::__init__->analyst/analyzer.py::CallGraph",
+      "source": "analyst/analyzer.py::__init__",
+      "target": "analyst/analyzer.py::CallGraph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::analyze->analyst/analyzer.py::_FileVisitor",
+      "source": "analyst/analyzer.py::analyze",
+      "target": "analyst/analyzer.py::_FileVisitor",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::analyze->analyst/analyzer.py::NodeInfo",
+      "source": "analyst/analyzer.py::analyze",
+      "target": "analyst/analyzer.py::NodeInfo",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/analyzer.py::analyze->analyst/analyzer.py::EdgeInfo",
+      "source": "analyst/analyzer.py::analyze",
+      "target": "analyst/analyzer.py::EdgeInfo",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "analyst/exporter.py::export_graph->analyst/exporter.py::graph_to_dict",
+      "source": "analyst/exporter.py::export_graph",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "main.py::cmd_analyze->analyst/analyzer.py::CodeAnalyzer",
+      "source": "main.py::cmd_analyze",
+      "target": "analyst/analyzer.py::CodeAnalyzer",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "main.py::cmd_analyze->analyst/analyzer.py::analyze",
+      "source": "main.py::cmd_analyze",
+      "target": "analyst/analyzer.py::analyze",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "main.py::cmd_analyze->analyst/exporter.py::export_graph",
+      "source": "main.py::cmd_analyze",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "main.py::cmd_export->analyst/exporter.py::export_graph",
+      "source": "main.py::cmd_export",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "main.py::main->main.py::build_parser",
+      "source": "main.py::main",
+      "target": "main.py::build_parser",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "serve.py::explain_node->teacher/groq_agent.py::GroqAgent",
+      "source": "serve.py::explain_node",
+      "target": "teacher/groq_agent.py::GroqAgent",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "serve.py::explain_node->teacher/groq_agent.py::explain",
+      "source": "serve.py::explain_node",
+      "target": "teacher/groq_agent.py::explain",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "serve.py::get_report->teacher/basic_reporter.py::BasicReporter",
+      "source": "serve.py::get_report",
+      "target": "teacher/basic_reporter.py::BasicReporter",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "serve.py::get_report->teacher/basic_reporter.py::generate",
+      "source": "serve.py::get_report",
+      "target": "teacher/basic_reporter.py::generate",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::generate->teacher/basic_reporter.py::_summary_section",
+      "source": "teacher/basic_reporter.py::generate",
+      "target": "teacher/basic_reporter.py::_summary_section",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::generate->teacher/basic_reporter.py::_nodes_by_file_section",
+      "source": "teacher/basic_reporter.py::generate",
+      "target": "teacher/basic_reporter.py::_nodes_by_file_section",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "teacher/basic_reporter.py::generate->teacher/basic_reporter.py::_edges_section",
+      "source": "teacher/basic_reporter.py::generate",
+      "target": "teacher/basic_reporter.py::_edges_section",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::_make_graph->analyst/analyzer.py::CallGraph",
+      "source": "tests/test_export.py::_make_graph",
+      "target": "analyst/analyzer.py::CallGraph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::_make_graph->analyst/analyzer.py::NodeInfo",
+      "source": "tests/test_export.py::_make_graph",
+      "target": "analyst/analyzer.py::NodeInfo",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::_make_graph->analyst/analyzer.py::EdgeInfo",
+      "source": "tests/test_export.py::_make_graph",
+      "target": "analyst/analyzer.py::EdgeInfo",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_count->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_node_count",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_count->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_node_count",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_count->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_edge_count",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_count->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_edge_count",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_shape->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_node_shape",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_shape->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_node_shape",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_class_node_type->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_class_node_type",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_class_node_type->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_class_node_type",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_entry_node_type->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_entry_node_type",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_entry_node_type->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_entry_node_type",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_shape->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_edge_shape",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_edge_shape->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_edge_shape",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_empty_graph->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_empty_graph",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_empty_graph->analyst/analyzer.py::CallGraph",
+      "source": "tests/test_export.py::test_empty_graph",
+      "target": "analyst/analyzer.py::CallGraph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_serializable->analyst/exporter.py::graph_to_dict",
+      "source": "tests/test_export.py::test_serializable",
+      "target": "analyst/exporter.py::graph_to_dict",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_serializable->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_serializable",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_file->analyst/exporter.py::export_graph",
+      "source": "tests/test_export.py::test_creates_file",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_file->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_creates_file",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_valid_json->analyst/exporter.py::export_graph",
+      "source": "tests/test_export.py::test_valid_json",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_valid_json->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_valid_json",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_parent_dirs->analyst/exporter.py::export_graph",
+      "source": "tests/test_export.py::test_creates_parent_dirs",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_creates_parent_dirs->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_creates_parent_dirs",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_none_graph_writes_empty->analyst/exporter.py::export_graph",
+      "source": "tests/test_export.py::test_none_graph_writes_empty",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_data_in_file->analyst/exporter.py::export_graph",
+      "source": "tests/test_export.py::test_node_data_in_file",
+      "target": "analyst/exporter.py::export_graph",
+      "data": {
+        "crossFile": true
+      }
+    },
+    {
+      "id": "tests/test_export.py::test_node_data_in_file->tests/test_export.py::_make_graph",
+      "source": "tests/test_export.py::test_node_data_in_file",
+      "target": "tests/test_export.py::_make_graph",
+      "data": {
+        "crossFile": false
+      }
+    }
+  ]
+}

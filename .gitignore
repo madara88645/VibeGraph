@@ -1,0 +1,7 @@
+node_modules/
+explorer/dist/
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
