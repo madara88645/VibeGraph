@@ -1,0 +1,2396 @@
+{
+  "nodes": [
+    {
+      "id": "global",
+      "type": "default",
+      "data": {
+        "label": "global",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "Console",
+      "type": "default",
+      "data": {
+        "label": "Console",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "main",
+      "type": "default",
+      "data": {
+        "label": "main",
+        "type": "function",
+        "lineno": 11,
+        "docstring": null,
+        "file": ".\\main.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ArgumentParser",
+      "type": "default",
+      "data": {
+        "label": "ArgumentParser",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "add_argument",
+      "type": "default",
+      "data": {
+        "label": "add_argument",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "parse_args",
+      "type": "default",
+      "data": {
+        "label": "parse_args",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "print",
+      "type": "default",
+      "data": {
+        "label": "print",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "Panel",
+      "type": "default",
+      "data": {
+        "label": "Panel",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer",
+        "type": "class",
+        "lineno": 75,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "analyze_file",
+      "type": "default",
+      "data": {
+        "label": "analyze_file",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "BasicTeacher",
+      "type": "default",
+      "data": {
+        "label": "BasicTeacher",
+        "type": "class",
+        "lineno": 3,
+        "docstring": null,
+        "file": ".\\teacher\\basic_reporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "generate_lesson",
+      "type": "default",
+      "data": {
+        "label": "generate_lesson",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "Markdown",
+      "type": "default",
+      "data": {
+        "label": "Markdown",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GraphExporter",
+      "type": "default",
+      "data": {
+        "label": "GraphExporter",
+        "type": "class",
+        "lineno": 5,
+        "docstring": null,
+        "file": ".\\analyst\\exporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "export_to_json",
+      "type": "default",
+      "data": {
+        "label": "export_to_json",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "exists",
+      "type": "default",
+      "data": {
+        "label": "exists",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "makedirs",
+      "type": "default",
+      "data": {
+        "label": "makedirs",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "join",
+      "type": "default",
+      "data": {
+        "label": "join",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "export_to_react_flow",
+      "type": "default",
+      "data": {
+        "label": "export_to_react_flow",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "listdir",
+      "type": "default",
+      "data": {
+        "label": "listdir",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "run",
+      "type": "default",
+      "data": {
+        "label": "run",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "default",
+      "data": {
+        "label": "copy",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "open",
+      "type": "default",
+      "data": {
+        "label": "open",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "FastAPI",
+      "type": "default",
+      "data": {
+        "label": "FastAPI",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "add_middleware",
+      "type": "default",
+      "data": {
+        "label": "add_middleware",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GroqTeacher",
+      "type": "default",
+      "data": {
+        "label": "GroqTeacher",
+        "type": "class",
+        "lineno": 50,
+        "docstring": null,
+        "file": ".\\teacher\\groq_agent.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ExplainRequest",
+      "type": "default",
+      "data": {
+        "label": "ExplainRequest",
+        "type": "class",
+        "lineno": 26,
+        "docstring": null,
+        "file": ".\\serve.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "_extract_snippet",
+      "type": "default",
+      "data": {
+        "label": "_extract_snippet",
+        "type": "function",
+        "lineno": 36,
+        "docstring": "Robustly extracts the source code of a function/class from *file_path*\nwhose name matches the last segment of *node_id* (e.g. \"MyClass.my_func\"\n\u2192 looks for \"my_func\").\n\nReturns the code string, or a descriptive fallback message.",
+        "file": ".\\serve.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "abspath",
+      "type": "default",
+      "data": {
+        "label": "abspath",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "isfile",
+      "type": "default",
+      "data": {
+        "label": "isfile",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "read",
+      "type": "default",
+      "data": {
+        "label": "read",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "parse",
+      "type": "default",
+      "data": {
+        "label": "parse",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "split",
+      "type": "default",
+      "data": {
+        "label": "split",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "splitlines",
+      "type": "default",
+      "data": {
+        "label": "splitlines",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk",
+      "type": "default",
+      "data": {
+        "label": "walk",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "isinstance",
+      "type": "default",
+      "data": {
+        "label": "isinstance",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "len",
+      "type": "default",
+      "data": {
+        "label": "len",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "SnippetRequest",
+      "type": "default",
+      "data": {
+        "label": "SnippetRequest",
+        "type": "class",
+        "lineno": 84,
+        "docstring": null,
+        "file": ".\\serve.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "get_snippet",
+      "type": "default",
+      "data": {
+        "label": "get_snippet",
+        "type": "function",
+        "lineno": 90,
+        "docstring": "Returns just the code snippet for a given node, without AI explanation.\nLightweight endpoint for the Code Follow panel.",
+        "file": ".\\serve.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "post",
+      "type": "default",
+      "data": {
+        "label": "post",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "health",
+      "type": "default",
+      "data": {
+        "label": "health",
+        "type": "function",
+        "lineno": 129,
+        "docstring": null,
+        "file": ".\\serve.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "get",
+      "type": "default",
+      "data": {
+        "label": "get",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "explain_node",
+      "type": "default",
+      "data": {
+        "label": "explain_node",
+        "type": "function",
+        "lineno": 134,
+        "docstring": "Finds the source code for *node_id* in the given file and asks the\nGroq teacher to explain it at the requested difficulty level.",
+        "file": ".\\serve.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "explain_code",
+      "type": "default",
+      "data": {
+        "label": "explain_code",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "mount",
+      "type": "default",
+      "data": {
+        "label": "mount",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "StaticFiles",
+      "type": "default",
+      "data": {
+        "label": "StaticFiles",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "test_health",
+      "type": "default",
+      "data": {
+        "label": "test_health",
+        "type": "function",
+        "lineno": 7,
+        "docstring": null,
+        "file": ".\\verify_backend.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "json",
+      "type": "default",
+      "data": {
+        "label": "json",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "test_explain",
+      "type": "default",
+      "data": {
+        "label": "test_explain",
+        "type": "function",
+        "lineno": 20,
+        "docstring": null,
+        "file": ".\\verify_backend.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "keys",
+      "type": "default",
+      "data": {
+        "label": "keys",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "exit",
+      "type": "default",
+      "data": {
+        "label": "exit",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor",
+        "type": "class",
+        "lineno": 6,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor.__init__",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor.__init__",
+        "type": "function",
+        "lineno": 7,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DiGraph",
+      "type": "default",
+      "data": {
+        "label": "DiGraph",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor.visit_FunctionDef",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor.visit_FunctionDef",
+        "type": "function",
+        "lineno": 13,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "endswith",
+      "type": "default",
+      "data": {
+        "label": "endswith",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "add_node",
+      "type": "default",
+      "data": {
+        "label": "add_node",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "get_docstring",
+      "type": "default",
+      "data": {
+        "label": "get_docstring",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "append",
+      "type": "default",
+      "data": {
+        "label": "append",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "generic_visit",
+      "type": "default",
+      "data": {
+        "label": "generic_visit",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor.visit_ClassDef",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor.visit_ClassDef",
+        "type": "function",
+        "lineno": 44,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor.visit_Call",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor.visit_Call",
+        "type": "function",
+        "lineno": 62,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "_get_callee_name",
+      "type": "default",
+      "data": {
+        "label": "_get_callee_name",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "add_edge",
+      "type": "default",
+      "data": {
+        "label": "add_edge",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CallGraphVisitor._get_callee_name",
+      "type": "default",
+      "data": {
+        "label": "CallGraphVisitor._get_callee_name",
+        "type": "function",
+        "lineno": 68,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer.__init__",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer.__init__",
+        "type": "function",
+        "lineno": 76,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer.analyze_file",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer.analyze_file",
+        "type": "function",
+        "lineno": 80,
+        "docstring": "Analyzes a file or directory recursively.",
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "isdir",
+      "type": "default",
+      "data": {
+        "label": "isdir",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "_analyze_directory",
+      "type": "default",
+      "data": {
+        "label": "_analyze_directory",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "_analyze_single_file",
+      "type": "default",
+      "data": {
+        "label": "_analyze_single_file",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer._analyze_directory",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer._analyze_directory",
+        "type": "function",
+        "lineno": 92,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer._analyze_single_file",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer._analyze_single_file",
+        "type": "function",
+        "lineno": 113,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "visit",
+      "type": "default",
+      "data": {
+        "label": "visit",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "compose",
+      "type": "default",
+      "data": {
+        "label": "compose",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "extend",
+      "type": "default",
+      "data": {
+        "label": "extend",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "CodeAnalyzer.analyze_structure",
+      "type": "default",
+      "data": {
+        "label": "CodeAnalyzer.analyze_structure",
+        "type": "function",
+        "lineno": 140,
+        "docstring": null,
+        "file": ".\\analyst\\analyzer.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "number_of_nodes",
+      "type": "default",
+      "data": {
+        "label": "number_of_nodes",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "nodes",
+      "type": "default",
+      "data": {
+        "label": "nodes",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "number_of_edges",
+      "type": "default",
+      "data": {
+        "label": "number_of_edges",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "list",
+      "type": "default",
+      "data": {
+        "label": "list",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "edges",
+      "type": "default",
+      "data": {
+        "label": "edges",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GraphExporter.__init__",
+      "type": "default",
+      "data": {
+        "label": "GraphExporter.__init__",
+        "type": "function",
+        "lineno": 6,
+        "docstring": null,
+        "file": ".\\analyst\\exporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GraphExporter.export_to_react_flow",
+      "type": "default",
+      "data": {
+        "label": "GraphExporter.export_to_react_flow",
+        "type": "function",
+        "lineno": 9,
+        "docstring": "Converts a NetworkX graph to a JSON format suitable for React Flow.",
+        "file": ".\\analyst\\exporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "dirname",
+      "type": "default",
+      "data": {
+        "label": "dirname",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "dump",
+      "type": "default",
+      "data": {
+        "label": "dump",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "BasicTeacher.__init__",
+      "type": "default",
+      "data": {
+        "label": "BasicTeacher.__init__",
+        "type": "function",
+        "lineno": 4,
+        "docstring": null,
+        "file": ".\\teacher\\basic_reporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "BasicTeacher.generate_lesson",
+      "type": "default",
+      "data": {
+        "label": "BasicTeacher.generate_lesson",
+        "type": "function",
+        "lineno": 7,
+        "docstring": "Generates a mock 'lesson' based on the graph structure.\nIn Phase 3, this will use an LLM.",
+        "file": ".\\teacher\\basic_reporter.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "density",
+      "type": "default",
+      "data": {
+        "label": "density",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "load_dotenv",
+      "type": "default",
+      "data": {
+        "label": "load_dotenv",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "_try_parse_json",
+      "type": "default",
+      "data": {
+        "label": "_try_parse_json",
+        "type": "function",
+        "lineno": 39,
+        "docstring": "Attempt to parse JSON from *text*, stripping markdown fences if present.",
+        "file": ".\\teacher\\groq_agent.py",
+        "entry_point": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "sub",
+      "type": "default",
+      "data": {
+        "label": "sub",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "strip",
+      "type": "default",
+      "data": {
+        "label": "strip",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "loads",
+      "type": "default",
+      "data": {
+        "label": "loads",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GroqTeacher.__init__",
+      "type": "default",
+      "data": {
+        "label": "GroqTeacher.__init__",
+        "type": "function",
+        "lineno": 51,
+        "docstring": null,
+        "file": ".\\teacher\\groq_agent.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "getenv",
+      "type": "default",
+      "data": {
+        "label": "getenv",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "Groq",
+      "type": "default",
+      "data": {
+        "label": "Groq",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "GroqTeacher.explain_code",
+      "type": "default",
+      "data": {
+        "label": "GroqTeacher.explain_code",
+        "type": "function",
+        "lineno": 59,
+        "docstring": "Explains *code_snippet* via Groq (Llama 3) and returns structured JSON.\n\nParameters\n----------\ncode_snippet : str\n    The source code to explain.\ncontext : str, optional\n    Extra context (e.g. \"External Library\").\nlevel : str\n    One of 'beginner', 'intermediate', 'advanced'.\n\nReturns\n-------\ndict with keys: analogy, technical, key_takeaway",
+        "file": ".\\teacher\\groq_agent.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "chr",
+      "type": "default",
+      "data": {
+        "label": "chr",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "create",
+      "type": "default",
+      "data": {
+        "label": "create",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "str",
+      "type": "default",
+      "data": {
+        "label": "str",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "TestGraphExport",
+      "type": "default",
+      "data": {
+        "label": "TestGraphExport",
+        "type": "class",
+        "lineno": 14,
+        "docstring": null,
+        "file": ".\\tests\\test_export.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "TestGraphExport.setUp",
+      "type": "default",
+      "data": {
+        "label": "TestGraphExport.setUp",
+        "type": "function",
+        "lineno": 15,
+        "docstring": null,
+        "file": ".\\tests\\test_export.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "write",
+      "type": "default",
+      "data": {
+        "label": "write",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "TestGraphExport.tearDown",
+      "type": "default",
+      "data": {
+        "label": "TestGraphExport.tearDown",
+        "type": "function",
+        "lineno": 32,
+        "docstring": null,
+        "file": ".\\tests\\test_export.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "rmtree",
+      "type": "default",
+      "data": {
+        "label": "rmtree",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "TestGraphExport.test_export_structure",
+      "type": "default",
+      "data": {
+        "label": "TestGraphExport.test_export_structure",
+        "type": "function",
+        "lineno": 36,
+        "docstring": null,
+        "file": ".\\tests\\test_export.py",
+        "entry_point": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "assertNotIn",
+      "type": "default",
+      "data": {
+        "label": "assertNotIn",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "assertTrue",
+      "type": "default",
+      "data": {
+        "label": "assertTrue",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "assertIn",
+      "type": "default",
+      "data": {
+        "label": "assertIn",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "assertEqual",
+      "type": "default",
+      "data": {
+        "label": "assertEqual",
+        "type": "default"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "eglobal-Console",
+      "source": "global",
+      "target": "Console",
+      "animated": true
+    },
+    {
+      "id": "eglobal-main",
+      "source": "global",
+      "target": "main",
+      "animated": true
+    },
+    {
+      "id": "eglobal-FastAPI",
+      "source": "global",
+      "target": "FastAPI",
+      "animated": true
+    },
+    {
+      "id": "eglobal-add_middleware",
+      "source": "global",
+      "target": "add_middleware",
+      "animated": true
+    },
+    {
+      "id": "eglobal-GroqTeacher",
+      "source": "global",
+      "target": "GroqTeacher",
+      "animated": true
+    },
+    {
+      "id": "eglobal-CodeAnalyzer",
+      "source": "global",
+      "target": "CodeAnalyzer",
+      "animated": true
+    },
+    {
+      "id": "eglobal-join",
+      "source": "global",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eglobal-exists",
+      "source": "global",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eglobal-mount",
+      "source": "global",
+      "target": "mount",
+      "animated": true
+    },
+    {
+      "id": "eglobal-StaticFiles",
+      "source": "global",
+      "target": "StaticFiles",
+      "animated": true
+    },
+    {
+      "id": "eglobal-run",
+      "source": "global",
+      "target": "run",
+      "animated": true
+    },
+    {
+      "id": "eglobal-print",
+      "source": "global",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "eglobal-test_health",
+      "source": "global",
+      "target": "test_health",
+      "animated": true
+    },
+    {
+      "id": "eglobal-test_explain",
+      "source": "global",
+      "target": "test_explain",
+      "animated": true
+    },
+    {
+      "id": "eglobal-exit",
+      "source": "global",
+      "target": "exit",
+      "animated": true
+    },
+    {
+      "id": "eglobal-load_dotenv",
+      "source": "global",
+      "target": "load_dotenv",
+      "animated": true
+    },
+    {
+      "id": "eglobal-append",
+      "source": "global",
+      "target": "append",
+      "animated": true
+    },
+    {
+      "id": "eglobal-abspath",
+      "source": "global",
+      "target": "abspath",
+      "animated": true
+    },
+    {
+      "id": "eglobal-dirname",
+      "source": "global",
+      "target": "dirname",
+      "animated": true
+    },
+    {
+      "id": "emain-ArgumentParser",
+      "source": "main",
+      "target": "ArgumentParser",
+      "animated": true
+    },
+    {
+      "id": "emain-add_argument",
+      "source": "main",
+      "target": "add_argument",
+      "animated": true
+    },
+    {
+      "id": "emain-parse_args",
+      "source": "main",
+      "target": "parse_args",
+      "animated": true
+    },
+    {
+      "id": "emain-print",
+      "source": "main",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "emain-Panel",
+      "source": "main",
+      "target": "Panel",
+      "animated": true
+    },
+    {
+      "id": "emain-CodeAnalyzer",
+      "source": "main",
+      "target": "CodeAnalyzer",
+      "animated": true
+    },
+    {
+      "id": "emain-analyze_file",
+      "source": "main",
+      "target": "analyze_file",
+      "animated": true
+    },
+    {
+      "id": "emain-BasicTeacher",
+      "source": "main",
+      "target": "BasicTeacher",
+      "animated": true
+    },
+    {
+      "id": "emain-generate_lesson",
+      "source": "main",
+      "target": "generate_lesson",
+      "animated": true
+    },
+    {
+      "id": "emain-Markdown",
+      "source": "main",
+      "target": "Markdown",
+      "animated": true
+    },
+    {
+      "id": "emain-GraphExporter",
+      "source": "main",
+      "target": "GraphExporter",
+      "animated": true
+    },
+    {
+      "id": "emain-export_to_json",
+      "source": "main",
+      "target": "export_to_json",
+      "animated": true
+    },
+    {
+      "id": "emain-exists",
+      "source": "main",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "emain-makedirs",
+      "source": "main",
+      "target": "makedirs",
+      "animated": true
+    },
+    {
+      "id": "emain-join",
+      "source": "main",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "emain-export_to_react_flow",
+      "source": "main",
+      "target": "export_to_react_flow",
+      "animated": true
+    },
+    {
+      "id": "emain-listdir",
+      "source": "main",
+      "target": "listdir",
+      "animated": true
+    },
+    {
+      "id": "emain-run",
+      "source": "main",
+      "target": "run",
+      "animated": true
+    },
+    {
+      "id": "emain-copy",
+      "source": "main",
+      "target": "copy",
+      "animated": true
+    },
+    {
+      "id": "emain-open",
+      "source": "main",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-abspath",
+      "source": "_extract_snippet",
+      "target": "abspath",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-isfile",
+      "source": "_extract_snippet",
+      "target": "isfile",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-open",
+      "source": "_extract_snippet",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-read",
+      "source": "_extract_snippet",
+      "target": "read",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-parse",
+      "source": "_extract_snippet",
+      "target": "parse",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-split",
+      "source": "_extract_snippet",
+      "target": "split",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-splitlines",
+      "source": "_extract_snippet",
+      "target": "splitlines",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-walk",
+      "source": "_extract_snippet",
+      "target": "walk",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-isinstance",
+      "source": "_extract_snippet",
+      "target": "isinstance",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-len",
+      "source": "_extract_snippet",
+      "target": "len",
+      "animated": true
+    },
+    {
+      "id": "e_extract_snippet-join",
+      "source": "_extract_snippet",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-_extract_snippet",
+      "source": "get_snippet",
+      "target": "_extract_snippet",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-abspath",
+      "source": "get_snippet",
+      "target": "abspath",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-isfile",
+      "source": "get_snippet",
+      "target": "isfile",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-open",
+      "source": "get_snippet",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-read",
+      "source": "get_snippet",
+      "target": "read",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-parse",
+      "source": "get_snippet",
+      "target": "parse",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-split",
+      "source": "get_snippet",
+      "target": "split",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-walk",
+      "source": "get_snippet",
+      "target": "walk",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-isinstance",
+      "source": "get_snippet",
+      "target": "isinstance",
+      "animated": true
+    },
+    {
+      "id": "eget_snippet-post",
+      "source": "get_snippet",
+      "target": "post",
+      "animated": true
+    },
+    {
+      "id": "ehealth-get",
+      "source": "health",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "eexplain_node-_extract_snippet",
+      "source": "explain_node",
+      "target": "_extract_snippet",
+      "animated": true
+    },
+    {
+      "id": "eexplain_node-explain_code",
+      "source": "explain_node",
+      "target": "explain_code",
+      "animated": true
+    },
+    {
+      "id": "eexplain_node-post",
+      "source": "explain_node",
+      "target": "post",
+      "animated": true
+    },
+    {
+      "id": "etest_health-get",
+      "source": "test_health",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "etest_health-json",
+      "source": "test_health",
+      "target": "json",
+      "animated": true
+    },
+    {
+      "id": "etest_health-print",
+      "source": "test_health",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "etest_explain-post",
+      "source": "test_explain",
+      "target": "post",
+      "animated": true
+    },
+    {
+      "id": "etest_explain-json",
+      "source": "test_explain",
+      "target": "json",
+      "animated": true
+    },
+    {
+      "id": "etest_explain-print",
+      "source": "test_explain",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "etest_explain-keys",
+      "source": "test_explain",
+      "target": "keys",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.__init__-DiGraph",
+      "source": "CallGraphVisitor.__init__",
+      "target": "DiGraph",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_FunctionDef-endswith",
+      "source": "CallGraphVisitor.visit_FunctionDef",
+      "target": "endswith",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_FunctionDef-add_node",
+      "source": "CallGraphVisitor.visit_FunctionDef",
+      "target": "add_node",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_FunctionDef-get_docstring",
+      "source": "CallGraphVisitor.visit_FunctionDef",
+      "target": "get_docstring",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_FunctionDef-append",
+      "source": "CallGraphVisitor.visit_FunctionDef",
+      "target": "append",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_FunctionDef-generic_visit",
+      "source": "CallGraphVisitor.visit_FunctionDef",
+      "target": "generic_visit",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_ClassDef-add_node",
+      "source": "CallGraphVisitor.visit_ClassDef",
+      "target": "add_node",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_ClassDef-get_docstring",
+      "source": "CallGraphVisitor.visit_ClassDef",
+      "target": "get_docstring",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_ClassDef-append",
+      "source": "CallGraphVisitor.visit_ClassDef",
+      "target": "append",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_ClassDef-generic_visit",
+      "source": "CallGraphVisitor.visit_ClassDef",
+      "target": "generic_visit",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_Call-_get_callee_name",
+      "source": "CallGraphVisitor.visit_Call",
+      "target": "_get_callee_name",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_Call-add_edge",
+      "source": "CallGraphVisitor.visit_Call",
+      "target": "add_edge",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor.visit_Call-generic_visit",
+      "source": "CallGraphVisitor.visit_Call",
+      "target": "generic_visit",
+      "animated": true
+    },
+    {
+      "id": "eCallGraphVisitor._get_callee_name-isinstance",
+      "source": "CallGraphVisitor._get_callee_name",
+      "target": "isinstance",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.__init__-DiGraph",
+      "source": "CodeAnalyzer.__init__",
+      "target": "DiGraph",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_file-exists",
+      "source": "CodeAnalyzer.analyze_file",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_file-isdir",
+      "source": "CodeAnalyzer.analyze_file",
+      "target": "isdir",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_file-_analyze_directory",
+      "source": "CodeAnalyzer.analyze_file",
+      "target": "_analyze_directory",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_file-_analyze_single_file",
+      "source": "CodeAnalyzer.analyze_file",
+      "target": "_analyze_single_file",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_directory-walk",
+      "source": "CodeAnalyzer._analyze_directory",
+      "target": "walk",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_directory-endswith",
+      "source": "CodeAnalyzer._analyze_directory",
+      "target": "endswith",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_directory-join",
+      "source": "CodeAnalyzer._analyze_directory",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_directory-_analyze_single_file",
+      "source": "CodeAnalyzer._analyze_directory",
+      "target": "_analyze_single_file",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-open",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-parse",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "parse",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-read",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "read",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-print",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-CallGraphVisitor",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "CallGraphVisitor",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-visit",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "visit",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-compose",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "compose",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer._analyze_single_file-extend",
+      "source": "CodeAnalyzer._analyze_single_file",
+      "target": "extend",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-analyze_file",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "analyze_file",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-number_of_nodes",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "number_of_nodes",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-join",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-nodes",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "nodes",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-number_of_edges",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "number_of_edges",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-list",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "list",
+      "animated": true
+    },
+    {
+      "id": "eCodeAnalyzer.analyze_structure-edges",
+      "source": "CodeAnalyzer.analyze_structure",
+      "target": "edges",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-nodes",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "nodes",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-get",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-append",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "append",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-edges",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "edges",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-dirname",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "dirname",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-exists",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-makedirs",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "makedirs",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-open",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "eGraphExporter.export_to_react_flow-dump",
+      "source": "GraphExporter.export_to_react_flow",
+      "target": "dump",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-nodes",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "nodes",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-get",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-len",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "len",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-join",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-number_of_edges",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "number_of_edges",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-edges",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "edges",
+      "animated": true
+    },
+    {
+      "id": "eBasicTeacher.generate_lesson-density",
+      "source": "BasicTeacher.generate_lesson",
+      "target": "density",
+      "animated": true
+    },
+    {
+      "id": "e_try_parse_json-sub",
+      "source": "_try_parse_json",
+      "target": "sub",
+      "animated": true
+    },
+    {
+      "id": "e_try_parse_json-strip",
+      "source": "_try_parse_json",
+      "target": "strip",
+      "animated": true
+    },
+    {
+      "id": "e_try_parse_json-loads",
+      "source": "_try_parse_json",
+      "target": "loads",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.__init__-getenv",
+      "source": "GroqTeacher.__init__",
+      "target": "getenv",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.__init__-print",
+      "source": "GroqTeacher.__init__",
+      "target": "print",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.__init__-Groq",
+      "source": "GroqTeacher.__init__",
+      "target": "Groq",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.explain_code-get",
+      "source": "GroqTeacher.explain_code",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.explain_code-chr",
+      "source": "GroqTeacher.explain_code",
+      "target": "chr",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.explain_code-create",
+      "source": "GroqTeacher.explain_code",
+      "target": "create",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.explain_code-_try_parse_json",
+      "source": "GroqTeacher.explain_code",
+      "target": "_try_parse_json",
+      "animated": true
+    },
+    {
+      "id": "eGroqTeacher.explain_code-str",
+      "source": "GroqTeacher.explain_code",
+      "target": "str",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.setUp-exists",
+      "source": "TestGraphExport.setUp",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.setUp-makedirs",
+      "source": "TestGraphExport.setUp",
+      "target": "makedirs",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.setUp-join",
+      "source": "TestGraphExport.setUp",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.setUp-open",
+      "source": "TestGraphExport.setUp",
+      "target": "open",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.setUp-write",
+      "source": "TestGraphExport.setUp",
+      "target": "write",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.tearDown-exists",
+      "source": "TestGraphExport.tearDown",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.tearDown-rmtree",
+      "source": "TestGraphExport.tearDown",
+      "target": "rmtree",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-CodeAnalyzer",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "CodeAnalyzer",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-analyze_file",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "analyze_file",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-assertNotIn",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "assertNotIn",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-get",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "get",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-assertTrue",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "assertTrue",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-GraphExporter",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "GraphExporter",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-join",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "join",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-export_to_react_flow",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "export_to_react_flow",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-exists",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "exists",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-assertIn",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "assertIn",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-assertEqual",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "assertEqual",
+      "animated": true
+    },
+    {
+      "id": "eTestGraphExport.test_export_structure-len",
+      "source": "TestGraphExport.test_export_structure",
+      "target": "len",
+      "animated": true
+    }
+  ]
+}
