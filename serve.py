@@ -1,0 +1,161 @@
+import os
+import ast
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from teacher.groq_agent import GroqTeacher
+from analyst.analyzer import CodeAnalyzer
+
+app = FastAPI(title="Vibe Learning System API")
+
+# Enable CORS for development (allowing frontend on 5173 to talk to backend on 8000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+teacher = GroqTeacher()
+analyzer = CodeAnalyzer()
+
+
+class ExplainRequest(BaseModel):
+    file_path: str | None = None
+    node_id: str
+    level: str = "intermediate"
+
+
+# ---------------------------------------------------------------------------
+# Snippet extraction utility
+# ---------------------------------------------------------------------------
+
+def _extract_snippet(file_path: str, node_id: str) -> str:
+    """
+    Robustly extracts the source code of a function/class from *file_path*
+    whose name matches the last segment of *node_id* (e.g. "MyClass.my_func"
+    → looks for "my_func").
+
+    Returns the code string, or a descriptive fallback message.
+    """
+    if not file_path:
+        return (
+            f"# External or Built-in: {node_id}\n"
+            "# (No source code available, please explain based on name/context.)"
+        )
+
+    resolved = os.path.abspath(file_path)
+    if not os.path.isfile(resolved):
+        return f"# File not found: {file_path}"
+
+    try:
+        with open(resolved, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError as e:
+        return f"# Error reading file: {e}"
+
+    try:
+        tree = ast.parse(source, filename=resolved)
+    except SyntaxError as e:
+        return f"# Syntax error in {file_path}: {e}"
+
+    target_name = node_id.split(".")[-1]
+    lines = source.splitlines()
+
+    # Walk the AST looking for FunctionDef / AsyncFunctionDef / ClassDef
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name == target_name:
+                start = node.lineno - 1          # 0-indexed
+                end = node.end_lineno or len(lines)
+                return "\n".join(lines[start:end])
+
+    return f"# Code for '{node_id}' not found in {file_path} (analysis mismatch)."
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+
+class SnippetRequest(BaseModel):
+    file_path: str | None = None
+    node_id: str
+
+
+@app.post("/api/snippet")
+def get_snippet(request: SnippetRequest):
+    """
+    Returns just the code snippet for a given node, without AI explanation.
+    Lightweight endpoint for the Code Follow panel.
+    """
+    snippet = _extract_snippet(request.file_path, request.node_id)
+
+    # Also find the line range for highlighting
+    start_line = None
+    end_line = None
+    full_source = None
+
+    if request.file_path:
+        resolved = os.path.abspath(request.file_path)
+        if os.path.isfile(resolved):
+            try:
+                with open(resolved, "r", encoding="utf-8") as f:
+                    full_source = f.read()
+                tree = ast.parse(full_source, filename=resolved)
+                target_name = request.node_id.split(".")[-1]
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                        if node.name == target_name:
+                            start_line = node.lineno
+                            end_line = node.end_lineno
+                            break
+            except Exception:
+                pass
+
+    return {
+        "node_id": request.node_id,
+        "snippet": snippet,
+        "file_path": request.file_path,
+        "start_line": start_line,
+        "end_line": end_line,
+        "full_source": full_source,
+    }
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "vibe": "checked"}
+
+
+@app.post("/api/explain")
+def explain_node(request: ExplainRequest):
+    """
+    Finds the source code for *node_id* in the given file and asks the
+    Groq teacher to explain it at the requested difficulty level.
+    """
+    snippet = _extract_snippet(request.file_path, request.node_id)
+
+    explanation = teacher.explain_code(
+        snippet,
+        context="External Library / Built-in" if not request.file_path else "",
+        level=request.level,
+    )
+
+    return {
+        "node_id": request.node_id,
+        "explanation": explanation,
+        "snippet": snippet,
+    }
+
+
+# Mount static files (Frontend build)
+# Only mounts if the build directory exists
+static_dir = os.path.join("explorer", "dist")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
