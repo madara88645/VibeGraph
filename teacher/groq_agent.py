@@ -125,3 +125,113 @@ class GroqTeacher:
                 "technical": str(e),
                 "key_takeaway": "Check Groq API status.",
             }
+
+    # ------------------------------------------------------------------
+    # Free-form chat about a code snippet
+    # ------------------------------------------------------------------
+
+    def chat(
+        self,
+        code_snippet: str,
+        question: str,
+        history: list[dict] | None = None,
+    ) -> str:
+        """
+        Free-form conversation about *code_snippet*.
+
+        Parameters
+        ----------
+        code_snippet : str
+            Source code the user is asking about.
+        question : str
+            The user's current question.
+        history : list[dict], optional
+            Previous messages: ``[{"role": "user"|"assistant", "content": ...}]``
+
+        Returns
+        -------
+        str  – Markdown-formatted answer.
+        """
+        if not self.client:
+            return "⚠️ GROQ_API_KEY eksik. `.env` dosyanı kontrol et."
+
+        system_msg = (
+            "Sen bir kod öğretmenisin. Kullanıcı şu fonksiyon hakkında soru soruyor:\n"
+            f"```python\n{code_snippet}\n```\n"
+            "Türkçe veya kullanıcının dilinde, net ve öğretici cevap ver."
+        )
+
+        messages: list[dict] = [{"role": "system", "content": system_msg}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": question})
+
+        try:
+            completion = self.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.5,
+                max_tokens=800,
+                top_p=1,
+                stream=False,
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            return f"⚠️ Groq API hatası: {e}"
+
+    # ------------------------------------------------------------------
+    # Suggest a learning path for a file's nodes / edges
+    # ------------------------------------------------------------------
+
+    def suggest_learning_path(
+        self,
+        nodes_summary: str,
+        edges_summary: str,
+        file_path: str,
+    ) -> list[dict]:
+        """
+        Ask the LLM to suggest a step-by-step learning order.
+
+        Returns
+        -------
+        list[dict]  – ``[{"step": int, "node_id": str, "reason": str}, ...]``
+        """
+        if not self.client:
+            return [{"step": 1, "node_id": "N/A", "reason": "GROQ_API_KEY missing."}]
+
+        system_msg = (
+            "You are a coding tutor. You MUST reply with ONLY a valid JSON object.\n"
+            "The JSON object must have exactly one key: \"steps\" which is an array.\n"
+            "Each element: {\"step\": <int>, \"node_id\": \"<str>\", \"reason\": \"<str>\"}.\n"
+            "Do NOT wrap in code fences. Output raw JSON only."
+        )
+
+        user_prompt = (
+            f"Bu Python dosyasındaki ({file_path}) fonksiyonlar ve sınıflar:\n"
+            f"{nodes_summary}\n\n"
+            f"Aralarındaki çağrı ilişkileri (edges):\n"
+            f"{edges_summary}\n\n"
+            "Bir öğrenci bu dosyayı öğrenmek istese hangi sırayla incelemeli? "
+            "JSON array olarak cevap ver."
+        )
+
+        try:
+            completion = self.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+                max_tokens=600,
+                top_p=1,
+                stream=False,
+                response_format={"type": "json_object"},
+            )
+            raw = completion.choices[0].message.content
+            parsed = _try_parse_json(raw)
+            if parsed and "steps" in parsed:
+                return parsed["steps"]
+            return [{"step": 1, "node_id": "parse_error", "reason": raw}]
+        except Exception as e:
+            return [{"step": 1, "node_id": "error", "reason": str(e)}]

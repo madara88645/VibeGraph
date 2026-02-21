@@ -151,6 +151,81 @@ def explain_node(request: ExplainRequest):
     }
 
 
+# ---------------------------------------------------------------------------
+# POST /api/chat – Free-form AI conversation about a node
+# ---------------------------------------------------------------------------
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    node_id: str
+    file_path: str | None = None
+    question: str
+    history: list[ChatMessage] = []
+
+
+@app.post("/api/chat")
+def chat_with_node(request: ChatRequest):
+    """
+    Free-form conversation about the code behind *node_id*.
+    Supports multi-turn via *history*.
+    """
+    snippet = _extract_snippet(request.file_path, request.node_id)
+
+    history_dicts = [{"role": m.role, "content": m.content} for m in request.history]
+
+    answer = teacher.chat(
+        code_snippet=snippet,
+        question=request.question,
+        history=history_dicts,
+    )
+
+    return {"answer": answer, "node_id": request.node_id}
+
+
+# ---------------------------------------------------------------------------
+# POST /api/learning-path – Suggested learning order for a file
+# ---------------------------------------------------------------------------
+
+
+class LearningPathRequest(BaseModel):
+    file_path: str
+
+
+@app.post("/api/learning-path")
+def suggest_learning_path(request: LearningPathRequest):
+    """
+    Analyzes *file_path*, extracts its nodes/edges, and asks the LLM
+    to suggest the best order to study them.
+    """
+    if not os.path.isfile(request.file_path):
+        raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
+
+    result = analyzer.analyze_file(request.file_path)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    graph = result["graph"]
+
+    nodes_summary = ", ".join(
+        f"{nid} ({data.get('type', '?')})"
+        for nid, data in graph.nodes(data=True)
+    )
+    edges_summary = ", ".join(f"{u} → {v}" for u, v in graph.edges())
+
+    steps = teacher.suggest_learning_path(
+        nodes_summary=nodes_summary,
+        edges_summary=edges_summary,
+        file_path=request.file_path,
+    )
+
+    return {"file_path": request.file_path, "steps": steps}
+
+
 # Mount static files (Frontend build)
 # Only mounts if the build directory exists
 static_dir = os.path.join("explorer", "dist")
