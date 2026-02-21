@@ -6,7 +6,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { setCenter } = useReactFlow();
+    const { fitView } = useReactFlow();
 
     // Fetch learning path when opened or file changes
     useEffect(() => {
@@ -31,10 +31,10 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                 if (data.steps && data.steps.length > 0) {
                     setSteps(data.steps);
                 } else {
-                    setError('No learning steps returned for this file.');
+                    setError('No steps found.');
                 }
             } catch (err) {
-                setError(`Failed to load: ${err.message}`);
+                setError(`Error: ${err.message}`);
             } finally {
                 setLoading(false);
             }
@@ -58,97 +58,70 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
         if (node) {
             if (node.data?.file) onSelectFile(node.data.file);
             onSelectNode(node);
-            if (node.position) {
-                setCenter(node.position.x + 86, node.position.y + 18, { zoom: 1.5, duration: 600 });
-            }
+
+            // Use fitView with a small timeout to ensure layout/selection is finished
+            setTimeout(() => {
+                fitView({
+                    nodes: [node],
+                    duration: 800,
+                    padding: 2.0, // Large padding to keep context but center node
+                });
+            }, 50);
         }
-    }, [steps, allNodes, onSelectFile, onSelectNode, setCenter]);
+    }, [steps, allNodes, onSelectFile, onSelectNode, fitView]);
 
     if (!isOpen) return null;
 
     const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
 
     return (
-        <div className="learning-path-overlay" onClick={onToggle}>
-            <div className="learning-path" onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="lp-header">
-                    <div className="lp-header-left">
-                        <span>🎯</span>
-                        <h2>Learning Path</h2>
-                    </div>
-                    {selectedFile && (
-                        <span className="lp-file-name">{selectedFile.split(/[/\\]/).pop()}</span>
-                    )}
-                    <button className="lp-close" onClick={onToggle}>✕</button>
-                </div>
+        <div className="lp-bar">
+            {/* Header / Icon */}
+            <div className="lp-bar-icon">🎯</div>
 
-                {/* Progress bar */}
-                {steps.length > 0 && (
-                    <div className="lp-progress-container">
-                        <div className="lp-progress-bar">
-                            <div className="lp-progress-fill" style={{ width: `${progress}%` }} />
-                        </div>
-                        <span className="lp-progress-text">Step {currentStep + 1} / {steps.length}</span>
-                    </div>
-                )}
+            {/* Navigation & Info */}
+            <div className="lp-bar-main">
+                <button
+                    className="lp-bar-nav"
+                    onClick={() => goToStep(currentStep - 1)}
+                    disabled={currentStep === 0 || loading}
+                >
+                    ←
+                </button>
 
-                {/* Content */}
-                <div className="lp-content">
-                    {loading && (
-                        <div className="lp-loading">
-                            <div className="code-spinner" />
-                            <span>Generating learning path…</span>
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="lp-error">{error}</div>
-                    )}
-
-                    {!loading && !error && steps.length > 0 && (
-                        <div className="lp-steps">
-                            {steps.map((step, idx) => (
-                                <button
-                                    key={idx}
-                                    className={`lp-step ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`}
-                                    onClick={() => goToStep(idx)}
-                                >
-                                    <div className="lp-step-number">
-                                        {idx < currentStep ? '✓' : idx + 1}
-                                    </div>
-                                    <div className="lp-step-info">
-                                        <span className="lp-step-name">{step.node_name || step.node_id}</span>
-                                        {step.reason && (
-                                            <span className="lp-step-reason">{step.reason}</span>
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                <div className="lp-bar-info">
+                    {loading ? (
+                        <span className="lp-bar-loading">Analyzing File...</span>
+                    ) : error ? (
+                        <span className="lp-bar-error">{error}</span>
+                    ) : steps.length > 0 ? (
+                        <>
+                            <span className="lp-bar-step">Step {currentStep + 1}/{steps.length}:</span>
+                            <span className="lp-bar-node">{steps[currentStep].node_name || steps[currentStep].node_id}</span>
+                        </>
+                    ) : (
+                        <span className="lp-bar-empty">No steps</span>
                     )}
                 </div>
 
-                {/* Navigation */}
-                {steps.length > 0 && (
-                    <div className="lp-nav">
-                        <button
-                            className="lp-nav-btn"
-                            onClick={() => goToStep(currentStep - 1)}
-                            disabled={currentStep === 0}
-                        >
-                            ← Previous
-                        </button>
-                        <button
-                            className="lp-nav-btn lp-nav-next"
-                            onClick={() => goToStep(currentStep + 1)}
-                            disabled={currentStep === steps.length - 1}
-                        >
-                            Next →
-                        </button>
-                    </div>
-                )}
+                <button
+                    className="lp-bar-nav"
+                    onClick={() => goToStep(currentStep + 1)}
+                    disabled={currentStep === steps.length - 1 || loading}
+                >
+                    →
+                </button>
             </div>
+
+            {/* Close */}
+            <button className="lp-bar-close" onClick={onToggle}>✕</button>
+
+            {/* Tiny Progress line at the very bottom */}
+            {steps.length > 0 && (
+                <div className="lp-bar-progress">
+                    <div className="lp-bar-progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+            )}
         </div>
     );
 };
