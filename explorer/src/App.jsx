@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
-import { useNodesState, useEdgesState, addEdge } from 'reactflow';
+import { ReactFlowProvider, useNodesState, useEdgesState, addEdge } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import GraphViewer from './components/GraphViewer';
 import ExplanationPanel from './components/ExplanationPanel';
 import FileSidebar from './components/FileSidebar';
 import CodePanel from './components/CodePanel';
-import { getLayoutedElements } from './utils/layout';
+import SearchBar from './components/SearchBar';
+import ChatDrawer from './components/ChatDrawer';
+import LearningPath from './components/LearningPath';
 import SimulationControls from './components/SimulationControls';
+import { getLayoutedElements } from './utils/layout';
 
 const TRAIL_LENGTH = 4;
 
-export default function App() {
+function AppInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -45,6 +48,10 @@ export default function App() {
   // Code Panel state
   const [codePanelOpen, setCodePanelOpen] = useState(true);
   const [codePanelNode, setCodePanelNode] = useState(null);
+
+  // New component states
+  const [chatOpen, setChatOpen] = useState(false);
+  const [learningPathOpen, setLearningPathOpen] = useState(false);
 
   useEffect(() => { activeNodeIdRef.current = activeNodeId; }, [activeNodeId]);
 
@@ -101,7 +108,6 @@ export default function App() {
       statsMap[f].types[t] = (statsMap[f].types[t] || 0) + 1;
     });
 
-    // Sort files: entry first, then alphabetical
     const fileList = Object.keys(statsMap).sort((a, b) => {
       if (statsMap[a].hasEntry && !statsMap[b].hasEntry) return -1;
       if (!statsMap[a].hasEntry && statsMap[b].hasEntry) return 1;
@@ -115,14 +121,12 @@ export default function App() {
   useEffect(() => {
     if (!selectedFile || allNodes.length === 0) return;
 
-    // Stop ghost runner on file change
     setIsPlaying(false);
     setActiveNodeId(null);
     setStepCount(0);
     setCurrentLabel('');
     trailRef.current = [];
 
-    // Get nodes from selected file
     const fileNodeIds = new Set();
     const fileNodes = allNodes.filter(n => {
       const nFile = n.data?.file || '_external';
@@ -133,12 +137,10 @@ export default function App() {
       return false;
     });
 
-    // Get edges: both endpoints in selected file OR cross-file connections
     const relevantEdges = allEdges.filter(e =>
       fileNodeIds.has(e.source) || fileNodeIds.has(e.target)
     );
 
-    // Also add external nodes that connect TO/FROM this file (as dim references)
     const externalNodeIds = new Set();
     relevantEdges.forEach(e => {
       if (!fileNodeIds.has(e.source)) externalNodeIds.add(e.source);
@@ -155,7 +157,6 @@ export default function App() {
 
     const combinedNodes = [...fileNodes, ...externalNodes];
 
-    // Style edges
     const styledEdges = relevantEdges.map(e => {
       const isInternal = fileNodeIds.has(e.source) && fileNodeIds.has(e.target);
       return {
@@ -168,7 +169,6 @@ export default function App() {
       };
     });
 
-    // Layout and set
     const layouted = getLayoutedElements(
       combinedNodes.map(n => ({ ...n })),
       styledEdges
@@ -195,7 +195,6 @@ export default function App() {
       const currentNode = currentActiveId ? currentNodes.find(n => n.id === currentActiveId) : null;
       let nextNodeId;
 
-      // Helper: pick a node, preferring ones with source files
       const pickRandom = (candidates) => {
         const withFile = candidates.filter(n => n.data?.file);
         const pool = withFile.length > 0 ? withFile : candidates;
@@ -208,7 +207,6 @@ export default function App() {
       } else {
         const connectedEdges = currentEdges.filter(e => e.source === currentActiveId);
         if (connectedEdges.length > 0) {
-          // Prefer edges leading to internal nodes
           const targetNodes = connectedEdges
             .map(e => currentNodes.find(n => n.id === e.target))
             .filter(Boolean);
@@ -231,7 +229,6 @@ export default function App() {
       const nextNode = currentNodes.find(n => n.id === nextNodeId);
       setCurrentLabel(nextNode?.data?.label || '');
 
-      // Update code panel — only for nodes with source files
       if (nextNode && nextNode.data?.file) {
         setCodePanelNode(nextNode);
       }
@@ -308,9 +305,13 @@ export default function App() {
     trailRef.current = [];
   }, []);
 
-  const onNodeClick = useCallback(async (event, node) => {
+  const handleSelectNode = useCallback((node) => {
     setSelectedNode(node);
-    setCodePanelNode(node);  // Also show code for clicked node
+    setCodePanelNode(node);
+  }, []);
+
+  const onNodeClick = useCallback(async (event, node) => {
+    handleSelectNode(node);
     setExplanation(null);
     setLoading(true);
     fetchExplanation(node, 'technical', 'intermediate');
@@ -368,6 +369,18 @@ export default function App() {
               📄 {selectedFile.split(/[/\\]/).pop()}
             </span>
           )}
+          <button
+            className="header-action-btn"
+            onClick={() => setLearningPathOpen(true)}
+            title="Learning Path"
+          >
+            🎯 Learn
+          </button>
+          <SearchBar
+            allNodes={allNodes}
+            onSelectNode={handleSelectNode}
+            onSelectFile={setSelectedFile}
+          />
         </div>
 
         {/* Graph */}
@@ -397,6 +410,13 @@ export default function App() {
             onClose={() => setSelectedNode(null)}
             fetchExplanation={fetchExplanation}
           />
+
+          {/* Chat Drawer */}
+          <ChatDrawer
+            selectedNode={selectedNode}
+            isOpen={chatOpen}
+            onToggle={() => setChatOpen(!chatOpen)}
+          />
         </div>
 
         {/* Code Panel — Bottom */}
@@ -407,6 +427,25 @@ export default function App() {
           onToggle={() => setCodePanelOpen(!codePanelOpen)}
         />
       </div>
+
+      {/* Learning Path Overlay */}
+      <LearningPath
+        selectedFile={selectedFile}
+        allNodes={allNodes}
+        onSelectNode={handleSelectNode}
+        onSelectFile={setSelectedFile}
+        isOpen={learningPathOpen}
+        onToggle={() => setLearningPathOpen(false)}
+      />
     </div>
+  );
+}
+
+// Wrap with ReactFlowProvider so SearchBar and LearningPath can use useReactFlow()
+export default function App() {
+  return (
+    <ReactFlowProvider>
+      <AppInner />
+    </ReactFlowProvider>
   );
 }

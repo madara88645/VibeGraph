@@ -147,3 +147,78 @@ class CodeAnalyzer:
         summary += f"Nodes ({graph.number_of_nodes()}): {', '.join(graph.nodes())}\n"
         summary += f"Edges ({graph.number_of_edges()}): {list(graph.edges())}\n"
         return summary
+
+    # ------------------------------------------------------------------
+    # Dependency extraction via import analysis
+    # ------------------------------------------------------------------
+
+    def extract_dependencies(
+        self, file_path: str, project_root: str | None = None
+    ) -> Dict[str, Any]:
+        """
+        Extracts import statements from *file_path* using AST.
+
+        Parameters
+        ----------
+        file_path : str
+            Path to the Python source file.
+        project_root : str, optional
+            Root of the project. Used to detect local (project-internal)
+            imports by checking whether a corresponding ``.py`` file exists.
+            Defaults to the directory containing *file_path*.
+
+        Returns
+        -------
+        dict with keys ``file`` and ``dependencies``.
+        Each dependency: ``{"module": str, "names": [str], "is_local": bool}``
+        """
+        resolved = os.path.abspath(file_path)
+        if not os.path.isfile(resolved):
+            return {"error": f"File not found: {file_path}"}
+
+        if project_root is None:
+            project_root = os.path.dirname(resolved)
+        project_root = os.path.abspath(project_root)
+
+        try:
+            with open(resolved, "r", encoding="utf-8") as f:
+                tree = ast.parse(f.read(), filename=resolved)
+        except SyntaxError as e:
+            return {"error": f"Syntax error in {file_path}: {e}"}
+
+        dependencies: List[Dict[str, Any]] = []
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module = alias.name
+                    dependencies.append({
+                        "module": module,
+                        "names": [alias.asname or alias.name],
+                        "is_local": self._is_local_module(module, project_root),
+                    })
+
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                names = [alias.name for alias in node.names]
+                # Relative imports (level > 0) are always local
+                is_local = (
+                    node.level > 0
+                    or self._is_local_module(module, project_root)
+                )
+                dependencies.append({
+                    "module": module,
+                    "names": names,
+                    "is_local": is_local,
+                })
+
+        return {"file": file_path, "dependencies": dependencies}
+
+    @staticmethod
+    def _is_local_module(module_name: str, project_root: str) -> bool:
+        """Check whether *module_name* maps to a .py file under *project_root*."""
+        parts = module_name.split(".")
+        # Try as a package (directory with __init__.py) or plain .py file
+        candidate_file = os.path.join(project_root, *parts) + ".py"
+        candidate_pkg = os.path.join(project_root, *parts, "__init__.py")
+        return os.path.isfile(candidate_file) or os.path.isfile(candidate_pkg)

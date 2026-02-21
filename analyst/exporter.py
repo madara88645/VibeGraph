@@ -6,9 +6,20 @@ class GraphExporter:
     def __init__(self):
         pass
 
-    def export_to_react_flow(self, graph: nx.DiGraph, output_path: str = None) -> Dict[str, Any]:
+    def export_to_react_flow(
+        self,
+        graph: nx.DiGraph,
+        output_path: str = None,
+        dependencies: list[dict] | None = None,
+    ) -> Dict[str, Any]:
         """
         Converts a NetworkX graph to a JSON format suitable for React Flow.
+
+        Parameters
+        ----------
+        dependencies : list[dict], optional
+            Output of ``CodeAnalyzer.extract_dependencies`` for one or more
+            files.  Each dict must have ``file`` and ``dependencies`` keys.
         """
         nodes = []
         edges = []
@@ -45,6 +56,20 @@ class GraphExporter:
             "nodes": nodes,
             "edges": edges
         }
+
+        # ---- file_dependencies (optional) ----
+        if dependencies:
+            file_deps = []
+            for dep_info in dependencies:
+                source_file = dep_info.get("file", "unknown")
+                for dep in dep_info.get("dependencies", []):
+                    if dep.get("is_local"):
+                        file_deps.append({
+                            "source_file": source_file,
+                            "target_file": dep["module"],
+                            "imports": dep["names"],
+                        })
+            output_data["file_dependencies"] = file_deps
 
         if output_path:
             # Ensure directory exists
