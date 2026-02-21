@@ -1,74 +1,59 @@
-import React, { useCallback } from 'react'
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-} from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
-import CustomNode from './CustomNode.jsx'
+import React from 'react';
+import ReactFlow, {
+    MiniMap,
+    Controls,
+    Background,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import CustomNode from './CustomNode';
 
-const nodeTypes = { custom: CustomNode }
+// Register custom node types
+const nodeTypes = {
+    custom: CustomNode,
+};
 
-function edgeStyle(edge, ghostTrail) {
-  const isTrail = ghostTrail.includes(edge.id)
-  return {
-    ...edge,
-    animated: isTrail,
-    style: {
-      stroke: edge.data?.crossFile ? 'var(--accent-class)' : 'var(--accent-fn)',
-      strokeWidth: isTrail ? 3 : 1.5,
-      strokeDasharray: edge.data?.crossFile ? '5,4' : undefined,
-      filter: isTrail ? 'drop-shadow(0 0 4px var(--accent-fn))' : undefined,
-    },
-  }
-}
+// Minimap color based on node type
+const minimapNodeColor = (node) => {
+    if (node.data?.entry_point) return '#22c55e';
+    switch (node.data?.type) {
+        case 'function': return '#06b6d4';
+        case 'class': return '#a855f7';
+        default: return '#334155';
+    }
+};
 
-export default function GraphViewer({
-  nodes,
-  edges,
-  ghostTrail,
-  onNodeClick,
-}) {
-  const [rfNodes, , onNodesChange] = useNodesState(nodes)
-  const [rfEdges, , onEdgesChange] = useEdgesState(edges)
+const defaultEdgeOptions = {
+    type: 'default',
+    style: { strokeWidth: 2, stroke: 'rgba(148, 163, 184, 0.4)' },
+};
 
-  const styledEdges = rfEdges.map((e) => edgeStyle(e, ghostTrail))
+const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }) => {
+    return (
+        <div style={{ height: '100%', width: '100%' }}>
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeClick={onNodeClick}
+                nodeTypes={nodeTypes}
+                defaultEdgeOptions={defaultEdgeOptions}
+                fitView
+                fitViewOptions={{ padding: 0.2 }}
+                minZoom={0.3}
+                maxZoom={2}
+                proOptions={{ hideAttribution: true }}
+            >
+                <MiniMap
+                    nodeColor={minimapNodeColor}
+                    maskColor="rgba(0, 0, 0, 0.7)"
+                    style={{ borderRadius: '10px' }}
+                />
+                <Controls />
+                <Background variant="dots" color="#1e1e30" gap={20} size={1} />
+            </ReactFlow>
+        </div>
+    );
+};
 
-  const handleNodeClick = useCallback(
-    (_evt, node) => onNodeClick && onNodeClick(node),
-    [onNodeClick]
-  )
-
-  return (
-    <div style={{ flex: 1, height: '100%' }}>
-      <ReactFlow
-        nodes={rfNodes}
-        edges={styledEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        fitView
-        minZoom={0.1}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background color="var(--border)" gap={24} />
-        <Controls />
-        <MiniMap
-          nodeColor={(n) => {
-            const colors = {
-              function: '#00d4ff',
-              class: '#a855f7',
-              entry: '#22c55e',
-            }
-            return colors[n.data?.nodeType] ?? '#888'
-          }}
-          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
-        />
-      </ReactFlow>
-    </div>
-  )
-}
+export default GraphViewer;

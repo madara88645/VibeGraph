@@ -1,7 +1,13 @@
 node_modules/
+explorer/node_modules/
 explorer/dist/
 __pycache__/
 *.pyc
 .env
 venv/
 .venv/
+.vscode/
+.idea/
+*.log
+explorer/public/graph_data.json
+explorer/dist/graph_data.json

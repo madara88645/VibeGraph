@@ -1,37 +1,64 @@
-import dagre from 'dagre'
-
-const NODE_WIDTH = 180
-const NODE_HEIGHT = 48
-
 /**
- * Apply dagre left-to-right layout to React Flow nodes and edges.
- * Returns new arrays with updated positions (does not mutate input).
+ * Dynamic Call-Graph Layout
+ * 
+ * Uses dagre to position nodes based on their actual call relationships.
+ * Since we now filter per-file (5-15 nodes), dagre runs instantly
+ * and produces a natural top-to-bottom call flow:
+ *   entry_point → callers → callees → leaf functions
+ * 
+ * This makes the graph look like actual code execution flow.
  */
-export function applyDagreLayout(nodes, edges, direction = 'LR') {
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 })
-  g.setDefaultEdgeLabel(() => ({}))
 
-  nodes.forEach((node) => {
-    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
-  })
+import dagre from 'dagre';
 
-  edges.forEach((edge) => {
-    g.setEdge(edge.source, edge.target)
-  })
+const NODE_W = 210;
+const NODE_H = 65;
 
-  dagre.layout(g)
+export const getLayoutedElements = (nodes, edges) => {
+    if (nodes.length === 0) return { nodes, edges };
 
-  const layoutedNodes = nodes.map((node) => {
-    const { x, y } = g.node(node.id) ?? { x: 0, y: 0 }
-    return {
-      ...node,
-      position: {
-        x: x - NODE_WIDTH / 2,
-        y: y - NODE_HEIGHT / 2,
-      },
-    }
-  })
+    const g = new dagre.graphlib.Graph();
+    g.setDefaultEdgeLabel(() => ({}));
+    g.setGraph({
+        rankdir: 'TB',       // top → bottom (like code execution)
+        ranksep: 100,        // vertical gap between call levels
+        nodesep: 60,         // horizontal gap between siblings
+        edgesep: 30,
+        marginx: 40,
+        marginy: 40,
+    });
 
-  return { nodes: layoutedNodes, edges }
-}
+    // Add nodes
+    nodes.forEach(node => {
+        g.setNode(node.id, { width: NODE_W, height: NODE_H });
+    });
+
+    // Add edges (only those connecting nodes in our set)
+    const nodeIds = new Set(nodes.map(n => n.id));
+    edges.forEach(edge => {
+        if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+            g.setEdge(edge.source, edge.target);
+        }
+    });
+
+    // Run layout
+    dagre.layout(g);
+
+    // Apply positions
+    nodes.forEach(node => {
+        const pos = g.node(node.id);
+        if (pos) {
+            node.position = {
+                x: pos.x - NODE_W / 2,
+                y: pos.y - NODE_H / 2,
+            };
+        } else {
+            // Orphan node — place at end
+            node.position = { x: 0, y: nodes.length * (NODE_H + 20) };
+        }
+        node.targetPosition = 'top';
+        node.sourcePosition = 'bottom';
+    });
+
+    return { nodes, edges };
+};

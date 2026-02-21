@@ -1,57 +1,102 @@
-import React, { memo } from 'react'
-import { Handle, Position } from '@xyflow/react'
+import React, { memo } from 'react';
+import { Handle, Position } from 'reactflow';
 
-const TYPE_STYLES = {
-  function: { icon: '⚡', color: 'var(--accent-fn)' },
-  class:    { icon: '🏗️', color: 'var(--accent-class)' },
-  entry:    { icon: '🚀', color: 'var(--accent-entry)' },
-}
+const typeConfig = {
+    'function': { icon: '⚡', accent: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'fn' },
+    'class': { icon: '🏗️', accent: '#a855f7', bg: 'rgba(168, 85, 247, 0.08)', label: 'cls' },
+    'entry_point': { icon: '🚀', accent: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', label: 'entry' },
+    'default': { icon: '○', accent: '#64748b', bg: 'rgba(100, 116, 139, 0.06)', label: 'ref' },
+};
 
-function CustomNode({ data, selected }) {
-  const { icon, color } = TYPE_STYLES[data.nodeType] ?? TYPE_STYLES.function
-  const dimmed = data.dimmed === true
+const CustomNode = ({ data, selected }) => {
+    const nodeType = data.entry_point ? 'entry_point' : (data.type || 'default');
+    const config = typeConfig[nodeType] || typeConfig['default'];
 
-  const style = {
-    background: 'var(--bg-secondary)',
-    border: `1.5px solid ${selected ? '#fff' : color}`,
-    borderRadius: '8px',
-    padding: '8px 14px',
-    minWidth: '140px',
-    maxWidth: '200px',
-    cursor: 'pointer',
-    opacity: dimmed ? 0.35 : 1,
-    boxShadow: data.glowing
-      ? `0 0 12px 3px ${color}`
-      : selected
-      ? `0 0 0 2px ${color}44`
-      : 'none',
-    transition: 'opacity 0.2s, box-shadow 0.2s',
-  }
+    // Extract short filename
+    const fileName = data.file ? data.file.split(/[/\\]/).pop() : null;
 
-  return (
-    <>
-      <Handle type="target" position={Position.Left} style={{ background: color }} />
-      <div style={style}>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-          {icon} {data.nodeType}
-        </div>
+    return (
         <div
-          style={{
-            fontWeight: 600,
-            color,
-            fontSize: '13px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-          title={data.label}
+            style={{
+                minWidth: '140px',
+                maxWidth: '220px',
+                background: config.bg,
+                borderLeft: `3px solid ${config.accent}`,
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontFamily: "'Inter', system-ui, sans-serif",
+                position: 'relative',
+                backdropFilter: 'blur(8px)',
+                border: selected
+                    ? `1px solid ${config.accent}`
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                borderLeftWidth: '3px',
+                borderLeftColor: config.accent,
+                transition: 'all 0.25s ease',
+            }}
         >
-          {data.label}
-        </div>
-      </div>
-      <Handle type="source" position={Position.Right} style={{ background: color }} />
-    </>
-  )
-}
+            <Handle
+                type="target"
+                position={Position.Top}
+                style={{ background: config.accent, width: 6, height: 6, border: 'none' }}
+            />
 
-export default memo(CustomNode)
+            {/* Header Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.85rem' }}>{config.icon}</span>
+                <span
+                    style={{
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        color: '#e2e8f0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                    }}
+                >
+                    {data.label}
+                </span>
+                {/* Type badge */}
+                <span
+                    style={{
+                        fontSize: '0.6rem',
+                        fontWeight: 500,
+                        color: config.accent,
+                        background: `${config.accent}22`,
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.02em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {config.label}
+                </span>
+            </div>
+
+            {/* Meta Row */}
+            {(fileName || data.lineno) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                    {fileName && (
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            📄 {fileName}
+                        </span>
+                    )}
+                    {data.lineno && (
+                        <span style={{ fontSize: '0.6rem', color: '#64748b', marginLeft: 'auto' }}>
+                            L{data.lineno}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                style={{ background: config.accent, width: 6, height: 6, border: 'none' }}
+            />
+        </div>
+    );
+};
+
+export default memo(CustomNode);

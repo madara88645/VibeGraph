@@ -1,85 +1,84 @@
-"""Graph exporter — converts a CallGraph to React Flow JSON.
-
-Output schema:
-{
-  "nodes": [
-    {
-      "id": "<node_id>",
-      "type": "custom",
-      "data": {
-        "label": "<label>",
-        "nodeType": "function"|"class"|"entry",
-        "file": "<relative_file_path>",
-        "lineno": <int>,
-        "source": "<source_code>"
-      },
-      "position": { "x": 0, "y": 0 }
-    },
-    ...
-  ],
-  "edges": [
-    {
-      "id": "<source>-><target>",
-      "source": "<source_id>",
-      "target": "<target_id>",
-      "data": { "crossFile": true|false }
-    },
-    ...
-  ]
-}
-
-Positions are left as (0, 0) — the React frontend applies dagre layout.
-"""
-
+import networkx as nx
 import json
-from pathlib import Path
-from typing import Optional
+from typing import Dict, Any, List
 
-from analyst.analyzer import CallGraph
+class GraphExporter:
+    def __init__(self):
+        pass
 
+    def export_to_react_flow(
+        self,
+        graph: nx.DiGraph,
+        output_path: str = None,
+        dependencies: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """
+        Converts a NetworkX graph to a JSON format suitable for React Flow.
 
-def graph_to_dict(graph: CallGraph) -> dict:
-    """Convert a CallGraph to the React Flow JSON dict."""
-    nodes = []
-    for node in graph.nodes.values():
-        nodes.append({
-            "id": node.id,
-            "type": "custom",
-            "data": {
-                "label": node.label,
-                "nodeType": node.node_type,
-                "file": node.file,
-                "lineno": node.lineno,
-                "source": node.source,
-            },
-            "position": {"x": 0, "y": 0},
-        })
+        Parameters
+        ----------
+        dependencies : list[dict], optional
+            Output of ``CodeAnalyzer.extract_dependencies`` for one or more
+            files.  Each dict must have ``file`` and ``dependencies`` keys.
+        """
+        nodes = []
+        edges = []
 
-    edges = []
-    for edge in graph.edges:
-        edges.append({
-            "id": f"{edge.source}->{edge.target}",
-            "source": edge.source,
-            "target": edge.target,
-            "data": {"crossFile": edge.cross_file},
-        })
+        # Convert nodes
+        for node_id, data in graph.nodes(data=True):
+            # Extract metadata
+            node_type = data.get("type", "default")
+            
+            # React Flow node structure
+            node_dict = {
+                "id": node_id,
+                "type": "default",  # Use 'input', 'output', or custom types if needed
+                "data": {
+                    "label": node_id,
+                    "type": node_type, # Include type in data as requested
+                    **data # Include other metadata like lineno, docstring
+                },
+                "position": {"x": 0, "y": 0} # Default position, frontend handles layout
+            }
+            nodes.append(node_dict)
 
-    return {"nodes": nodes, "edges": edges}
+        # Convert edges
+        for u, v, data in graph.edges(data=True):
+            edge_dict = {
+                "id": f"e{u}-{v}",
+                "source": u,
+                "target": v,
+                "animated": True, # Optional visual polish
+            }
+            edges.append(edge_dict)
 
+        output_data = {
+            "nodes": nodes,
+            "edges": edges
+        }
 
-def export_graph(
-    graph: Optional[CallGraph] = None,
-    output_path: str = "explorer/public/graph_data.json",
-) -> None:
-    """Serialize *graph* to JSON and write to *output_path*.
+        # ---- file_dependencies (optional) ----
+        if dependencies:
+            file_deps = []
+            for dep_info in dependencies:
+                source_file = dep_info.get("file", "unknown")
+                for dep in dep_info.get("dependencies", []):
+                    if dep.get("is_local"):
+                        file_deps.append({
+                            "source_file": source_file,
+                            "target_file": dep["module"],
+                            "imports": dep["names"],
+                        })
+            output_data["file_dependencies"] = file_deps
 
-    If *graph* is None, writes an empty graph so the frontend still loads.
-    """
-    if graph is None:
-        data = {"nodes": [], "edges": []}
-    else:
-        data = graph_to_dict(graph)
-
-    out = Path(output_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        if output_path:
+            # Ensure directory exists
+            import os
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+                
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2)
+        
+        return output_data

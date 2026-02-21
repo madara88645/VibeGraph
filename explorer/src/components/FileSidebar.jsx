@@ -1,68 +1,171 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect } from 'react';
 
-export default function FileSidebar({ nodes, activeFile, onFileSelect }) {
-  const files = useMemo(() => {
-    const set = new Set(nodes.map((n) => n.data.file))
-    return ['(all files)', ...Array.from(set).sort()]
-  }, [nodes])
+const typeIcons = {
+    function: '⚡',
+    class: '🏗️',
+    entry_point: '🚀',
+    default: '○',
+};
 
-  return (
-    <aside
-      style={{
-        width: 'var(--sidebar-width)',
-        background: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflowY: 'auto',
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          padding: '10px 12px',
-          fontWeight: 700,
-          fontSize: '11px',
-          letterSpacing: '0.08em',
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        Files
-      </div>
+const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
+    const [activeTab, setActiveTab] = useState('files');
+    const [deps, setDeps] = useState(null);
 
-      {files.map((file) => {
-        const isActive =
-          file === '(all files)' ? activeFile === null : activeFile === file
-        return (
-          <button
-            key={file}
-            onClick={() => onFileSelect(file === '(all files)' ? null : file)}
-            style={{
-              background: isActive ? 'var(--bg-tertiary)' : 'transparent',
-              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              borderLeft: isActive
-                ? '2px solid var(--accent-fn)'
-                : '2px solid transparent',
-              borderTop: 'none',
-              borderRight: 'none',
-              borderBottom: 'none',
-              borderRadius: 0,
-              padding: '7px 12px',
-              textAlign: 'left',
-              fontSize: '12px',
-              width: '100%',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            title={file}
-          >
-            {file === '(all files)' ? '📂 All Files' : `📄 ${file}`}
-          </button>
-        )
-      })}
-    </aside>
-  )
-}
+    // Load file_dependencies from graph_data.json
+    useEffect(() => {
+        const loadDeps = async () => {
+            try {
+                const res = await fetch('/graph_data.json');
+                if (!res.ok) return;
+                const data = await res.json();
+                setDeps(data.file_dependencies || null);
+            } catch {
+                // silently fail
+            }
+        };
+        loadDeps();
+    }, []);
+
+    return (
+        <div className="file-sidebar">
+            {/* Tabs */}
+            <div className="sidebar-tabs">
+                <button
+                    className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('files')}
+                >
+                    📁 Files
+                </button>
+                <button
+                    className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('deps')}
+                >
+                    🔗 Deps
+                </button>
+            </div>
+
+            {/* Files Tab */}
+            {activeTab === 'files' && (
+                <>
+                    <div className="sidebar-content">
+                        {files.map(file => {
+                            const stats = nodeStats[file] || {};
+                            const isSelected = file === selectedFile;
+                            const shortName = file.split(/[/\\]/).pop() || file;
+                            const dirName = file.split(/[/\\]/).slice(0, -1).join('/');
+
+                            return (
+                                <button
+                                    key={file}
+                                    className={`sidebar-file ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => onSelectFile(file)}
+                                >
+                                    <div className="file-main">
+                                        <span className="file-icon">{stats.hasEntry ? '🚀' : '📄'}</span>
+                                        <span className="file-name">{shortName}</span>
+                                        <span className="file-count">{stats.count || 0}</span>
+                                    </div>
+                                    {dirName && (
+                                        <div className="file-dir">{dirName}</div>
+                                    )}
+                                    {isSelected && stats.types && (
+                                        <div className="file-types">
+                                            {Object.entries(stats.types).map(([type, count]) => (
+                                                <span key={type} className={`type-badge type-${type}`}>
+                                                    {typeIcons[type] || '○'} {count}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="sidebar-legend">
+                        <span>⚡ fn</span>
+                        <span>🏗️ cls</span>
+                        <span>🚀 entry</span>
+                        <span>○ ref</span>
+                    </div>
+                </>
+            )}
+
+            {/* Dependencies Tab */}
+            {activeTab === 'deps' && (
+                <div className="sidebar-content">
+                    {!deps && (
+                        <div className="deps-empty">
+                            No dependency data. Run analysis with <code>--deps</code> flag.
+                        </div>
+                    )}
+
+                    {deps && Object.keys(deps).length === 0 && (
+                        <div className="deps-empty">No file dependencies found.</div>
+                    )}
+
+                    {deps && Object.entries(deps).map(([file, info]) => {
+                        const shortName = file.split(/[/\\]/).pop() || file;
+                        const isSelected = file === selectedFile;
+                        const imports = info.imports || info.imports_from || [];
+                        const importedBy = info.imported_by || [];
+
+                        return (
+                            <div key={file} className={`deps-file ${isSelected ? 'selected' : ''}`}>
+                                <button
+                                    className="deps-file-header"
+                                    onClick={() => onSelectFile(file)}
+                                >
+                                    <span className="deps-file-icon">📄</span>
+                                    <span className="deps-file-name">{shortName}</span>
+                                </button>
+
+                                {imports.length > 0 && (
+                                    <div className="deps-section">
+                                        <span className="deps-section-label">→ imports</span>
+                                        {imports.map((imp, i) => {
+                                            const impName = typeof imp === 'string' ? imp : imp.module || imp.name;
+                                            const details = typeof imp === 'object' ? imp.names : null;
+                                            return (
+                                                <div key={i} className="deps-item">
+                                                    <span className="deps-item-name">
+                                                        {(impName || '').split(/[/\\]/).pop()}
+                                                    </span>
+                                                    {details && details.length > 0 && (
+                                                        <span className="deps-item-detail">
+                                                            ({details.join(', ')})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {importedBy.length > 0 && (
+                                    <div className="deps-section">
+                                        <span className="deps-section-label">← used by</span>
+                                        {importedBy.map((ref, i) => (
+                                            <button
+                                                key={i}
+                                                className="deps-item deps-item-clickable"
+                                                onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
+                                            >
+                                                <span className="deps-item-name">
+                                                    {(typeof ref === 'string' ? ref : ref.file || '').split(/[/\\]/).pop()}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default FileSidebar;

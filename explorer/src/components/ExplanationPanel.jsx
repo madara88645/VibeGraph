@@ -1,159 +1,249 @@
-import React, { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import CodeViewer from './CodeViewer';
 
-const LEVELS = ['beginner', 'intermediate', 'advanced']
-const TABS = ['technical', 'analogy']
+const typeColors = {
+    'function': { accent: '#06b6d4', label: 'Function', icon: '⚡' },
+    'class': { accent: '#a855f7', label: 'Class', icon: '🏗️' },
+    'entry_point': { accent: '#22c55e', label: 'Entry Point', icon: '🚀' },
+    'default': { accent: '#64748b', label: 'Reference', icon: '○' },
+};
 
-export default function ExplanationPanel({ activeNode, onClose }) {
-  const [level, setLevel] = useState('beginner')
-  const [tab, setTab] = useState('technical')
-  const [explanation, setExplanation] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation }) => {
+    const [tab, setTab] = useState('technical');
+    const [level, setLevel] = useState('intermediate');
 
-  async function fetchExplanation(selectedLevel) {
-    if (!activeNode) return
-    setLoading(true)
-    setError(null)
-    setExplanation(null)
-    try {
-      const res = await fetch('/api/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          node_id: activeNode.id,
-          node_label: activeNode.data.label,
-          source_code: activeNode.data.source ?? '',
-          level: selectedLevel,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.detail ?? `HTTP ${res.status}`)
-      }
-      const data = await res.json()
-      setExplanation(data.explanation)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+    useEffect(() => {
+        if (node && fetchExplanation) {
+            fetchExplanation(node, tab, level);
+        }
+    }, [tab, level, node]);
 
-  function handleLevelChange(l) {
-    setLevel(l)
-    fetchExplanation(l)
-  }
+    if (!node) return null;
 
-  if (!activeNode) return null
+    const nodeType = node.data.entry_point ? 'entry_point' : (node.data.type || 'default');
+    const typeConfig = typeColors[nodeType] || typeColors['default'];
 
-  return (
-    <div
-      style={{
-        width: 'var(--explanation-width)',
-        background: 'var(--bg-secondary)',
-        borderLeft: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span style={{ fontWeight: 700, color: 'var(--accent-fn)', fontSize: '13px' }}>
-          🤖 AI Explanation
-        </span>
-        <button className="btn-ghost" onClick={onClose} style={{ padding: '2px 8px' }}>✕</button>
-      </div>
+    const renderContent = () => {
+        if (loading) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '30px 0', gap: '12px' }}>
+                    <div style={{
+                        width: '24px', height: '24px',
+                        border: `2px solid ${typeConfig.accent}33`,
+                        borderTopColor: typeConfig.accent,
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite'
+                    }} />
+                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>AI is thinking...</span>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            );
+        }
 
-      {/* Node label */}
-      <div style={{ padding: '6px 12px', borderBottom: '1px solid var(--border)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-        Explaining: <strong style={{ color: 'var(--text-primary)' }}>{activeNode.data.label}</strong>
-      </div>
+        if (!explanation) {
+            return <p style={{ color: '#64748b', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>Click a node to get an AI explanation.</p>;
+        }
 
-      {/* Level buttons */}
-      <div style={{ display: 'flex', gap: '4px', padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
-        {LEVELS.map((l) => (
-          <button
-            key={l}
-            className={`btn-ghost${level === l ? ' active' : ''}`}
-            onClick={() => handleLevelChange(l)}
-            style={{ flex: 1, fontSize: '11px' }}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
+        const aiResponse = explanation.explanation || explanation;
+        const codeSnippet = explanation.snippet || node.data.snippet;
 
-      {/* Tabs */}
-      <div className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            className={`tab${tab === t ? ' active' : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {t === 'technical' ? '🔧 Technical' : '🎭 Analogy'}
-          </button>
-        ))}
-      </div>
+        if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
+            return (
+                <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+                    {tab === 'analogy' && (
+                        <div>
+                            <p style={{ margin: '0 0 12px' }}>{aiResponse.analogy}</p>
+                            <div style={{
+                                background: 'rgba(219, 39, 119, 0.08)',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                borderLeft: '3px solid #db2777',
+                                fontSize: '0.82rem',
+                            }}>
+                                <strong style={{ color: '#e2e8f0' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                            </div>
+                        </div>
+                    )}
 
-      {/* Ask button */}
-      {!explanation && !loading && (
-        <div style={{ padding: '12px' }}>
-          <button
-            className="btn-primary"
-            style={{ width: '100%' }}
-            onClick={() => fetchExplanation(level)}
-          >
-            Ask AI to explain
-          </button>
-        </div>
-      )}
+                    {tab === 'technical' && (
+                        <div>
+                            <div className="markdown-content">
+                                <ReactMarkdown>{aiResponse.technical}</ReactMarkdown>
+                            </div>
+                            <div style={{
+                                background: 'rgba(59, 130, 246, 0.08)',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                borderLeft: `3px solid ${typeConfig.accent}`,
+                                fontSize: '0.82rem',
+                                marginTop: '12px',
+                            }}>
+                                <strong style={{ color: '#e2e8f0' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                            </div>
+                            {codeSnippet && (
+                                <div style={{ marginTop: '12px' }}>
+                                    <CodeViewer code={codeSnippet} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
-      {/* Loading */}
-      {loading && (
-        <div style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
-          ⏳ Asking Groq…
-        </div>
-      )}
+        // Fallback for string
+        return (
+            <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+                <ReactMarkdown>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
+                {codeSnippet && <CodeViewer code={codeSnippet} />}
+            </div>
+        );
+    };
 
-      {/* Error */}
-      {error && (
-        <div style={{ padding: '12px', color: '#f87171', fontSize: '12px' }}>
-          ⚠ {error}
-        </div>
-      )}
-
-      {/* Explanation */}
-      {explanation && !loading && (
-        <div
-          style={{
-            flex: 1,
+    return (
+        <div className="slide-in-right" style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            width: '370px',
+            maxHeight: '92vh',
+            background: 'rgba(12, 12, 22, 0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            borderRadius: '14px',
+            padding: '0',
+            color: '#e2e8f0',
+            boxShadow: '0 8px 40px rgba(0, 0, 0, 0.5)',
             overflowY: 'auto',
-            padding: '12px',
-            fontSize: '12px',
-            lineHeight: 1.6,
-          }}
-        >
-          {tab === 'technical' ? (
-            <ReactMarkdown>{explanation}</ReactMarkdown>
-          ) : (
-            <ReactMarkdown>
-              {`*Here's an analogy to help you understand:*\n\n${explanation}`}
-            </ReactMarkdown>
-          )}
+            zIndex: 100,
+        }}>
+            {/* Header */}
+            <div style={{
+                padding: '16px 18px 12px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+            }}>
+                {/* Type badge */}
+                <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 600,
+                    color: typeConfig.accent,
+                    background: `${typeConfig.accent}18`,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                }}>
+                    {typeConfig.icon} {typeConfig.label}
+                </span>
+
+                <span style={{
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: '#e2e8f0',
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                }}>
+                    {node.data.label}
+                </span>
+
+                <button
+                    onClick={onClose}
+                    style={{
+                        cursor: 'pointer',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: 'none',
+                        color: '#64748b',
+                        fontSize: '0.9rem',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        transition: 'all 0.15s',
+                    }}
+                >
+                    ✕
+                </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '14px 18px' }}>
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '3px' }}>
+                    {[
+                        { key: 'technical', label: '⚙️ Technical' },
+                        { key: 'analogy', label: '🎭 Analogy' },
+                    ].map(t => (
+                        <button
+                            key={t.key}
+                            onClick={() => setTab(t.key)}
+                            style={{
+                                flex: 1,
+                                padding: '7px 0',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: tab === t.key ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                color: tab === t.key ? '#e2e8f0' : '#64748b',
+                                fontSize: '0.78rem',
+                                fontWeight: tab === t.key ? 600 : 400,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Difficulty */}
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
+                    {['beginner', 'intermediate', 'advanced'].map((lvl) => (
+                        <button
+                            key={lvl}
+                            onClick={() => setLevel(lvl)}
+                            style={{
+                                flex: 1,
+                                padding: '4px 0',
+                                borderRadius: '6px',
+                                border: level === lvl ? `1px solid ${typeConfig.accent}44` : '1px solid rgba(255,255,255,0.06)',
+                                background: level === lvl ? `${typeConfig.accent}12` : 'transparent',
+                                color: level === lvl ? typeConfig.accent : '#64748b',
+                                fontSize: '0.7rem',
+                                fontWeight: level === lvl ? 600 : 400,
+                                cursor: 'pointer',
+                                textTransform: 'capitalize',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {lvl}
+                        </button>
+                    ))}
+                </div>
+
+                {renderContent()}
+            </div>
+
+            {/* Footer */}
+            {(node.data.file || node.data.original_data?.file) && (
+                <div style={{
+                    padding: '10px 18px',
+                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                    fontSize: '0.7rem',
+                    color: '#475569',
+                    display: 'flex',
+                    gap: '12px',
+                }}>
+                    <span>📄 {node.data.file || node.data.original_data?.file}</span>
+                    {(node.data.lineno || node.data.original_data?.lineno) && (
+                        <span>L{node.data.lineno || node.data.original_data?.lineno}</span>
+                    )}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  )
-}
+    );
+};
+
+export default ExplanationPanel;
