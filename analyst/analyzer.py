@@ -76,11 +76,17 @@ class CodeAnalyzer:
     def __init__(self):
         self.graph = nx.DiGraph()
         self.definitions = []
+        self.errors = []
 
     def analyze_file(self, target_path: str) -> Dict[str, Any]:
         """
         Analyzes a file or directory recursively.
         """
+        # Reset graph and errors for fresh analysis
+        self.graph = nx.DiGraph()
+        self.definitions = []
+        self.errors = []
+
         if not os.path.exists(target_path):
             return {"error": f"Path not found: {target_path}"}
             
@@ -90,9 +96,9 @@ class CodeAnalyzer:
             return self._analyze_single_file(target_path)
 
     def _analyze_directory(self, dir_path: str) -> Dict[str, Any]:
-        # Reset graph for fresh analysis (optional, depends on use case)
-        # self.graph = nx.DiGraph() 
-        # self.definitions = []
+        # Clear state for a fresh directory analysis
+        self.graph = nx.DiGraph() 
+        self.definitions = []
         
         for root, _, files in os.walk(dir_path):
             for file in files:
@@ -107,7 +113,8 @@ class CodeAnalyzer:
         return {
             "file": dir_path,
             "definitions": self.definitions,
-            "graph": self.graph
+            "graph": self.graph,
+            "errors": self.errors
         }
 
     def _analyze_single_file(self, file_path: str, merge: bool = False) -> Dict[str, Any]:
@@ -117,7 +124,9 @@ class CodeAnalyzer:
             except SyntaxError as e:
                  # In directory mode, we might just log this and continue
                 if merge:
-                    print(f"Syntax error in {file_path}: {e}")
+                    error_msg = f"Syntax error in {file_path}: {e}"
+                    print(error_msg)
+                    self.errors.append(error_msg)
                     return {}
                 return {"error": f"Syntax error in {file_path}: {e}"}
 
