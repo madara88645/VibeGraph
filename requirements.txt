@@ -10,3 +10,4 @@ uvicorn
 groq
 pytest
 httpx
+python-multipart

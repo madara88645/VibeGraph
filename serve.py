@@ -1,12 +1,17 @@
 import os
 import ast
+import shutil
+import tempfile
 import uvicorn
-from fastapi import FastAPI, HTTPException
+import zipfile
+from typing import List
+from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
+from analyst.exporter import GraphExporter
 
 app = FastAPI(title="Vibe Learning System API")
 
@@ -21,6 +26,7 @@ app.add_middleware(
 
 teacher = GroqTeacher()
 analyzer = CodeAnalyzer()
+exporter = GraphExporter()
 
 
 class ExplainRequest(BaseModel):
@@ -37,7 +43,7 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
     """
     Robustly extracts the source code of a function/class from *file_path*
     whose name matches the last segment of *node_id* (e.g. "MyClass.my_func"
-    → looks for "my_func").
+    \u2192 looks for "my_func").
 
     Returns the code string, or a descriptive fallback message.
     """
@@ -152,7 +158,7 @@ def explain_node(request: ExplainRequest):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/chat – Free-form AI conversation about a node
+# POST /api/chat \u2013 Free-form AI conversation about a node
 # ---------------------------------------------------------------------------
 
 
@@ -188,7 +194,7 @@ def chat_with_node(request: ChatRequest):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/learning-path – Suggested learning order for a file
+# POST /api/learning-path \u2013 Suggested learning order for a file
 # ---------------------------------------------------------------------------
 
 
@@ -224,6 +230,67 @@ def suggest_learning_path(request: LearningPathRequest):
     )
 
     return {"file_path": request.file_path, "steps": steps}
+
+
+# ---------------------------------------------------------------------------
+# POST /api/upload-project \u2013 Receive files, analyze, and return graph
+# ---------------------------------------------------------------------------
+
+def cleanup_tmp_dir(path: str):
+    """Background task to remove temp directory."""
+    if os.path.exists(path):
+        shutil.rmtree(path, ignore_errors=True)
+
+@app.post("/api/upload-project")
+async def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+    """
+    Receives dynamic uploads (single .py, multiple files, or .zip), saves to a 
+    temporary folder, runs analysis, and returns the graph data directly.
+    """
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_upload_")
+    
+    try:
+        for file in files:
+            file_path = os.path.join(tmp_dir, file.filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            # If it's a zip file, extract it
+            if file.filename.endswith(".zip"):
+                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                    zip_ref.extractall(tmp_dir)
+                os.remove(file_path) # Remove zip after extraction
+        
+        # Run analysis on the directory
+        result = analyzer.analyze_file(tmp_dir)
+
+        if "error" in result:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+        if result.get("errors") and result["graph"].number_of_nodes() == 0:
+            # If all files had errors, return the first error
+            raise HTTPException(status_code=400, detail=result["errors"][0])
+
+        graph = result["graph"]
+        
+        # Use GraphExporter for consistent React Flow JSON format
+        # We don't provide an output_path because we want the dict returned
+        response_data = exporter.export_to_react_flow(graph)
+        
+        # Attach tmp_dir root to help frontend know where files are (optional)
+        response_data["upload_root"] = tmp_dir
+        
+        return response_data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload/Analysis failed: {str(e)}")
+    finally:
+        if 'tmp_dir' in locals() and os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
 
 
 # Mount static files (Frontend build)

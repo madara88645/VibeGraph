@@ -9,6 +9,7 @@ import CodePanel from './components/CodePanel';
 import SearchBar from './components/SearchBar';
 import ChatDrawer from './components/ChatDrawer';
 import LearningPath from './components/LearningPath';
+import ProjectUpload from './components/ProjectUpload';
 import SimulationControls from './components/SimulationControls';
 import { getLayoutedElements } from './utils/layout';
 
@@ -116,6 +117,42 @@ function AppInner() {
 
     return { files: fileList, nodeStats: statsMap };
   }, [allNodes]);
+
+  const handleUploadSuccess = useCallback((result) => {
+    const { nodes: newNodes, edges: newEdges } = result;
+
+    // Process nodes to match the "custom" type and add metadata
+    const customNodes = newNodes.map(n => ({
+      ...n,
+      type: 'custom',
+      data: {
+        ...n.data,
+        file: n.data.file || n.data.original_data?.file || null,
+        lineno: n.data.lineno || n.data.original_data?.lineno,
+        entry_point: n.data.entry_point || false,
+      }
+    }));
+
+    // Auto-select the first file from the new project
+    const filesSet = new Set();
+    customNodes.forEach(n => {
+      if (n.data.file) filesSet.add(n.data.file);
+    });
+
+    const newFiles = [...filesSet];
+    if (newFiles.length > 0) {
+      setSelectedFile(newFiles[0]);
+    }
+
+    setAllNodes(customNodes);
+    setAllEdges(newEdges);
+
+    // Reset UI state
+    setSelectedNode(null);
+    setExplanation(null);
+    setIsPlaying(false);
+    setActiveNodeId(null);
+  }, [setNodes, setEdges, setAllNodes, setAllEdges, setSelectedFile, setSelectedNode, setExplanation, setIsPlaying, setActiveNodeId]);
 
   // Filter nodes/edges when file selection changes
   useEffect(() => {
@@ -376,6 +413,9 @@ function AppInner() {
           >
             🎯 Learn
           </button>
+
+          <ProjectUpload onUploadSuccess={handleUploadSuccess} />
+
           <SearchBar
             allNodes={allNodes}
             onSelectNode={handleSelectNode}
