@@ -5,3 +5,8 @@ openai
 langchain
 pydantic
 python-dotenv
+fastapi
+uvicorn
+groq
+pytest
+httpx
