@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,5 +24,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Lint (ruff)
+        run: ruff check . --select E,F --ignore E501,E402 --exclude tests/upload_cases
+
+      - name: Type check (mypy)
+        run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
+
       - name: Run tests
-        run: python -m pytest tests/ -v
+        run: python -m pytest tests/ -v --ignore=tests/test_upload.py

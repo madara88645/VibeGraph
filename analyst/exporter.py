@@ -1,6 +1,6 @@
 import networkx as nx
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 class GraphExporter:
     def __init__(self):
