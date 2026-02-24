@@ -5,9 +5,10 @@ openai
 langchain
 pydantic
 python-dotenv
-fastapi
+fastapi==0.109.2
+starlette==0.36.3
 uvicorn
 groq
 pytest
-httpx
+httpx==0.27.2
 python-multipart
