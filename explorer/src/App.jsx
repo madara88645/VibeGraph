@@ -387,7 +387,7 @@ function AppInner() {
   );
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
+    <div className="app-shell">
       {/* Sidebar */}
       <FileSidebar
         files={files}
@@ -397,7 +397,7 @@ function AppInner() {
       />
 
       {/* Main Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div className="main-area">
         <div className="vibe-header">
           <h1>⚡ Vibe Learning</h1>
           <span className="status-badge">AI Active</span>
@@ -424,7 +424,7 @@ function AppInner() {
         </div>
 
         {/* Graph */}
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div className="graph-shell">
           <GraphViewer
             nodes={nodes}
             edges={edges}

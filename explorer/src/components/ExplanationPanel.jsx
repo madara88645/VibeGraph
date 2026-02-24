@@ -102,77 +102,30 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
     };
 
     return (
-        <div className="slide-in-right" style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            width: '370px',
-            maxHeight: '92vh',
-            background: 'rgba(12, 12, 22, 0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '14px',
-            padding: '0',
-            color: '#e2e8f0',
-            boxShadow: '0 8px 40px rgba(0, 0, 0, 0.5)',
-            overflowY: 'auto',
-            zIndex: 100,
-        }}>
+        <div className="slide-in-right explanation-panel">
             {/* Header */}
-            <div style={{
-                padding: '16px 18px 12px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-            }}>
+            <div className="ep-header">
                 {/* Type badge */}
-                <span style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                    color: typeConfig.accent,
-                    background: `${typeConfig.accent}18`,
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                }}>
+                <span className="ep-type" style={{ color: typeConfig.accent, background: `${typeConfig.accent}18`, borderColor: `${typeConfig.accent}40` }}>
                     {typeConfig.icon} {typeConfig.label}
                 </span>
 
-                <span style={{
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    color: '#e2e8f0',
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}>
+                <span className="ep-title">
                     {node.data.label}
                 </span>
 
                 <button
                     onClick={onClose}
-                    style={{
-                        cursor: 'pointer',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: 'none',
-                        color: '#64748b',
-                        fontSize: '0.9rem',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        transition: 'all 0.15s',
-                    }}
+                    className="ep-close"
                 >
                     ✕
                 </button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: '14px 18px' }}>
+            <div className="ep-body">
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '3px' }}>
+                <div className="ep-tabs">
                     {[
                         { key: 'technical', label: '⚙️ Technical' },
                         { key: 'analogy', label: '🎭 Analogy' },
@@ -180,18 +133,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         <button
                             key={t.key}
                             onClick={() => setTab(t.key)}
-                            style={{
-                                flex: 1,
-                                padding: '7px 0',
-                                borderRadius: '6px',
-                                border: 'none',
-                                background: tab === t.key ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                color: tab === t.key ? '#e2e8f0' : '#64748b',
-                                fontSize: '0.78rem',
-                                fontWeight: tab === t.key ? 600 : 400,
-                                cursor: 'pointer',
-                                transition: 'all 0.15s',
-                            }}
+                            className={`ep-tab ${tab === t.key ? 'active' : ''}`}
                         >
                             {t.label}
                         </button>
@@ -199,24 +141,13 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 </div>
 
                 {/* Difficulty */}
-                <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
+                <div className="ep-levels">
                     {['beginner', 'intermediate', 'advanced'].map((lvl) => (
                         <button
                             key={lvl}
                             onClick={() => setLevel(lvl)}
-                            style={{
-                                flex: 1,
-                                padding: '4px 0',
-                                borderRadius: '6px',
-                                border: level === lvl ? `1px solid ${typeConfig.accent}44` : '1px solid rgba(255,255,255,0.06)',
-                                background: level === lvl ? `${typeConfig.accent}12` : 'transparent',
-                                color: level === lvl ? typeConfig.accent : '#64748b',
-                                fontSize: '0.7rem',
-                                fontWeight: level === lvl ? 600 : 400,
-                                cursor: 'pointer',
-                                textTransform: 'capitalize',
-                                transition: 'all 0.15s',
-                            }}
+                            className={`ep-level ${level === lvl ? 'active' : ''}`}
+                            style={level === lvl ? { borderColor: `${typeConfig.accent}44`, background: `${typeConfig.accent}12`, color: typeConfig.accent } : undefined}
                         >
                             {lvl}
                         </button>
@@ -228,14 +159,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
             {/* Footer */}
             {(node.data.file || node.data.original_data?.file) && (
-                <div style={{
-                    padding: '10px 18px',
-                    borderTop: '1px solid rgba(255,255,255,0.04)',
-                    fontSize: '0.7rem',
-                    color: '#475569',
-                    display: 'flex',
-                    gap: '12px',
-                }}>
+                <div className="ep-footer">
                     <span>📄 {node.data.file || node.data.original_data?.file}</span>
                     {(node.data.lineno || node.data.original_data?.lineno) && (
                         <span>L{node.data.lineno || node.data.original_data?.lineno}</span>

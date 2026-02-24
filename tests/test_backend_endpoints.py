@@ -513,6 +513,33 @@ class TestRegression(unittest.TestCase):
         self.assertIn("def main", data["snippet"])
 
 
+class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
+    """Regression tests for upload -> snippet flow on temporary uploads."""
+
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def test_upload_then_snippet_works_with_uploaded_temp_file(self):
+        source = b"def telegram_agent():\n    return 'ok'\n"
+        files = {"files": ("telegram-agent/telegram_agent.py", source, "text/x-python")}
+
+        upload_resp = self.client.post("/api/upload-project", files=files)
+        self.assertEqual(upload_resp.status_code, 200, upload_resp.text)
+        payload = upload_resp.json()
+        self.assertIn("nodes", payload)
+
+        node = next((n for n in payload["nodes"] if n.get("id") == "telegram_agent"), None)
+        self.assertIsNotNone(node, "uploaded function node not found in graph")
+
+        file_path = node["data"].get("file")
+        self.assertTrue(file_path and os.path.isfile(file_path), f"uploaded file missing at {file_path}")
+
+        snippet_resp = self.client.post("/api/snippet", json={"file_path": file_path, "node_id": "telegram_agent"})
+        self.assertEqual(snippet_resp.status_code, 200, snippet_resp.text)
+        snippet_payload = snippet_resp.json()
+        self.assertIn("def telegram_agent", snippet_payload.get("snippet", ""))
+
+
 # ---------------------------------------------------------------------------
 # Run
 # ---------------------------------------------------------------------------
