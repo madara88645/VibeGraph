@@ -29,7 +29,7 @@ const defaultEdgeOptions = {
 
 const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }) => {
     return (
-        <div style={{ height: '100%', width: '100%' }}>
+        <div className="graph-canvas">
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -46,11 +46,11 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
             >
                 <MiniMap
                     nodeColor={minimapNodeColor}
-                    maskColor="rgba(0, 0, 0, 0.7)"
-                    style={{ borderRadius: '10px' }}
+                    maskColor="rgba(0, 0, 0, 0.76)"
+                    style={{ borderRadius: '12px' }}
                 />
                 <Controls />
-                <Background variant="dots" color="#1e1e30" gap={20} size={1} />
+                <Background variant="dots" color="rgba(125, 211, 252, 0.12)" gap={24} size={1} />
             </ReactFlow>
         </div>
     );

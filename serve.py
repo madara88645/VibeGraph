@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import uvicorn
 import zipfile
+from pathlib import Path
 from typing import List
 from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,8 +13,36 @@ from pydantic import BaseModel
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
+import json as _agent_json
+import time as _agent_time
+
+# region agent log
+def _agent_debug_log(run_id: str, hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
+    """
+    Lightweight debug logger for the AI agent.
+    Writes NDJSON lines to debug-0b7624.log for this session.
+    """
+    try:
+        payload = {
+            "sessionId": "0b7624",
+            "runId": run_id,
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+            "timestamp": int(_agent_time.time() * 1000),
+        }
+        with open("debug-0b7624.log", "a", encoding="utf-8") as f:
+            f.write(_agent_json.dumps(payload) + "\n")
+    except Exception:
+        # Never let logging break the main flow
+        pass
+# endregion
 
 app = FastAPI(title="Vibe Learning System API")
+
+UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
+UPLOAD_PREFIX = "vibegraph_upload_"
 
 # Enable CORS for development (allowing frontend on 5173 to talk to backend on 8000)
 app.add_middleware(
@@ -241,56 +270,188 @@ def cleanup_tmp_dir(path: str):
     if os.path.exists(path):
         shutil.rmtree(path, ignore_errors=True)
 
+
+def cleanup_expired_upload_dirs(retention_seconds: int = UPLOAD_RETENTION_SECONDS) -> None:
+    """Remove old upload temp folders, keeping recent uploads available."""
+    now = _agent_time.time()
+    temp_root = Path(tempfile.gettempdir())
+    for candidate in temp_root.glob(f"{UPLOAD_PREFIX}*"):
+        try:
+            if not candidate.is_dir():
+                continue
+            age = now - candidate.stat().st_mtime
+            if age > retention_seconds:
+                shutil.rmtree(candidate, ignore_errors=True)
+        except Exception:
+            continue
+
+
+def _normalize_uploaded_filename(raw_name: str) -> str:
+    """Normalize upload path and block path traversal / absolute paths."""
+    if not raw_name:
+        raise HTTPException(status_code=400, detail="Uploaded file has no filename")
+
+    normalized = raw_name.replace("\\", "/")
+    parts = [p for p in normalized.split("/") if p not in ("", ".")]
+    if not parts:
+        raise HTTPException(status_code=400, detail=f"Invalid upload path: {raw_name}")
+
+    if any(part == ".." for part in parts):
+        raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
+
+    safe_rel = os.path.join(*parts)
+    if os.path.isabs(safe_rel):
+        raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
+
+    return safe_rel
+
 @app.post("/api/upload-project")
 async def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     """
     Receives dynamic uploads (single .py, multiple files, or .zip), saves to a 
     temporary folder, runs analysis, and returns the graph data directly.
     """
-    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_upload_")
-    
+    cleanup_expired_upload_dirs()
+    tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
+
+    # region agent log
+    _agent_debug_log(
+        run_id="pre-fix",
+        hypothesis_id="H1",
+        location="serve.py:245",
+        message="upload_project_called",
+        data={
+            "tmp_dir": tmp_dir,
+            "incoming_file_count": len(files),
+            "sample_filenames": [getattr(f, "filename", None) for f in list(files)[:5]],
+        },
+    )
+    # endregion
+
     try:
+        saved_files: list[dict] = []
+
         for file in files:
-            file_path = os.path.join(tmp_dir, file.filename)
+            safe_name = _normalize_uploaded_filename(file.filename)
+            file_path = os.path.join(tmp_dir, safe_name)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            
+
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            
+
+            saved_files.append(
+                {
+                    "stored_path": file_path,
+                    "original_name": safe_name,
+                    "is_zip": safe_name.endswith(".zip"),
+                }
+            )
+
             # If it's a zip file, extract it
-            if file.filename.endswith(".zip"):
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            if safe_name.endswith(".zip"):
+                with zipfile.ZipFile(file_path, "r") as zip_ref:
                     zip_ref.extractall(tmp_dir)
-                os.remove(file_path) # Remove zip after extraction
-        
+                os.remove(file_path)  # Remove zip after extraction
+
+        # region agent log
+        _agent_debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H1",
+            location="serve.py:266",
+            message="before_analyze_file",
+            data={
+                "tmp_dir": tmp_dir,
+                "saved_file_count": len(saved_files),
+                "saved_files_sample": saved_files[:5],
+            },
+        )
+        # endregion
+
         # Run analysis on the directory
         result = analyzer.analyze_file(tmp_dir)
 
+        # region agent log
+        _agent_debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H1",
+            location="serve.py:273",
+            message="after_analyze_file",
+            data={
+                "has_error_key": "error" in result,
+                "error_value": result.get("error"),
+                "errors_count": len(result.get("errors", []))
+                if isinstance(result, dict)
+                else None,
+                "node_count": result.get("graph").number_of_nodes()
+                if isinstance(result, dict) and result.get("graph") is not None
+                else None,
+            },
+        )
+        # endregion
+
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
-            
+
         if result.get("errors") and result["graph"].number_of_nodes() == 0:
             # If all files had errors, return the first error
             raise HTTPException(status_code=400, detail=result["errors"][0])
 
         graph = result["graph"]
-        
+
         # Use GraphExporter for consistent React Flow JSON format
         # We don't provide an output_path because we want the dict returned
         response_data = exporter.export_to_react_flow(graph)
-        
-        # Attach tmp_dir root to help frontend know where files are (optional)
+
+        # Keep uploaded source available for follow-up snippet/explain calls.
+        # Old upload dirs are cleaned periodically by cleanup_expired_upload_dirs().
         response_data["upload_root"] = tmp_dir
-        
+        response_data["upload_expires_in_seconds"] = UPLOAD_RETENTION_SECONDS
+
+        # region agent log
+        _agent_debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H1",
+            location="serve.py:285",
+            message="upload_project_success",
+            data={
+                "node_count": len(response_data.get("nodes", [])),
+                "edge_count": len(response_data.get("edges", [])),
+            },
+        )
+        # endregion
+
         return response_data
 
-    except HTTPException:
+    except HTTPException as exc:
+        cleanup_tmp_dir(tmp_dir)
+        # region agent log
+        _agent_debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H2",
+            location="serve.py:293",
+            message="upload_project_http_exception",
+            data={
+                "status_code": getattr(exc, "status_code", None),
+                "detail": getattr(exc, "detail", None),
+            },
+        )
+        # endregion
         raise
     except Exception as e:
+        cleanup_tmp_dir(tmp_dir)
+        # region agent log
+        _agent_debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H2",
+            location="serve.py:302",
+            message="upload_project_unexpected_exception",
+            data={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            },
+        )
+        # endregion
         raise HTTPException(status_code=500, detail=f"Upload/Analysis failed: {str(e)}")
-    finally:
-        if 'tmp_dir' in locals() and os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
 
 
 # Mount static files (Frontend build)
