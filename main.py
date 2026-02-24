@@ -1,5 +1,4 @@
 import argparse
-import sys
 from analyst.analyzer import CodeAnalyzer
 from teacher.basic_reporter import BasicTeacher
 from rich.console import Console
@@ -67,7 +66,6 @@ def main():
         import webbrowser
         import uvicorn
         from serve import app
-        from analyst.analyzer import CodeAnalyzer
         import shutil
 
         target = args.target if args.target else "."
