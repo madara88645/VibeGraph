@@ -7,7 +7,7 @@ class CallGraphVisitor(ast.NodeVisitor):
     def __init__(self, file_path: str):
         self.graph = nx.DiGraph()
         self.current_scope = "global"
-        self.definitions = []
+        self.definitions: List[Dict[str, Any]] = []
         self.file_path = file_path
 
     def visit_FunctionDef(self, node):
