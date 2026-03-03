@@ -50,6 +50,7 @@ def _try_parse_json(text: str) -> dict | None:
 class GroqTeacher:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
+        self.model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         if not self.api_key:
             print("Warning: GROQ_API_KEY not found in .env")
             self.client = None
@@ -95,7 +96,7 @@ class GroqTeacher:
 
         try:
             completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
@@ -168,7 +169,7 @@ class GroqTeacher:
 
         try:
             completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model=self.model_name,
                 messages=messages,
                 temperature=0.5,
                 max_tokens=800,
@@ -217,7 +218,7 @@ class GroqTeacher:
 
         try:
             completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_prompt},
