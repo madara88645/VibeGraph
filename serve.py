@@ -70,8 +70,8 @@ class ExplainRequest(BaseModel):
 
 def _is_safe_path(path: str) -> bool:
     """Ensure the path is either within the current working directory or a valid upload temp directory."""
-    resolved = os.path.abspath(path)
-    cwd = os.path.abspath(os.getcwd())
+    resolved = os.path.realpath(path)
+    cwd = os.path.realpath(os.getcwd())
 
     try:
         if os.path.commonpath([resolved, cwd]) == cwd:
@@ -79,7 +79,7 @@ def _is_safe_path(path: str) -> bool:
     except ValueError:
         pass
 
-    tmp_dir = os.path.abspath(tempfile.gettempdir())
+    tmp_dir = os.path.realpath(tempfile.gettempdir())
     try:
         if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
             rel_path = os.path.relpath(resolved, tmp_dir)
@@ -106,7 +106,7 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
             "# (No source code available, please explain based on name/context.)"
         )
 
-    resolved = os.path.abspath(file_path)
+    resolved = os.path.realpath(file_path)
 
     if not _is_safe_path(resolved):
         return f"# Access denied: Unsafe file path {file_path}"
@@ -163,8 +163,8 @@ def get_snippet(request: SnippetRequest):
     full_source = None
 
     if request.file_path:
-        resolved = os.path.abspath(request.file_path)
-        if os.path.isfile(resolved):
+        resolved = os.path.realpath(request.file_path)
+        if _is_safe_path(resolved) and os.path.isfile(resolved):
             try:
                 with open(resolved, "r", encoding="utf-8") as f:
                     full_source = f.read()
