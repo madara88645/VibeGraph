@@ -110,7 +110,7 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
 
     resolved = os.path.abspath(file_path)
     if not os.path.isfile(resolved):
-        return f"# File not found: {file_path}"
+        return f"# Source for {node_id} (External/Built-in)"
 
     try:
         with open(resolved, "r", encoding="utf-8") as f:
@@ -337,7 +337,7 @@ def _normalize_uploaded_filename(raw_name: str) -> str:
     return safe_rel
 
 @app.post("/api/upload-project")
-async def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     """
     Receives dynamic uploads (single .py, multiple files, or .zip), saves to a 
     temporary folder, runs analysis, and returns the graph data directly.

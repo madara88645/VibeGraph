@@ -110,6 +110,17 @@ class TestAnalyzerForSearch(unittest.TestCase):
     def tearDown(self):
         self.ctx.__exit__(None, None, None)
 
+    def test_analyze_single_file_syntax_error(self):
+        """Invalid syntax in a single file should return an error dict."""
+        analyzer = CodeAnalyzer()
+        broken_file = os.path.join(self.proj.tmpdir, "broken.py")
+        with open(broken_file, "w", encoding="utf-8") as f:
+            f.write("def broken(:\n    pass\n")
+
+        result = analyzer.analyze_file(broken_file)
+        self.assertIn("error", result)
+        self.assertTrue(result["error"].startswith("Syntax error in"))
+
     def test_single_file_contains_expected_nodes(self):
         """Analyzer must return all classes and functions as graph nodes."""
         analyzer = CodeAnalyzer()
@@ -193,6 +204,39 @@ class TestAnalyzerForSearch(unittest.TestCase):
 
         self.assertNotIn("error", result)
         self.assertGreaterEqual(result["graph"].number_of_nodes(), 60)
+
+    def test_analyze_structure_success(self):
+        """Verify analyze_structure returns a formatted summary string."""
+        analyzer = CodeAnalyzer()
+        summary = analyzer.analyze_structure(self.proj.file_a)
+
+        self.assertIsInstance(summary, str)
+        self.assertIn(f"Target: {self.proj.file_a}", summary)
+        self.assertIn("Nodes (", summary)
+        self.assertIn("Edges (", summary)
+        self.assertIn("FileProcessor", summary)
+        self.assertIn("main", summary)
+
+    def test_analyze_structure_error_file_not_found(self):
+        """Verify analyze_structure handles non-existent files correctly."""
+        analyzer = CodeAnalyzer()
+        non_existent_file = os.path.join(self.proj.tmpdir, "nonexistent.py")
+        summary = analyzer.analyze_structure(non_existent_file)
+
+        self.assertIsInstance(summary, str)
+        self.assertEqual(summary, f"Path not found: {non_existent_file}")
+
+    def test_analyze_structure_syntax_error(self):
+        """Verify analyze_structure handles syntax errors correctly."""
+        bad_file = os.path.join(self.proj.tmpdir, "bad.py")
+        with open(bad_file, "w") as f:
+            f.write("def bad_syntax(:\n    pass")
+
+        analyzer = CodeAnalyzer()
+        summary = analyzer.analyze_structure(bad_file)
+
+        self.assertIsInstance(summary, str)
+        self.assertIn(f"Syntax error in {bad_file}", summary)
 
 
 # ---------------------------------------------------------------------------
@@ -515,6 +559,19 @@ class TestRegression(unittest.TestCase):
         self.assertIn("node_id", data)
         # The snippet should contain the function source
         self.assertIn("def main", data["snippet"])
+
+    def test_snippet_endpoint_file_not_found(self):
+        """POST /api/snippet should handle a safe file path that does not exist."""
+        nonexistent_file = os.path.join(self.proj.tmpdir, "nonexistent.py")
+        resp = self.client.post("/api/snippet", json={
+            "file_path": nonexistent_file,
+            "node_id": "main",
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("snippet", data)
+        self.assertIn("# Source for main (External/Built-in)", data["snippet"])
 
 
 class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
