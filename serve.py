@@ -1,4 +1,5 @@
 import os
+import sys
 import ast
 import shutil
 import tempfile
@@ -34,9 +35,9 @@ def _agent_debug_log(run_id: str, hypothesis_id: str, location: str, message: st
         }
         with open("debug-0b7624.log", "a", encoding="utf-8") as f:
             f.write(_agent_json.dumps(payload) + "\n")
-    except Exception:
-        # Never let logging break the main flow
-        pass
+    except Exception as e:
+        # Never let logging break the main flow, but at least report the error
+        print(f"DEBUG LOG ERROR: {e}", file=sys.stderr)
 # endregion
 
 app = FastAPI(title="Vibe Learning System API")
