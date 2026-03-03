@@ -350,6 +350,11 @@ async def upload_project(background_tasks: BackgroundTasks, files: List[UploadFi
             # If it's a zip file, extract it
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
+                    tmp_dir_abs = os.path.abspath(tmp_dir)
+                    for member in zip_ref.infolist():
+                        extracted_path = os.path.abspath(os.path.join(tmp_dir_abs, member.filename))
+                        if not extracted_path.startswith(tmp_dir_abs + os.sep) and extracted_path != tmp_dir_abs:
+                            raise HTTPException(status_code=400, detail=f"Unsafe zip file detected: {safe_name}")
                     zip_ref.extractall(tmp_dir)
                 os.remove(file_path)  # Remove zip after extraction
 
