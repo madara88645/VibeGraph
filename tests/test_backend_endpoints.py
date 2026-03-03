@@ -110,6 +110,17 @@ class TestAnalyzerForSearch(unittest.TestCase):
     def tearDown(self):
         self.ctx.__exit__(None, None, None)
 
+    def test_analyze_single_file_syntax_error(self):
+        """Invalid syntax in a single file should return an error dict."""
+        analyzer = CodeAnalyzer()
+        broken_file = os.path.join(self.proj.tmpdir, "broken.py")
+        with open(broken_file, "w", encoding="utf-8") as f:
+            f.write("def broken(:\n    pass\n")
+
+        result = analyzer._analyze_single_file(broken_file)
+        self.assertIn("error", result)
+        self.assertTrue(result["error"].startswith("Syntax error in"))
+
     def test_single_file_contains_expected_nodes(self):
         """Analyzer must return all classes and functions as graph nodes."""
         analyzer = CodeAnalyzer()
