@@ -68,6 +68,28 @@ class ExplainRequest(BaseModel):
 # Snippet extraction utility
 # ---------------------------------------------------------------------------
 
+
+def _is_safe_path(file_path: str) -> bool:
+    """
+    Validates that a file_path is safe to read.
+    It must be within the current working directory or the OS temp directory.
+    """
+    try:
+        resolved = os.path.abspath(file_path)
+        cwd = os.path.abspath(os.getcwd())
+        if os.path.commonpath([cwd, resolved]) == cwd:
+            return True
+        tmp_dir = os.path.abspath(tempfile.gettempdir())
+        if os.path.commonpath([tmp_dir, resolved]) == tmp_dir:
+            # Must specifically be within one of our upload directories
+            # to prevent reading arbitrary files from /tmp
+            rel_path = os.path.relpath(resolved, tmp_dir)
+            if rel_path.startswith(UPLOAD_PREFIX) or rel_path.startswith("vibegraph_test_"):
+                return True
+        return False
+    except ValueError:
+        return False
+
 def _extract_snippet(file_path: str, node_id: str) -> str:
     """
     Robustly extracts the source code of a function/class from *file_path*
@@ -81,6 +103,9 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
             f"# External or Built-in: {node_id}\n"
             "# (No source code available, please explain based on name/context.)"
         )
+
+    if not _is_safe_path(file_path):
+        return f"# Error: Access to {file_path} is denied."
 
     resolved = os.path.abspath(file_path)
     if not os.path.isfile(resolved):
@@ -135,6 +160,8 @@ def get_snippet(request: SnippetRequest):
     full_source = None
 
     if request.file_path:
+        if not _is_safe_path(request.file_path):
+            return {"error": "Access denied"}
         resolved = os.path.abspath(request.file_path)
         if os.path.isfile(resolved):
             try:
@@ -237,6 +264,9 @@ def suggest_learning_path(request: LearningPathRequest):
     Analyzes *file_path*, extracts its nodes/edges, and asks the LLM
     to suggest the best order to study them.
     """
+    if not _is_safe_path(request.file_path):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     if not os.path.isfile(request.file_path):
         raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
 
