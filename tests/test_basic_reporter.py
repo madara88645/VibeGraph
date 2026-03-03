@@ -4,7 +4,7 @@ import sys
 import os
 
 # Add project root to sys.path to ensure imports work
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from teacher.basic_reporter import BasicTeacher
 
