@@ -331,7 +331,7 @@ class TestLearningPathEndpoint(unittest.TestCase):
     def test_learning_path_file_not_found(self):
         """Should return 404 for non-existent file."""
         resp = self.client.post("/api/learning-path", json={
-            "file_path": "/nonexistent/file.py",
+            "file_path": os.path.join(self.proj.tmpdir, "nonexistent.py"),
         })
         self.assertEqual(resp.status_code, 404)
 
@@ -550,3 +550,32 @@ class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestPathTraversalSecurity(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def test_snippet_prevents_path_traversal(self):
+        """Endpoints should deny path traversal outside cwd or temp upload dir."""
+        resp = self.client.post("/api/snippet", json={
+            "file_path": "../../../../etc/passwd",
+            "node_id": "root"
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("error", resp.json())
+        self.assertEqual(resp.json()["error"], "Access denied")
+
+    def test_explain_prevents_path_traversal(self):
+        resp = self.client.post("/api/explain", json={
+            "file_path": "../../../../etc/passwd",
+            "node_id": "root"
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("# Error: Access to", resp.json()["snippet"])
+
+    def test_learning_path_prevents_path_traversal(self):
+        resp = self.client.post("/api/learning-path", json={
+            "file_path": "../../../../etc/passwd"
+        })
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.json()["detail"], "Access denied")
