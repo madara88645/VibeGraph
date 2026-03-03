@@ -80,7 +80,7 @@ class _TempProject:
     """Context manager that creates a temporary project with dummy files."""
 
     def __enter__(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_upload_test_")
         self.file_a = os.path.join(self.tmpdir, "file_a.py")
         self.file_b = os.path.join(self.tmpdir, "file_b.py")
         with open(self.file_a, "w", encoding="utf-8") as f:
