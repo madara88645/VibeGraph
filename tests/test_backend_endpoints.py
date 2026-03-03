@@ -117,7 +117,7 @@ class TestAnalyzerForSearch(unittest.TestCase):
         with open(broken_file, "w", encoding="utf-8") as f:
             f.write("def broken(:\n    pass\n")
 
-        result = analyzer._analyze_single_file(broken_file)
+        result = analyzer.analyze_file(broken_file)
         self.assertIn("error", result)
         self.assertTrue(result["error"].startswith("Syntax error in"))
 
