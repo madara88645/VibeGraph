@@ -516,6 +516,19 @@ class TestRegression(unittest.TestCase):
         # The snippet should contain the function source
         self.assertIn("def main", data["snippet"])
 
+    def test_snippet_endpoint_file_not_found(self):
+        """POST /api/snippet should handle a safe file path that does not exist."""
+        nonexistent_file = os.path.join(self.proj.tmpdir, "nonexistent.py")
+        resp = self.client.post("/api/snippet", json={
+            "file_path": nonexistent_file,
+            "node_id": "main",
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("snippet", data)
+        self.assertIn("# Source for main (External/Built-in)", data["snippet"])
+
 
 class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
     """Regression tests for upload -> snippet flow on temporary uploads."""

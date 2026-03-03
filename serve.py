@@ -110,7 +110,7 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
 
     resolved = os.path.abspath(file_path)
     if not os.path.isfile(resolved):
-        return f"# File not found: {file_path}"
+        return f"# Source for {node_id} (External/Built-in)"
 
     try:
         with open(resolved, "r", encoding="utf-8") as f:
