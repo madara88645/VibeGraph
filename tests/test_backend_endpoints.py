@@ -681,8 +681,7 @@ class TestPathTraversalSecurity(unittest.TestCase):
             "node_id": "root"
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("error", resp.json())
-        self.assertEqual(resp.json()["error"], "Access denied")
+        self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
 
     def test_explain_prevents_path_traversal(self):
         resp = self.client.post("/api/explain", json={
@@ -690,7 +689,7 @@ class TestPathTraversalSecurity(unittest.TestCase):
             "node_id": "root"
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("# Error: Access to", resp.json()["snippet"])
+        self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
 
     def test_learning_path_prevents_path_traversal(self):
         resp = self.client.post("/api/learning-path", json={
