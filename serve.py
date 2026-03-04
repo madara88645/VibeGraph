@@ -7,7 +7,7 @@ import uvicorn
 import zipfile
 from pathlib import Path
 from typing import List
-from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -337,7 +337,7 @@ def _normalize_uploaded_filename(raw_name: str) -> str:
     return safe_rel
 
 @app.post("/api/upload-project")
-def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+def upload_project(files: List[UploadFile] = File(...)):
     """
     Receives dynamic uploads (single .py, multiple files, or .zip), saves to a 
     temporary folder, runs analysis, and returns the graph data directly.
