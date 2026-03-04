@@ -1,13 +1,13 @@
 import ast
 import os
 import networkx as nx
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 class CallGraphVisitor(ast.NodeVisitor):
     def __init__(self, file_path: str):
         self.graph = nx.DiGraph()
         self.current_scope = "global"
-        self.definitions: List[Dict[str, Any]] = []
+        self.definitions: list[dict[str, Any]] = []
         self.file_path = file_path
 
     def visit_FunctionDef(self, node):
@@ -65,7 +65,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             self.graph.add_edge(self.current_scope, callee_name)
         self.generic_visit(node)
 
-    def _get_callee_name(self, node) -> Optional[str]:
+    def _get_callee_name(self, node) -> str | None:
         if isinstance(node.func, ast.Name):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
@@ -78,7 +78,7 @@ class CodeAnalyzer:
         self.definitions = []
         self.errors = []
 
-    def analyze_file(self, target_path: str) -> Dict[str, Any]:
+    def analyze_file(self, target_path: str) -> dict[str, Any]:
         """
         Analyzes a file or directory recursively.
         """
@@ -95,7 +95,7 @@ class CodeAnalyzer:
         else:
             return self._analyze_single_file(target_path)
 
-    def _analyze_directory(self, dir_path: str) -> Dict[str, Any]:
+    def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
         # Clear state for a fresh directory analysis
         self.graph = nx.DiGraph() 
         self.definitions = []
@@ -117,8 +117,8 @@ class CodeAnalyzer:
             "errors": self.errors
         }
 
-    def _analyze_single_file(self, file_path: str, merge: bool = False) -> Dict[str, Any]:
-        with open(file_path, "r", encoding="utf-8") as f:
+    def _analyze_single_file(self, file_path: str, merge: bool = False) -> dict[str, Any]:
+        with open(file_path, encoding="utf-8") as f:
             try:
                 tree = ast.parse(f.read(), filename=file_path)
             except SyntaxError as e:
@@ -163,7 +163,7 @@ class CodeAnalyzer:
 
     def extract_dependencies(
         self, file_path: str, project_root: str | None = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extracts import statements from *file_path* using AST.
 
@@ -190,12 +190,12 @@ class CodeAnalyzer:
         project_root = os.path.abspath(project_root)
 
         try:
-            with open(resolved, "r", encoding="utf-8") as f:
+            with open(resolved, encoding="utf-8") as f:
                 tree = ast.parse(f.read(), filename=resolved)
         except SyntaxError as e:
             return {"error": f"Syntax error in {file_path}: {e}"}
 
-        dependencies: List[Dict[str, Any]] = []
+        dependencies: list[dict[str, Any]] = []
 
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
