@@ -36,15 +36,15 @@ _FALLBACK = {
 }
 
 
-def _try_parse_json(text: str) -> dict | None:
+def _try_parse_json(text: str) -> dict:
     """Attempt to parse JSON from *text*, stripping markdown fences if present."""
     # Strip possible ```json ... ``` wrapping
     cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip())
     cleaned = re.sub(r"\s*```$", "", cleaned)
     try:
         return json.loads(cleaned)
-    except json.JSONDecodeError:
-        return None
+    except json.JSONDecodeError as e:
+        raise ValueError(text) from e
 
 
 class GroqTeacher:
@@ -119,15 +119,15 @@ class GroqTeacher:
             raw = completion.choices[0].message.content
             parsed = _try_parse_json(raw)
 
-            if parsed is None:
-                return {**_FALLBACK, "technical": raw}
-
             # Ensure all expected keys exist
             return {
                 "analogy": parsed.get("analogy", _FALLBACK["analogy"]),
                 "technical": parsed.get("technical", _FALLBACK["technical"]),
                 "key_takeaway": parsed.get("key_takeaway", _FALLBACK["key_takeaway"]),
             }
+
+        except ValueError as e:
+            return {**_FALLBACK, "technical": str(e)}
 
         except Exception as e:
             return {
@@ -240,8 +240,10 @@ class GroqTeacher:
             )
             raw = completion.choices[0].message.content
             parsed = _try_parse_json(raw)
-            if parsed and "steps" in parsed:
-                return parsed["steps"]
-            return [{"step": 1, "node_id": "parse_error", "reason": raw}]
+            if "steps" not in parsed:
+                raise ValueError(raw)
+            return parsed["steps"]
+        except ValueError as e:
+            return [{"step": 1, "node_id": "parse_error", "reason": str(e)}]
         except Exception as e:
             return [{"step": 1, "node_id": "error", "reason": str(e)}]
