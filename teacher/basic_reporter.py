@@ -9,6 +9,8 @@ class BasicTeacher:
         Generates a mock 'lesson' based on the graph structure.
         In Phase 3, this will use an LLM.
         """
+        if not isinstance(graph, nx.DiGraph):
+            raise ValueError("Invalid graph provided")
         
         lesson = f"# Lesson: Understanding {file_path}\n\n"
         

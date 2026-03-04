@@ -26,7 +26,6 @@ class TestBasicTeacher(unittest.TestCase):
         self.assertIn("## 3. Analysis", lesson)
         self.assertIn("This module is **loosely coupled** (few connections).", lesson)
 
-if __name__ == '__main__':
     def test_empty_graph(self):
         graph = nx.DiGraph()
         lesson = self.teacher.generate_lesson(graph, "empty.py")
@@ -77,6 +76,18 @@ if __name__ == '__main__':
         self.assertIn("Here is how the components interact:", lesson)
         self.assertIn("- `my_func` calls `helper_func`", lesson)
         self.assertIn("- `MyClass` calls `my_func`", lesson)
+
+    def test_invalid_graph_type(self):
+        with self.assertRaises(ValueError) as context:
+            self.teacher.generate_lesson("not_a_graph", "invalid.py")
+
+        self.assertEqual(str(context.exception), "Invalid graph provided")
+
+    def test_none_graph(self):
+        with self.assertRaises(ValueError) as context:
+            self.teacher.generate_lesson(None, "none.py")
+
+        self.assertEqual(str(context.exception), "Invalid graph provided")
 
     def test_high_coupling(self):
         graph = nx.DiGraph()
