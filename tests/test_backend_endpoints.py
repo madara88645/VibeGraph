@@ -26,7 +26,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from fastapi.testclient import TestClient
-from serve import app
+from serve import app, UPLOAD_PREFIX
 from analyst.analyzer import CodeAnalyzer
 
 
@@ -80,7 +80,7 @@ class _TempProject:
     """Context manager that creates a temporary project with dummy files."""
 
     def __enter__(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_upload_test_")
         self.file_a = os.path.join(self.tmpdir, "file_a.py")
         self.file_b = os.path.join(self.tmpdir, "file_b.py")
         with open(self.file_a, "w", encoding="utf-8") as f:
@@ -599,6 +599,68 @@ class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
         self.assertEqual(snippet_resp.status_code, 200, snippet_resp.text)
         snippet_payload = snippet_resp.json()
         self.assertIn("def telegram_agent", snippet_payload.get("snippet", ""))
+
+
+# ---------------------------------------------------------------------------
+# 6. Path Traversal Security Tests (/api/snippet)
+# ---------------------------------------------------------------------------
+
+
+class TestSnippetPathTraversal(unittest.TestCase):
+    """Verify that /api/snippet rejects paths outside allowed directories."""
+
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def test_traversal_path_is_denied(self):
+        """Relative path traversal (e.g. ../../../../etc/passwd) must be denied."""
+        resp = self.client.post("/api/snippet", json={
+            "file_path": "../../../../etc/passwd",
+            "node_id": "root",
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("Access denied", data["snippet"])
+        self.assertIsNone(data["full_source"])
+
+    def test_absolute_path_outside_cwd_is_denied(self):
+        """An absolute path outside cwd and temp upload dirs must be denied."""
+        resp = self.client.post("/api/snippet", json={
+            "file_path": "/etc/passwd",
+            "node_id": "root",
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("Access denied", data["snippet"])
+        self.assertIsNone(data["full_source"])
+
+    def test_full_source_not_returned_for_denied_path(self):
+        """Even if the file exists, full_source must not be populated when path is unsafe."""
+        # /etc/hostname is a common file that exists on Linux
+        resp = self.client.post("/api/snippet", json={
+            "file_path": "/etc/hostname",
+            "node_id": "anything",
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIsNone(data["full_source"])
+
+    def test_valid_upload_tmp_path_is_allowed(self):
+        """A file inside a vibegraph_upload_ temp dir must be accessible."""
+        tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
+        try:
+            test_file = os.path.join(tmp_dir, "test.py")
+            with open(test_file, "w") as f:
+                f.write("def my_func():\n    pass\n")
+            resp = self.client.post("/api/snippet", json={
+                "file_path": test_file,
+                "node_id": "my_func",
+            })
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertIn("def my_func", data["snippet"])
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------

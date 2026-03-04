@@ -69,27 +69,29 @@ class ExplainRequest(BaseModel):
 # Snippet extraction utility
 # ---------------------------------------------------------------------------
 
-
-def _is_safe_path(file_path: str) -> bool:
-    """
-    Validates that a file_path is safe to read.
-    It must be within the current working directory or the OS temp directory.
-    """
+def _is_safe_path(path: str) -> bool:
+    """Ensure the path is either within the current working directory or a valid upload temp directory."""
     try:
-        resolved = os.path.abspath(file_path)
-        cwd = os.path.abspath(os.getcwd())
-        if os.path.commonpath([cwd, resolved]) == cwd:
+        resolved = os.path.realpath(path)
+        cwd = os.path.realpath(os.getcwd())
+
+        if os.path.commonpath([resolved, cwd]) == cwd:
             return True
-        tmp_dir = os.path.abspath(tempfile.gettempdir())
-        if os.path.commonpath([tmp_dir, resolved]) == tmp_dir:
-            # Must specifically be within one of our upload directories
-            # to prevent reading arbitrary files from /tmp
-            rel_path = os.path.relpath(resolved, tmp_dir)
-            if rel_path.startswith(UPLOAD_PREFIX) or rel_path.startswith("vibegraph_test_"):
-                return True
-        return False
     except ValueError:
-        return False
+        pass
+
+    tmp_dir = os.path.realpath(tempfile.gettempdir())
+    try:
+        if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
+            rel_path = os.path.relpath(resolved, tmp_dir)
+            parts = rel_path.split(os.sep)
+            if parts and (parts[0].startswith(UPLOAD_PREFIX) or parts[0].startswith("vibegraph_test_")):
+                return True
+    except ValueError:
+        pass
+
+    return False
+
 
 def _extract_snippet(file_path: str, node_id: str) -> str:
     """
@@ -105,10 +107,11 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
             "# (No source code available, please explain based on name/context.)"
         )
 
-    if not _is_safe_path(file_path):
-        return f"# Error: Access to {file_path} is denied."
+    resolved = os.path.realpath(file_path)
 
-    resolved = os.path.abspath(file_path)
+    if not _is_safe_path(resolved):
+        return f"# Access denied: Unsafe file path {file_path}"
+
     if not os.path.isfile(resolved):
         return f"# Source for {node_id} (External/Built-in)"
 
@@ -161,10 +164,8 @@ def get_snippet(request: SnippetRequest):
     full_source = None
 
     if request.file_path:
-        if not _is_safe_path(request.file_path):
-            return {"error": "Access denied"}
-        resolved = os.path.abspath(request.file_path)
-        if os.path.isfile(resolved):
+        resolved = os.path.realpath(request.file_path)
+        if _is_safe_path(resolved) and os.path.isfile(resolved):
             try:
                 with open(resolved, "r", encoding="utf-8") as f:
                     full_source = f.read()
