@@ -1,4 +1,5 @@
 import ast
+import functools
 import os
 import networkx as nx
 from typing import Any
@@ -224,6 +225,7 @@ class CodeAnalyzer:
         return {"file": file_path, "dependencies": dependencies}
 
     @staticmethod
+    @functools.lru_cache(maxsize=1024)
     def _is_local_module(module_name: str, project_root: str) -> bool:
         """Check whether *module_name* maps to a .py file under *project_root*."""
         parts = module_name.split(".")
