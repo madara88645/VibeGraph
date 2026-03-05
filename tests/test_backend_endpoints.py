@@ -524,6 +524,7 @@ class TestRegression(unittest.TestCase):
         """POST /api/health should return 405 Method Not Allowed."""
         resp = self.client.post("/api/health")
         self.assertEqual(resp.status_code, 405)
+        self.assertEqual(resp.json()["detail"], "Method Not Allowed")
 
     @patch("serve.teacher")
     def test_explain_endpoint(self, mock_teacher):
