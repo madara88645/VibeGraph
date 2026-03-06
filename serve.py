@@ -191,6 +191,7 @@ def get_snippet(request: SnippetRequest):
 
 @app.get("/api/health")
 def health():
+    """Basic health check."""
     return {"status": "ok", "vibe": "checked"}
 
 
