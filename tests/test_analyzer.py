@@ -23,14 +23,6 @@ class TestCodeAnalyzerStructure(unittest.TestCase):
         # Nodes: helper, main. Edge: main -> helper.
         # Actually NetworkX nodes/edges are just node names.
 
-        expected_nodes = "helper, main"
-        # NetworkX edges format is list of tuples
-        expected_edges = "[('main', 'helper')]"
-
-        expected_output = f"Target: {self.dummy_file}\n"
-        expected_output += f"Nodes (2): helper, main\n"
-        expected_output += f"Edges (1): [('main', 'helper')]\n"
-
         # We need to consider node iteration order, so we shouldn't strictly match the whole string
         # unless we know the order. NetworkX preserves insertion order.
         # CallGraphVisitor visits definitions: helper then main.
