@@ -26,7 +26,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from fastapi.testclient import TestClient
-from serve import app, UPLOAD_PREFIX
+from serve import app, UPLOAD_PREFIX, _extract_snippet
 from analyst.analyzer import CodeAnalyzer
 
 
@@ -685,6 +685,65 @@ class TestSnippetPathTraversal(unittest.TestCase):
             self.assertIn("def my_func", data["snippet"])
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# 7. Unit Tests for _extract_snippet
+# ---------------------------------------------------------------------------
+
+class TestExtractSnippetUnit(unittest.TestCase):
+    """Directly tests the _extract_snippet function for various edge cases and errors."""
+
+    def setUp(self):
+        self.ctx = _TempProject()
+        self.proj = self.ctx.__enter__()
+
+    def tearDown(self):
+        self.ctx.__exit__(None, None, None)
+
+    def test_extract_snippet_none_path(self):
+        """Should handle missing/None file_path properly."""
+        snippet = _extract_snippet(None, "my_node")
+        self.assertIn("# External or Built-in: my_node", snippet)
+
+    def test_extract_snippet_unsafe_path(self):
+        """Should deny paths outside of safe directories."""
+        snippet = _extract_snippet("../../../../etc/passwd", "root")
+        self.assertIn("# Access denied: Unsafe file path", snippet)
+
+    def test_extract_snippet_invalid_file(self):
+        """Should return default fallback for a safe path that doesn't exist."""
+        nonexistent = os.path.join(self.proj.tmpdir, "nonexistent.py")
+        snippet = _extract_snippet(nonexistent, "my_node")
+        self.assertIn("# Source for my_node (External/Built-in)", snippet)
+
+    def test_extract_snippet_oserror(self):
+        """Should handle OSError when trying to read the file."""
+        # Create a file with no read permissions to trigger OSError (PermissionError)
+        unreadable_file = os.path.join(self.proj.tmpdir, "unreadable.py")
+        with open(unreadable_file, "w", encoding="utf-8") as f:
+            f.write("def hidden(): pass")
+        os.chmod(unreadable_file, 0o000)
+
+        try:
+            snippet = _extract_snippet(unreadable_file, "hidden")
+            self.assertIn("# Error reading file:", snippet)
+        finally:
+            os.chmod(unreadable_file, 0o644)
+
+    def test_extract_snippet_syntax_error(self):
+        """Should handle syntax errors in the python file."""
+        broken_file = os.path.join(self.proj.tmpdir, "broken.py")
+        with open(broken_file, "w", encoding="utf-8") as f:
+            f.write("def broken(:\n    pass\n")
+
+        snippet = _extract_snippet(broken_file, "broken")
+        self.assertIn("# Syntax error in", snippet)
+
+    def test_extract_snippet_node_not_found(self):
+        """Should return mismatch message if the node is not found in the file."""
+        snippet = _extract_snippet(self.proj.file_a, "nonexistent_node")
+        self.assertIn("# Code for 'nonexistent_node' not found in", snippet)
 
 
 # ---------------------------------------------------------------------------
