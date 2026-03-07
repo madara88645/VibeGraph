@@ -121,6 +121,29 @@ class TestAnalyzerForSearch(unittest.TestCase):
         self.assertIn("error", result)
         self.assertTrue(result["error"].startswith("Syntax error in"))
 
+    def test_analyze_single_file_method_syntax_error_no_merge(self):
+        """Invalid syntax in _analyze_single_file with merge=False."""
+        analyzer = CodeAnalyzer()
+        broken_file = os.path.join(self.proj.tmpdir, "broken.py")
+        with open(broken_file, "w", encoding="utf-8") as f:
+            f.write("def broken(:\n    pass\n")
+
+        result = analyzer._analyze_single_file(broken_file, merge=False)
+        self.assertIn("error", result)
+        self.assertTrue(result["error"].startswith("Syntax error in"))
+
+    def test_analyze_single_file_method_syntax_error_merge(self):
+        """Invalid syntax in _analyze_single_file with merge=True."""
+        analyzer = CodeAnalyzer()
+        broken_file = os.path.join(self.proj.tmpdir, "broken.py")
+        with open(broken_file, "w", encoding="utf-8") as f:
+            f.write("def broken(:\n    pass\n")
+
+        result = analyzer._analyze_single_file(broken_file, merge=True)
+        self.assertEqual(result, {})
+        self.assertEqual(len(analyzer.errors), 1)
+        self.assertTrue(analyzer.errors[0].startswith("Syntax error in"))
+
     def test_single_file_contains_expected_nodes(self):
         """Analyzer must return all classes and functions as graph nodes."""
         analyzer = CodeAnalyzer()
