@@ -113,7 +113,7 @@ class TestBasicTeacher(unittest.TestCase):
         # Use a real DiGraph instance so isinstance(graph, nx.DiGraph) succeeds
         graph = nx.DiGraph()
 
-        # Make graph.nodes() raise an exception
+        # Make graph.nodes(data=True) raise an exception
         graph.nodes = MagicMock(side_effect=RuntimeError("Mocked graph error"))
 
         # Ensure our assumption about the type check holds
