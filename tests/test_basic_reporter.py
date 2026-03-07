@@ -118,5 +118,22 @@ class TestBasicTeacher(unittest.TestCase):
         lesson = self.teacher.generate_lesson(graph, "coupled.py")
         self.assertIn("This module is **highly coupled** (many connections).", lesson)
 
+    def test_graph_runtime_error(self):
+        from unittest.mock import MagicMock
+
+        # Use a real DiGraph instance so isinstance(graph, nx.DiGraph) succeeds
+        graph = nx.DiGraph()
+
+        # Make graph.nodes(data=True) raise an exception
+        graph.nodes = MagicMock(side_effect=RuntimeError("Mocked graph error"))
+
+        # Ensure our assumption about the type check holds
+        self.assertIsInstance(graph, nx.DiGraph)
+
+        with self.assertRaises(RuntimeError) as context:
+            self.teacher.generate_lesson(graph, "error.py")
+
+        self.assertEqual(str(context.exception), "Mocked graph error")
+
 if __name__ == "__main__":
     unittest.main()
