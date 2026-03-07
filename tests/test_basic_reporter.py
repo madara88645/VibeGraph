@@ -36,6 +36,17 @@ class TestBasicTeacher(unittest.TestCase):
         self.assertNotIn("This module contains", lesson)
         self.assertNotIn("It defines", lesson)
 
+    def test_empty_graph_edge_case(self):
+        graph = nx.DiGraph()
+        # Edge case: graph with nodes that have no 'type' attribute
+        graph.add_node("untyped_node")
+
+        lesson = self.teacher.generate_lesson(graph, "untyped_edge_case.py")
+
+        self.assertIsInstance(lesson, str)
+        self.assertGreater(len(lesson), 0)
+        self.assertIn("untyped_edge_case.py", lesson)
+
     def test_only_classes(self):
         graph = nx.DiGraph()
         graph.add_node("MyClass", type="class")
@@ -106,6 +117,23 @@ class TestBasicTeacher(unittest.TestCase):
 
         lesson = self.teacher.generate_lesson(graph, "coupled.py")
         self.assertIn("This module is **highly coupled** (many connections).", lesson)
+
+    def test_graph_runtime_error(self):
+        from unittest.mock import MagicMock
+
+        # Use a real DiGraph instance so isinstance(graph, nx.DiGraph) succeeds
+        graph = nx.DiGraph()
+
+        # Make graph.nodes(data=True) raise an exception
+        graph.nodes = MagicMock(side_effect=RuntimeError("Mocked graph error"))
+
+        # Ensure our assumption about the type check holds
+        self.assertIsInstance(graph, nx.DiGraph)
+
+        with self.assertRaises(RuntimeError) as context:
+            self.teacher.generate_lesson(graph, "error.py")
+
+        self.assertEqual(str(context.exception), "Mocked graph error")
 
 if __name__ == "__main__":
     unittest.main()
