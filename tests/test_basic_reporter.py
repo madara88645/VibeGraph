@@ -110,14 +110,17 @@ class TestBasicTeacher(unittest.TestCase):
     def test_graph_runtime_error(self):
         from unittest.mock import MagicMock
 
-        # Create a mock that passes isinstance(graph, nx.DiGraph)
-        mock_graph = MagicMock(spec=nx.DiGraph)
+        # Use a real DiGraph instance so isinstance(graph, nx.DiGraph) succeeds
+        graph = nx.DiGraph()
 
         # Make graph.nodes() raise an exception
-        mock_graph.nodes.side_effect = RuntimeError("Mocked graph error")
+        graph.nodes = MagicMock(side_effect=RuntimeError("Mocked graph error"))
+
+        # Ensure our assumption about the type check holds
+        self.assertIsInstance(graph, nx.DiGraph)
 
         with self.assertRaises(RuntimeError) as context:
-            self.teacher.generate_lesson(mock_graph, "error.py")
+            self.teacher.generate_lesson(graph, "error.py")
 
         self.assertEqual(str(context.exception), "Mocked graph error")
 
