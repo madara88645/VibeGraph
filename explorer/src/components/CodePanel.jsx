@@ -40,7 +40,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             setError(null);
 
             try {
-                const response = await fetch('http://localhost:8000/api/snippet', {
+                const response = await fetch('/api/snippet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

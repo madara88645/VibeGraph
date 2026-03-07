@@ -19,7 +19,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
             setCurrentStep(0);
 
             try {
-                const response = await fetch('http://localhost:8000/api/learning-path', {
+                const response = await fetch('/api/learning-path', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ file_path: selectedFile }),

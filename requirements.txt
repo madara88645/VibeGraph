@@ -1,8 +1,5 @@
 networkx
-matplotlib
 rich
-openai
-langchain
 pydantic
 python-dotenv
 fastapi==0.109.2
