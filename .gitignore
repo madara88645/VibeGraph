@@ -11,3 +11,4 @@ venv/
 *.log
 explorer/public/graph_data.json
 explorer/dist/graph_data.json
+.coverage
