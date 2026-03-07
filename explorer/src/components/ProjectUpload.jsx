@@ -21,7 +21,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/upload-project', {
+            const response = await fetch('/api/upload-project', {
                 method: 'POST',
                 body: formData,
             });

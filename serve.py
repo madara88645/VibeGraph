@@ -45,10 +45,12 @@ app = FastAPI(title="Vibe Learning System API")
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 UPLOAD_PREFIX = "vibegraph_upload_"
 
+CORS_ORIGINS = os.getenv("VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000")
+
 # Enable CORS for development (allowing frontend on 5173 to talk to backend on 8000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -227,7 +229,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    node_id: str
+    node_id: str | None = None
     file_path: str | None = None
     question: str
     history: list[ChatMessage] = []

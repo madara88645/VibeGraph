@@ -719,17 +719,13 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
     def test_extract_snippet_oserror(self):
         """Should handle OSError when trying to read the file."""
-        # Create a file with no read permissions to trigger OSError (PermissionError)
         unreadable_file = os.path.join(self.proj.tmpdir, "unreadable.py")
         with open(unreadable_file, "w", encoding="utf-8") as f:
             f.write("def hidden(): pass")
-        os.chmod(unreadable_file, 0o000)
 
-        try:
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             snippet = _extract_snippet(unreadable_file, "hidden")
             self.assertIn("# Error reading file:", snippet)
-        finally:
-            os.chmod(unreadable_file, 0o644)
 
     def test_extract_snippet_syntax_error(self):
         """Should handle syntax errors in the python file."""
