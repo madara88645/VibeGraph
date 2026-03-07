@@ -38,11 +38,14 @@ class TestBasicTeacher(unittest.TestCase):
 
     def test_empty_graph_edge_case(self):
         graph = nx.DiGraph()
-        lesson = self.teacher.generate_lesson(graph, "empty_edge_case.py")
+        # Edge case: graph with nodes that have no 'type' attribute
+        graph.add_node("untyped_node")
+
+        lesson = self.teacher.generate_lesson(graph, "untyped_edge_case.py")
 
         self.assertIsInstance(lesson, str)
         self.assertGreater(len(lesson), 0)
-        self.assertIn("empty_edge_case.py", lesson)
+        self.assertIn("untyped_edge_case.py", lesson)
 
     def test_only_classes(self):
         graph = nx.DiGraph()
