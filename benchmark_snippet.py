@@ -1,6 +1,6 @@
 import time
 from fastapi.testclient import TestClient
-from serve import app, SnippetRequest
+from serve import app
 
 client = TestClient(app)
 
