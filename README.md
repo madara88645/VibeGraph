@@ -1,7 +1,6 @@
 <div align="center">
 
-<!-- COVER IMAGE — replace with your generated cover once ready -->
-<!-- <img src="docs/screenshots/cover.png" alt="VibeGraph Cover" width="100%"> -->
+<img src="docs/screenshots/Bannervibe.png" alt="VibeGraph Banner" width="100%">
 
 # VibeGraph
 
