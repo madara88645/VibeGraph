@@ -101,6 +101,7 @@ class CodeAnalyzer:
         self.graph = nx.DiGraph() 
         self.definitions = []
         
+        graphs = []
         for root, _, files in os.walk(dir_path):
             for file in files:
                 if file.endswith(".py"):
@@ -109,7 +110,12 @@ class CodeAnalyzer:
                     if "site-packages" in full_path or "node_modules" in full_path or "__pycache__" in full_path:
                         continue
                         
-                    self._analyze_single_file(full_path, merge=True)
+                    result = self._analyze_single_file(full_path, merge=True)
+                    if "graph" in result:
+                        graphs.append(result["graph"])
+
+        if graphs:
+            self.graph = nx.compose_all(graphs)
                     
         return {
             "file": dir_path,
@@ -135,7 +141,6 @@ class CodeAnalyzer:
         visitor.visit(tree)
         
         if merge:
-            self.graph = nx.compose(self.graph, visitor.graph)
             self.definitions.extend(visitor.definitions)
         else:
             self.graph = visitor.graph
