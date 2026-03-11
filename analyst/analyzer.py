@@ -147,17 +147,6 @@ class CodeAnalyzer:
             "graph": visitor.graph
         }
 
-    def analyze_structure(self, file_path: str) -> str:
-        result = self.analyze_file(file_path)
-        if "error" in result:
-            return result["error"]
-
-        graph = result["graph"]
-        summary = f"Target: {result['file']}\n"
-        summary += f"Nodes ({graph.number_of_nodes()}): {', '.join(graph.nodes())}\n"
-        summary += f"Edges ({graph.number_of_edges()}): {list(graph.edges())}\n"
-        return summary
-
     # ------------------------------------------------------------------
     # Dependency extraction via import analysis
     # ------------------------------------------------------------------
