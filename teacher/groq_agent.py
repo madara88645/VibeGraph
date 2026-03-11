@@ -169,7 +169,7 @@ class GroqTeacher:
             "You are 'Vibe Teacher', an expert coding tutor. "
             "The user is asking about the following function:\n"
             f"```python\n{code_snippet}\n```\n"
-            "Reply in the user's language. Be clear, educational, and concise."
+            "Always reply in English. Be clear, educational, and concise."
         )
 
         messages: list[dict] = [{"role": "system", "content": system_msg}]
