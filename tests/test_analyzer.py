@@ -48,5 +48,66 @@ class TestCodeAnalyzerStructure(unittest.TestCase):
         summary = analyzer.analyze_structure(non_existent_file)
         self.assertEqual(summary, f"Path not found: {non_existent_file}")
 
+class TestIsLocalModule(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def test_local_module_py_file(self):
+        """Test detection of a plain .py file."""
+        module_path = os.path.join(self.tmpdir, "my_module.py")
+        with open(module_path, "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        self.assertTrue(CodeAnalyzer._is_local_module("my_module", self.tmpdir))
+
+    def test_local_module_package(self):
+        """Test detection of a package directory with __init__.py."""
+        pkg_path = os.path.join(self.tmpdir, "my_package")
+        os.makedirs(pkg_path)
+        with open(os.path.join(pkg_path, "__init__.py"), "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        self.assertTrue(CodeAnalyzer._is_local_module("my_package", self.tmpdir))
+
+    def test_nested_local_module(self):
+        """Test detection of a nested module inside a package."""
+        pkg_path = os.path.join(self.tmpdir, "my_package")
+        os.makedirs(pkg_path)
+        with open(os.path.join(pkg_path, "__init__.py"), "w", encoding="utf-8") as f:
+            f.write("# dummy")
+        with open(os.path.join(pkg_path, "nested_module.py"), "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        self.assertTrue(CodeAnalyzer._is_local_module("my_package.nested_module", self.tmpdir))
+
+    def test_nested_local_package(self):
+        """Test detection of a nested package."""
+        nested_pkg_path = os.path.join(self.tmpdir, "my_package", "nested_package")
+        os.makedirs(nested_pkg_path)
+        with open(os.path.join(self.tmpdir, "my_package", "__init__.py"), "w", encoding="utf-8") as f:
+            f.write("# dummy")
+        with open(os.path.join(nested_pkg_path, "__init__.py"), "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        self.assertTrue(CodeAnalyzer._is_local_module("my_package.nested_package", self.tmpdir))
+
+    def test_directory_without_init(self):
+        """Test that a directory without __init__.py is not considered a local module."""
+        dir_path = os.path.join(self.tmpdir, "just_a_dir")
+        os.makedirs(dir_path)
+
+        self.assertFalse(CodeAnalyzer._is_local_module("just_a_dir", self.tmpdir))
+
+    def test_nonexistent_module(self):
+        """Test that a non-existent module returns False."""
+        self.assertFalse(CodeAnalyzer._is_local_module("does_not_exist", self.tmpdir))
+
+
 if __name__ == "__main__":
     unittest.main()
