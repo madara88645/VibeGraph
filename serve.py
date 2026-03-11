@@ -95,38 +95,41 @@ def _is_safe_path(path: str) -> bool:
     return False
 
 
-def _extract_snippet(file_path: str, node_id: str) -> str:
+def _extract_snippet(file_path: str, node_id: str) -> tuple[str, int | None, int | None, str | None]:
     """
     Robustly extracts the source code of a function/class from *file_path*
     whose name matches the last segment of *node_id* (e.g. "MyClass.my_func"
     \u2192 looks for "my_func").
 
-    Returns the code string, or a descriptive fallback message.
+    Returns a tuple of:
+      (code_string, start_line, end_line, full_source)
+    where start_line and end_line are 1-indexed.
     """
     if not file_path:
         return (
             f"# External or Built-in: {node_id}\n"
-            "# (No source code available, please explain based on name/context.)"
+            "# (No source code available, please explain based on name/context.)",
+            None, None, None
         )
 
     resolved = os.path.realpath(file_path)
 
     if not _is_safe_path(resolved):
-        return f"# Access denied: Unsafe file path {file_path}"
+        return f"# Access denied: Unsafe file path {file_path}", None, None, None
 
     if not os.path.isfile(resolved):
-        return f"# Source for {node_id} (External/Built-in)"
+        return f"# Source for {node_id} (External/Built-in)", None, None, None
 
     try:
         with open(resolved, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError as e:
-        return f"# Error reading file: {e}"
+        return f"# Error reading file: {e}", None, None, None
 
     try:
         tree = ast.parse(source, filename=resolved)
     except SyntaxError as e:
-        return f"# Syntax error in {file_path}: {e}"
+        return f"# Syntax error in {file_path}: {e}", None, None, source
 
     target_name = node_id.split(".")[-1]
     lines = source.splitlines()
@@ -137,9 +140,9 @@ def _extract_snippet(file_path: str, node_id: str) -> str:
             if node.name == target_name:
                 start = node.lineno - 1          # 0-indexed
                 end = node.end_lineno or len(lines)
-                return "\n".join(lines[start:end])
+                return "\n".join(lines[start:end]), node.lineno, node.end_lineno, source
 
-    return f"# Code for '{node_id}' not found in {file_path} (analysis mismatch)."
+    return f"# Code for '{node_id}' not found in {file_path} (analysis mismatch).", None, None, source
 
 
 # ---------------------------------------------------------------------------
@@ -158,29 +161,7 @@ def get_snippet(request: SnippetRequest):
     Returns just the code snippet for a given node, without AI explanation.
     Lightweight endpoint for the Code Follow panel.
     """
-    snippet = _extract_snippet(request.file_path, request.node_id)
-
-    # Also find the line range for highlighting
-    start_line = None
-    end_line = None
-    full_source = None
-
-    if request.file_path:
-        resolved = os.path.realpath(request.file_path)
-        if _is_safe_path(resolved) and os.path.isfile(resolved):
-            try:
-                with open(resolved, "r", encoding="utf-8") as f:
-                    full_source = f.read()
-                tree = ast.parse(full_source, filename=resolved)
-                target_name = request.node_id.split(".")[-1]
-                for node in ast.walk(tree):
-                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                        if node.name == target_name:
-                            start_line = node.lineno
-                            end_line = node.end_lineno
-                            break
-            except Exception:
-                pass
+    snippet, start_line, end_line, full_source = _extract_snippet(request.file_path, request.node_id)
 
     return {
         "node_id": request.node_id,
@@ -203,7 +184,7 @@ def explain_node(request: ExplainRequest):
     Finds the source code for *node_id* in the given file and asks the
     Groq teacher to explain it at the requested difficulty level.
     """
-    snippet = _extract_snippet(request.file_path, request.node_id)
+    snippet, _, _, _ = _extract_snippet(request.file_path, request.node_id)
 
     explanation = teacher.explain_code(
         snippet,
@@ -241,7 +222,7 @@ def chat_with_node(request: ChatRequest):
     Free-form conversation about the code behind *node_id*.
     Supports multi-turn via *history*.
     """
-    snippet = _extract_snippet(request.file_path, request.node_id)
+    snippet, _, _, _ = _extract_snippet(request.file_path, request.node_id)
 
     history_dicts = [{"role": m.role, "content": m.content} for m in request.history]
 
