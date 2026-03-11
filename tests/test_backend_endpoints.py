@@ -714,7 +714,7 @@ class TestExtractSnippetUnit(unittest.TestCase):
     def test_extract_snippet_invalid_file(self):
         """Should return default fallback for a safe path that doesn't exist."""
         nonexistent = os.path.join(self.proj.tmpdir, "nonexistent.py")
-        snippet = _extract_snippet(nonexistent, "my_node")
+        snippet, _, _, _ = _extract_snippet(nonexistent, "my_node")
         self.assertIn("# Source for my_node (External/Built-in)", snippet)
 
     def test_extract_snippet_oserror(self):
