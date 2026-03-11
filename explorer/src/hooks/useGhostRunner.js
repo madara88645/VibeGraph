@@ -12,11 +12,15 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
 
     // Refs for Game Loop
     const nodesRef = useRef([]);
+    const nodesMapRef = useRef(new Map());
     const edgesRef = useRef([]);
     const activeNodeIdRef = useRef(null);
     const trailRef = useRef([]);
 
-    useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+    useEffect(() => {
+        nodesRef.current = nodes;
+        nodesMapRef.current = new Map(nodes.map(n => [n.id, n]));
+    }, [nodes]);
     useEffect(() => { edgesRef.current = edges; }, [edges]);
     useEffect(() => { activeNodeIdRef.current = activeNodeId; }, [activeNodeId]);
 
@@ -28,13 +32,14 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             if (!isPlaying) return;
 
             const currentNodes = nodesRef.current;
+            const currentNodesMap = nodesMapRef.current;
             const currentEdges = edgesRef.current;
             const currentActiveId = activeNodeIdRef.current;
             const trail = trailRef.current;
 
             if (currentNodes.length === 0) return;
 
-            const currentNode = currentActiveId ? currentNodes.find(n => n.id === currentActiveId) : null;
+            const currentNode = currentActiveId ? currentNodesMap.get(currentActiveId) : null;
             let nextNodeId;
 
             const pickRandom = (candidates) => {
@@ -50,7 +55,7 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                 const connectedEdges = currentEdges.filter(e => e.source === currentActiveId);
                 if (connectedEdges.length > 0) {
                     const targetNodes = connectedEdges
-                        .map(e => currentNodes.find(n => n.id === e.target))
+                        .map(e => currentNodesMap.get(e.target))
                         .filter(Boolean);
                     const withFile = targetNodes.filter(n => n.data?.file);
                     const pool = withFile.length > 0 ? withFile : targetNodes;
@@ -68,7 +73,7 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             setActiveNodeId(nextNodeId);
             setStepCount(prev => prev + 1);
 
-            const nextNode = currentNodes.find(n => n.id === nextNodeId);
+            const nextNode = currentNodesMap.get(nextNodeId);
             setCurrentLabel(nextNode?.data?.label || '');
 
             if (nextNode && nextNode.data?.file) {
