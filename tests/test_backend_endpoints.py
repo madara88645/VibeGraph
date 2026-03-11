@@ -703,12 +703,12 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
     def test_extract_snippet_none_path(self):
         """Should handle missing/None file_path properly."""
-        snippet = _extract_snippet(None, "my_node")
+        snippet, _, _, _ = _extract_snippet(None, "my_node")
         self.assertIn("# External or Built-in: my_node", snippet)
 
     def test_extract_snippet_unsafe_path(self):
         """Should deny paths outside of safe directories."""
-        snippet = _extract_snippet("../../../../etc/passwd", "root")
+        snippet, _, _, _ = _extract_snippet("../../../../etc/passwd", "root")
         self.assertIn("# Access denied: Unsafe file path", snippet)
 
     def test_extract_snippet_invalid_file(self):
@@ -724,7 +724,7 @@ class TestExtractSnippetUnit(unittest.TestCase):
             f.write("def hidden(): pass")
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
-            snippet = _extract_snippet(unreadable_file, "hidden")
+            snippet, _, _, _ = _extract_snippet(unreadable_file, "hidden")
             self.assertIn("# Error reading file:", snippet)
 
     def test_extract_snippet_syntax_error(self):
@@ -733,12 +733,12 @@ class TestExtractSnippetUnit(unittest.TestCase):
         with open(broken_file, "w", encoding="utf-8") as f:
             f.write("def broken(:\n    pass\n")
 
-        snippet = _extract_snippet(broken_file, "broken")
+        snippet, _, _, _ = _extract_snippet(broken_file, "broken")
         self.assertIn("# Syntax error in", snippet)
 
     def test_extract_snippet_node_not_found(self):
         """Should return mismatch message if the node is not found in the file."""
-        snippet = _extract_snippet(self.proj.file_a, "nonexistent_node")
+        snippet, _, _, _ = _extract_snippet(self.proj.file_a, "nonexistent_node")
         self.assertIn("# Code for 'nonexistent_node' not found in", snippet)
 
 
