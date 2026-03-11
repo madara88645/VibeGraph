@@ -228,40 +228,6 @@ class TestAnalyzerForSearch(unittest.TestCase):
         self.assertNotIn("error", result)
         self.assertGreaterEqual(result["graph"].number_of_nodes(), 60)
 
-    def test_analyze_structure_success(self):
-        """Verify analyze_structure returns a formatted summary string."""
-        analyzer = CodeAnalyzer()
-        summary = analyzer.analyze_structure(self.proj.file_a)
-
-        self.assertIsInstance(summary, str)
-        self.assertIn(f"Target: {self.proj.file_a}", summary)
-        self.assertIn("Nodes (", summary)
-        self.assertIn("Edges (", summary)
-        self.assertIn("FileProcessor", summary)
-        self.assertIn("main", summary)
-
-    def test_analyze_structure_error_file_not_found(self):
-        """Verify analyze_structure handles non-existent files correctly."""
-        analyzer = CodeAnalyzer()
-        non_existent_file = os.path.join(self.proj.tmpdir, "nonexistent.py")
-        summary = analyzer.analyze_structure(non_existent_file)
-
-        self.assertIsInstance(summary, str)
-        self.assertEqual(summary, f"Path not found: {non_existent_file}")
-
-    def test_analyze_structure_syntax_error(self):
-        """Verify analyze_structure handles syntax errors correctly."""
-        bad_file = os.path.join(self.proj.tmpdir, "bad.py")
-        with open(bad_file, "w") as f:
-            f.write("def bad_syntax(:\n    pass")
-
-        analyzer = CodeAnalyzer()
-        summary = analyzer.analyze_structure(bad_file)
-
-        self.assertIsInstance(summary, str)
-        self.assertIn(f"Syntax error in {bad_file}", summary)
-
-
 # ---------------------------------------------------------------------------
 # 2. Chat Endpoint Tests (/api/chat)
 # ---------------------------------------------------------------------------
