@@ -5,10 +5,7 @@ class BasicTeacher:
         pass
 
     def generate_lesson(self, graph: nx.DiGraph, file_path: str) -> str:
-        """
-        Generates a mock 'lesson' based on the graph structure.
-        In Phase 3, this will use an LLM.
-        """
+        """Generates a lesson summary based on the graph structure."""
         if not isinstance(graph, nx.DiGraph):
             raise ValueError("Invalid graph provided")
         
@@ -20,7 +17,8 @@ class BasicTeacher:
         functions = [n for n, d in graph.nodes(data=True) if d.get('type') == 'function']
         
         if classes:
-            lesson += f"This module contains **{len(classes)} classes**: `{', '.join(classes)}`.\n"
+            class_word = "class" if len(classes) == 1 else "classes"
+            lesson += f"This module contains **{len(classes)} {class_word}**: `{', '.join(classes)}`.\n"
         if functions:
             lesson += f"It defines **{len(functions)} functions**: `{', '.join(functions)}`.\n"
             

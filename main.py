@@ -55,7 +55,7 @@ def main():
         exporter = GraphExporter()
         
         output_path = args.out
-        exporter.export_to_json(graph, output_path)
+        exporter.export_to_react_flow(graph, output_path)
         
         console.print(f"[bold blue]Graph exported to:[/bold blue] {output_path}")
 

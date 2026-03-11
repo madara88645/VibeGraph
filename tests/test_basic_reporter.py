@@ -82,7 +82,7 @@ class TestBasicTeacher(unittest.TestCase):
 
         lesson = self.teacher.generate_lesson(graph, "mixed.py")
 
-        self.assertIn("This module contains **1 classes**: `MyClass`.", lesson)
+        self.assertIn("This module contains **1 class**: `MyClass`.", lesson)
         self.assertIn("It defines **2 functions**: `my_func, helper_func`.", lesson)
         self.assertIn("Here is how the components interact:", lesson)
         self.assertIn("- `my_func` calls `helper_func`", lesson)

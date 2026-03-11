@@ -1,12 +1,13 @@
 import os
 import sys
 import ast
+import time
 import shutil
 import tempfile
 import uvicorn
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,31 +15,6 @@ from pydantic import BaseModel
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
-import json as _agent_json
-import time as _agent_time
-
-# region agent log
-def _agent_debug_log(run_id: str, hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
-    """
-    Lightweight debug logger for the AI agent.
-    Writes NDJSON lines to debug-0b7624.log for this session.
-    """
-    try:
-        payload = {
-            "sessionId": "0b7624",
-            "runId": run_id,
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data or {},
-            "timestamp": int(_agent_time.time() * 1000),
-        }
-        with open("debug-0b7624.log", "a", encoding="utf-8") as f:
-            f.write(_agent_json.dumps(payload) + "\n")
-    except Exception as e:
-        # Never let logging break the main flow, but at least report the error
-        print(f"DEBUG LOG ERROR: {e}", file=sys.stderr)
-# endregion
 
 app = FastAPI(title="Vibe Learning System API")
 
@@ -57,14 +33,13 @@ app.add_middleware(
 )
 
 teacher = GroqTeacher()
-analyzer = CodeAnalyzer()
 exporter = GraphExporter()
 
 
 class ExplainRequest(BaseModel):
     file_path: str | None = None
     node_id: str
-    level: str = "intermediate"
+    level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +180,7 @@ def explain_node(request: ExplainRequest):
 
 
 class ChatMessage(BaseModel):
-    role: str  # "user" or "assistant"
+    role: Literal["user", "assistant"]
     content: str
 
 
@@ -256,7 +231,7 @@ def suggest_learning_path(request: LearningPathRequest):
     if not os.path.isfile(request.file_path):
         raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
 
-    result = analyzer.analyze_file(request.file_path)
+    result = CodeAnalyzer().analyze_file(request.file_path)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
@@ -289,7 +264,7 @@ def cleanup_tmp_dir(path: str):
 
 def cleanup_expired_upload_dirs(retention_seconds: int = UPLOAD_RETENTION_SECONDS) -> None:
     """Remove old upload temp folders, keeping recent uploads available."""
-    now = _agent_time.time()
+    now = time.time()
     temp_root = Path(tempfile.gettempdir())
     for candidate in temp_root.glob(f"{UPLOAD_PREFIX}*"):
         try:
@@ -330,23 +305,9 @@ def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = 
     background_tasks.add_task(cleanup_expired_upload_dirs)
     tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
 
-    # region agent log
-    _agent_debug_log(
-        run_id="pre-fix",
-        hypothesis_id="H1",
-        location="serve.py:245",
-        message="upload_project_called",
-        data={
-            "tmp_dir": tmp_dir,
-            "incoming_file_count": len(files),
-            "sample_filenames": [getattr(f, "filename", None) for f in list(files)[:5]],
-        },
-    )
-    # endregion
+    MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100 MB
 
     try:
-        saved_files: list[dict] = []
-
         for file in files:
             safe_name = _normalize_uploaded_filename(file.filename)
             file_path = os.path.join(tmp_dir, safe_name)
@@ -355,123 +316,41 @@ def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = 
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            saved_files.append(
-                {
-                    "stored_path": file_path,
-                    "original_name": safe_name,
-                    "is_zip": safe_name.endswith(".zip"),
-                }
-            )
-
-            # If it's a zip file, extract it
+            # If it's a zip file, validate and extract it
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
+                    # Check for path traversal
                     for member in zip_ref.infolist():
                         extracted_path = os.path.abspath(os.path.join(tmp_dir_abs, member.filename))
                         if not extracted_path.startswith(tmp_dir_abs + os.sep) and extracted_path != tmp_dir_abs:
                             raise HTTPException(status_code=400, detail=f"Unsafe zip file detected: {safe_name}")
+                    # Check for zip bomb
+                    total_size = sum(m.file_size for m in zip_ref.infolist())
+                    if total_size > MAX_UNCOMPRESSED_SIZE:
+                        raise HTTPException(status_code=400, detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})")
                     zip_ref.extractall(tmp_dir)
                 os.remove(file_path)  # Remove zip after extraction
 
-        # region agent log
-        _agent_debug_log(
-            run_id="pre-fix",
-            hypothesis_id="H1",
-            location="serve.py:266",
-            message="before_analyze_file",
-            data={
-                "tmp_dir": tmp_dir,
-                "saved_file_count": len(saved_files),
-                "saved_files_sample": saved_files[:5],
-            },
-        )
-        # endregion
-
         # Run analysis on the directory
-        result = analyzer.analyze_file(tmp_dir)
-
-        # region agent log
-        _agent_debug_log(
-            run_id="pre-fix",
-            hypothesis_id="H1",
-            location="serve.py:273",
-            message="after_analyze_file",
-            data={
-                "has_error_key": "error" in result,
-                "error_value": result.get("error"),
-                "errors_count": len(result.get("errors", []))
-                if isinstance(result, dict)
-                else None,
-                "node_count": result.get("graph").number_of_nodes()
-                if isinstance(result, dict) and result.get("graph") is not None
-                else None,
-            },
-        )
-        # endregion
+        result = CodeAnalyzer().analyze_file(tmp_dir)
 
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
 
         if result.get("errors") and result["graph"].number_of_nodes() == 0:
-            # If all files had errors, return the first error
             raise HTTPException(status_code=400, detail=result["errors"][0])
 
         graph = result["graph"]
-
-        # Use GraphExporter for consistent React Flow JSON format
-        # We don't provide an output_path because we want the dict returned
         response_data = exporter.export_to_react_flow(graph)
-
-        # Keep uploaded source available for follow-up snippet/explain calls.
-        # Old upload dirs are cleaned periodically by cleanup_expired_upload_dirs().
-        response_data["upload_root"] = tmp_dir
-        response_data["upload_expires_in_seconds"] = UPLOAD_RETENTION_SECONDS
-
-        # region agent log
-        _agent_debug_log(
-            run_id="pre-fix",
-            hypothesis_id="H1",
-            location="serve.py:285",
-            message="upload_project_success",
-            data={
-                "node_count": len(response_data.get("nodes", [])),
-                "edge_count": len(response_data.get("edges", [])),
-            },
-        )
-        # endregion
 
         return response_data
 
-    except HTTPException as exc:
+    except HTTPException:
         cleanup_tmp_dir(tmp_dir)
-        # region agent log
-        _agent_debug_log(
-            run_id="pre-fix",
-            hypothesis_id="H2",
-            location="serve.py:293",
-            message="upload_project_http_exception",
-            data={
-                "status_code": getattr(exc, "status_code", None),
-                "detail": getattr(exc, "detail", None),
-            },
-        )
-        # endregion
         raise
     except Exception as e:
         cleanup_tmp_dir(tmp_dir)
-        # region agent log
-        _agent_debug_log(
-            run_id="pre-fix",
-            hypothesis_id="H2",
-            location="serve.py:302",
-            message="upload_project_unexpected_exception",
-            data={
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-            },
-        )
-        # endregion
         raise HTTPException(status_code=500, detail=f"Upload/Analysis failed: {str(e)}")
 
 

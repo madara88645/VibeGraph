@@ -54,7 +54,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 setCodeData(data);
                 lastFetchedId.current = activeNode.id;
             } catch (err) {
-                setError('Backend bağlantısı kurulamadı');
+                setError('Could not connect to backend');
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -165,8 +165,8 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 {!loading && !error && !codeData && (
                     <div className="code-placeholder">
                         {isGhostRunning
-                            ? '👻 Ghost Runner başlatıldığında kod otomatik gösterilecek...'
-                            : 'Bir node\'a tıklayın veya Ghost Runner\'ı başlatın'}
+                            ? '👻 Code will appear automatically when Ghost Runner starts...'
+                            : 'Click a node or start Ghost Runner'}
                     </div>
                 )}
             </div>

@@ -163,12 +163,13 @@ class GroqTeacher:
         str  – Markdown-formatted answer.
         """
         if not self.client:
-            return "⚠️ GROQ_API_KEY eksik. `.env` dosyanı kontrol et."
+            return "⚠️ GROQ_API_KEY not found. Check your `.env` file."
 
         system_msg = (
-            "Sen bir kod öğretmenisin. Kullanıcı şu fonksiyon hakkında soru soruyor:\n"
+            "You are 'Vibe Teacher', an expert coding tutor. "
+            "The user is asking about the following function:\n"
             f"```python\n{code_snippet}\n```\n"
-            "Türkçe veya kullanıcının dilinde, net ve öğretici cevap ver."
+            "Reply in the user's language. Be clear, educational, and concise."
         )
 
         messages: list[dict] = [{"role": "system", "content": system_msg}]
@@ -187,7 +188,7 @@ class GroqTeacher:
             )
             return completion.choices[0].message.content
         except Exception as e:
-            return f"⚠️ Groq API hatası: {e}"
+            return f"⚠️ Groq API error: {e}"
 
     # ------------------------------------------------------------------
     # Suggest a learning path for a file's nodes / edges
@@ -217,12 +218,12 @@ class GroqTeacher:
         )
 
         user_prompt = (
-            f"Bu Python dosyasındaki ({file_path}) fonksiyonlar ve sınıflar:\n"
+            f"The following functions and classes are in the Python file ({file_path}):\n"
             f"{nodes_summary}\n\n"
-            f"Aralarındaki çağrı ilişkileri (edges):\n"
+            f"Call relationships between them (edges):\n"
             f"{edges_summary}\n\n"
-            "Bir öğrenci bu dosyayı öğrenmek istese hangi sırayla incelemeli? "
-            "JSON array olarak cevap ver."
+            "In what order should a student study this file to understand it best? "
+            "Reply as a JSON array."
         )
 
         try:
