@@ -7,28 +7,65 @@ on:
     branches: [main]
 
 jobs:
-  ci:
+  lint:
+    name: Lint (ruff)
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
+      - run: pip install ruff
+      - run: ruff check . --select E,F --ignore E501,E402 --exclude tests/upload_cases
 
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Lint (ruff)
-        run: ruff check . --select E,F --ignore E501,E402 --exclude tests/upload_cases
-
-      - name: Type check (mypy)
-        run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
-
       - name: Run tests
         run: python -m pytest tests/ -v --ignore=tests/test_upload.py
+        env:
+          GROQ_API_KEY: dummy-key-for-ci
+
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: explorer/package-lock.json
+      - run: npm ci
+        working-directory: explorer
+      - run: npm run build
+        working-directory: explorer
