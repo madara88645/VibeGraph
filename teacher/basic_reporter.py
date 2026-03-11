@@ -28,8 +28,8 @@ class BasicTeacher:
         lesson += "\n## 2. Key Interactions\n"
         if graph.number_of_edges() > 0:
             lesson += "Here is how the components interact:\n"
-            for u, v in graph.edges():
-                lesson += f"- `{u}` calls `{v}`\n"
+            edges_text = [f"- `{u}` calls `{v}`\n" for u, v in graph.edges()]
+            lesson += "".join(edges_text)
         else:
             lesson += "No internal function calls detected in this file.\n"
 
