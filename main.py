@@ -95,11 +95,12 @@ def main():
         # Build if dist is missing or empty
         if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
             try:
+                npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
                 # Install deps if needed
                 if not os.path.exists(os.path.join("explorer", "node_modules")):
-                     subprocess.run("npm install", cwd="explorer", shell=True, check=True)
+                     subprocess.run([npm_cmd, "install"], cwd="explorer", check=True)
                 
-                subprocess.run("npm run build", cwd="explorer", shell=True, check=True)
+                subprocess.run([npm_cmd, "run", "build"], cwd="explorer", check=True)
             except subprocess.CalledProcessError:
                 return
         else:
