@@ -78,6 +78,7 @@ class CodeAnalyzer:
         self.graph = nx.DiGraph()
         self.definitions = []
         self.errors = []
+        self._subgraphs = []
 
     def analyze_file(self, target_path: str) -> dict[str, Any]:
         """
@@ -87,6 +88,7 @@ class CodeAnalyzer:
         self.graph = nx.DiGraph()
         self.definitions = []
         self.errors = []
+        self._subgraphs = []
 
         if not os.path.exists(target_path):
             return {"error": f"Path not found: {target_path}"}
@@ -100,8 +102,8 @@ class CodeAnalyzer:
         # Clear state for a fresh directory analysis
         self.graph = nx.DiGraph() 
         self.definitions = []
+        self._subgraphs = []
         
-        graphs = []
         for root, _, files in os.walk(dir_path):
             for file in files:
                 if file.endswith(".py"):
@@ -110,12 +112,10 @@ class CodeAnalyzer:
                     if "site-packages" in full_path or "node_modules" in full_path or "__pycache__" in full_path:
                         continue
                         
-                    result = self._analyze_single_file(full_path, merge=True)
-                    if "graph" in result:
-                        graphs.append(result["graph"])
+                    self._analyze_single_file(full_path, merge=True)
 
-        if graphs:
-            self.graph = nx.compose_all(graphs)
+        if self._subgraphs:
+            self.graph = nx.compose_all(self._subgraphs)
                     
         return {
             "file": dir_path,
@@ -141,6 +141,7 @@ class CodeAnalyzer:
         visitor.visit(tree)
         
         if merge:
+            self._subgraphs.append(visitor.graph)
             self.definitions.extend(visitor.definitions)
         else:
             self.graph = visitor.graph
