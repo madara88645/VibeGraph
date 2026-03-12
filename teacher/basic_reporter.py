@@ -1,5 +1,6 @@
 import networkx as nx
 
+
 class BasicTeacher:
     def __init__(self):
         pass
@@ -8,20 +9,22 @@ class BasicTeacher:
         """Generates a lesson summary based on the graph structure."""
         if not isinstance(graph, nx.DiGraph):
             raise ValueError("Invalid graph provided")
-        
+
         lesson = f"# Lesson: Understanding {file_path}\n\n"
-        
+
         # 1. Structure Overview
         lesson += "## 1. Structural Overview\n"
-        classes = [n for n, d in graph.nodes(data=True) if d.get('type') == 'class']
-        functions = [n for n, d in graph.nodes(data=True) if d.get('type') == 'function']
-        
+        classes = [n for n, d in graph.nodes(data=True) if d.get("type") == "class"]
+        functions = [
+            n for n, d in graph.nodes(data=True) if d.get("type") == "function"
+        ]
+
         if classes:
             class_word = "class" if len(classes) == 1 else "classes"
             lesson += f"This module contains **{len(classes)} {class_word}**: `{', '.join(classes)}`.\n"
         if functions:
             lesson += f"It defines **{len(functions)} functions**: `{', '.join(functions)}`.\n"
-            
+
         # 2. Key Interactions (Edges)
         lesson += "\n## 2. Key Interactions\n"
         if graph.number_of_edges() > 0:

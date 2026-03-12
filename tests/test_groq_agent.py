@@ -2,6 +2,7 @@ import unittest
 
 from teacher.groq_agent import _try_parse_json
 
+
 class TestTryParseJson(unittest.TestCase):
     def test_valid_json(self):
         result = _try_parse_json('{"key": "value"}')
@@ -30,8 +31,8 @@ class TestTryParseJson(unittest.TestCase):
 
     def test_empty_string(self):
         with self.assertRaises(ValueError) as context:
-            _try_parse_json('')
-        self.assertEqual(str(context.exception), '')
+            _try_parse_json("")
+        self.assertEqual(str(context.exception), "")
 
     def test_malformed_markdown_fences(self):
         result = _try_parse_json('```json{"key": "value"}')

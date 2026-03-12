@@ -5,6 +5,7 @@ from serve import app
 
 client = TestClient(app)
 
+
 def test_upload_zip_slip():
     # Create a malicious zip file
     zip_path = "malicious.zip"
@@ -17,7 +18,7 @@ def test_upload_zip_slip():
     with open(zip_path, "rb") as f:
         response = client.post(
             "/api/upload-project",
-            files={"files": ("malicious.zip", f, "application/zip")}
+            files={"files": ("malicious.zip", f, "application/zip")},
         )
 
     # Clean up
@@ -25,6 +26,7 @@ def test_upload_zip_slip():
 
     assert response.status_code == 400
     assert "Unsafe zip file detected" in response.json()["detail"]
+
 
 def test_upload_safe_zip():
     # Create a safe zip file
@@ -35,8 +37,7 @@ def test_upload_safe_zip():
 
     with open(zip_path, "rb") as f:
         response = client.post(
-            "/api/upload-project",
-            files={"files": ("safe.zip", f, "application/zip")}
+            "/api/upload-project", files={"files": ("safe.zip", f, "application/zip")}
         )
 
     # Clean up

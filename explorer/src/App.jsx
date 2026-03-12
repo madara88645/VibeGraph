@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { ReactFlowProvider, useNodesState, useEdgesState, addEdge } from 'reactflow';
+import { ReactFlowProvider, useNodesState, useEdgesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import GraphViewer from './components/GraphViewer';
@@ -71,11 +71,6 @@ function AppInner() {
       setActiveNodeId(null);
     });
   }, [handleUploadSuccess, resetInteractionState, setIsPlaying, setActiveNodeId]);
-
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
 
   return (
     <div className="app-shell">

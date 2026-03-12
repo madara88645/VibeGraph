@@ -53,6 +53,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
             const aiContent = data.answer || data.response || data.message || 'No response.';
             setMessages((prev) => [...prev, { role: 'assistant', content: aiContent }]);
         } catch (err) {
+            console.error("Chat error:", err);
             setMessages((prev) => [
                 ...prev,
                 { role: 'assistant', content: '⚠️ Could not reach the backend. Is serve.py running?' },

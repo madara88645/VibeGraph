@@ -212,8 +212,8 @@ class GroqTeacher:
 
         system_msg = (
             "You are a coding tutor. You MUST reply with ONLY a valid JSON object.\n"
-            "The JSON object must have exactly one key: \"steps\" which is an array.\n"
-            "Each element: {\"step\": <int>, \"node_id\": \"<str>\", \"reason\": \"<str>\"}.\n"
+            'The JSON object must have exactly one key: "steps" which is an array.\n'
+            'Each element: {"step": <int>, "node_id": "<str>", "reason": "<str>"}.\n'
             "Do NOT wrap in code fences. Output raw JSON only."
         )
 

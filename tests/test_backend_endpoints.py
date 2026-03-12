@@ -66,14 +66,14 @@ def helper():
     print("I am a helper")
 '''
 
-DUMMY_CODE_B = '''\
+DUMMY_CODE_B = """\
 from file_a import FileProcessor
 
 class Orchestrator:
     def run(self):
         fp = FileProcessor("data")
         fp.process("input.csv")
-'''
+"""
 
 
 class _TempProject:
@@ -171,7 +171,10 @@ class TestAnalyzerForSearch(unittest.TestCase):
 
         query = "proc"
         matches = [n for n in node_ids if query.lower() in n.lower()]
-        self.assertTrue(len(matches) >= 1, f"'proc' should match FileProcessor.process (got {matches})")
+        self.assertTrue(
+            len(matches) >= 1,
+            f"'proc' should match FileProcessor.process (got {matches})",
+        )
         self.assertIn("FileProcessor.process", matches)
 
     def test_empty_search_returns_nothing(self):
@@ -196,8 +199,11 @@ class TestAnalyzerForSearch(unittest.TestCase):
             if node_id not in defined_names:
                 continue  # skip implicitly created external ref nodes
             self.assertIn("type", data, f"Node '{node_id}' missing 'type'")
-            self.assertIn(data["type"], ("function", "class"),
-                          f"Node '{node_id}' has unexpected type '{data['type']}'")
+            self.assertIn(
+                data["type"],
+                ("function", "class"),
+                f"Node '{node_id}' has unexpected type '{data['type']}'",
+            )
             self.assertIn("file", data, f"Node '{node_id}' missing 'file'")
 
     def test_directory_scan_merges_nodes(self):
@@ -228,6 +234,7 @@ class TestAnalyzerForSearch(unittest.TestCase):
         self.assertNotIn("error", result)
         self.assertGreaterEqual(result["graph"].number_of_nodes(), 60)
 
+
 # ---------------------------------------------------------------------------
 # 2. Chat Endpoint Tests (/api/chat)
 # ---------------------------------------------------------------------------
@@ -250,12 +257,15 @@ class TestChatEndpoint(unittest.TestCase):
         """Basic chat call should return an answer string."""
         mock_teacher.chat.return_value = "Bu fonksiyon dosyaları okur."
 
-        resp = self.client.post("/api/chat", json={
-            "node_id": "main",
-            "file_path": self.proj.file_a,
-            "question": "Bu fonksiyon ne yapar?",
-            "history": [],
-        })
+        resp = self.client.post(
+            "/api/chat",
+            json={
+                "node_id": "main",
+                "file_path": self.proj.file_a,
+                "question": "Bu fonksiyon ne yapar?",
+                "history": [],
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -268,12 +278,15 @@ class TestChatEndpoint(unittest.TestCase):
         """Chat should work even when node_id is a generic value (no file)."""
         mock_teacher.chat.return_value = "Genel bir cevap."
 
-        resp = self.client.post("/api/chat", json={
-            "node_id": "general",
-            "file_path": None,
-            "question": "Python nedir?",
-            "history": [],
-        })
+        resp = self.client.post(
+            "/api/chat",
+            json={
+                "node_id": "general",
+                "file_path": None,
+                "question": "Python nedir?",
+                "history": [],
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -289,17 +302,24 @@ class TestChatEndpoint(unittest.TestCase):
             {"role": "assistant", "content": "İlk cevabım"},
         ]
 
-        resp = self.client.post("/api/chat", json={
-            "node_id": "main",
-            "file_path": self.proj.file_a,
-            "question": "Devam sorusu",
-            "history": history,
-        })
+        resp = self.client.post(
+            "/api/chat",
+            json={
+                "node_id": "main",
+                "file_path": self.proj.file_a,
+                "question": "Devam sorusu",
+                "history": history,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         # Verify teacher.chat was called with the history
         call_args = mock_teacher.chat.call_args
-        passed_history = call_args.kwargs.get("history") or call_args[1].get("history") if call_args[1] else None
+        passed_history = (
+            call_args.kwargs.get("history") or call_args[1].get("history")
+            if call_args[1]
+            else None
+        )
         if passed_history is None and call_args[0]:
             # positional args
             pass  # we just check the response
@@ -311,12 +331,15 @@ class TestChatEndpoint(unittest.TestCase):
         which should still be wrapped in the response."""
         mock_teacher.chat.return_value = "⚠️ Groq API hatası: connection timeout"
 
-        resp = self.client.post("/api/chat", json={
-            "node_id": "main",
-            "file_path": self.proj.file_a,
-            "question": "Test",
-            "history": [],
-        })
+        resp = self.client.post(
+            "/api/chat",
+            json={
+                "node_id": "main",
+                "file_path": self.proj.file_a,
+                "question": "Test",
+                "history": [],
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         self.assertIn("⚠️", resp.json()["answer"])
@@ -346,9 +369,12 @@ class TestLearningPathEndpoint(unittest.TestCase):
             {"step": 2, "node_id": "main", "reason": "Giriş noktası"},
         ]
 
-        resp = self.client.post("/api/learning-path", json={
-            "file_path": self.proj.file_a,
-        })
+        resp = self.client.post(
+            "/api/learning-path",
+            json={
+                "file_path": self.proj.file_a,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -363,9 +389,12 @@ class TestLearningPathEndpoint(unittest.TestCase):
 
     def test_learning_path_file_not_found(self):
         """Should return 404 for non-existent file."""
-        resp = self.client.post("/api/learning-path", json={
-            "file_path": os.path.join(self.proj.tmpdir, "nonexistent.py"),
-        })
+        resp = self.client.post(
+            "/api/learning-path",
+            json={
+                "file_path": os.path.join(self.proj.tmpdir, "nonexistent.py"),
+            },
+        )
         self.assertEqual(resp.status_code, 404)
 
     @patch("serve.teacher")
@@ -375,9 +404,12 @@ class TestLearningPathEndpoint(unittest.TestCase):
             {"step": 1, "node_id": "Orchestrator", "reason": "Tek sınıf"},
         ]
 
-        resp = self.client.post("/api/learning-path", json={
-            "file_path": self.proj.file_b,
-        })
+        resp = self.client.post(
+            "/api/learning-path",
+            json={
+                "file_path": self.proj.file_b,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -396,9 +428,12 @@ class TestLearningPathEndpoint(unittest.TestCase):
             {"step": 1, "node_id": "error", "reason": "API down"},
         ]
 
-        resp = self.client.post("/api/learning-path", json={
-            "file_path": self.proj.file_a,
-        })
+        resp = self.client.post(
+            "/api/learning-path",
+            json={
+                "file_path": self.proj.file_a,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
 
@@ -524,11 +559,14 @@ class TestRegression(unittest.TestCase):
             "key_takeaway": "Test takeaway",
         }
 
-        resp = self.client.post("/api/explain", json={
-            "file_path": self.proj.file_a,
-            "node_id": "main",
-            "level": "intermediate",
-        })
+        resp = self.client.post(
+            "/api/explain",
+            json={
+                "file_path": self.proj.file_a,
+                "node_id": "main",
+                "level": "intermediate",
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -538,10 +576,13 @@ class TestRegression(unittest.TestCase):
 
     def test_snippet_endpoint(self):
         """POST /api/snippet should return code for a given node."""
-        resp = self.client.post("/api/snippet", json={
-            "file_path": self.proj.file_a,
-            "node_id": "main",
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": self.proj.file_a,
+                "node_id": "main",
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -553,10 +594,13 @@ class TestRegression(unittest.TestCase):
     def test_snippet_endpoint_file_not_found(self):
         """POST /api/snippet should handle a safe file path that does not exist."""
         nonexistent_file = os.path.join(self.proj.tmpdir, "nonexistent.py")
-        resp = self.client.post("/api/snippet", json={
-            "file_path": nonexistent_file,
-            "node_id": "main",
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": nonexistent_file,
+                "node_id": "main",
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -579,13 +623,20 @@ class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
         payload = upload_resp.json()
         self.assertIn("nodes", payload)
 
-        node = next((n for n in payload["nodes"] if n.get("id") == "telegram_agent"), None)
+        node = next(
+            (n for n in payload["nodes"] if n.get("id") == "telegram_agent"), None
+        )
         self.assertIsNotNone(node, "uploaded function node not found in graph")
 
         file_path = node["data"].get("file")
-        self.assertTrue(file_path and os.path.isfile(file_path), f"uploaded file missing at {file_path}")
+        self.assertTrue(
+            file_path and os.path.isfile(file_path),
+            f"uploaded file missing at {file_path}",
+        )
 
-        snippet_resp = self.client.post("/api/snippet", json={"file_path": file_path, "node_id": "telegram_agent"})
+        snippet_resp = self.client.post(
+            "/api/snippet", json={"file_path": file_path, "node_id": "telegram_agent"}
+        )
         self.assertEqual(snippet_resp.status_code, 200, snippet_resp.text)
         snippet_payload = snippet_resp.json()
         self.assertIn("def telegram_agent", snippet_payload.get("snippet", ""))
@@ -604,10 +655,13 @@ class TestSnippetPathTraversal(unittest.TestCase):
 
     def test_traversal_path_is_denied(self):
         """Relative path traversal (e.g. ../../../../etc/passwd) must be denied."""
-        resp = self.client.post("/api/snippet", json={
-            "file_path": "../../../../etc/passwd",
-            "node_id": "root",
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": "../../../../etc/passwd",
+                "node_id": "root",
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertIn("Access denied", data["snippet"])
@@ -615,10 +669,13 @@ class TestSnippetPathTraversal(unittest.TestCase):
 
     def test_absolute_path_outside_cwd_is_denied(self):
         """An absolute path outside cwd and temp upload dirs must be denied."""
-        resp = self.client.post("/api/snippet", json={
-            "file_path": "/etc/passwd",
-            "node_id": "root",
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": "/etc/passwd",
+                "node_id": "root",
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertIn("Access denied", data["snippet"])
@@ -627,10 +684,13 @@ class TestSnippetPathTraversal(unittest.TestCase):
     def test_full_source_not_returned_for_denied_path(self):
         """Even if the file exists, full_source must not be populated when path is unsafe."""
         # /etc/hostname is a common file that exists on Linux
-        resp = self.client.post("/api/snippet", json={
-            "file_path": "/etc/hostname",
-            "node_id": "anything",
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": "/etc/hostname",
+                "node_id": "anything",
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertIsNone(data["full_source"])
@@ -642,10 +702,13 @@ class TestSnippetPathTraversal(unittest.TestCase):
             test_file = os.path.join(tmp_dir, "test.py")
             with open(test_file, "w") as f:
                 f.write("def my_func():\n    pass\n")
-            resp = self.client.post("/api/snippet", json={
-                "file_path": test_file,
-                "node_id": "my_func",
-            })
+            resp = self.client.post(
+                "/api/snippet",
+                json={
+                    "file_path": test_file,
+                    "node_id": "my_func",
+                },
+            )
             self.assertEqual(resp.status_code, 200)
             data = resp.json()
             self.assertIn("def my_func", data["snippet"])
@@ -656,6 +719,7 @@ class TestSnippetPathTraversal(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # 7. Unit Tests for _extract_snippet
 # ---------------------------------------------------------------------------
+
 
 class TestExtractSnippetUnit(unittest.TestCase):
     """Directly tests the _extract_snippet function for various edge cases and errors."""
@@ -715,30 +779,31 @@ class TestExtractSnippetUnit(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
 class TestPathTraversalSecurity(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 
     def test_snippet_prevents_path_traversal(self):
         """Endpoints should deny path traversal outside cwd or temp upload dir."""
-        resp = self.client.post("/api/snippet", json={
-            "file_path": "../../../../etc/passwd",
-            "node_id": "root"
-        })
+        resp = self.client.post(
+            "/api/snippet",
+            json={"file_path": "../../../../etc/passwd", "node_id": "root"},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
 
     def test_explain_prevents_path_traversal(self):
-        resp = self.client.post("/api/explain", json={
-            "file_path": "../../../../etc/passwd",
-            "node_id": "root"
-        })
+        resp = self.client.post(
+            "/api/explain",
+            json={"file_path": "../../../../etc/passwd", "node_id": "root"},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
 
     def test_learning_path_prevents_path_traversal(self):
-        resp = self.client.post("/api/learning-path", json={
-            "file_path": "../../../../etc/passwd"
-        })
+        resp = self.client.post(
+            "/api/learning-path", json={"file_path": "../../../../etc/passwd"}
+        )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(resp.json()["detail"], "Access denied")

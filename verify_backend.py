@@ -3,6 +3,7 @@ import sys
 
 BASE_URL = "http://localhost:8000"
 
+
 def test_health():
     try:
         resp = requests.get(f"{BASE_URL}/api/health")
@@ -16,12 +17,9 @@ def test_health():
         print(f"[FAIL] Health Check Exception: {e}")
         return False
 
+
 def test_explain():
-    payload = {
-        "file_path": "main.py",
-        "node_id": "main",
-        "level": "intermediate"
-    }
+    payload = {"file_path": "main.py", "node_id": "main", "level": "intermediate"}
     try:
         resp = requests.post(f"{BASE_URL}/api/explain", json=payload)
         if resp.status_code == 200:
@@ -39,11 +37,12 @@ def test_explain():
         print(f"[FAIL] Explain API Exception: {e}")
         return False
 
+
 if __name__ == "__main__":
     print("Running Backend Verification...")
     h = test_health()
     e = test_explain()
-    
+
     if h and e:
         print("\nBackend Verification: SUCCESS")
         sys.exit(0)
