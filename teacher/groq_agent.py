@@ -38,9 +38,20 @@ _FALLBACK = {
 
 def _try_parse_json(text: str) -> dict:
     """Attempt to parse JSON from *text*, stripping markdown fences if present."""
-    # Strip possible ```json ... ``` wrapping
-    cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip())
-    cleaned = re.sub(r"\s*```$", "", cleaned)
+    # Strip possible ```json ... ``` wrapping, ignoring leading/trailing non-code text and case
+    cleaned = text.strip()
+
+    # Check if there is a json markdown block
+    # Using greedy matching (.*) so it extracts the outermost markdown block and doesn't break
+    # when the JSON contains internal markdown fences.
+    match = re.search(r"```(?:json)?\s*(.*)\s*```", cleaned, re.IGNORECASE | re.DOTALL)
+    if match:
+        cleaned = match.group(1)
+    else:
+        # Fallback to the old simple stripping in case they just added ``` at the start/end
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as e:
