@@ -14,6 +14,7 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
                 onClick={onToggle}
                 className={`sim-btn ${isPlaying ? 'sim-btn-pause' : 'sim-btn-play'}`}
                 title={isPlaying ? 'Pause' : 'Play'}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
             >
                 {isPlaying ? '⏸' : '▶'}
             </button>
@@ -23,6 +24,7 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
                 onClick={onReset}
                 className="sim-btn"
                 title="Reset"
+                aria-label="Reset"
             >
                 ↺
             </button>

@@ -73,7 +73,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
 
     if (!isOpen) {
         return (
-            <button className="code-panel-toggle" onClick={onToggle}>
+            <button className="code-panel-toggle" onClick={onToggle} aria-label="Open Code Panel">
                 <span>{'<>'}</span> Code
             </button>
         );
@@ -109,7 +109,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         </span>
                     )}
                 </div>
-                <button className="code-panel-close" onClick={onToggle}>✕</button>
+                <button className="code-panel-close" onClick={onToggle} aria-label="Close Code Panel">✕</button>
             </div>
 
             {/* Content */}
