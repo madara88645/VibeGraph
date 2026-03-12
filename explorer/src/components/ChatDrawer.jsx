@@ -46,7 +46,17 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
             }, {});
             const typeStr = Object.entries(types).map(([k, v]) => `${v} ${k}s`).join(', ');
             const fileNames = [...new Set(allNodes.map(n => n.data?.file).filter(Boolean))];
-            projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.`;
+            
+            // Limit to top 20 nodes to prevent context bloat, but show their names
+            const coreNodes = allNodes
+                .filter(n => n.data?.type === 'class' || n.data?.type === 'function')
+                .slice(0, 20)
+                .map(n => n.id)
+                .join(', ');
+
+            projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.
+Files included: ${fileNames.join(', ')}
+Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         }
 
         try {
