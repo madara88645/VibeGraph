@@ -168,9 +168,7 @@ class GroqTeacher:
         if not self.client:
             return "⚠️ GROQ_API_KEY not found. Check your `.env` file."
 
-        context_str = (
-            f"Project Context: {project_context}\n" if project_context else ""
-        )
+        context_str = f"Project Context: {project_context}\n" if project_context else ""
 
         system_msg = (
             "You are 'Vibe Teacher', an expert coding tutor. "
