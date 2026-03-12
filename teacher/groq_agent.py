@@ -145,6 +145,7 @@ class GroqTeacher:
         code_snippet: str,
         question: str,
         history: list[dict] | None = None,
+        project_context: str = "",
     ) -> str:
         """
         Free-form conversation about *code_snippet*.
@@ -157,6 +158,8 @@ class GroqTeacher:
             The user's current question.
         history : list[dict], optional
             Previous messages: ``[{"role": "user"|"assistant", "content": ...}]``
+        project_context : str, optional
+            High-level overview of the uploaded project to give context.
 
         Returns
         -------
@@ -165,9 +168,14 @@ class GroqTeacher:
         if not self.client:
             return "⚠️ GROQ_API_KEY not found. Check your `.env` file."
 
+        context_str = (
+            f"Project Context: {project_context}\n" if project_context else ""
+        )
+
         system_msg = (
             "You are 'Vibe Teacher', an expert coding tutor. "
-            "The user is asking about the following function:\n"
+            f"{context_str}"
+            "The user is asking about the following code/project:\n"
             f"```python\n{code_snippet}\n```\n"
             "Always reply in English. Be clear, educational, and concise."
         )

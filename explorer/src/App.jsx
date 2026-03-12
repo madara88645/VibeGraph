@@ -140,6 +140,7 @@ function AppInner() {
           {/* Chat Drawer */}
           <ChatDrawer
             selectedNode={selectedNode}
+            allNodes={allNodes}
             isOpen={chatOpen}
             onToggle={() => setChatOpen(!chatOpen)}
           />

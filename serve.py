@@ -204,6 +204,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     node_id: str | None = None
     file_path: str | None = None
+    project_context: str | None = None
     question: str
     history: list[ChatMessage] = []
 
@@ -220,6 +221,7 @@ def chat_with_node(request: ChatRequest):
 
     answer = teacher.chat(
         code_snippet=snippet,
+        project_context=request.project_context or "",
         question=request.question,
         history=history_dicts,
     )

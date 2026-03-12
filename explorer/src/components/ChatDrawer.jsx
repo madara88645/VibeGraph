@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
+const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -37,6 +37,18 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
         setInputText('');
         setLoading(true);
 
+        let projectContext = "No project loaded.";
+        if (allNodes && allNodes.length > 0) {
+            const types = allNodes.reduce((acc, n) => {
+                const t = n.data?.type || 'unknown';
+                acc[t] = (acc[t] || 0) + 1;
+                return acc;
+            }, {});
+            const typeStr = Object.entries(types).map(([k, v]) => `${v} ${k}s`).join(', ');
+            const fileNames = [...new Set(allNodes.map(n => n.data?.file).filter(Boolean))];
+            projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.`;
+        }
+
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -44,6 +56,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                 body: JSON.stringify({
                     node_id: selectedNode?.id || null,
                     file_path: selectedNode?.data?.file || null,
+                    project_context: projectContext,
                     question: text,
                     history: newMessages.slice(-10),
                 }),
@@ -98,7 +111,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                     <div className="chat-empty">
                         {selectedNode
                             ? `Ask anything about "${selectedNode.data?.label || selectedNode.id}"…`
-                            : 'Select a node and ask a question!'}
+                            : 'Ask a general question about the uploaded project!'}
                     </div>
                 )}
 
