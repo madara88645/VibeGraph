@@ -487,6 +487,65 @@ class TestDependencyExtraction(unittest.TestCase):
         self.assertNotIn("error", result_b)
 
 
+class TestIsLocalModule(unittest.TestCase):
+    """Tests for CodeAnalyzer._is_local_module static method."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_local_module_test_")
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def test_plain_py_file(self):
+        """Should detect a plain .py file as local."""
+        file_path = os.path.join(self.tmpdir, "my_module.py")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        result = CodeAnalyzer._is_local_module("my_module", self.tmpdir)
+        self.assertTrue(result)
+
+    def test_package_with_init(self):
+        """Should detect a directory with __init__.py as local."""
+        pkg_dir = os.path.join(self.tmpdir, "my_pkg")
+        os.makedirs(pkg_dir)
+        init_file = os.path.join(pkg_dir, "__init__.py")
+        with open(init_file, "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        result = CodeAnalyzer._is_local_module("my_pkg", self.tmpdir)
+        self.assertTrue(result)
+
+    def test_nested_module(self):
+        """Should detect a nested module inside a package."""
+        pkg_dir = os.path.join(self.tmpdir, "my_pkg")
+        os.makedirs(pkg_dir)
+        init_file = os.path.join(pkg_dir, "__init__.py")
+        sub_file = os.path.join(pkg_dir, "sub_module.py")
+        with open(init_file, "w", encoding="utf-8") as f:
+            f.write("# dummy")
+        with open(sub_file, "w", encoding="utf-8") as f:
+            f.write("# dummy")
+
+        result = CodeAnalyzer._is_local_module("my_pkg.sub_module", self.tmpdir)
+        self.assertTrue(result)
+
+    def test_non_existent_module(self):
+        """Should return False for a non-existent module."""
+        result = CodeAnalyzer._is_local_module("non_existent", self.tmpdir)
+        self.assertFalse(result)
+
+    def test_directory_without_init(self):
+        """Should return False for a directory without __init__.py (not a package)."""
+        empty_dir = os.path.join(self.tmpdir, "empty_dir")
+        os.makedirs(empty_dir)
+
+        result = CodeAnalyzer._is_local_module("empty_dir", self.tmpdir)
+        self.assertFalse(result)
+
+
 # ---------------------------------------------------------------------------
 # 5. Existing Endpoints Regression Tests
 # ---------------------------------------------------------------------------
