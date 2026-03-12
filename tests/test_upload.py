@@ -12,9 +12,9 @@ def test_case_a_single_file():
             f"{BASE_URL}/api/upload-project", files=files, timeout=30.0
         )
 
-    assert (
-        response.status_code == 200
-    ), f"Expected 200, got {response.status_code}: {response.text}"
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
     data = response.json()
     assert "nodes" in data
     print("Case A: Passed!")
@@ -36,9 +36,9 @@ def test_case_b_multi_file():
         f1.close()
         f2.close()
 
-    assert (
-        response.status_code == 200
-    ), f"Expected 200, got {response.status_code}: {response.text}"
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
     data = response.json()
     node_ids = [node["id"] for node in data["nodes"]]
     assert "run_lib" in node_ids
@@ -56,9 +56,9 @@ def test_case_c_error_handling():
         )
 
     print(f"Response status: {response.status_code}")
-    assert (
-        response.status_code == 400
-    ), f"Expected 400, got {response.status_code}: {response.text}"
+    assert response.status_code == 400, (
+        f"Expected 400, got {response.status_code}: {response.text}"
+    )
     assert "Syntax error" in response.json()["detail"]
     print("Case C: Passed!")
 
