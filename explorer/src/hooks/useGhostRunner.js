@@ -87,7 +87,14 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                 else if (trailIndex === 1) className += ' ghost-trail-1';
                 else if (trailIndex === 2) className += ' ghost-trail-2';
                 else if (trailIndex >= 3) className += ' ghost-trail-3';
-                return { ...node, className: className.trim() };
+
+                className = className.trim();
+
+                // PERFORMANCE OPTIMIZATION (Bolt): Prevent React Flow O(N) re-renders
+                // If visual classes haven't changed, return exact same object reference
+                if (node.className === className) return node;
+
+                return { ...node, className };
             }));
 
             if (currentActiveId && nextNodeId) {
@@ -112,6 +119,16 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                         className = 'ghost-edge-trail';
                         style = { stroke: 'rgba(244, 63, 94, 0.5)', strokeWidth: 4 };
                     }
+
+                    // PERFORMANCE OPTIMIZATION (Bolt): Prevent React Flow O(N) re-renders
+                    // If visual styles and properties haven't changed, return exact same object reference
+                    const isUnchanged = edge.className === className &&
+                        edge.animated === animated &&
+                        edge.style?.stroke === style.stroke &&
+                        edge.style?.strokeWidth === style.strokeWidth &&
+                        edge.style?.strokeDasharray === style.strokeDasharray;
+
+                    if (isUnchanged) return edge;
 
                     return { ...edge, className, style, animated };
                 }));
