@@ -117,6 +117,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 <button
                     onClick={onClose}
                     className="ep-close"
+                    aria-label="Close explanation panel"
                 >
                     ✕
                 </button>
