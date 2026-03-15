@@ -87,7 +87,10 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                 else if (trailIndex === 1) className += ' ghost-trail-1';
                 else if (trailIndex === 2) className += ' ghost-trail-2';
                 else if (trailIndex >= 3) className += ' ghost-trail-3';
-                return { ...node, className: className.trim() };
+
+                className = className.trim();
+                if (node.className === className) return node;
+                return { ...node, className };
             }));
 
             if (currentActiveId && nextNodeId) {
@@ -113,6 +116,7 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                         style = { stroke: 'rgba(244, 63, 94, 0.5)', strokeWidth: 4 };
                     }
 
+                    if (edge.className === className && edge.animated === animated) return edge;
                     return { ...edge, className, style, animated };
                 }));
             }
@@ -130,17 +134,25 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
     // Reset visuals when stopping
     useEffect(() => {
         if (!isPlaying) {
-            setNodes(nds => nds.map(n => ({
-                ...n,
-                className: n.data?.isExternal ? 'external-ref' : ''
-            })));
-            setEdges(eds => eds.map(e => ({
-                ...e, animated: false,
-                className: e.className?.includes('external-edge') ? 'external-edge' : '',
-                style: e.className?.includes('external-edge')
-                    ? { stroke: 'rgba(148, 163, 184, 0.2)', strokeWidth: 1.5, strokeDasharray: '5 3' }
-                    : { stroke: 'rgba(148, 163, 184, 0.5)', strokeWidth: 2.5 }
-            })));
+            setNodes(nds => nds.map(n => {
+                const className = n.data?.isExternal ? 'external-ref' : '';
+                if (n.className === className) return n;
+                return { ...n, className };
+            }));
+            setEdges(eds => eds.map(e => {
+                const animated = false;
+                const className = e.className?.includes('external-edge') ? 'external-edge' : '';
+
+                if (e.className === className && e.animated === animated) return e;
+
+                return {
+                    ...e, animated,
+                    className,
+                    style: e.className?.includes('external-edge')
+                        ? { stroke: 'rgba(148, 163, 184, 0.2)', strokeWidth: 1.5, strokeDasharray: '5 3' }
+                        : { stroke: 'rgba(148, 163, 184, 0.5)', strokeWidth: 2.5 }
+                };
+            }));
         }
     }, [isPlaying, setNodes, setEdges]);
 
