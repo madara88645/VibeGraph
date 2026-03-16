@@ -57,8 +57,7 @@ def test_upload_safe_zip():
 def test_hidden_file_access_blocked():
     """Test that the backend blocks access to hidden files like .env."""
     response = client.post(
-        "/api/snippet",
-        json={"file_path": ".env", "node_id": "test"}
+        "/api/snippet", json={"file_path": ".env", "node_id": "test"}
     )
 
     assert response.status_code == 200
