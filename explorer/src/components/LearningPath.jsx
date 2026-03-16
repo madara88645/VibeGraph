@@ -85,6 +85,8 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                     className="lp-bar-nav"
                     onClick={() => goToStep(currentStep - 1)}
                     disabled={currentStep === 0 || loading}
+                    title="Previous Step"
+                    aria-label="Previous Step"
                 >
                     ←
                 </button>
@@ -108,13 +110,15 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                     className="lp-bar-nav"
                     onClick={() => goToStep(currentStep + 1)}
                     disabled={currentStep === steps.length - 1 || loading}
+                    title="Next Step"
+                    aria-label="Next Step"
                 >
                     →
                 </button>
             </div>
 
             {/* Close */}
-            <button className="lp-bar-close" onClick={onToggle}>✕</button>
+            <button className="lp-bar-close" onClick={onToggle} title="Close Learning Path" aria-label="Close Learning Path">✕</button>
 
             {/* Tiny Progress line at the very bottom */}
             {steps.length > 0 && (
