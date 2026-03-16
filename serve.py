@@ -58,7 +58,7 @@ def _is_safe_path(path: str) -> bool:
             rel_path = os.path.relpath(resolved, cwd)
             parts = rel_path.split(os.sep)
             # Block hidden files and directories
-            if any(part.startswith('.') for part in parts if part != '.'):
+            if any(part.startswith(".") for part in parts if part != "."):
                 return False
             return True
     except ValueError:
@@ -70,7 +70,7 @@ def _is_safe_path(path: str) -> bool:
             rel_path = os.path.relpath(resolved, tmp_dir)
             parts = rel_path.split(os.sep)
             # Block hidden files and directories
-            if any(part.startswith('.') for part in parts if part != '.'):
+            if any(part.startswith(".") for part in parts if part != "."):
                 return False
             if parts and (
                 parts[0].startswith(UPLOAD_PREFIX)
