@@ -52,6 +52,13 @@ def _is_safe_path(path: str) -> bool:
     """Ensure the path is either within the current working directory or a valid upload temp directory."""
     try:
         resolved = os.path.realpath(path)
+
+        # 🚨 SENTINEL SECURITY FIX: Prevent reading hidden files and directories (like .env, .git)
+        # which could expose API keys and sensitive data.
+        parts = resolved.split(os.sep)
+        if any(p.startswith(".") and p not in (".", "..") for p in parts):
+            return False
+
         cwd = os.path.realpath(os.getcwd())
 
         if os.path.commonpath([resolved, cwd]) == cwd:

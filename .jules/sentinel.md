@@ -1,0 +1,4 @@
+## 2024-05-24 - [Arbitrary File Read via snippet extraction]
+**Vulnerability:** The `/api/snippet` endpoint extracted Python code using an internal path validation `_is_safe_path` that allowed any file located within the current working directory. This permitted arbitrary file read for hidden files like `.env`, which can expose critical secrets like the `GROQ_API_KEY`.
+**Learning:** Checking if a path is a substring of the current working directory is insufficient for a backend service that serves out of a production root. Hidden files and sensitive directories must be explicitly blocked.
+**Prevention:** In Python path validations, split the path into components and check `if any(p.startswith(".") and p not in (".", "..") for p in parts):` to robustly block traversal into sensitive hidden files.
