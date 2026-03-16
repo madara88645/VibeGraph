@@ -21,9 +21,13 @@ class BasicTeacher:
 
         if classes:
             class_word = "class" if len(classes) == 1 else "classes"
-            lesson_parts.append(f"This module contains **{len(classes)} {class_word}**: `{', '.join(classes)}`.\n")
+            lesson_parts.append(
+                f"This module contains **{len(classes)} {class_word}**: `{', '.join(classes)}`.\n"
+            )
         if functions:
-            lesson_parts.append(f"It defines **{len(functions)} functions**: `{', '.join(functions)}`.\n")
+            lesson_parts.append(
+                f"It defines **{len(functions)} functions**: `{', '.join(functions)}`.\n"
+            )
 
         # 2. Key Interactions (Edges)
         lesson_parts.append("\n## 2. Key Interactions\n")
@@ -38,8 +42,12 @@ class BasicTeacher:
         density = nx.density(graph)
         lesson_parts.append("\n## 3. Analysis\n")
         if density > 0.5:
-            lesson_parts.append("This module is **highly coupled** (many connections).\n")
+            lesson_parts.append(
+                "This module is **highly coupled** (many connections).\n"
+            )
         else:
-            lesson_parts.append("This module is **loosely coupled** (few connections).\n")
+            lesson_parts.append(
+                "This module is **loosely coupled** (few connections).\n"
+            )
 
         return "".join(lesson_parts)
