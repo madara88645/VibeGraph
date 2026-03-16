@@ -109,7 +109,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         </span>
                     )}
                 </div>
-                <button className="code-panel-close" onClick={onToggle}>✕</button>
+                <button className="code-panel-close" onClick={onToggle} title="Close Code Panel" aria-label="Close Code Panel">✕</button>
             </div>
 
             {/* Content */}
