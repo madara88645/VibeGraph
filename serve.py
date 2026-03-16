@@ -55,6 +55,11 @@ def _is_safe_path(path: str) -> bool:
         cwd = os.path.realpath(os.getcwd())
 
         if os.path.commonpath([resolved, cwd]) == cwd:
+            rel_path = os.path.relpath(resolved, cwd)
+            parts = rel_path.split(os.sep)
+            # Block hidden files and directories
+            if any(part.startswith('.') for part in parts if part != '.'):
+                return False
             return True
     except ValueError:
         pass
@@ -64,6 +69,9 @@ def _is_safe_path(path: str) -> bool:
         if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
             rel_path = os.path.relpath(resolved, tmp_dir)
             parts = rel_path.split(os.sep)
+            # Block hidden files and directories
+            if any(part.startswith('.') for part in parts if part != '.'):
+                return False
             if parts and (
                 parts[0].startswith(UPLOAD_PREFIX)
                 or parts[0].startswith("vibegraph_test_")
