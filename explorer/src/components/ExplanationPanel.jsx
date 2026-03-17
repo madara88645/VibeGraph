@@ -50,7 +50,13 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (
-                <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+                <div
+                    className="fade-in"
+                    style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}
+                    role="tabpanel"
+                    id={`panel-${tab}`}
+                    aria-labelledby={`tab-${tab}`}
+                >
                     {tab === 'analogy' && (
                         <div>
                             <p style={{ margin: '0 0 12px' }}>{aiResponse.analogy}</p>
@@ -127,13 +133,17 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             {/* Body */}
             <div className="ep-body">
                 {/* Tabs */}
-                <div className="ep-tabs">
+                <div className="ep-tabs" role="tablist" aria-label="Explanation modes">
                     {[
                         { key: 'technical', label: '⚙️ Technical' },
                         { key: 'analogy', label: '🎭 Analogy' },
                     ].map(t => (
                         <button
                             key={t.key}
+                            id={`tab-${t.key}`}
+                            role="tab"
+                            aria-selected={tab === t.key}
+                            aria-controls={`panel-${t.key}`}
                             onClick={() => setTab(t.key)}
                             className={`ep-tab ${tab === t.key ? 'active' : ''}`}
                         >
@@ -143,11 +153,12 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 </div>
 
                 {/* Difficulty */}
-                <div className="ep-levels">
+                <div className="ep-levels" role="group" aria-label="Difficulty level">
                     {['beginner', 'intermediate', 'advanced'].map((lvl) => (
                         <button
                             key={lvl}
                             onClick={() => setLevel(lvl)}
+                            aria-pressed={level === lvl}
                             className={`ep-level ${level === lvl ? 'active' : ''}`}
                             style={level === lvl ? { borderColor: `${typeConfig.accent}44`, background: `${typeConfig.accent}12`, color: typeConfig.accent } : undefined}
                         >
