@@ -1,3 +1,3 @@
-## 2025-03-13 - [React Flow Reference Equality]
-**Learning:** React Flow deeply relies on object reference equality inside the nodes and edges arrays. In `useGhostRunner`, updating visual states (like trailing effects) by returning a new object for every node/edge (e.g. `{...node, className}`) causes massive O(N) re-renders on every animation tick, heavily degrading performance for larger graphs.
-**Action:** When rapidly animating properties on nodes/edges arrays in React Flow, always check if the computed visual property (like `className` or `animated`) is equal to the current one. If it is, explicitly return the original node/edge reference rather than creating a new object.
+## 2024-05-24 - React Flow Unnecessary Re-renders
+**Learning:** In React Flow, state arrays like `nodes` and `edges` trigger O(N) full re-renders on every tick during rapid animations (like Ghost Runner) if object references change, even when visual properties haven't.
+**Action:** When mapping over `nodes` or `edges` state to update classes/styles, preserve the exact object references for items whose properties haven't changed.
