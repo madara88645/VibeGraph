@@ -50,7 +50,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (
-                <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+                <div className="fade-in" id="panel-ep" role="tabpanel" aria-labelledby={`tab-ep-${tab}`} style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
                     {tab === 'analogy' && (
                         <div>
                             <p style={{ margin: '0 0 12px' }}>{aiResponse.analogy}</p>
@@ -94,7 +94,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
         // Fallback for string
         return (
-            <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+            <div className="fade-in" id="panel-ep" role="tabpanel" aria-labelledby={`tab-ep-${tab}`} style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
                 <ReactMarkdown>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
                 {codeSnippet && <CodeViewer code={codeSnippet} />}
             </div>
@@ -127,12 +127,16 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             {/* Body */}
             <div className="ep-body">
                 {/* Tabs */}
-                <div className="ep-tabs">
+                <div className="ep-tabs" role="tablist" aria-label="Explanation Views">
                     {[
                         { key: 'technical', label: '⚙️ Technical' },
                         { key: 'analogy', label: '🎭 Analogy' },
                     ].map(t => (
                         <button
+                            id={`tab-ep-${t.key}`}
+                            role="tab"
+                            aria-selected={tab === t.key}
+                            aria-controls="panel-ep"
                             key={t.key}
                             onClick={() => setTab(t.key)}
                             className={`ep-tab ${tab === t.key ? 'active' : ''}`}

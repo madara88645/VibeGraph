@@ -29,14 +29,22 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
     return (
         <div className="file-sidebar">
             {/* Tabs */}
-            <div className="sidebar-tabs">
+            <div className="sidebar-tabs" role="tablist" aria-label="Sidebar Tabs">
                 <button
+                    id="tab-files"
+                    role="tab"
+                    aria-selected={activeTab === 'files'}
+                    aria-controls="panel-files"
                     className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
                     onClick={() => setActiveTab('files')}
                 >
                     📁 Files
                 </button>
                 <button
+                    id="tab-deps"
+                    role="tab"
+                    aria-selected={activeTab === 'deps'}
+                    aria-controls="panel-deps"
                     className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deps')}
                 >
@@ -47,7 +55,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
             {/* Files Tab */}
             {activeTab === 'files' && (
                 <>
-                    <div className="sidebar-content">
+                    <div className="sidebar-content" id="panel-files" role="tabpanel" aria-labelledby="tab-files">
                         {files.map(file => {
                             const stats = nodeStats[file] || {};
                             const isSelected = file === selectedFile;
@@ -94,7 +102,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
 
             {/* Dependencies Tab */}
             {activeTab === 'deps' && (
-                <div className="sidebar-content">
+                <div className="sidebar-content" id="panel-deps" role="tabpanel" aria-labelledby="tab-deps">
                     {!deps && (
                         <div className="deps-empty">
                             No dependency data. Run analysis with <code>--deps</code> flag.
