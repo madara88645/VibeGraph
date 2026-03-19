@@ -821,6 +821,48 @@ class TestExtractSnippetUnit(unittest.TestCase):
         self.assertIn("# Code for 'nonexistent_node' not found in", snippet)
 
 
+class TestIsLocalModule(unittest.TestCase):
+    """Tests for CodeAnalyzer._is_local_module."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_test_is_local_")
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        CodeAnalyzer._is_local_module.cache_clear()
+
+    def test_plain_python_file(self):
+        """Should return True for a plain .py file."""
+        with open(os.path.join(self.tmpdir, "my_module.py"), "w") as f:
+            f.write("pass")
+        self.assertTrue(CodeAnalyzer._is_local_module("my_module", self.tmpdir))
+
+    def test_package_directory(self):
+        """Should return True for a directory with an __init__.py file."""
+        pkg_dir = os.path.join(self.tmpdir, "my_pkg")
+        os.makedirs(pkg_dir)
+        with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
+            f.write("pass")
+        self.assertTrue(CodeAnalyzer._is_local_module("my_pkg", self.tmpdir))
+
+    def test_nested_module(self):
+        """Should correctly resolve nested modules e.g. a.b.c"""
+        pkg_dir = os.path.join(self.tmpdir, "a", "b")
+        os.makedirs(pkg_dir)
+        with open(os.path.join(pkg_dir, "c.py"), "w") as f:
+            f.write("pass")
+        self.assertTrue(CodeAnalyzer._is_local_module("a.b.c", self.tmpdir))
+
+    def test_non_existent_module(self):
+        """Should return False if the module does not exist."""
+        self.assertFalse(CodeAnalyzer._is_local_module("non_existent", self.tmpdir))
+
+    def test_empty_module_string(self):
+        """Should handle empty module strings without crashing."""
+        self.assertFalse(CodeAnalyzer._is_local_module("", self.tmpdir))
+
+
 # ---------------------------------------------------------------------------
 # Run
 # ---------------------------------------------------------------------------
