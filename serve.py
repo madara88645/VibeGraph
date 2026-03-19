@@ -406,4 +406,4 @@ if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104
+    uvicorn.run(app, host="127.0.0.1", port=8000)
