@@ -2,9 +2,6 @@ import networkx as nx
 
 
 class BasicTeacher:
-    def __init__(self):
-        pass
-
     def generate_lesson(self, graph: nx.DiGraph, file_path: str) -> str:
         """Generates a lesson summary based on the graph structure."""
         if not isinstance(graph, nx.DiGraph):
