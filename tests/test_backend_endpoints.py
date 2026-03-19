@@ -144,6 +144,29 @@ class TestAnalyzerForSearch(unittest.TestCase):
         self.assertEqual(len(analyzer.errors), 1)
         self.assertTrue(analyzer.errors[0].startswith("Syntax error in"))
 
+    def test_analyze_single_file_invalid_syntax_merge_false(self):
+        """Tests that _analyze_single_file returns an error dictionary for invalid syntax with merge=False."""
+        analyzer = CodeAnalyzer()
+        invalid_file = os.path.join(self.proj.tmpdir, "invalid_false.py")
+        with open(invalid_file, "w", encoding="utf-8") as f:
+            f.write("print 'Hello World'")  # Python 2 syntax, invalid in Python 3
+
+        result = analyzer._analyze_single_file(invalid_file, merge=False)
+        self.assertIn("error", result)
+        self.assertTrue("Syntax error in" in result["error"])
+
+    def test_analyze_single_file_invalid_syntax_merge_true(self):
+        """Tests that _analyze_single_file appends to self.errors and returns {} for invalid syntax with merge=True."""
+        analyzer = CodeAnalyzer()
+        invalid_file = os.path.join(self.proj.tmpdir, "invalid_true.py")
+        with open(invalid_file, "w", encoding="utf-8") as f:
+            f.write("print 'Hello World'")  # Python 2 syntax, invalid in Python 3
+
+        result = analyzer._analyze_single_file(invalid_file, merge=True)
+        self.assertEqual(result, {})
+        self.assertEqual(len(analyzer.errors), 1)
+        self.assertTrue("Syntax error in" in analyzer.errors[0])
+
     def test_single_file_contains_expected_nodes(self):
         """Analyzer must return all classes and functions as graph nodes."""
         analyzer = CodeAnalyzer()
