@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import uvicorn
 import zipfile
+import functools
 from pathlib import Path
 from typing import List, Literal
 from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
@@ -83,6 +84,24 @@ def _is_safe_path(path: str) -> bool:
     return False
 
 
+@functools.lru_cache(maxsize=128)
+def _get_parsed_ast(
+    resolved_path: str, mtime: float
+) -> tuple[str | None, ast.AST | None, str | None]:
+    try:
+        with open(resolved_path, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError as e:
+        return None, None, f"# Error reading file: {e}"
+
+    try:
+        tree = ast.parse(source, filename=resolved_path)
+    except SyntaxError as e:
+        return source, None, f"# Syntax error in {resolved_path}: {e}"
+
+    return source, tree, None
+
+
 def _extract_snippet(
     file_path: str, node_id: str
 ) -> tuple[str, int | None, int | None, str | None]:
@@ -113,15 +132,18 @@ def _extract_snippet(
         return f"# Source for {node_id} (External/Built-in)", None, None, None
 
     try:
-        with open(resolved, "r", encoding="utf-8") as f:
-            source = f.read()
-    except OSError as e:
-        return f"# Error reading file: {e}", None, None, None
+        mtime = os.path.getmtime(resolved)
+    except OSError:
+        mtime = 0.0
 
-    try:
-        tree = ast.parse(source, filename=resolved)
-    except SyntaxError as e:
-        return f"# Syntax error in {file_path}: {e}", None, None, source
+    source, tree, error = _get_parsed_ast(resolved, mtime)
+
+    if error:
+        if source is not None:
+            # It was a SyntaxError where we still got the source
+            return error, None, None, source
+        # It was an OSError where we don't have source
+        return error, None, None, None
 
     target_name = node_id.split(".")[-1]
     lines = source.splitlines()
