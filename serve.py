@@ -33,6 +33,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add standard HTTP security headers to all responses."""
+    response = await call_next(request)
+    # Prevent MIME-type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Prevent Clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+    # Enable XSS filtering in legacy browsers
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Enforce HTTPS locally and downstream (optional max-age)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Ensure sensitive info is not leaked in referrers
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 teacher = GroqTeacher()
 exporter = GraphExporter()
 
