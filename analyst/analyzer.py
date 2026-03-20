@@ -131,7 +131,7 @@ class CodeAnalyzer:
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)
-                    # Skip venv/node_modules/etc
+                    # Skip venv/node_modules/etc just in case they are nested oddly
                     if (
                         "site-packages" in full_path
                         or "node_modules" in full_path
