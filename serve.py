@@ -355,9 +355,12 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
                     # Check for path traversal
+                    safe_members = []
                     for member in zip_ref.infolist():
+                        # Prevent absolute path resolution escaping tmp_dir_abs
+                        safe_filename = member.filename.lstrip("/\\")
                         extracted_path = os.path.abspath(
-                            os.path.join(tmp_dir_abs, member.filename)
+                            os.path.join(tmp_dir_abs, safe_filename)
                         )
                         if (
                             not extracted_path.startswith(tmp_dir_abs + os.sep)
@@ -367,14 +370,17 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
+                        # Update the filename to the safe version for extractall
+                        member.filename = safe_filename
+                        safe_members.append(member)
                     # Check for zip bomb
-                    total_size = sum(m.file_size for m in zip_ref.infolist())
+                    total_size = sum(m.file_size for m in safe_members)
                     if total_size > MAX_UNCOMPRESSED_SIZE:
                         raise HTTPException(
                             status_code=400,
                             detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
                         )
-                    zip_ref.extractall(tmp_dir)
+                    zip_ref.extractall(tmp_dir, members=safe_members)
                 os.remove(file_path)  # Remove zip after extraction
 
         # Run analysis on the directory
