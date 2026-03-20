@@ -1,0 +1,4 @@
+## 2025-02-26 - Prevent Zip-Slip Risk from extractall() in File Uploads
+**Vulnerability:** The use of `zipfile.extractall()` poses a historical security risk related to arbitrary file writes during extraction. Although path traversal was checked prior, static analysis tools and defense-in-depth principles flag `extractall()` as inherently unsafe.
+**Learning:** Even with robust pre-validation of zip members via `infolist()`, using `extractall()` nullifies the precision of individual file extraction, leading to implicit trust of the zip contents.
+**Prevention:** Avoid `extractall()`. Instead, track validated and sanitized members explicitly in a list, then loop through this safe list to extract files individually using `zip_ref.extract(member, target_dir)`. This enforces defense in depth and appeases security scanners.
