@@ -37,3 +37,57 @@ class TestTryParseJson(unittest.TestCase):
     def test_malformed_markdown_fences(self):
         result = _try_parse_json('```json{"key": "value"}')
         self.assertEqual(result, {"key": "value"})
+
+
+from unittest.mock import patch, MagicMock
+from teacher.groq_agent import GroqTeacher
+
+
+def test_explain_code_exception_leak():
+    """Ensure explain_code does not leak exception details on error."""
+    with patch("teacher.groq_agent.Groq") as MockGroq:
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
+        MockGroq.return_value = mock_client
+
+        teacher = GroqTeacher()
+        # Force client to exist
+        teacher.client = mock_client
+
+        result = teacher.explain_code("def foo(): pass")
+
+        assert "SECRET_API_ERROR" not in result.get("technical", "")
+        assert result.get("technical") == "An unexpected error occurred."
+
+
+def test_chat_exception_leak():
+    """Ensure chat does not leak exception details on error."""
+    with patch("teacher.groq_agent.Groq") as MockGroq:
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
+        MockGroq.return_value = mock_client
+
+        teacher = GroqTeacher()
+        teacher.client = mock_client
+
+        result = teacher.chat("def foo(): pass", "hello")
+
+        assert "SECRET_API_ERROR" not in result
+        assert result == "⚠️ Groq API error: An unexpected error occurred."
+
+
+def test_suggest_learning_path_exception_leak():
+    """Ensure suggest_learning_path does not leak exception details on error."""
+    with patch("teacher.groq_agent.Groq") as MockGroq:
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
+        MockGroq.return_value = mock_client
+
+        teacher = GroqTeacher()
+        teacher.client = mock_client
+
+        result = teacher.suggest_learning_path("nodes", "edges", "test.py")
+
+        assert len(result) == 1
+        assert "SECRET_API_ERROR" not in result[0].get("reason", "")
+        assert result[0].get("reason") == "An unexpected error occurred."

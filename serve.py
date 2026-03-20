@@ -1,5 +1,6 @@
 import os
 import ast
+import logging
 import time
 import shutil
 import tempfile
@@ -19,6 +20,17 @@ from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
 
 app = FastAPI(title="Vibe Learning System API")
+
+
+@app.exception_handler(Exception)
+def global_exception_handler(request, exc: Exception):
+    """Global catch-all to prevent stack trace leaks."""
+    logging.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred."},
+    )
+
 
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 UPLOAD_PREFIX = "vibegraph_upload_"
@@ -444,8 +456,11 @@ def upload_project(
         cleanup_tmp_dir(tmp_dir)
         raise
     except Exception as e:
+        logging.error(f"Upload/Analysis failed: {e}", exc_info=True)
         cleanup_tmp_dir(tmp_dir)
-        raise HTTPException(status_code=500, detail=f"Upload/Analysis failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Upload/Analysis failed due to an internal error."
+        )
 
 
 # Mount static files (Frontend build)
