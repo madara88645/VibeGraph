@@ -38,17 +38,22 @@ app.add_middleware(
 
 logger = logging.getLogger(__name__)
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
     Catch-all exception handler to prevent leaking stack traces and internals
     to the client. Logs the actual error and returns a generic 500 JSON response.
     """
-    logger.error(f"Unhandled exception during {request.method} {request.url.path}: {exc}", exc_info=True)
+    logger.error(
+        f"Unhandled exception during {request.method} {request.url.path}: {exc}",
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
 
 teacher = GroqTeacher()
 exporter = GraphExporter()
