@@ -1,9 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const ProjectUpload = ({ onUploadSuccess }) => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && isModalOpen && !isAnalyzing) {
+                setIsModalOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isModalOpen, isAnalyzing]);
 
     const handleUpload = async (event) => {
         const files = event.target.files;
@@ -69,19 +79,33 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 className="modal-close-btn"
                                 onClick={() => setIsModalOpen(false)}
                                 disabled={isAnalyzing}
+                                title="Close Upload Modal"
+                                aria-label="Close Upload Modal"
                             >✕</button>
                         </div>
 
                         <div className="upload-modal-body">
                             {isAnalyzing ? (
-                                <div className="analyzing-state">
-                                    <div className="vibe-spinner"></div>
+                                <div className="analyzing-state" aria-live="polite" aria-busy="true">
+                                    <div className="vibe-spinner" aria-hidden="true"></div>
                                     <p>Analyzing Project...</p>
                                     <span className="analyzing-subtitle">Building call graph, mapping vibes</span>
                                 </div>
                             ) : (
-                                <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
-                                    <div className="upload-icon">📤</div>
+                                <div
+                                    className="upload-zone"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label="Select a project folder to analyze"
+                                >
+                                    <div className="upload-icon" aria-hidden="true">📤</div>
                                     <p>Select a project folder to analyze</p>
                                     <span className="upload-hint">Uploads all .py files to the server</span>
                                     <input
@@ -93,7 +117,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                         onChange={handleUpload}
                                         multiple
                                     />
-                                    <button className="upload-select-btn">Select Folder</button>
+                                    <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Select Folder</button>
                                 </div>
                             )}
                         </div>

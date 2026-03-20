@@ -110,7 +110,24 @@ class CodeAnalyzer:
         self.definitions = []
 
         graphs = []
-        for root, _, files in os.walk(dir_path):
+        for root, dirs, files in os.walk(dir_path):
+            # PERFORMANCE OPTIMIZATION (Bolt): Skip heavy ignored directories entirely
+            # Modify `dirs` in-place so os.walk does not traverse into them
+            dirs[:] = [
+                d
+                for d in dirs
+                if d
+                not in {
+                    ".git",
+                    "node_modules",
+                    "site-packages",
+                    "venv",
+                    "env",
+                    ".venv",
+                    "__pycache__",
+                }
+            ]
+
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)

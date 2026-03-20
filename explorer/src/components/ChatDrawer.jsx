@@ -95,7 +95,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
 
     if (!isOpen) {
         return (
-            <button className="chat-fab" onClick={onToggle} title="Open Chat">
+            <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
                 💬
             </button>
         );
@@ -113,7 +113,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                         Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
                     </span>
                 )}
-                <button className="chat-drawer-close" onClick={onToggle}>✕</button>
+                <button className="chat-drawer-close" onClick={onToggle} aria-label="Close Chat">✕</button>
             </div>
 
             <div className="chat-messages">
@@ -164,6 +164,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     className="chat-send"
                     onClick={sendMessage}
                     disabled={loading || !inputText.trim()}
+                    aria-label="Send message"
                 >
                     ↑
                 </button>
