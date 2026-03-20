@@ -36,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +54,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"},
     )
 
-
 @app.middleware("http")
 async def add_security_headers(request, call_next):
     """Add standard HTTP security headers to all responses."""
@@ -71,7 +69,6 @@ async def add_security_headers(request, call_next):
     # Ensure sensitive info is not leaked in referrers
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
-
 
 teacher = GroqTeacher()
 exporter = GraphExporter()
