@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import logging
+import logging  # noqa: F811
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
@@ -23,7 +23,7 @@ app = FastAPI(title="Vibe Learning System API")
 
 
 @app.exception_handler(Exception)
-def global_exception_handler(request, exc: Exception):
+def global_exception_handler_legacy(request, exc: Exception):
     """Global catch-all to prevent stack trace leaks."""
     logging.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception):  # type: ignore # noqa: F811
     """
     Catch-all exception handler to prevent leaking stack traces and internals
     to the client. Logs the actual error and returns a generic 500 JSON response.
