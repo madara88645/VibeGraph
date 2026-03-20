@@ -4,9 +4,10 @@ import sys
 import os
 
 # Add project root to sys.path to ensure imports work
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from teacher.basic_reporter import BasicTeacher
+
 
 class TestBasicTeacher(unittest.TestCase):
     def setUp(self):
@@ -54,7 +55,9 @@ class TestBasicTeacher(unittest.TestCase):
 
         lesson = self.teacher.generate_lesson(graph, "classes.py")
 
-        self.assertIn("This module contains **2 classes**: `MyClass, OtherClass`.", lesson)
+        self.assertIn(
+            "This module contains **2 classes**: `MyClass, OtherClass`.", lesson
+        )
         self.assertNotIn("It defines", lesson)
         self.assertIn("No internal function calls detected in this file.", lesson)
         self.assertIn("This module is **loosely coupled**", lesson)
@@ -134,6 +137,7 @@ class TestBasicTeacher(unittest.TestCase):
             self.teacher.generate_lesson(graph, "error.py")
 
         self.assertEqual(str(context.exception), "Mocked graph error")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -29,14 +29,22 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
     return (
         <div className="file-sidebar">
             {/* Tabs */}
-            <div className="sidebar-tabs">
+            <div className="sidebar-tabs" role="tablist" aria-label="Sidebar views">
                 <button
+                    id="tab-files"
+                    role="tab"
+                    aria-selected={activeTab === 'files'}
+                    aria-controls="panel-files"
                     className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
                     onClick={() => setActiveTab('files')}
                 >
                     📁 Files
                 </button>
                 <button
+                    id="tab-deps"
+                    role="tab"
+                    aria-selected={activeTab === 'deps'}
+                    aria-controls="panel-deps"
                     className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deps')}
                 >
@@ -46,7 +54,12 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
 
             {/* Files Tab */}
             {activeTab === 'files' && (
-                <>
+                <div
+                    id="panel-files"
+                    role="tabpanel"
+                    aria-labelledby="tab-files"
+                    style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+                >
                     <div className="sidebar-content">
                         {files.map(file => {
                             const stats = nodeStats[file] || {};
@@ -89,12 +102,17 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
                         <span>🚀 entry</span>
                         <span>○ ref</span>
                     </div>
-                </>
+                </div>
             )}
 
             {/* Dependencies Tab */}
             {activeTab === 'deps' && (
-                <div className="sidebar-content">
+                <div
+                    className="sidebar-content"
+                    id="panel-deps"
+                    role="tabpanel"
+                    aria-labelledby="tab-deps"
+                >
                     {!deps && (
                         <div className="deps-empty">
                             No dependency data. Run analysis with <code>--deps</code> flag.

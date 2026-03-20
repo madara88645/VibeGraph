@@ -5,12 +5,15 @@ import shutil
 import tempfile
 import uvicorn
 import zipfile
+import functools
 from pathlib import Path
 from typing import List, Literal
-from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
+from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import logging
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
@@ -20,7 +23,9 @@ app = FastAPI(title="Vibe Learning System API")
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 UPLOAD_PREFIX = "vibegraph_upload_"
 
-CORS_ORIGINS = os.getenv("VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000")
+CORS_ORIGINS = os.getenv(
+    "VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000"
+)
 
 # Enable CORS for development (allowing frontend on 5173 to talk to backend on 8000)
 app.add_middleware(
@@ -30,6 +35,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to prevent leaking stack traces and internals
+    to the client. Logs the actual error and returns a generic 500 JSON response.
+    """
+    logger.error(
+        f"Unhandled exception during {request.method} {request.url.path}: {exc}",
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 
 teacher = GroqTeacher()
 exporter = GraphExporter()
@@ -45,6 +69,7 @@ class ExplainRequest(BaseModel):
 # Snippet extraction utility
 # ---------------------------------------------------------------------------
 
+
 def _is_safe_path(path: str) -> bool:
     """Ensure the path is either within the current working directory or a valid upload temp directory."""
     try:
@@ -52,6 +77,11 @@ def _is_safe_path(path: str) -> bool:
         cwd = os.path.realpath(os.getcwd())
 
         if os.path.commonpath([resolved, cwd]) == cwd:
+            rel_path = os.path.relpath(resolved, cwd)
+            parts = rel_path.split(os.sep)
+            # Block hidden files and directories
+            if any(part.startswith(".") for part in parts if part != "."):
+                return False
             return True
     except ValueError:
         pass
@@ -61,7 +91,13 @@ def _is_safe_path(path: str) -> bool:
         if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
             rel_path = os.path.relpath(resolved, tmp_dir)
             parts = rel_path.split(os.sep)
-            if parts and (parts[0].startswith(UPLOAD_PREFIX) or parts[0].startswith("vibegraph_test_")):
+            # Block hidden files and directories
+            if any(part.startswith(".") for part in parts if part != "."):
+                return False
+            if parts and (
+                parts[0].startswith(UPLOAD_PREFIX)
+                or parts[0].startswith("vibegraph_test_")
+            ):
                 return True
     except ValueError:
         pass
@@ -69,7 +105,27 @@ def _is_safe_path(path: str) -> bool:
     return False
 
 
-def _extract_snippet(file_path: str, node_id: str) -> tuple[str, int | None, int | None, str | None]:
+@functools.lru_cache(maxsize=128)
+def _get_parsed_ast(
+    resolved_path: str, mtime: float
+) -> tuple[str | None, ast.AST | None, str | None]:
+    try:
+        with open(resolved_path, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError as e:
+        return None, None, f"# Error reading file: {e}"
+
+    try:
+        tree = ast.parse(source, filename=resolved_path)
+    except SyntaxError as e:
+        return source, None, f"# Syntax error in {resolved_path}: {e}"
+
+    return source, tree, None
+
+
+def _extract_snippet(
+    file_path: str, node_id: str
+) -> tuple[str, int | None, int | None, str | None]:
     """
     Robustly extracts the source code of a function/class from *file_path*
     whose name matches the last segment of *node_id* (e.g. "MyClass.my_func"
@@ -83,7 +139,9 @@ def _extract_snippet(file_path: str, node_id: str) -> tuple[str, int | None, int
         return (
             f"# External or Built-in: {node_id}\n"
             "# (No source code available, please explain based on name/context.)",
-            None, None, None
+            None,
+            None,
+            None,
         )
 
     resolved = os.path.realpath(file_path)
@@ -95,15 +153,18 @@ def _extract_snippet(file_path: str, node_id: str) -> tuple[str, int | None, int
         return f"# Source for {node_id} (External/Built-in)", None, None, None
 
     try:
-        with open(resolved, "r", encoding="utf-8") as f:
-            source = f.read()
-    except OSError as e:
-        return f"# Error reading file: {e}", None, None, None
+        mtime = os.path.getmtime(resolved)
+    except OSError:
+        mtime = 0.0
 
-    try:
-        tree = ast.parse(source, filename=resolved)
-    except SyntaxError as e:
-        return f"# Syntax error in {file_path}: {e}", None, None, source
+    source, tree, error = _get_parsed_ast(resolved, mtime)
+
+    if error:
+        if source is not None:
+            # It was a SyntaxError where we still got the source
+            return error, None, None, source
+        # It was an OSError where we don't have source
+        return error, None, None, None
 
     target_name = node_id.split(".")[-1]
     lines = source.splitlines()
@@ -112,11 +173,16 @@ def _extract_snippet(file_path: str, node_id: str) -> tuple[str, int | None, int
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if node.name == target_name:
-                start = node.lineno - 1          # 0-indexed
+                start = node.lineno - 1  # 0-indexed
                 end = node.end_lineno or len(lines)
                 return "\n".join(lines[start:end]), node.lineno, node.end_lineno, source
 
-    return f"# Code for '{node_id}' not found in {file_path} (analysis mismatch).", None, None, source
+    return (
+        f"# Code for '{node_id}' not found in {file_path} (analysis mismatch).",
+        None,
+        None,
+        source,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +201,9 @@ def get_snippet(request: SnippetRequest):
     Returns just the code snippet for a given node, without AI explanation.
     Lightweight endpoint for the Code Follow panel.
     """
-    snippet, start_line, end_line, full_source = _extract_snippet(request.file_path, request.node_id)
+    snippet, start_line, end_line, full_source = _extract_snippet(
+        request.file_path, request.node_id
+    )
 
     return {
         "node_id": request.node_id,
@@ -145,6 +213,7 @@ def get_snippet(request: SnippetRequest):
         "end_line": end_line,
         "full_source": full_source,
     }
+
 
 @app.get("/api/health")
 def health():
@@ -186,6 +255,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     node_id: str | None = None
     file_path: str | None = None
+    project_context: str | None = None
     question: str
     history: list[ChatMessage] = []
 
@@ -202,6 +272,7 @@ def chat_with_node(request: ChatRequest):
 
     answer = teacher.chat(
         code_snippet=snippet,
+        project_context=request.project_context or "",
         question=request.question,
         history=history_dicts,
     )
@@ -228,7 +299,9 @@ def suggest_learning_path(request: LearningPathRequest):
         raise HTTPException(status_code=403, detail="Access denied")
 
     if not os.path.isfile(request.file_path):
-        raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
+        raise HTTPException(
+            status_code=404, detail=f"File not found: {request.file_path}"
+        )
 
     result = CodeAnalyzer().analyze_file(request.file_path)
     if "error" in result:
@@ -237,8 +310,7 @@ def suggest_learning_path(request: LearningPathRequest):
     graph = result["graph"]
 
     nodes_summary = ", ".join(
-        f"{nid} ({data.get('type', '?')})"
-        for nid, data in graph.nodes(data=True)
+        f"{nid} ({data.get('type', '?')})" for nid, data in graph.nodes(data=True)
     )
     edges_summary = ", ".join(f"{u} → {v}" for u, v in graph.edges())
 
@@ -255,13 +327,16 @@ def suggest_learning_path(request: LearningPathRequest):
 # POST /api/upload-project \u2013 Receive files, analyze, and return graph
 # ---------------------------------------------------------------------------
 
+
 def cleanup_tmp_dir(path: str):
     """Background task to remove temp directory."""
     if os.path.exists(path):
         shutil.rmtree(path, ignore_errors=True)
 
 
-def cleanup_expired_upload_dirs(retention_seconds: int = UPLOAD_RETENTION_SECONDS) -> None:
+def cleanup_expired_upload_dirs(
+    retention_seconds: int = UPLOAD_RETENTION_SECONDS,
+) -> None:
     """Remove old upload temp folders, keeping recent uploads available."""
     now = time.time()
     temp_root = Path(tempfile.gettempdir())
@@ -295,10 +370,13 @@ def _normalize_uploaded_filename(raw_name: str) -> str:
 
     return safe_rel
 
+
 @app.post("/api/upload-project")
-def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+def upload_project(
+    background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
+):
     """
-    Receives dynamic uploads (single .py, multiple files, or .zip), saves to a 
+    Receives dynamic uploads (single .py, multiple files, or .zip), saves to a
     temporary folder, runs analysis, and returns the graph data directly.
     """
     background_tasks.add_task(cleanup_expired_upload_dirs)
@@ -320,15 +398,32 @@ def upload_project(background_tasks: BackgroundTasks, files: List[UploadFile] = 
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
                     # Check for path traversal
+                    safe_members = []
                     for member in zip_ref.infolist():
-                        extracted_path = os.path.abspath(os.path.join(tmp_dir_abs, member.filename))
-                        if not extracted_path.startswith(tmp_dir_abs + os.sep) and extracted_path != tmp_dir_abs:
-                            raise HTTPException(status_code=400, detail=f"Unsafe zip file detected: {safe_name}")
+                        # Prevent absolute path resolution escaping tmp_dir_abs
+                        safe_filename = member.filename.lstrip("/\\")
+                        extracted_path = os.path.abspath(
+                            os.path.join(tmp_dir_abs, safe_filename)
+                        )
+                        if (
+                            not extracted_path.startswith(tmp_dir_abs + os.sep)
+                            and extracted_path != tmp_dir_abs
+                        ):
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Unsafe zip file detected: {safe_name}",
+                            )
+                        # Update the filename to the safe version for extractall
+                        member.filename = safe_filename
+                        safe_members.append(member)
                     # Check for zip bomb
-                    total_size = sum(m.file_size for m in zip_ref.infolist())
+                    total_size = sum(m.file_size for m in safe_members)
                     if total_size > MAX_UNCOMPRESSED_SIZE:
-                        raise HTTPException(status_code=400, detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})")
-                    zip_ref.extractall(tmp_dir)
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
+                        )
+                    zip_ref.extractall(tmp_dir, members=safe_members)
                 os.remove(file_path)  # Remove zip after extraction
 
         # Run analysis on the directory
@@ -360,4 +455,4 @@ if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

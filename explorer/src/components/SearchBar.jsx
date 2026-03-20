@@ -51,10 +51,6 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
             .slice(0, 8);
     }, [query, allNodes]);
 
-    useEffect(() => {
-        setHighlightIdx(0);
-    }, [results]);
-
     const handleSelect = useCallback((node) => {
         if (node.data?.file) onSelectFile(node.data.file);
         onSelectNode(node);
@@ -94,12 +90,12 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     className="search-input"
                     placeholder="Search nodes... (Ctrl+K)"
                     value={query}
-                    onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
+                    onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                 />
                 {query && (
-                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }}>✕</button>
+                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search">✕</button>
                 )}
             </div>
 

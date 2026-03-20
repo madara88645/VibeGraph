@@ -195,4 +195,4 @@ pytest tests/ -v
 
 ## License
 
-AGPLv3 
+GPLv3

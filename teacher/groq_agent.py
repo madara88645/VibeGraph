@@ -145,6 +145,7 @@ class GroqTeacher:
         code_snippet: str,
         question: str,
         history: list[dict] | None = None,
+        project_context: str = "",
     ) -> str:
         """
         Free-form conversation about *code_snippet*.
@@ -157,6 +158,8 @@ class GroqTeacher:
             The user's current question.
         history : list[dict], optional
             Previous messages: ``[{"role": "user"|"assistant", "content": ...}]``
+        project_context : str, optional
+            High-level overview of the uploaded project to give context.
 
         Returns
         -------
@@ -165,9 +168,12 @@ class GroqTeacher:
         if not self.client:
             return "⚠️ GROQ_API_KEY not found. Check your `.env` file."
 
+        context_str = f"Project Context: {project_context}\n" if project_context else ""
+
         system_msg = (
             "You are 'Vibe Teacher', an expert coding tutor. "
-            "The user is asking about the following function:\n"
+            f"{context_str}"
+            "The user is asking about the following code/project:\n"
             f"```python\n{code_snippet}\n```\n"
             "Always reply in English. Be clear, educational, and concise."
         )
@@ -212,8 +218,8 @@ class GroqTeacher:
 
         system_msg = (
             "You are a coding tutor. You MUST reply with ONLY a valid JSON object.\n"
-            "The JSON object must have exactly one key: \"steps\" which is an array.\n"
-            "Each element: {\"step\": <int>, \"node_id\": \"<str>\", \"reason\": \"<str>\"}.\n"
+            'The JSON object must have exactly one key: "steps" which is an array.\n'
+            'Each element: {"step": <int>, "node_id": "<str>", "reason": "<str>"}.\n'
             "Do NOT wrap in code fences. Output raw JSON only."
         )
 

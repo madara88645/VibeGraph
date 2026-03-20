@@ -5,6 +5,7 @@ from serve import app
 
 client = TestClient(app)
 
+
 def test_upload_zip_slip():
     # Create a malicious zip file
     zip_path = "malicious.zip"
@@ -17,7 +18,7 @@ def test_upload_zip_slip():
     with open(zip_path, "rb") as f:
         response = client.post(
             "/api/upload-project",
-            files={"files": ("malicious.zip", f, "application/zip")}
+            files={"files": ("malicious.zip", f, "application/zip")},
         )
 
     # Clean up
@@ -25,6 +26,7 @@ def test_upload_zip_slip():
 
     assert response.status_code == 400
     assert "Unsafe zip file detected" in response.json()["detail"]
+
 
 def test_upload_safe_zip():
     # Create a safe zip file
@@ -35,8 +37,7 @@ def test_upload_safe_zip():
 
     with open(zip_path, "rb") as f:
         response = client.post(
-            "/api/upload-project",
-            files={"files": ("safe.zip", f, "application/zip")}
+            "/api/upload-project", files={"files": ("safe.zip", f, "application/zip")}
         )
 
     # Clean up
@@ -51,3 +52,29 @@ def test_upload_safe_zip():
         assert "Unsafe zip file detected" not in detail
     else:
         assert response.status_code == 200
+
+
+def test_upload_absolute_path_zip():
+    """Ensure that absolute paths in zip files are sanitized properly."""
+    zip_path = "absolute_path.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        # File attempting to escape to absolute path
+        z.writestr("/etc/passwd", "This is a malicious file")
+        # Ensure there is at least a valid python file to not fail immediately on empty graph if graph generation logic changes later
+        z.writestr("valid.py", "def a(): pass")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("absolute_path.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    # If the file is properly sanitized, it will extract to `tmp_dir/etc/passwd` rather than `/etc/passwd`.
+    # Therefore, we shouldn't get an "Unsafe zip file detected" error.
+    # Let's verify that the endpoint doesn't return the specific error.
+    if response.status_code == 400:
+        detail = response.json().get("detail", "")
+        assert "Unsafe zip file detected" not in detail

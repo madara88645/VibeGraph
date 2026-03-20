@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint (ruff)
+  lint-backend:
+    name: Backend Lint & Format (ruff)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -17,11 +17,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
-      - run: ruff check . --select E,F --ignore E501,E402 --exclude tests/upload_cases
+          cache: pip
+      - name: Install Ruff
+        run: pip install ruff
+      - name: Run Ruff Linter
+        run: ruff check . --select E,F --ignore E501,E402 --exclude tests/upload_cases
+      - name: Run Ruff Formatter check
+        run: ruff format --check . --exclude tests/upload_cases
 
-  test:
-    name: Tests (pytest)
+  security-backend:
+    name: Backend Security (bandit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Security Check
+        run: bandit -r . -x tests/,explorer/,node_modules/ -ll -ii
+
+  test-backend:
+    name: Backend Tests & Coverage
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,14 +52,20 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run tests
-        run: python -m pytest tests/ -v --ignore=tests/test_upload.py
+        run: pip install -r requirements.txt pytest-cov
+      - name: Run tests with coverage
+        run: python -m pytest tests/ -v --ignore=tests/test_upload.py --cov=. --cov-report=xml
         env:
           GROQ_API_KEY: dummy-key-for-ci
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: coverage.xml
+          retention-days: 14
 
-  typecheck:
-    name: Type check (mypy)
+  typecheck-backend:
+    name: Backend Type check (mypy)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,10 +77,11 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
+      - name: Run mypy
+        run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
 
   frontend:
-    name: Frontend build
+    name: Frontend Lint & Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -65,7 +92,18 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: explorer/package-lock.json
-      - run: npm ci
+      - name: Install Dependencies
+        run: npm ci
         working-directory: explorer
-      - run: npm run build
+      - name: Frontend Linting
+        run: npm run lint
         working-directory: explorer
+      - name: Frontend Build
+        run: npm run build
+        working-directory: explorer
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: explorer/dist/
+          retention-days: 14

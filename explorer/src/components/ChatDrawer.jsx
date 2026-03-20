@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
+const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -37,6 +37,28 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
         setInputText('');
         setLoading(true);
 
+        let projectContext = "No project loaded.";
+        if (allNodes && allNodes.length > 0) {
+            const types = allNodes.reduce((acc, n) => {
+                const t = n.data?.type || 'unknown';
+                acc[t] = (acc[t] || 0) + 1;
+                return acc;
+            }, {});
+            const typeStr = Object.entries(types).map(([k, v]) => `${v} ${k}s`).join(', ');
+            const fileNames = [...new Set(allNodes.map(n => n.data?.file).filter(Boolean))];
+
+            // Limit to top 20 nodes to prevent context bloat, but show their names
+            const coreNodes = allNodes
+                .filter(n => n.data?.type === 'class' || n.data?.type === 'function')
+                .slice(0, 20)
+                .map(n => n.id)
+                .join(', ');
+
+            projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.
+Files included: ${fileNames.join(', ')}
+Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
+        }
+
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -44,6 +66,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                 body: JSON.stringify({
                     node_id: selectedNode?.id || null,
                     file_path: selectedNode?.data?.file || null,
+                    project_context: projectContext,
                     question: text,
                     history: newMessages.slice(-10),
                 }),
@@ -53,6 +76,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
             const aiContent = data.answer || data.response || data.message || 'No response.';
             setMessages((prev) => [...prev, { role: 'assistant', content: aiContent }]);
         } catch (err) {
+            console.error("Chat error:", err);
             setMessages((prev) => [
                 ...prev,
                 { role: 'assistant', content: '⚠️ Could not reach the backend. Is serve.py running?' },
@@ -71,7 +95,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
 
     if (!isOpen) {
         return (
-            <button className="chat-fab" onClick={onToggle} title="Open Chat">
+            <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
                 💬
             </button>
         );
@@ -89,7 +113,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                         Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
                     </span>
                 )}
-                <button className="chat-drawer-close" onClick={onToggle}>✕</button>
+                <button className="chat-drawer-close" onClick={onToggle} aria-label="Close Chat">✕</button>
             </div>
 
             <div className="chat-messages">
@@ -97,7 +121,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                     <div className="chat-empty">
                         {selectedNode
                             ? `Ask anything about "${selectedNode.data?.label || selectedNode.id}"…`
-                            : 'Select a node and ask a question!'}
+                            : 'Ask a general question about the uploaded project!'}
                     </div>
                 )}
 
@@ -140,6 +164,7 @@ const ChatDrawer = ({ selectedNode, isOpen, onToggle }) => {
                     className="chat-send"
                     onClick={sendMessage}
                     disabled={loading || !inputText.trim()}
+                    aria-label="Send message"
                 >
                     ↑
                 </button>
