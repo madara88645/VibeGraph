@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import re
 from groq import Groq
 from dotenv import load_dotenv
@@ -130,9 +131,10 @@ class GroqTeacher:
             return {**_FALLBACK, "technical": str(e)}
 
         except Exception as e:
+            logging.error(f"Error during explain_code: {e}", exc_info=True)
             return {
                 "analogy": "Connection Error",
-                "technical": str(e),
+                "technical": "An unexpected error occurred.",
                 "key_takeaway": "Check Groq API status.",
             }
 
@@ -194,7 +196,8 @@ class GroqTeacher:
             )
             return completion.choices[0].message.content
         except Exception as e:
-            return f"⚠️ Groq API error: {e}"
+            logging.error(f"Error during chat: {e}", exc_info=True)
+            return "⚠️ Groq API error: An unexpected error occurred."
 
     # ------------------------------------------------------------------
     # Suggest a learning path for a file's nodes / edges
@@ -253,4 +256,11 @@ class GroqTeacher:
         except ValueError as e:
             return [{"step": 1, "node_id": "parse_error", "reason": str(e)}]
         except Exception as e:
-            return [{"step": 1, "node_id": "error", "reason": str(e)}]
+            logging.error(f"Error during suggest_learning_path: {e}", exc_info=True)
+            return [
+                {
+                    "step": 1,
+                    "node_id": "error",
+                    "reason": "An unexpected error occurred.",
+                }
+            ]
