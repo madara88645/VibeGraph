@@ -105,6 +105,94 @@ def my_function():
             self.assertIn("source", edge)
             self.assertIn("target", edge)
 
+    def test_export_empty_graph(self):
+        import networkx as nx
+
+        exporter = GraphExporter()
+        graph = nx.DiGraph()
+
+        json_output = exporter.export_to_react_flow(graph)
+
+        self.assertIn("nodes", json_output)
+        self.assertIn("edges", json_output)
+        self.assertEqual(len(json_output["nodes"]), 0)
+        self.assertEqual(len(json_output["edges"]), 0)
+
+    def test_export_without_output_path(self):
+        import networkx as nx
+
+        exporter = GraphExporter()
+        graph = nx.DiGraph()
+        graph.add_node("TestNode", type="function")
+
+        json_output = exporter.export_to_react_flow(graph, output_path=None)
+
+        self.assertEqual(len(json_output["nodes"]), 1)
+        self.assertEqual(json_output["nodes"][0]["id"], "TestNode")
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, "graph_data.json")))
+
+    def test_export_with_uncreated_directory(self):
+        import networkx as nx
+
+        exporter = GraphExporter()
+        graph = nx.DiGraph()
+
+        nested_dir = os.path.join(self.test_dir, "nested", "dir")
+        output_file = os.path.join(nested_dir, "graph_data.json")
+
+        self.assertFalse(os.path.exists(nested_dir))
+
+        _ = exporter.export_to_react_flow(graph, output_path=output_file)
+
+        self.assertTrue(os.path.exists(output_file))
+        self.assertTrue(os.path.exists(nested_dir))
+
+    def test_export_with_dependencies(self):
+        import networkx as nx
+
+        exporter = GraphExporter()
+        graph = nx.DiGraph()
+
+        dependencies = [
+            {
+                "file": "source_file.py",
+                "dependencies": [
+                    {
+                        "is_local": True,
+                        "module": "target_file.py",
+                        "names": ["my_func"],
+                    },
+                    {"is_local": False, "module": "sys", "names": []},
+                ],
+            },
+            {
+                "dependencies": [
+                    {
+                        "is_local": True,
+                        "module": "another_target.py",
+                        "names": ["ClassA"],
+                    }
+                ]
+            },
+        ]
+
+        json_output = exporter.export_to_react_flow(graph, dependencies=dependencies)
+
+        self.assertIn("file_dependencies", json_output)
+        file_deps = json_output["file_dependencies"]
+
+        self.assertEqual(len(file_deps), 2)
+
+        # Check first dependency
+        self.assertEqual(file_deps[0]["source_file"], "source_file.py")
+        self.assertEqual(file_deps[0]["target_file"], "target_file.py")
+        self.assertEqual(file_deps[0]["imports"], ["my_func"])
+
+        # Check second dependency with default "unknown" source_file
+        self.assertEqual(file_deps[1]["source_file"], "unknown")
+        self.assertEqual(file_deps[1]["target_file"], "another_target.py")
+        self.assertEqual(file_deps[1]["imports"], ["ClassA"])
+
 
 if __name__ == "__main__":
     unittest.main()

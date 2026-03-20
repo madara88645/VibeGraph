@@ -5,12 +5,15 @@ import shutil
 import tempfile
 import uvicorn
 import zipfile
+import functools
 from pathlib import Path
 from typing import List, Literal
-from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
+from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import logging
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
@@ -32,6 +35,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to prevent leaking stack traces and internals
+    to the client. Logs the actual error and returns a generic 500 JSON response.
+    """
+    logger.error(
+        f"Unhandled exception during {request.method} {request.url.path}: {exc}",
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 
 teacher = GroqTeacher()
 exporter = GraphExporter()
@@ -55,6 +77,11 @@ def _is_safe_path(path: str) -> bool:
         cwd = os.path.realpath(os.getcwd())
 
         if os.path.commonpath([resolved, cwd]) == cwd:
+            rel_path = os.path.relpath(resolved, cwd)
+            parts = rel_path.split(os.sep)
+            # Block hidden files and directories
+            if any(part.startswith(".") for part in parts if part != "."):
+                return False
             return True
     except ValueError:
         pass
@@ -64,6 +91,9 @@ def _is_safe_path(path: str) -> bool:
         if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
             rel_path = os.path.relpath(resolved, tmp_dir)
             parts = rel_path.split(os.sep)
+            # Block hidden files and directories
+            if any(part.startswith(".") for part in parts if part != "."):
+                return False
             if parts and (
                 parts[0].startswith(UPLOAD_PREFIX)
                 or parts[0].startswith("vibegraph_test_")
@@ -73,6 +103,24 @@ def _is_safe_path(path: str) -> bool:
         pass
 
     return False
+
+
+@functools.lru_cache(maxsize=128)
+def _get_parsed_ast(
+    resolved_path: str, mtime: float
+) -> tuple[str | None, ast.AST | None, str | None]:
+    try:
+        with open(resolved_path, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError as e:
+        return None, None, f"# Error reading file: {e}"
+
+    try:
+        tree = ast.parse(source, filename=resolved_path)
+    except SyntaxError as e:
+        return source, None, f"# Syntax error in {resolved_path}: {e}"
+
+    return source, tree, None
 
 
 def _extract_snippet(
@@ -105,15 +153,18 @@ def _extract_snippet(
         return f"# Source for {node_id} (External/Built-in)", None, None, None
 
     try:
-        with open(resolved, "r", encoding="utf-8") as f:
-            source = f.read()
-    except OSError as e:
-        return f"# Error reading file: {e}", None, None, None
+        mtime = os.path.getmtime(resolved)
+    except OSError:
+        mtime = 0.0
 
-    try:
-        tree = ast.parse(source, filename=resolved)
-    except SyntaxError as e:
-        return f"# Syntax error in {file_path}: {e}", None, None, source
+    source, tree, error = _get_parsed_ast(resolved, mtime)
+
+    if error:
+        if source is not None:
+            # It was a SyntaxError where we still got the source
+            return error, None, None, source
+        # It was an OSError where we don't have source
+        return error, None, None, None
 
     target_name = node_id.split(".")[-1]
     lines = source.splitlines()
@@ -352,8 +403,10 @@ def upload_project(
 
                     # Check for path traversal
                     for member in zip_ref.infolist():
+                        # Prevent absolute path resolution escaping tmp_dir_abs
+                        safe_filename = member.filename.lstrip("/\\")
                         extracted_path = os.path.abspath(
-                            os.path.join(tmp_dir_abs, member.filename)
+                            os.path.join(tmp_dir_abs, safe_filename)
                         )
                         if (
                             not extracted_path.startswith(tmp_dir_abs + os.sep)
@@ -363,8 +416,9 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
+                        # Update the filename to the safe version for extractall
+                        member.filename = safe_filename
                         safe_members.append(member)
-
                     # Check for zip bomb
                     total_size = sum(m.file_size for m in safe_members)
                     if total_size > MAX_UNCOMPRESSED_SIZE:
@@ -407,4 +461,4 @@ if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104
+    uvicorn.run(app, host="127.0.0.1", port=8000)
