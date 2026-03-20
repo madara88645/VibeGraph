@@ -186,4 +186,6 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
     );
 };
 
-export default FileSidebar;
+// ⚡ Bolt Optimization: Use React.memo() to prevent O(N) re-renders when
+// App.jsx rapidly updates global nodes/edges state during Ghost Runner animations.
+export default React.memo(FileSidebar);

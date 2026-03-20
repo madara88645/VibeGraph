@@ -173,4 +173,6 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     );
 };
 
-export default ChatDrawer;
+// ⚡ Bolt Optimization: Use React.memo() to prevent O(N) re-renders when
+// App.jsx rapidly updates global nodes/edges state during Ghost Runner animations.
+export default React.memo(ChatDrawer);

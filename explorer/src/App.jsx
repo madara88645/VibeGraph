@@ -121,7 +121,7 @@ function AppInner() {
 
           <SimulationControls
             isPlaying={isPlaying}
-            onToggle={() => setIsPlaying(!isPlaying)}
+            onToggle={useCallback(() => setIsPlaying(!isPlaying), [isPlaying, setIsPlaying])}
             onReset={onResetSimulation}
             stepCount={stepCount}
             speed={speed}
@@ -133,7 +133,7 @@ function AppInner() {
             node={selectedNode}
             explanation={explanation}
             loading={loading}
-            onClose={() => setSelectedNode(null)}
+            onClose={useCallback(() => setSelectedNode(null), [setSelectedNode])}
             fetchExplanation={fetchExplanation}
           />
 
@@ -142,7 +142,7 @@ function AppInner() {
             selectedNode={selectedNode}
             allNodes={allNodes}
             isOpen={chatOpen}
-            onToggle={() => setChatOpen(!chatOpen)}
+            onToggle={useCallback(() => setChatOpen(!chatOpen), [chatOpen, setChatOpen])}
           />
         </div>
 
@@ -151,7 +151,7 @@ function AppInner() {
           activeNode={codePanelNode}
           isGhostRunning={isPlaying}
           isOpen={codePanelOpen}
-          onToggle={() => setCodePanelOpen(!codePanelOpen)}
+          onToggle={useCallback(() => setCodePanelOpen(!codePanelOpen), [codePanelOpen, setCodePanelOpen])}
         />
       </div>
 
@@ -162,7 +162,7 @@ function AppInner() {
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}
-        onToggle={() => setLearningPathOpen(false)}
+        onToggle={useCallback(() => setLearningPathOpen(false), [setLearningPathOpen])}
       />
     </div>
   );

@@ -67,4 +67,6 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
     );
 };
 
-export default SimulationControls;
+// ⚡ Bolt Optimization: Use React.memo() to prevent O(N) re-renders when
+// App.jsx rapidly updates global nodes/edges state during Ghost Runner animations.
+export default React.memo(SimulationControls);
