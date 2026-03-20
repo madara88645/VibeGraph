@@ -34,12 +34,14 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
             <div className="sim-divider" />
 
             {/* Speed Selector */}
-            <div>
+            <div role="group" aria-label="Simulation Speed">
                 {speedOptions.map(opt => (
                     <button
                         key={opt.value}
                         onClick={() => onSpeedChange && onSpeedChange(opt.value)}
                         className={`sim-speed ${speed === opt.value ? 'active' : ''}`}
+                        aria-pressed={speed === opt.value}
+                        aria-label={`${opt.label} speed`}
                     >
                         {opt.label}
                     </button>
