@@ -14,23 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import logging
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
 
 app = FastAPI(title="Vibe Learning System API")
-
-
-@app.exception_handler(Exception)
-def global_exception_handler(request, exc: Exception):
-    """Global catch-all to prevent stack trace leaks."""
-    logging.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "An internal server error occurred."},
-    )
-
 
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 UPLOAD_PREFIX = "vibegraph_upload_"
