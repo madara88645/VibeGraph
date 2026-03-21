@@ -100,9 +100,11 @@ def test_explain_code_cache_uses_lru_recency():
         teacher.client = MagicMock()
 
         def fake_create(*args, **kwargs):
-            code = kwargs["messages"][1]["content"].split("```python\n", 1)[1].split(
-                "\n```", 1
-            )[0]
+            code = (
+                kwargs["messages"][1]["content"]
+                .split("```python\n", 1)[1]
+                .split("\n```", 1)[0]
+            )
             payload = {
                 "analogy": f"analogy:{code}",
                 "technical": f"technical:{code}",

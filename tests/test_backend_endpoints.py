@@ -367,7 +367,6 @@ class TestChatEndpoint(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("⚠️", resp.json()["answer"])
 
-
     @patch("app.dependencies.teacher")
     def test_chat_stream_formats_multiline_tokens_as_valid_sse(self, mock_teacher):
         """Multiline tokens should be emitted as valid SSE data fields."""
