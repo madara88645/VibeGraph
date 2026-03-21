@@ -14,21 +14,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import logging
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
 
 app = FastAPI(title="Vibe Learning System API")
 
+logger = logging.getLogger(__name__)
 
 @app.exception_handler(Exception)
-def global_exception_handler(request, exc: Exception):
-    """Global catch-all to prevent stack trace leaks."""
-    logging.error(f"Unhandled exception: {exc}", exc_info=True)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to prevent leaking stack traces and internals
+    to the client. Logs the actual error and returns a generic 500 JSON response.
+    """
+    logger.error(
+        f"Unhandled exception during {request.method} {request.url.path}: {exc}",
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal server error occurred."},
+        content={"detail": "Internal server error"},
     )
 
 
@@ -47,24 +53,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-logger = logging.getLogger(__name__)
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """
-    Catch-all exception handler to prevent leaking stack traces and internals
-    to the client. Logs the actual error and returns a generic 500 JSON response.
-    """
-    logger.error(
-        f"Unhandled exception during {request.method} {request.url.path}: {exc}",
-        exc_info=True,
-    )
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"},
-    )
 
 
 teacher = GroqTeacher()

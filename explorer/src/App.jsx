@@ -72,6 +72,12 @@ function AppInner() {
     });
   }, [handleUploadSuccess, resetInteractionState, setIsPlaying, setActiveNodeId]);
 
+  const handleToggleSimulation = useCallback(() => setIsPlaying(prev => !prev), [setIsPlaying]);
+  const handleCloseExplanation = useCallback(() => setSelectedNode(null), [setSelectedNode]);
+  const handleToggleChat = useCallback(() => setChatOpen(prev => !prev), [setChatOpen]);
+  const handleToggleCodePanel = useCallback(() => setCodePanelOpen(prev => !prev), [setCodePanelOpen]);
+  const handleToggleLearningPath = useCallback(() => setLearningPathOpen(false), [setLearningPathOpen]);
+
   return (
     <div className="app-shell">
       {/* Sidebar */}
@@ -121,7 +127,7 @@ function AppInner() {
 
           <SimulationControls
             isPlaying={isPlaying}
-            onToggle={useCallback(() => setIsPlaying(!isPlaying), [isPlaying, setIsPlaying])}
+            onToggle={handleToggleSimulation}
             onReset={onResetSimulation}
             stepCount={stepCount}
             speed={speed}
@@ -133,7 +139,7 @@ function AppInner() {
             node={selectedNode}
             explanation={explanation}
             loading={loading}
-            onClose={useCallback(() => setSelectedNode(null), [setSelectedNode])}
+            onClose={handleCloseExplanation}
             fetchExplanation={fetchExplanation}
           />
 
@@ -142,7 +148,7 @@ function AppInner() {
             selectedNode={selectedNode}
             allNodes={allNodes}
             isOpen={chatOpen}
-            onToggle={useCallback(() => setChatOpen(!chatOpen), [chatOpen, setChatOpen])}
+            onToggle={handleToggleChat}
           />
         </div>
 
@@ -151,7 +157,7 @@ function AppInner() {
           activeNode={codePanelNode}
           isGhostRunning={isPlaying}
           isOpen={codePanelOpen}
-          onToggle={useCallback(() => setCodePanelOpen(!codePanelOpen), [codePanelOpen, setCodePanelOpen])}
+          onToggle={handleToggleCodePanel}
         />
       </div>
 
@@ -162,7 +168,7 @@ function AppInner() {
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}
-        onToggle={useCallback(() => setLearningPathOpen(false), [setLearningPathOpen])}
+        onToggle={handleToggleLearningPath}
       />
     </div>
   );
