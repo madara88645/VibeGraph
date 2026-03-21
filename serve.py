@@ -22,6 +22,7 @@ app = FastAPI(title="Vibe Learning System API")
 
 logger = logging.getLogger(__name__)
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
