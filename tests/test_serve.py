@@ -32,7 +32,7 @@ from io import BytesIO
 def test_upload_project_internal_error_leak():
     """Ensure internal errors during upload do not leak stack traces."""
     with patch(
-        "serve.CodeAnalyzer.analyze_file",
+        "app.routers.upload.CodeAnalyzer.analyze_file",
         side_effect=Exception("SECRET_INTERNAL_ERROR"),
     ):
         file_content = b"print('hello')"
@@ -47,7 +47,8 @@ def test_upload_project_internal_error_leak():
 def test_global_exception_handler_leak():
     """Ensure global unhandled exceptions return a generic 500 response."""
     with patch(
-        "serve._extract_snippet", side_effect=Exception("SECRET_UNHANDLED_ERROR")
+        "app.routers.explain.extract_snippet",
+        side_effect=Exception("SECRET_UNHANDLED_ERROR"),
     ):
         try:
             response = client.post(
