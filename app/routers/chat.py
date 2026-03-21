@@ -10,6 +10,12 @@ import app.dependencies as deps
 router = APIRouter(prefix="/api", tags=["chat"])
 
 
+def format_sse_event(data: str) -> str:
+    """Encode *data* as a valid SSE event, preserving embedded newlines."""
+    lines = str(data).splitlines() or [""]
+    return "".join(f"data: {line}\n" for line in lines) + "\n"
+
+
 @router.post("/chat")
 def chat_with_node(request: ChatRequest):
     """
@@ -46,8 +52,8 @@ def chat_stream(request: ChatRequest):
             question=request.question,
             history=history_dicts,
         ):
-            yield f"data: {token}\n\n"
-        yield "data: [DONE]\n\n"
+            yield format_sse_event(token)
+        yield format_sse_event("[DONE]")
 
     return StreamingResponse(
         event_generator(),

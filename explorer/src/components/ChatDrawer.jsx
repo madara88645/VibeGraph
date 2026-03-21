@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
+import { consumeSseChunk } from '../utils/sse';
+
 const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
@@ -96,29 +98,54 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+                let streamDone = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
+                    const chunk = decoder.decode(value, { stream: true });
+                    const parsed = consumeSseChunk(buffer, chunk);
+                    buffer = parsed.buffer;
 
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const token = line.slice(6);
-                            if (token === '[DONE]') break;
-                            setMessages((prev) => {
-                                const updated = [...prev];
-                                const last = updated[updated.length - 1];
-                                updated[updated.length - 1] = {
-                                    ...last,
-                                    content: last.content + token,
-                                };
-                                return updated;
-                            });
+                    for (const eventData of parsed.events) {
+                        if (eventData === '[DONE]') {
+                            streamDone = true;
+                            break;
                         }
+
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            const last = updated[updated.length - 1];
+                            updated[updated.length - 1] = {
+                                ...last,
+                                content: last.content + eventData,
+                            };
+                            return updated;
+                        });
+                    }
+
+                    if (streamDone) {
+                        break;
+                    }
+                }
+
+                if (!streamDone && buffer) {
+                    const parsed = consumeSseChunk(buffer, '\n\n');
+                    for (const eventData of parsed.events) {
+                        if (eventData === '[DONE]') {
+                            break;
+                        }
+
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            const last = updated[updated.length - 1];
+                            updated[updated.length - 1] = {
+                                ...last,
+                                content: last.content + eventData,
+                            };
+                            return updated;
+                        });
                     }
                 }
             }

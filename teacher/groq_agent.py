@@ -3,6 +3,8 @@ import os
 import json
 import logging
 import re
+from collections import OrderedDict
+from threading import RLock
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -65,7 +67,8 @@ class GroqTeacher:
                 )
             model_name = "llama-3.3-70b-versatile"
         self.model_name = model_name
-        self._explain_cache: dict[str, dict] = {}
+        self._explain_cache: OrderedDict[str, dict] = OrderedDict()
+        self._cache_lock = RLock()
         if not self.api_key:
             print("Warning: GROQ_API_KEY not found in .env")
             self.client = None
@@ -105,8 +108,11 @@ class GroqTeacher:
         cache_key = hashlib.sha256(
             f"{code_snippet}|{level}|{context}".encode()
         ).hexdigest()
-        if cache_key in self._explain_cache:
-            return self._explain_cache[cache_key]
+        with self._cache_lock:
+            cached = self._explain_cache.get(cache_key)
+            if cached is not None:
+                self._explain_cache.move_to_end(cache_key)
+                return cached
 
         tone = _TONE_MAP.get(level, _TONE_MAP["intermediate"])
 
@@ -139,11 +145,12 @@ class GroqTeacher:
                 "key_takeaway": parsed.get("key_takeaway", _FALLBACK["key_takeaway"]),
             }
 
-            # Store in cache (evict oldest if full)
-            if len(self._explain_cache) >= _MAX_CACHE_SIZE:
-                oldest_key = next(iter(self._explain_cache))
-                del self._explain_cache[oldest_key]
-            self._explain_cache[cache_key] = result
+            # Store in cache using true LRU ordering.
+            with self._cache_lock:
+                self._explain_cache[cache_key] = result
+                self._explain_cache.move_to_end(cache_key)
+                if len(self._explain_cache) > _MAX_CACHE_SIZE:
+                    self._explain_cache.popitem(last=False)
 
             return result
 

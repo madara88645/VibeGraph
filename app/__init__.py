@@ -37,12 +37,14 @@ class JSONFormatter(logging.Formatter):
 
 def configure_logging() -> None:
     """Set up structured JSON logging for production."""
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    if root.handlers:
+        return
+
     handler = logging.StreamHandler()
     handler.setFormatter(JSONFormatter())
-    root = logging.getLogger()
-    root.handlers.clear()
     root.addHandler(handler)
-    root.setLevel(logging.INFO)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

@@ -368,6 +368,28 @@ class TestChatEndpoint(unittest.TestCase):
         self.assertIn("⚠️", resp.json()["answer"])
 
 
+    @patch("app.dependencies.teacher")
+    def test_chat_stream_formats_multiline_tokens_as_valid_sse(self, mock_teacher):
+        """Multiline tokens should be emitted as valid SSE data fields."""
+        mock_teacher.stream_chat.return_value = iter(["line one\nline two"])
+
+        with self.client.stream(
+            "POST",
+            "/api/chat/stream",
+            json={
+                "node_id": "main",
+                "file_path": self.proj.file_a,
+                "question": "Stream test",
+                "history": [],
+            },
+        ) as resp:
+            body = b"".join(resp.iter_bytes()).decode()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("data: line one\ndata: line two\n\n", body)
+        self.assertTrue(body.endswith("data: [DONE]\n\n"))
+
+
 # ---------------------------------------------------------------------------
 # 3. Learning Path Endpoint Tests (/api/learning-path)
 # ---------------------------------------------------------------------------
