@@ -254,8 +254,10 @@ class CodeAnalyzer:
     @functools.lru_cache(maxsize=1024)
     def _is_local_module(module_name: str, project_root: str) -> bool:
         """Check whether *module_name* maps to a .py file under *project_root*."""
-        parts = module_name.split(".")
+        # PERFORMANCE OPTIMIZATION (Bolt): Replace '.' with os.sep instead of split()
+        # This avoids list allocation and *parts unpacking overhead in os.path.join.
+        rel_path = module_name.replace(".", os.sep)
         # Try as a package (directory with __init__.py) or plain .py file
-        candidate_file = os.path.join(project_root, *parts) + ".py"
-        candidate_pkg = os.path.join(project_root, *parts, "__init__.py")
+        candidate_file = os.path.join(project_root, rel_path) + ".py"
+        candidate_pkg = os.path.join(project_root, rel_path, "__init__.py")
         return os.path.isfile(candidate_file) or os.path.isfile(candidate_pkg)

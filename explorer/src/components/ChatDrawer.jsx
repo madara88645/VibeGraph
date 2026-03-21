@@ -224,4 +224,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     );
 };
 
-export default ChatDrawer;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap ChatDrawer in React.memo() to prevent parsing/rendering
+// chat history Markdown on every tick during rapid simulation state changes.
+export default React.memo(ChatDrawer);
