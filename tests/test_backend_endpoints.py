@@ -803,6 +803,7 @@ class TestExtractSnippetUnit(unittest.TestCase):
     def test_extract_snippet_unsafe_path(self):
         """Should deny paths outside of safe directories with HTTPException."""
         from fastapi import HTTPException
+
         with self.assertRaises(HTTPException) as ctx:
             _extract_snippet("../../../../etc/passwd", "root")
         self.assertEqual(ctx.exception.status_code, 403)
