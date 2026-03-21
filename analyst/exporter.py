@@ -10,7 +10,7 @@ class GraphExporter:
     def export_to_react_flow(
         self,
         graph: nx.DiGraph,
-        output_path: str = None,
+        output_path: str | None = None,
         dependencies: list[dict] | None = None,
     ) -> Dict[str, Any]:
         """

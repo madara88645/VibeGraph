@@ -59,28 +59,79 @@ Files included: ${fileNames.join(', ')}
 Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         }
 
+        // Add placeholder assistant message for streaming
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    node_id: selectedNode?.id || null,
-                    file_path: selectedNode?.data?.file || null,
-                    project_context: projectContext,
-                    question: text,
-                    history: newMessages.slice(-10),
-                }),
+            const requestBody = JSON.stringify({
+                node_id: selectedNode?.id || null,
+                file_path: selectedNode?.data?.file || null,
+                project_context: projectContext,
+                question: text,
+                history: newMessages.slice(-10),
             });
 
-            const data = await response.json();
-            const aiContent = data.answer || data.response || data.message || 'No response.';
-            setMessages((prev) => [...prev, { role: 'assistant', content: aiContent }]);
+            const response = await fetch('/api/chat/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: requestBody,
+            });
+
+            if (!response.ok || !response.body) {
+                // Fallback to non-streaming endpoint
+                const fallbackResp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: requestBody,
+                });
+                const data = await fallbackResp.json();
+                const aiContent = data.answer || data.response || data.message || 'No response.';
+                setMessages((prev) => {
+                    const updated = [...prev];
+                    updated[updated.length - 1] = { role: 'assistant', content: aiContent };
+                    return updated;
+                });
+            } else {
+                // Stream tokens from SSE
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const token = line.slice(6);
+                            if (token === '[DONE]') break;
+                            setMessages((prev) => {
+                                const updated = [...prev];
+                                const last = updated[updated.length - 1];
+                                updated[updated.length - 1] = {
+                                    ...last,
+                                    content: last.content + token,
+                                };
+                                return updated;
+                            });
+                        }
+                    }
+                }
+            }
         } catch (err) {
             console.error("Chat error:", err);
-            setMessages((prev) => [
-                ...prev,
-                { role: 'assistant', content: '⚠️ Could not reach the backend. Is serve.py running?' },
-            ]);
+            setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                    role: 'assistant',
+                    content: '\u26a0\ufe0f Could not reach the backend. Is serve.py running?',
+                };
+                return updated;
+            });
         } finally {
             setLoading(false);
         }
@@ -137,7 +188,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     </div>
                 ))}
 
-                {loading && (
+                {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
                     <div className="chat-message chat-message-assistant">
                         <div className="chat-bubble chat-typing">
                             <span className="typing-dot"></span>

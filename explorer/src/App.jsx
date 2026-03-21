@@ -11,6 +11,7 @@ import ChatDrawer from './components/ChatDrawer';
 import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
 import SimulationControls from './components/SimulationControls';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Custom Hooks
 import { useGraphData } from './hooks/useGraphData';
@@ -111,13 +112,15 @@ function AppInner() {
 
         {/* Graph */}
         <div className="graph-shell">
-          <GraphViewer
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-          />
+          <ErrorBoundary>
+            <GraphViewer
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={onNodeClick}
+            />
+          </ErrorBoundary>
 
           <SimulationControls
             isPlaying={isPlaying}
@@ -138,12 +141,14 @@ function AppInner() {
           />
 
           {/* Chat Drawer */}
-          <ChatDrawer
-            selectedNode={selectedNode}
-            allNodes={allNodes}
-            isOpen={chatOpen}
-            onToggle={() => setChatOpen(!chatOpen)}
-          />
+          <ErrorBoundary>
+            <ChatDrawer
+              selectedNode={selectedNode}
+              allNodes={allNodes}
+              isOpen={chatOpen}
+              onToggle={() => setChatOpen(!chatOpen)}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* Code Panel — Bottom */}
@@ -171,8 +176,10 @@ function AppInner() {
 // Wrap with ReactFlowProvider so SearchBar and LearningPath can use useReactFlow()
 export default function App() {
   return (
-    <ReactFlowProvider>
-      <AppInner />
-    </ReactFlowProvider>
+    <ErrorBoundary>
+      <ReactFlowProvider>
+        <AppInner />
+      </ReactFlowProvider>
+    </ErrorBoundary>
   );
 }
