@@ -186,4 +186,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
     );
 };
 
-export default FileSidebar;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap FileSidebar in React.memo() to prevent O(N) re-renders
+// of the entire file tree when the App's rapid simulation state changes.
+export default React.memo(FileSidebar);

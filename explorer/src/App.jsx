@@ -72,6 +72,13 @@ function AppInner() {
     });
   }, [handleUploadSuccess, resetInteractionState, setIsPlaying, setActiveNodeId]);
 
+  // PERFORMANCE OPTIMIZATION (Bolt):
+  // Stabilize callbacks passed to memoized components to prevent breaking React.memo
+  const handleToggleSimulation = useCallback(() => setIsPlaying(prev => !prev), [setIsPlaying]);
+  const handleToggleChat = useCallback(() => setChatOpen(prev => !prev), [setChatOpen]);
+  const handleToggleCodePanel = useCallback(() => setCodePanelOpen(prev => !prev), [setCodePanelOpen]);
+  const handleCloseLearningPath = useCallback(() => setLearningPathOpen(false), [setLearningPathOpen]);
+
   return (
     <div className="app-shell">
       {/* Sidebar */}
@@ -121,7 +128,7 @@ function AppInner() {
 
           <SimulationControls
             isPlaying={isPlaying}
-            onToggle={() => setIsPlaying(!isPlaying)}
+            onToggle={handleToggleSimulation}
             onReset={onResetSimulation}
             stepCount={stepCount}
             speed={speed}
@@ -142,7 +149,7 @@ function AppInner() {
             selectedNode={selectedNode}
             allNodes={allNodes}
             isOpen={chatOpen}
-            onToggle={() => setChatOpen(!chatOpen)}
+            onToggle={handleToggleChat}
           />
         </div>
 
@@ -151,7 +158,7 @@ function AppInner() {
           activeNode={codePanelNode}
           isGhostRunning={isPlaying}
           isOpen={codePanelOpen}
-          onToggle={() => setCodePanelOpen(!codePanelOpen)}
+          onToggle={handleToggleCodePanel}
         />
       </div>
 
@@ -162,7 +169,7 @@ function AppInner() {
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}
-        onToggle={() => setLearningPathOpen(false)}
+        onToggle={handleCloseLearningPath}
       />
     </div>
   );

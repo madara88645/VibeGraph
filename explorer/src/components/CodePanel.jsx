@@ -174,4 +174,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     );
 };
 
-export default CodePanel;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap CodePanel in React.memo() to prevent parsing/rendering
+// syntax highlighting on every tick during rapid simulation state changes.
+export default React.memo(CodePanel);
