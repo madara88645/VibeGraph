@@ -1,6 +1,7 @@
-import httpx
+from fastapi.testclient import TestClient
+from serve import app
 
-BASE_URL = "http://localhost:8000"
+client = TestClient(app)
 
 
 def test_case_a_single_file():
@@ -8,9 +9,7 @@ def test_case_a_single_file():
     file_path = "tests/upload_cases/case_a.py"
     with open(file_path, "rb") as f:
         files = {"files": ("case_a.py", f, "text/x-python")}
-        response = httpx.post(
-            f"{BASE_URL}/api/upload-project", files=files, timeout=30.0
-        )
+        response = client.post("/api/upload-project", files=files, timeout=30.0)
 
     assert response.status_code == 200, (
         f"Expected 200, got {response.status_code}: {response.text}"
@@ -29,9 +28,7 @@ def test_case_b_multi_file():
         ("files", ("lib/utils.py", f2, "text/x-python")),
     ]
     try:
-        response = httpx.post(
-            f"{BASE_URL}/api/upload-project", files=files, timeout=30.0
-        )
+        response = client.post("/api/upload-project", files=files, timeout=30.0)
     finally:
         f1.close()
         f2.close()
@@ -51,9 +48,7 @@ def test_case_c_error_handling():
     file_path = "tests/upload_cases/invalid.py"
     with open(file_path, "rb") as f:
         files = {"files": ("invalid.py", f, "text/x-python")}
-        response = httpx.post(
-            f"{BASE_URL}/api/upload-project", files=files, timeout=30.0
-        )
+        response = client.post("/api/upload-project", files=files, timeout=30.0)
 
     print(f"Response status: {response.status_code}")
     assert response.status_code == 400, (
