@@ -1,6 +1,5 @@
 """Upload integration tests — uses TestClient (no live server needed)."""
 
-from io import BytesIO
 from fastapi.testclient import TestClient
 from serve import app
 
