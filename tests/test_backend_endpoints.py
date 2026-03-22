@@ -491,12 +491,12 @@ class TestDependencyExtraction(unittest.TestCase):
     """Tests for CodeAnalyzer.extract_dependencies which powers the Deps tab."""
 
     def setUp(self):
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
         self.ctx = _TempProject()
         self.proj = self.ctx.__enter__()
 
     def tearDown(self):
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
         self.ctx.__exit__(None, None, None)
 
     def test_extract_dependencies_no_project_root(self):
@@ -861,21 +861,21 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
 
 class TestIsLocalModule(unittest.TestCase):
-    """Tests for CodeAnalyzer._is_local_module."""
+    """Tests for CodeAnalyzer._get_local_modules."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_test_is_local_")
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
 
     def test_plain_python_file(self):
         """Should return True for a plain .py file."""
         with open(os.path.join(self.tmpdir, "my_module.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("my_module", self.tmpdir))
+        self.assertIn("my_module", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_package_directory(self):
         """Should return True for a directory with an __init__.py file."""
@@ -883,7 +883,7 @@ class TestIsLocalModule(unittest.TestCase):
         os.makedirs(pkg_dir)
         with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("my_pkg", self.tmpdir))
+        self.assertIn("my_pkg", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_nested_module(self):
         """Should correctly resolve nested modules e.g. a.b.c"""
@@ -891,15 +891,15 @@ class TestIsLocalModule(unittest.TestCase):
         os.makedirs(pkg_dir)
         with open(os.path.join(pkg_dir, "c.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("a.b.c", self.tmpdir))
+        self.assertIn("a.b.c", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_non_existent_module(self):
         """Should return False if the module does not exist."""
-        self.assertFalse(CodeAnalyzer._is_local_module("non_existent", self.tmpdir))
+        self.assertNotIn("non_existent", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_empty_module_string(self):
         """Should handle empty module strings without crashing."""
-        self.assertFalse(CodeAnalyzer._is_local_module("", self.tmpdir))
+        self.assertNotIn("", CodeAnalyzer._get_local_modules(self.tmpdir))
 
 
 # ---------------------------------------------------------------------------
