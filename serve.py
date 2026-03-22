@@ -14,22 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import logging
 from teacher.groq_agent import GroqTeacher
 from analyst.analyzer import CodeAnalyzer
 from analyst.exporter import GraphExporter
 
 app = FastAPI(title="Vibe Learning System API")
-
-
-@app.exception_handler(Exception)
-def global_exception_handler(request, exc: Exception):
-    """Global catch-all to prevent stack trace leaks."""
-    logging.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "An internal server error occurred."},
-    )
 
 
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
@@ -409,8 +398,9 @@ def upload_project(
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
-                    # Check for path traversal
+                    # Check for path traversal and zip bomb
                     safe_members = []
+                    total_size = 0
                     for member in zip_ref.infolist():
                         # Prevent absolute path resolution escaping tmp_dir_abs
                         safe_filename = member.filename.lstrip("/\\")
@@ -425,16 +415,18 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
+                        # Check for zip bomb during iteration
+                        total_size += member.file_size
+                        if total_size > MAX_UNCOMPRESSED_SIZE:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
+                            )
+
                         # Update the filename to the safe version for extractall
                         member.filename = safe_filename
                         safe_members.append(member)
-                    # Check for zip bomb
-                    total_size = sum(m.file_size for m in safe_members)
-                    if total_size > MAX_UNCOMPRESSED_SIZE:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
-                        )
+
                     zip_ref.extractall(tmp_dir, members=safe_members)
                 os.remove(file_path)  # Remove zip after extraction
 
