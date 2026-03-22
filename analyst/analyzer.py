@@ -232,21 +232,26 @@ class CodeAnalyzer:
                 for alias in node.names:
                     module = alias.name
                     # E.g. "app.models" -> check "app.models" or "app"
-                    top_level = module.split('.')[0]
+                    top_level = module.split(".")[0]
                     dependencies.append(
                         {
                             "module": module,
                             "names": [alias.asname or alias.name],
-                            "is_local": module in local_modules or top_level in local_modules,
+                            "is_local": module in local_modules
+                            or top_level in local_modules,
                         }
                     )
 
             elif isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 names = [alias.name for alias in node.names]
-                top_level = module.split('.')[0] if module else ""
+                top_level = module.split(".")[0] if module else ""
                 # Relative imports (level > 0) are always local
-                is_local = node.level > 0 or module in local_modules or top_level in local_modules
+                is_local = (
+                    node.level > 0
+                    or module in local_modules
+                    or top_level in local_modules
+                )
                 dependencies.append(
                     {
                         "module": module,
@@ -269,29 +274,36 @@ class CodeAnalyzer:
         for root, dirs, files in os.walk(project_root):
             # Same ignored dirs logic as analyze_directory
             dirs[:] = [
-                d for d in dirs
-                if d not in {
-                    ".git", "node_modules", "site-packages",
-                    "venv", "env", ".venv", "__pycache__"
+                d
+                for d in dirs
+                if d
+                not in {
+                    ".git",
+                    "node_modules",
+                    "site-packages",
+                    "venv",
+                    "env",
+                    ".venv",
+                    "__pycache__",
                 }
             ]
 
             # Compute relative module path components
             rel_dir = os.path.relpath(root, project_root)
-            if rel_dir == '.':
+            if rel_dir == ".":
                 base_parts = []
             else:
                 base_parts = rel_dir.split(os.sep)
-                local_mods.add('.'.join(base_parts)) # The package dir itself
+                local_mods.add(".".join(base_parts))  # The package dir itself
 
             for file in files:
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     # Strip .py
                     mod_name = file[:-3]
-                    if mod_name == '__init__':
+                    if mod_name == "__init__":
                         continue
 
                     parts = base_parts + [mod_name]
-                    local_mods.add('.'.join(parts))
+                    local_mods.add(".".join(parts))
 
         return frozenset(local_mods)
