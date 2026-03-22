@@ -233,6 +233,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     ref={inputRef}
                     className="chat-input"
                     placeholder="Ask a question…"
+                    aria-label="Chat message"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
