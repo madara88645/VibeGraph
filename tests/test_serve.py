@@ -60,3 +60,52 @@ def test_global_exception_handler_leak():
         assert response.status_code == 500
         assert "SECRET_UNHANDLED_ERROR" not in response.text
         assert response.status_code == 500
+
+
+import os
+import time
+
+from serve import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+
+
+def test_cleanup_expired_upload_dirs(tmp_path):
+    """Ensure expired directories are removed and recent ones or files are kept."""
+    old_dir = tmp_path / f"{UPLOAD_PREFIX}old"
+    old_dir.mkdir()
+
+    recent_dir = tmp_path / f"{UPLOAD_PREFIX}recent"
+    recent_dir.mkdir()
+
+    ignored_dir = tmp_path / "other_prefix_old"
+    ignored_dir.mkdir()
+
+    file_with_prefix = tmp_path / f"{UPLOAD_PREFIX}file.txt"
+    file_with_prefix.write_text("not a dir")
+
+    now = time.time()
+    os.utime(old_dir, (now - 7200, now - 7200))
+    os.utime(recent_dir, (now - 10, now - 10))
+    os.utime(ignored_dir, (now - 7200, now - 7200))
+    os.utime(file_with_prefix, (now - 7200, now - 7200))
+
+    with patch("serve.tempfile.gettempdir", return_value=str(tmp_path)):
+        cleanup_expired_upload_dirs(retention_seconds=3600)
+
+    assert not old_dir.exists()
+    assert recent_dir.exists()
+    assert ignored_dir.exists()
+    assert file_with_prefix.exists()
+
+
+def test_cleanup_expired_upload_dirs_exception_handling(tmp_path):
+    """Ensure cleanup function safely ignores exceptions during deletion."""
+    error_dir = tmp_path / f"{UPLOAD_PREFIX}error"
+    error_dir.mkdir()
+
+    with patch("serve.tempfile.gettempdir", return_value=str(tmp_path)):
+        with patch("serve.shutil.rmtree", side_effect=Exception("Simulated error")):
+            now = time.time()
+            os.utime(error_dir, (now - 7200, now - 7200))
+            cleanup_expired_upload_dirs(retention_seconds=3600)
+
+    assert error_dir.exists()
