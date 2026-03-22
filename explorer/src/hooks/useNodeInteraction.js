@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export function useNodeInteraction() {
     const [selectedNode, setSelectedNode] = useState(null);
     const [explanation, setExplanation] = useState(null);
     const [loading, setLoading] = useState(false);
+    const explanationCacheRef = useRef(new Map());
 
     // Code Panel state
     const [codePanelOpen, setCodePanelOpen] = useState(true);
@@ -14,6 +15,14 @@ export function useNodeInteraction() {
     const [learningPathOpen, setLearningPathOpen] = useState(false);
 
     const fetchExplanation = useCallback(async (node, type = 'technical', level = 'intermediate') => {
+        const cacheKey = `${node.id}__${type}__${level}`;
+        const cached = explanationCacheRef.current.get(cacheKey);
+        if (cached) {
+            setExplanation(cached);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const file_path = node.data.file || node.data.original_data?.file;
@@ -24,8 +33,6 @@ export function useNodeInteraction() {
                 level
             };
 
-            // Ensure we hit the Vite proxy endpoint or use absolute backend address in dev
-            // Changing this to a relative path /api/explain as per DevOps plan
             const response = await fetch('/api/explain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,7 +40,9 @@ export function useNodeInteraction() {
             });
 
             const data = await response.json();
-            setExplanation(data.explanation ? data : "No explanation returned.");
+            const result = data.explanation ? data : "No explanation returned.";
+            explanationCacheRef.current.set(cacheKey, result);
+            setExplanation(result);
         } catch (err) {
             console.error(err);
             setExplanation("Failed to connect to Vibe Teacher (Backend). Is server.py running?");
@@ -57,6 +66,7 @@ export function useNodeInteraction() {
     const resetInteractionState = useCallback(() => {
         setSelectedNode(null);
         setExplanation(null);
+        explanationCacheRef.current.clear();
     }, []);
 
     return {

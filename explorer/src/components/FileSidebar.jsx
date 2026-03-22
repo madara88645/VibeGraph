@@ -7,7 +7,7 @@ const typeIcons = {
     default: '○',
 };
 
-const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
+const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCount }) => {
     const [activeTab, setActiveTab] = useState('files');
     const [deps, setDeps] = useState(null);
 
@@ -61,6 +61,16 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats }) => {
                     style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
                 >
                     <div className="sidebar-content">
+                        <button
+                            className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
+                            onClick={() => onSelectFile(null)}
+                        >
+                            <div className="file-main">
+                                <span className="file-icon">🗂️</span>
+                                <span className="file-name">All Files</span>
+                                <span className="file-count">{totalNodeCount || 0}</span>
+                            </div>
+                        </button>
                         {files.map(file => {
                             const stats = nodeStats[file] || {};
                             const isSelected = file === selectedFile;

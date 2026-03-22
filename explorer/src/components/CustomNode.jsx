@@ -17,22 +17,10 @@ const CustomNode = ({ data, selected }) => {
 
     return (
         <div
+            className={`vg-node ${selected ? 'vg-node-selected' : ''}`}
             style={{
-                minWidth: '140px',
-                maxWidth: '220px',
-                background: config.bg,
-                borderLeft: `3px solid ${config.accent}`,
-                borderRadius: '8px',
-                padding: '10px 12px',
-                fontFamily: "'Inter', system-ui, sans-serif",
-                position: 'relative',
-                backdropFilter: 'blur(8px)',
-                border: selected
-                    ? `1px solid ${config.accent}`
-                    : '1px solid rgba(255, 255, 255, 0.08)',
-                borderLeftWidth: '3px',
-                borderLeftColor: config.accent,
-                transition: 'all 0.25s ease',
+                '--node-accent': config.accent,
+                '--node-bg': config.bg,
             }}
         >
             <Handle

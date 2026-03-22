@@ -12,6 +12,7 @@ import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
 import SimulationControls from './components/SimulationControls';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
 
 // Custom Hooks
 import { useGraphData } from './hooks/useGraphData';
@@ -88,6 +89,7 @@ function AppInner() {
         selectedFile={selectedFile}
         onSelectFile={setSelectedFile}
         nodeStats={nodeStats}
+        totalNodeCount={allNodes.length}
       />
 
       {/* Main Area */}
@@ -184,9 +186,11 @@ function AppInner() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <ReactFlowProvider>
-        <AppInner />
-      </ReactFlowProvider>
+      <ToastProvider>
+        <ReactFlowProvider>
+          <AppInner />
+        </ReactFlowProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

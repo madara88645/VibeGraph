@@ -15,6 +15,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const [codeData, setCodeData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const highlightRef = useRef(null);
     const lastFetchedId = useRef(null);
 
@@ -64,6 +65,15 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         fetchCode();
     }, [activeNode, isOpen]);
 
+    // Close fullscreen on Escape
+    useEffect(() => {
+        const handleKey = (e) => {
+            if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [isFullscreen]);
+
     // Auto-scroll to highlighted function
     useEffect(() => {
         if (highlightRef.current) {
@@ -85,7 +95,10 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const endLine = codeData?.end_line;
 
     return (
-        <div className="code-panel">
+        <div className={`code-panel ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
+            {/* Backdrop for fullscreen */}
+            {isFullscreen && <div className="code-panel-backdrop" onClick={() => setIsFullscreen(false)} />}
+
             {/* Header */}
             <div className="code-panel-header">
                 <div className="code-panel-title">
@@ -109,7 +122,17 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         </span>
                     )}
                 </div>
-                <button className="code-panel-close" onClick={onToggle} title="Close Code Panel" aria-label="Close Code Panel">✕</button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                        className="code-panel-close"
+                        onClick={() => setIsFullscreen(prev => !prev)}
+                        title={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
+                        aria-label={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
+                    >
+                        {isFullscreen ? '⊙' : '⛶'}
+                    </button>
+                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel">✕</button>
+                </div>
             </div>
 
             {/* Content */}
