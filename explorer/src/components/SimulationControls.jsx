@@ -34,12 +34,13 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
             <div className="sim-divider" />
 
             {/* Speed Selector */}
-            <div>
+            <div role="group" aria-label="Simulation speed">
                 {speedOptions.map(opt => (
                     <button
                         key={opt.value}
                         onClick={() => onSpeedChange && onSpeedChange(opt.value)}
                         className={`sim-speed ${speed === opt.value ? 'active' : ''}`}
+                        aria-pressed={speed === opt.value}
                     >
                         {opt.label}
                     </button>
@@ -50,7 +51,7 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
             <div className="sim-divider" />
 
             {/* Step Counter */}
-            <div className="sim-step">
+            <div className="sim-step" aria-live="polite">
                 Step <strong>{stepCount}</strong>
             </div>
 
@@ -58,7 +59,7 @@ const SimulationControls = ({ isPlaying, onToggle, onReset, stepCount = 0, speed
             {currentLabel && (
                 <>
                     <div className="sim-divider" />
-                    <div className="sim-current">
+                    <div className="sim-current" aria-live="polite">
                         👻 {currentLabel}
                     </div>
                 </>
