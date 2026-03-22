@@ -47,10 +47,6 @@ describe('Toast notification system', () => {
         await user.click(screen.getByText('Error'));
         await user.click(screen.getByText('Info'));
 
-        const icons = screen.getAllByClassName
-            ? document.querySelectorAll('.toast-icon')
-            : screen.getByText('ok').parentElement.parentElement.querySelectorAll('.toast-icon');
-
         // All three toasts should be visible
         expect(screen.getByText('ok')).toBeInTheDocument();
         expect(screen.getByText('fail')).toBeInTheDocument();
