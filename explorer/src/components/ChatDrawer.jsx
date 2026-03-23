@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
+import { consumeSseChunk } from '../utils/sse';
+
 const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
@@ -59,28 +61,104 @@ Files included: ${fileNames.join(', ')}
 Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         }
 
+        // Add placeholder assistant message for streaming
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    node_id: selectedNode?.id || null,
-                    file_path: selectedNode?.data?.file || null,
-                    project_context: projectContext,
-                    question: text,
-                    history: newMessages.slice(-10),
-                }),
+            const requestBody = JSON.stringify({
+                node_id: selectedNode?.id || null,
+                file_path: selectedNode?.data?.file || null,
+                project_context: projectContext,
+                question: text,
+                history: newMessages.slice(-10),
             });
 
-            const data = await response.json();
-            const aiContent = data.answer || data.response || data.message || 'No response.';
-            setMessages((prev) => [...prev, { role: 'assistant', content: aiContent }]);
+            const response = await fetch('/api/chat/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: requestBody,
+            });
+
+            if (!response.ok || !response.body) {
+                // Fallback to non-streaming endpoint
+                const fallbackResp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: requestBody,
+                });
+                const data = await fallbackResp.json();
+                const aiContent = data.answer || data.response || data.message || 'No response.';
+                setMessages((prev) => {
+                    const updated = [...prev];
+                    updated[updated.length - 1] = { role: 'assistant', content: aiContent };
+                    return updated;
+                });
+            } else {
+                // Stream tokens from SSE
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let streamDone = false;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const parsed = consumeSseChunk(buffer, chunk);
+                    buffer = parsed.buffer;
+
+                    for (const eventData of parsed.events) {
+                        if (eventData === '[DONE]') {
+                            streamDone = true;
+                            break;
+                        }
+
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            const last = updated[updated.length - 1];
+                            updated[updated.length - 1] = {
+                                ...last,
+                                content: last.content + eventData,
+                            };
+                            return updated;
+                        });
+                    }
+
+                    if (streamDone) {
+                        break;
+                    }
+                }
+
+                if (!streamDone && buffer) {
+                    const parsed = consumeSseChunk(buffer, '\n\n');
+                    for (const eventData of parsed.events) {
+                        if (eventData === '[DONE]') {
+                            break;
+                        }
+
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            const last = updated[updated.length - 1];
+                            updated[updated.length - 1] = {
+                                ...last,
+                                content: last.content + eventData,
+                            };
+                            return updated;
+                        });
+                    }
+                }
+            }
         } catch (err) {
             console.error("Chat error:", err);
-            setMessages((prev) => [
-                ...prev,
-                { role: 'assistant', content: '⚠️ Could not reach the backend. Is serve.py running?' },
-            ]);
+            setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                    role: 'assistant',
+                    content: '\u26a0\ufe0f Could not reach the backend. Is serve.py running?',
+                };
+                return updated;
+            });
         } finally {
             setLoading(false);
         }
@@ -137,7 +215,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     </div>
                 ))}
 
-                {loading && (
+                {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
                     <div className="chat-message chat-message-assistant">
                         <div className="chat-bubble chat-typing">
                             <span className="typing-dot"></span>
@@ -173,4 +251,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     );
 };
 
-export default ChatDrawer;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap ChatDrawer in React.memo() to prevent parsing/rendering
+// chat history Markdown on every tick during rapid simulation state changes.
+export default React.memo(ChatDrawer);

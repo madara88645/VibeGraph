@@ -1,7 +1,10 @@
+import hashlib
 import os
 import json
 import logging
 import re
+from collections import OrderedDict
+from threading import RLock
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -48,6 +51,9 @@ def _try_parse_json(text: str) -> dict:
         raise ValueError(text) from e
 
 
+_MAX_CACHE_SIZE = 256
+
+
 class GroqTeacher:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
@@ -61,6 +67,8 @@ class GroqTeacher:
                 )
             model_name = "llama-3.3-70b-versatile"
         self.model_name = model_name
+        self._explain_cache: OrderedDict[str, dict] = OrderedDict()
+        self._cache_lock = RLock()
         if not self.api_key:
             print("Warning: GROQ_API_KEY not found in .env")
             self.client = None
@@ -96,6 +104,16 @@ class GroqTeacher:
                 "key_takeaway": "No API key = No Vibe.",
             }
 
+        # Check cache
+        cache_key = hashlib.sha256(
+            f"{code_snippet}|{level}|{context}".encode()
+        ).hexdigest()
+        with self._cache_lock:
+            cached = self._explain_cache.get(cache_key)
+            if cached is not None:
+                self._explain_cache.move_to_end(cache_key)
+                return cached
+
         tone = _TONE_MAP.get(level, _TONE_MAP["intermediate"])
 
         user_prompt = (
@@ -121,11 +139,20 @@ class GroqTeacher:
             parsed = _try_parse_json(raw)
 
             # Ensure all expected keys exist
-            return {
+            result = {
                 "analogy": parsed.get("analogy", _FALLBACK["analogy"]),
                 "technical": parsed.get("technical", _FALLBACK["technical"]),
                 "key_takeaway": parsed.get("key_takeaway", _FALLBACK["key_takeaway"]),
             }
+
+            # Store in cache using true LRU ordering.
+            with self._cache_lock:
+                self._explain_cache[cache_key] = result
+                self._explain_cache.move_to_end(cache_key)
+                if len(self._explain_cache) > _MAX_CACHE_SIZE:
+                    self._explain_cache.popitem(last=False)
+
+            return result
 
         except ValueError as e:
             return {**_FALLBACK, "technical": str(e)}
@@ -198,6 +225,56 @@ class GroqTeacher:
         except Exception as e:
             logging.error(f"Error during chat: {e}", exc_info=True)
             return "⚠️ Groq API error: An unexpected error occurred."
+
+    # ------------------------------------------------------------------
+    # Streaming chat (Server-Sent Events)
+    # ------------------------------------------------------------------
+
+    def stream_chat(
+        self,
+        code_snippet: str,
+        question: str,
+        history: list[dict] | None = None,
+        project_context: str = "",
+    ):
+        """
+        Streaming version of chat(). Yields token strings as they arrive.
+        """
+        if not self.client:
+            yield "\u26a0\ufe0f GROQ_API_KEY not found. Check your `.env` file."
+            return
+
+        context_str = f"Project Context: {project_context}\n" if project_context else ""
+
+        system_msg = (
+            "You are 'Vibe Teacher', an expert coding tutor. "
+            f"{context_str}"
+            "The user is asking about the following code/project:\n"
+            f"```python\n{code_snippet}\n```\n"
+            "Always reply in English. Be clear, educational, and concise."
+        )
+
+        messages: list[dict] = [{"role": "system", "content": system_msg}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": question})
+
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=0.5,
+                max_tokens=800,
+                top_p=1,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    yield delta.content
+        except Exception as e:
+            logging.error(f"Error during stream_chat: {e}", exc_info=True)
+            yield "\u26a0\ufe0f Groq API error: An unexpected error occurred."
 
     # ------------------------------------------------------------------
     # Suggest a learning path for a file's nodes / edges

@@ -223,23 +223,35 @@ class CodeAnalyzer:
 
         dependencies: list[dict[str, Any]] = []
 
+        # PERFORMANCE OPTIMIZATION (Bolt): Cache local modules set per project_root
+        # to avoid O(N * M) os.path.isfile checks where N is files and M is imports.
+        local_modules = CodeAnalyzer._get_local_modules(project_root)
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     module = alias.name
+                    # E.g. "app.models" -> check "app.models" or "app"
+                    top_level = module.split(".")[0]
                     dependencies.append(
                         {
                             "module": module,
                             "names": [alias.asname or alias.name],
-                            "is_local": self._is_local_module(module, project_root),
+                            "is_local": module in local_modules
+                            or top_level in local_modules,
                         }
                     )
 
             elif isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 names = [alias.name for alias in node.names]
+                top_level = module.split(".")[0] if module else ""
                 # Relative imports (level > 0) are always local
-                is_local = node.level > 0 or self._is_local_module(module, project_root)
+                is_local = (
+                    node.level > 0
+                    or module in local_modules
+                    or top_level in local_modules
+                )
                 dependencies.append(
                     {
                         "module": module,
@@ -251,11 +263,47 @@ class CodeAnalyzer:
         return {"file": file_path, "dependencies": dependencies}
 
     @staticmethod
-    @functools.lru_cache(maxsize=1024)
-    def _is_local_module(module_name: str, project_root: str) -> bool:
-        """Check whether *module_name* maps to a .py file under *project_root*."""
-        parts = module_name.split(".")
-        # Try as a package (directory with __init__.py) or plain .py file
-        candidate_file = os.path.join(project_root, *parts) + ".py"
-        candidate_pkg = os.path.join(project_root, *parts, "__init__.py")
-        return os.path.isfile(candidate_file) or os.path.isfile(candidate_pkg)
+    @functools.lru_cache(maxsize=32)
+    def _get_local_modules(project_root: str) -> frozenset[str]:
+        """
+        Scans project_root once and returns a frozenset of all local module/package
+        paths in python dotted notation (e.g. 'app', 'app.routers', 'serve').
+        """
+        local_mods = set()
+
+        for root, dirs, files in os.walk(project_root):
+            # Same ignored dirs logic as analyze_directory
+            dirs[:] = [
+                d
+                for d in dirs
+                if d
+                not in {
+                    ".git",
+                    "node_modules",
+                    "site-packages",
+                    "venv",
+                    "env",
+                    ".venv",
+                    "__pycache__",
+                }
+            ]
+
+            # Compute relative module path components
+            rel_dir = os.path.relpath(root, project_root)
+            if rel_dir == ".":
+                base_parts = []
+            else:
+                base_parts = rel_dir.split(os.sep)
+                local_mods.add(".".join(base_parts))  # The package dir itself
+
+            for file in files:
+                if file.endswith(".py"):
+                    # Strip .py
+                    mod_name = file[:-3]
+                    if mod_name == "__init__":
+                        continue
+
+                    parts = base_parts + [mod_name]
+                    local_mods.add(".".join(parts))
+
+        return frozenset(local_mods)

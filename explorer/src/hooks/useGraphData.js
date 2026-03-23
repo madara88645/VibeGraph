@@ -108,7 +108,18 @@ export function useGraphData(setNodes, setEdges) {
 
     // Filter nodes/edges when file selection changes
     useEffect(() => {
-        if (!selectedFile || allNodes.length === 0) return;
+        if (allNodes.length === 0) return;
+
+        // Show all nodes when no file is selected
+        if (!selectedFile) {
+            const layouted = getLayoutedElements(
+                allNodes.map(n => ({ ...n })),
+                allEdges
+            );
+            setNodes(layouted.nodes);
+            setEdges(layouted.edges);
+            return;
+        }
 
         const fileNodeIds = new Set();
         const fileNodes = allNodes.filter(n => {

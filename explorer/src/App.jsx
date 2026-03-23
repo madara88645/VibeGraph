@@ -11,6 +11,8 @@ import ChatDrawer from './components/ChatDrawer';
 import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
 import SimulationControls from './components/SimulationControls';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
 
 // Custom Hooks
 import { useGraphData } from './hooks/useGraphData';
@@ -72,6 +74,13 @@ function AppInner() {
     });
   }, [handleUploadSuccess, resetInteractionState, setIsPlaying, setActiveNodeId]);
 
+  // PERFORMANCE OPTIMIZATION (Bolt):
+  // Stabilize callbacks passed to memoized components to prevent breaking React.memo
+  const handleToggleSimulation = useCallback(() => setIsPlaying(prev => !prev), [setIsPlaying]);
+  const handleToggleChat = useCallback(() => setChatOpen(prev => !prev), [setChatOpen]);
+  const handleToggleCodePanel = useCallback(() => setCodePanelOpen(prev => !prev), [setCodePanelOpen]);
+  const handleCloseLearningPath = useCallback(() => setLearningPathOpen(false), [setLearningPathOpen]);
+
   return (
     <div className="app-shell">
       {/* Sidebar */}
@@ -80,6 +89,7 @@ function AppInner() {
         selectedFile={selectedFile}
         onSelectFile={setSelectedFile}
         nodeStats={nodeStats}
+        totalNodeCount={allNodes.length}
       />
 
       {/* Main Area */}
@@ -111,17 +121,19 @@ function AppInner() {
 
         {/* Graph */}
         <div className="graph-shell">
-          <GraphViewer
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-          />
+          <ErrorBoundary>
+            <GraphViewer
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={onNodeClick}
+            />
+          </ErrorBoundary>
 
           <SimulationControls
             isPlaying={isPlaying}
-            onToggle={() => setIsPlaying(!isPlaying)}
+            onToggle={handleToggleSimulation}
             onReset={onResetSimulation}
             stepCount={stepCount}
             speed={speed}
@@ -138,12 +150,14 @@ function AppInner() {
           />
 
           {/* Chat Drawer */}
-          <ChatDrawer
-            selectedNode={selectedNode}
-            allNodes={allNodes}
-            isOpen={chatOpen}
-            onToggle={() => setChatOpen(!chatOpen)}
-          />
+          <ErrorBoundary>
+            <ChatDrawer
+              selectedNode={selectedNode}
+              allNodes={allNodes}
+              isOpen={chatOpen}
+              onToggle={handleToggleChat}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* Code Panel — Bottom */}
@@ -151,7 +165,7 @@ function AppInner() {
           activeNode={codePanelNode}
           isGhostRunning={isPlaying}
           isOpen={codePanelOpen}
-          onToggle={() => setCodePanelOpen(!codePanelOpen)}
+          onToggle={handleToggleCodePanel}
         />
       </div>
 
@@ -162,7 +176,7 @@ function AppInner() {
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}
-        onToggle={() => setLearningPathOpen(false)}
+        onToggle={handleCloseLearningPath}
       />
     </div>
   );
@@ -171,8 +185,12 @@ function AppInner() {
 // Wrap with ReactFlowProvider so SearchBar and LearningPath can use useReactFlow()
 export default function App() {
   return (
-    <ReactFlowProvider>
-      <AppInner />
-    </ReactFlowProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <ReactFlowProvider>
+          <AppInner />
+        </ReactFlowProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

@@ -275,7 +275,7 @@ class TestChatEndpoint(unittest.TestCase):
     def tearDown(self):
         self.ctx.__exit__(None, None, None)
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_chat_returns_answer(self, mock_teacher):
         """Basic chat call should return an answer string."""
         mock_teacher.chat.return_value = "Bu fonksiyon dosyaları okur."
@@ -296,7 +296,7 @@ class TestChatEndpoint(unittest.TestCase):
         self.assertEqual(data["answer"], "Bu fonksiyon dosyaları okur.")
         self.assertEqual(data["node_id"], "main")
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_chat_without_node_selection(self, mock_teacher):
         """Chat should work even when node_id is a generic value (no file)."""
         mock_teacher.chat.return_value = "Genel bir cevap."
@@ -315,7 +315,7 @@ class TestChatEndpoint(unittest.TestCase):
         data = resp.json()
         self.assertIn("answer", data)
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_chat_preserves_history(self, mock_teacher):
         """History should be passed to the teacher unchanged."""
         mock_teacher.chat.return_value = "Devam cevabı."
@@ -348,7 +348,7 @@ class TestChatEndpoint(unittest.TestCase):
             pass  # we just check the response
         self.assertEqual(resp.json()["answer"], "Devam cevabı.")
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_chat_api_error_returns_error_string(self, mock_teacher):
         """If the Groq API fails, teacher.chat returns an error string,
         which should still be wrapped in the response."""
@@ -367,6 +367,27 @@ class TestChatEndpoint(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("⚠️", resp.json()["answer"])
 
+    @patch("app.dependencies.teacher")
+    def test_chat_stream_formats_multiline_tokens_as_valid_sse(self, mock_teacher):
+        """Multiline tokens should be emitted as valid SSE data fields."""
+        mock_teacher.stream_chat.return_value = iter(["line one\nline two"])
+
+        with self.client.stream(
+            "POST",
+            "/api/chat/stream",
+            json={
+                "node_id": "main",
+                "file_path": self.proj.file_a,
+                "question": "Stream test",
+                "history": [],
+            },
+        ) as resp:
+            body = b"".join(resp.iter_bytes()).decode()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("data: line one\ndata: line two\n\n", body)
+        self.assertTrue(body.endswith("data: [DONE]\n\n"))
+
 
 # ---------------------------------------------------------------------------
 # 3. Learning Path Endpoint Tests (/api/learning-path)
@@ -384,7 +405,7 @@ class TestLearningPathEndpoint(unittest.TestCase):
     def tearDown(self):
         self.ctx.__exit__(None, None, None)
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_learning_path_returns_steps(self, mock_teacher):
         """Should return a list of step objects."""
         mock_teacher.suggest_learning_path.return_value = [
@@ -420,7 +441,7 @@ class TestLearningPathEndpoint(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 404)
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_learning_path_different_files(self, mock_teacher):
         """Different files should produce different learning paths."""
         mock_teacher.suggest_learning_path.return_value = [
@@ -438,7 +459,7 @@ class TestLearningPathEndpoint(unittest.TestCase):
         data = resp.json()
         self.assertEqual(data["file_path"], self.proj.file_b)
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_learning_path_api_error(self, mock_teacher):
         """If teacher raises, endpoint should handle gracefully."""
         mock_teacher.suggest_learning_path.side_effect = Exception("API down")
@@ -470,12 +491,12 @@ class TestDependencyExtraction(unittest.TestCase):
     """Tests for CodeAnalyzer.extract_dependencies which powers the Deps tab."""
 
     def setUp(self):
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
         self.ctx = _TempProject()
         self.proj = self.ctx.__enter__()
 
     def tearDown(self):
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
         self.ctx.__exit__(None, None, None)
 
     def test_extract_dependencies_no_project_root(self):
@@ -622,7 +643,7 @@ class TestRegression(unittest.TestCase):
         self.assertEqual(resp.status_code, 405)
         self.assertEqual(resp.json()["detail"], "Method Not Allowed")
 
-    @patch("serve.teacher")
+    @patch("app.dependencies.teacher")
     def test_explain_endpoint(self, mock_teacher):
         """POST /api/explain should still return explanation + snippet."""
         mock_teacher.explain_code.return_value = {
@@ -734,10 +755,7 @@ class TestSnippetPathTraversal(unittest.TestCase):
                 "node_id": "root",
             },
         )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIn("Access denied", data["snippet"])
-        self.assertIsNone(data["full_source"])
+        self.assertEqual(resp.status_code, 403)
 
     def test_absolute_path_outside_cwd_is_denied(self):
         """An absolute path outside cwd and temp upload dirs must be denied."""
@@ -748,10 +766,7 @@ class TestSnippetPathTraversal(unittest.TestCase):
                 "node_id": "root",
             },
         )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIn("Access denied", data["snippet"])
-        self.assertIsNone(data["full_source"])
+        self.assertEqual(resp.status_code, 403)
 
     def test_full_source_not_returned_for_denied_path(self):
         """Even if the file exists, full_source must not be populated when path is unsafe."""
@@ -763,9 +778,7 @@ class TestSnippetPathTraversal(unittest.TestCase):
                 "node_id": "anything",
             },
         )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIsNone(data["full_source"])
+        self.assertEqual(resp.status_code, 403)
 
     def test_valid_upload_tmp_path_is_allowed(self):
         """A file inside a vibegraph_upload_ temp dir must be accessible."""
@@ -809,9 +822,12 @@ class TestExtractSnippetUnit(unittest.TestCase):
         self.assertIn("# External or Built-in: my_node", snippet)
 
     def test_extract_snippet_unsafe_path(self):
-        """Should deny paths outside of safe directories."""
-        snippet, _, _, _ = _extract_snippet("../../../../etc/passwd", "root")
-        self.assertIn("# Access denied: Unsafe file path", snippet)
+        """Should deny paths outside of safe directories with HTTPException."""
+        from fastapi import HTTPException
+
+        with self.assertRaises(HTTPException) as ctx:
+            _extract_snippet("../../../../etc/passwd", "root")
+        self.assertEqual(ctx.exception.status_code, 403)
 
     def test_extract_snippet_invalid_file(self):
         """Should return default fallback for a safe path that doesn't exist."""
@@ -845,21 +861,21 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
 
 class TestIsLocalModule(unittest.TestCase):
-    """Tests for CodeAnalyzer._is_local_module."""
+    """Tests for CodeAnalyzer._get_local_modules."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="vibegraph_test_is_local_")
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
-        CodeAnalyzer._is_local_module.cache_clear()
+        CodeAnalyzer._get_local_modules.cache_clear()
 
     def test_plain_python_file(self):
         """Should return True for a plain .py file."""
         with open(os.path.join(self.tmpdir, "my_module.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("my_module", self.tmpdir))
+        self.assertIn("my_module", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_package_directory(self):
         """Should return True for a directory with an __init__.py file."""
@@ -867,7 +883,7 @@ class TestIsLocalModule(unittest.TestCase):
         os.makedirs(pkg_dir)
         with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("my_pkg", self.tmpdir))
+        self.assertIn("my_pkg", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_nested_module(self):
         """Should correctly resolve nested modules e.g. a.b.c"""
@@ -875,15 +891,15 @@ class TestIsLocalModule(unittest.TestCase):
         os.makedirs(pkg_dir)
         with open(os.path.join(pkg_dir, "c.py"), "w") as f:
             f.write("pass")
-        self.assertTrue(CodeAnalyzer._is_local_module("a.b.c", self.tmpdir))
+        self.assertIn("a.b.c", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_non_existent_module(self):
         """Should return False if the module does not exist."""
-        self.assertFalse(CodeAnalyzer._is_local_module("non_existent", self.tmpdir))
+        self.assertNotIn("non_existent", CodeAnalyzer._get_local_modules(self.tmpdir))
 
     def test_empty_module_string(self):
         """Should handle empty module strings without crashing."""
-        self.assertFalse(CodeAnalyzer._is_local_module("", self.tmpdir))
+        self.assertNotIn("", CodeAnalyzer._get_local_modules(self.tmpdir))
 
 
 # ---------------------------------------------------------------------------
@@ -904,16 +920,14 @@ class TestPathTraversalSecurity(unittest.TestCase):
             "/api/snippet",
             json={"file_path": "../../../../etc/passwd", "node_id": "root"},
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
+        self.assertEqual(resp.status_code, 403)
 
     def test_explain_prevents_path_traversal(self):
         resp = self.client.post(
             "/api/explain",
             json={"file_path": "../../../../etc/passwd", "node_id": "root"},
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("# Access denied: Unsafe file path", resp.json()["snippet"])
+        self.assertEqual(resp.status_code, 403)
 
     def test_learning_path_prevents_path_traversal(self):
         resp = self.client.post(

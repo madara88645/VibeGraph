@@ -183,4 +183,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
     );
 };
 
-export default ExplanationPanel;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap ExplanationPanel in React.memo() to prevent parsing/rendering
+// Markdown on every tick during rapid simulation state changes.
+export default React.memo(ExplanationPanel);

@@ -1,0 +1,11 @@
+services:
+  vibegraph:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - VIBEGRAPH_CORS_ORIGINS=http://localhost:8000
+    volumes:
+      - ./explorer/public:/app/explorer/public:ro
