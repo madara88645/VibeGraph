@@ -155,7 +155,8 @@ class GroqTeacher:
             return result
 
         except ValueError as e:
-            return {**_FALLBACK, "technical": str(e)}
+            logging.error(f"JSON parse error in explain_code: {e}", exc_info=True)
+            return {**_FALLBACK, "technical": "Failed to parse the response format."}
 
         except Exception as e:
             logging.error(f"Error during explain_code: {e}", exc_info=True)
@@ -331,7 +332,16 @@ class GroqTeacher:
                 raise ValueError(raw)
             return parsed["steps"]
         except ValueError as e:
-            return [{"step": 1, "node_id": "parse_error", "reason": str(e)}]
+            logging.error(
+                f"JSON parse error in suggest_learning_path: {e}", exc_info=True
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": "parse_error",
+                    "reason": "Failed to parse the response format.",
+                }
+            ]
         except Exception as e:
             logging.error(f"Error during suggest_learning_path: {e}", exc_info=True)
             return [
