@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
 
 const ProjectUpload = ({ onUploadSuccess }) => {
+    const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const fileInputRef = useRef(null);
@@ -46,13 +48,14 @@ const ProjectUpload = ({ onUploadSuccess }) => {
             if (result.nodes && result.edges) {
                 onUploadSuccess(result);
                 setIsModalOpen(false);
+                showToast('Project analyzed successfully!', 'success');
             } else {
                 console.error("Analysis success but invalid graph data returned", result);
-                alert("Analysis completed but graph data is missing. Check backend logs.");
+                showToast('Analysis completed but graph data is missing.', 'error');
             }
         } catch (error) {
             console.error("Project upload failed:", error);
-            alert(`Error: ${error.message}`);
+            showToast(`Upload failed: ${error.message}`, 'error');
         } finally {
             setIsAnalyzing(false);
             // Reset input so the same folder can be uploaded again if needed

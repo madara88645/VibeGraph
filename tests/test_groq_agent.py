@@ -1,4 +1,5 @@
 import unittest
+import json
 
 from teacher.groq_agent import _try_parse_json
 
@@ -91,3 +92,35 @@ def test_suggest_learning_path_exception_leak():
         assert len(result) == 1
         assert "SECRET_API_ERROR" not in result[0].get("reason", "")
         assert result[0].get("reason") == "An unexpected error occurred."
+
+
+def test_explain_code_cache_uses_lru_recency():
+    with patch("teacher.groq_agent._MAX_CACHE_SIZE", 2):
+        teacher = GroqTeacher()
+        teacher.client = MagicMock()
+
+        def fake_create(*args, **kwargs):
+            code = (
+                kwargs["messages"][1]["content"]
+                .split("```python\n", 1)[1]
+                .split("\n```", 1)[0]
+            )
+            payload = {
+                "analogy": f"analogy:{code}",
+                "technical": f"technical:{code}",
+                "key_takeaway": f"takeaway:{code}",
+            }
+            return MagicMock(
+                choices=[MagicMock(message=MagicMock(content=json.dumps(payload)))]
+            )
+
+        teacher.client.chat.completions.create.side_effect = fake_create
+
+        teacher.explain_code("print('a')")
+        teacher.explain_code("print('b')")
+        teacher.explain_code("print('a')")
+        teacher.explain_code("print('c')")
+        teacher.explain_code("print('a')")
+        teacher.explain_code("print('b')")
+
+        assert teacher.client.chat.completions.create.call_count == 4

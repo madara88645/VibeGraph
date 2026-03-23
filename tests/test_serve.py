@@ -32,7 +32,7 @@ from io import BytesIO
 def test_upload_project_internal_error_leak():
     """Ensure internal errors during upload do not leak stack traces."""
     with patch(
-        "serve.CodeAnalyzer.analyze_file",
+        "app.routers.upload.CodeAnalyzer.analyze_file",
         side_effect=Exception("SECRET_INTERNAL_ERROR"),
     ):
         file_content = b"print('hello')"
@@ -47,7 +47,8 @@ def test_upload_project_internal_error_leak():
 def test_global_exception_handler_leak():
     """Ensure global unhandled exceptions return a generic 500 response."""
     with patch(
-        "serve._extract_snippet", side_effect=Exception("SECRET_UNHANDLED_ERROR")
+        "app.routers.explain.extract_snippet",
+        side_effect=Exception("SECRET_UNHANDLED_ERROR"),
     ):
         try:
             response = client.post(
@@ -65,7 +66,7 @@ def test_global_exception_handler_leak():
 import os
 import time
 
-from serve import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
 
 
 def test_cleanup_expired_upload_dirs(tmp_path):
@@ -88,7 +89,7 @@ def test_cleanup_expired_upload_dirs(tmp_path):
     os.utime(ignored_dir, (now - 7200, now - 7200))
     os.utime(file_with_prefix, (now - 7200, now - 7200))
 
-    with patch("serve.tempfile.gettempdir", return_value=str(tmp_path)):
+    with patch("app.routers.upload.tempfile.gettempdir", return_value=str(tmp_path)):
         cleanup_expired_upload_dirs(retention_seconds=3600)
 
     assert not old_dir.exists()
@@ -102,8 +103,10 @@ def test_cleanup_expired_upload_dirs_exception_handling(tmp_path):
     error_dir = tmp_path / f"{UPLOAD_PREFIX}error"
     error_dir.mkdir()
 
-    with patch("serve.tempfile.gettempdir", return_value=str(tmp_path)):
-        with patch("serve.shutil.rmtree", side_effect=Exception("Simulated error")):
+    with patch("app.routers.upload.tempfile.gettempdir", return_value=str(tmp_path)):
+        with patch(
+            "app.routers.upload.shutil.rmtree", side_effect=Exception("Simulated error")
+        ):
             now = time.time()
             os.utime(error_dir, (now - 7200, now - 7200))
             cleanup_expired_upload_dirs(retention_seconds=3600)

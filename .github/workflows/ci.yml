@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest-cov
       - name: Run tests with coverage
-        run: python -m pytest tests/ -v --ignore=tests/test_upload.py --cov=. --cov-report=xml
+        run: python -m pytest tests/ -v --cov=. --cov-report=xml
         env:
           GROQ_API_KEY: dummy-key-for-ci
       - name: Upload coverage report
@@ -78,7 +78,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run mypy
-        run: mypy . --ignore-missing-imports --no-strict-optional --allow-untyped-defs --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
+        run: mypy . --ignore-missing-imports --python-version 3.12 --exclude tests --explicit-package-bases --disable-error-code=import-untyped
 
   frontend:
     name: Frontend Lint & Build
