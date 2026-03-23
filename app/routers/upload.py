@@ -72,6 +72,7 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
                     safe_members = []
+                    total_size = 0
                     for member in zip_ref.infolist():
                         safe_filename = member.filename.lstrip("/\\")
                         extracted_path = os.path.abspath(
@@ -85,14 +86,17 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
+                        
+                        total_size += member.file_size
+                        if total_size > MAX_UNCOMPRESSED_SIZE:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
+                            )
+
                         member.filename = safe_filename
                         safe_members.append(member)
-                    total_size = sum(m.file_size for m in safe_members)
-                    if total_size > MAX_UNCOMPRESSED_SIZE:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
-                        )
+
                     zip_ref.extractall(tmp_dir, members=safe_members)
                 os.remove(file_path)
 
