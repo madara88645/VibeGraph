@@ -1,7 +1,12 @@
 """Upload integration tests — uses TestClient (no live server needed)."""
 
+import os
+import tempfile
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
+from app.routers.upload import cleanup_tmp_dir
 from serve import app
 
 client = TestClient(app)
@@ -55,3 +60,35 @@ def test_case_c_error_handling():
         f"Expected 400, got {response.status_code}: {response.text}"
     )
     assert "Syntax error" in response.json()["detail"]
+
+
+def test_cleanup_tmp_dir_success():
+    """Test successful removal of an existing directory."""
+    tmp_dir = tempfile.mkdtemp()
+    assert os.path.exists(tmp_dir)
+
+    cleanup_tmp_dir(tmp_dir)
+    assert not os.path.exists(tmp_dir)
+
+
+def test_cleanup_tmp_dir_not_exists():
+    """Test cleanup when the directory does not exist."""
+    fake_path = "/path/that/definitely/does/not/exist/12345"
+    assert not os.path.exists(fake_path)
+
+    # Should not raise any exceptions
+    cleanup_tmp_dir(fake_path)
+
+
+@patch("app.routers.upload.shutil.rmtree")
+def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
+    """Test that cleanup_tmp_dir passes ignore_errors=True to shutil.rmtree."""
+    tmp_dir = tempfile.mkdtemp()
+    assert os.path.exists(tmp_dir)
+
+    cleanup_tmp_dir(tmp_dir)
+
+    mock_rmtree.assert_called_once_with(tmp_dir, ignore_errors=True)
+
+    # Cleanup the actual temp dir since the mock prevented it
+    os.rmdir(tmp_dir)
