@@ -12,3 +12,8 @@
 **Vulnerability:** Unhandled exceptions and caught exceptions within API endpoints leaked raw stack traces and internal strings back to the client.
 **Learning:** Broad exception blocks should catch internal details but only expose generic error strings to the outside world.
 **Prevention:** Always implement global exception handlers that return generic 500 errors and avoid stringifying Exception e directly into API response objects.
+
+## 2025-03-02 - Information Exposure via Unhandled LLM Parsing Errors
+**Vulnerability:** When the AI's response failed to parse as valid JSON (due to formatting errors or unexpected output), the `_try_parse_json` utility raised a `ValueError`. The caller functions (`explain_code` and `suggest_learning_path`) caught this error but returned its raw string representation (`str(e)`) to the client, leaking the raw, potentially confusing, or malformed LLM output directly.
+**Learning:** Even when errors are caught, returning the raw exception string—especially one containing external API output—violates the principle of failing securely by exposing internal processing details and unvalidated data.
+**Prevention:** Catch parsing errors explicitly, log the raw exception internally using `logging.error(..., exc_info=True)` for observability, and always return a sanitized, context-specific fallback message to the client.
