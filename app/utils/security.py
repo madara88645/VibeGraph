@@ -17,9 +17,10 @@ def is_safe_path(path: str) -> bool:
 
         if os.path.commonpath([resolved, cwd]) == cwd:
             rel_path = os.path.relpath(resolved, cwd)
-            parts = rel_path.split(os.sep)
             # Block hidden files and directories
-            if any(part.startswith(".") for part in parts if part != "."):
+            if (
+                rel_path.startswith(".") and rel_path != "."
+            ) or f"{os.sep}." in rel_path:
                 return False
             return True
     except ValueError:
@@ -29,13 +30,13 @@ def is_safe_path(path: str) -> bool:
     try:
         if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
             rel_path = os.path.relpath(resolved, tmp_dir)
-            parts = rel_path.split(os.sep)
             # Block hidden files and directories
-            if any(part.startswith(".") for part in parts if part != "."):
+            if (
+                rel_path.startswith(".") and rel_path != "."
+            ) or f"{os.sep}." in rel_path:
                 return False
-            if parts and (
-                parts[0].startswith(UPLOAD_PREFIX)
-                or parts[0].startswith("vibegraph_test_")
+            if rel_path.startswith(UPLOAD_PREFIX) or rel_path.startswith(
+                "vibegraph_test_"
             ):
                 return True
     except ValueError:
