@@ -6,7 +6,6 @@ import shutil
 import tempfile
 import time
 import zipfile
-from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
@@ -33,16 +32,22 @@ def cleanup_expired_upload_dirs(
 ) -> None:
     """Remove old upload temp folders, keeping recent uploads available."""
     now = time.time()
-    temp_root = Path(tempfile.gettempdir())
-    for candidate in temp_root.glob(f"{UPLOAD_PREFIX}*"):
-        try:
-            if not candidate.is_dir():
-                continue
-            age = now - candidate.stat().st_mtime
-            if age > retention_seconds:
-                shutil.rmtree(candidate, ignore_errors=True)
-        except Exception:
-            continue
+    temp_root = tempfile.gettempdir()
+    try:
+        with os.scandir(temp_root) as it:
+            for entry in it:
+                if not entry.name.startswith(UPLOAD_PREFIX):
+                    continue
+                try:
+                    if not entry.is_dir():
+                        continue
+                    age = now - entry.stat().st_mtime
+                    if age > retention_seconds:
+                        shutil.rmtree(entry.path, ignore_errors=True)
+                except Exception:
+                    continue
+    except Exception:
+        pass
 
 
 @router.post("/upload-project")
