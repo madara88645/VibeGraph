@@ -333,7 +333,13 @@ class GroqTeacher:
             return parsed["steps"]
         except ValueError as e:
             logging.error(f"Error parsing learning_path JSON: {e}", exc_info=True)
-            return [{"step": 1, "node_id": "parse_error", "reason": "Could not parse the AI's response."}]
+            return [
+                {
+                    "step": 1,
+                    "node_id": "parse_error",
+                    "reason": "Could not parse the AI's response.",
+                }
+            ]
         except Exception as e:
             logging.error(f"Error during suggest_learning_path: {e}", exc_info=True)
             return [
