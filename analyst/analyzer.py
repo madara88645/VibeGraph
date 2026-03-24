@@ -128,17 +128,18 @@ class CodeAnalyzer:
                 }
             ]
 
+            # Skip venv/node_modules/etc just in case they are nested oddly
+            # PERFORMANCE OPTIMIZATION (Bolt): Check directory path once instead of full_path per file
+            if (
+                "site-packages" in root
+                or "node_modules" in root
+                or "__pycache__" in root
+            ):
+                continue
+
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)
-                    # Skip venv/node_modules/etc just in case they are nested oddly
-                    if (
-                        "site-packages" in full_path
-                        or "node_modules" in full_path
-                        or "__pycache__" in full_path
-                    ):
-                        continue
-
                     result = self._analyze_single_file(full_path, merge=True)
                     if "graph" in result:
                         graphs.append(result["graph"])
