@@ -281,7 +281,7 @@ class CodeAnalyzer:
 
         # PERFORMANCE OPTIMIZATION (Bolt): Use os.scandir() instead of os.walk()
         # to avoid unnecessary object allocation and overhead.
-        stack = [(project_root, [])]
+        stack: list[tuple[str, list[str]]] = [(project_root, [])]
 
         while stack:
             current_dir, base_parts = stack.pop()
