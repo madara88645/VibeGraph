@@ -46,7 +46,11 @@ def cleanup_expired_upload_dirs(
             continue
 
 
-@router.post("/upload-project", response_model=UploadResponse, summary="Upload and analyse a project")
+@router.post(
+    "/upload-project",
+    response_model=UploadResponse,
+    summary="Upload and analyse a project",
+)
 def upload_project(
     background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
 ):
