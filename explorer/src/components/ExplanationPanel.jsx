@@ -35,14 +35,14 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite'
                     }} />
-                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>AI is thinking...</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>AI is thinking...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
             );
         }
 
         if (!explanation) {
-            return <p style={{ color: '#64748b', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>Click a node to get an AI explanation.</p>;
+            return <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>Click a node to get an AI explanation.</p>;
         }
 
         const aiResponse = explanation.explanation || explanation;
@@ -52,7 +52,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             return (
                 <div
                     className="fade-in"
-                    style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}
+                    style={{ fontSize: '0.88rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}
                     role="tabpanel"
                     id={`panel-${tab}`}
                     aria-labelledby={`tab-${tab}`}
@@ -61,13 +61,13 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         <div>
                             <p style={{ margin: '0 0 12px' }}>{aiResponse.analogy}</p>
                             <div style={{
-                                background: 'rgba(219, 39, 119, 0.08)',
+                                background: `${typeConfig.accent}12`,
                                 padding: '10px 12px',
                                 borderRadius: '8px',
-                                borderLeft: '3px solid #db2777',
+                                borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                             }}>
-                                <strong style={{ color: '#e2e8f0' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                         </div>
                     )}
@@ -78,14 +78,14 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 <ReactMarkdown>{aiResponse.technical}</ReactMarkdown>
                             </div>
                             <div style={{
-                                background: 'rgba(59, 130, 246, 0.08)',
+                                background: `${typeConfig.accent}12`,
                                 padding: '10px 12px',
                                 borderRadius: '8px',
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
                             }}>
-                                <strong style={{ color: '#e2e8f0' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
                                 <div style={{ marginTop: '12px' }}>
@@ -100,7 +100,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
         // Fallback for string
         return (
-            <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: '#cbd5e1' }}>
+            <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
                 <ReactMarkdown>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
                 {codeSnippet && <CodeViewer code={codeSnippet} />}
             </div>

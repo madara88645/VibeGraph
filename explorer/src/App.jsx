@@ -18,10 +18,12 @@ import { ToastProvider } from './components/Toast';
 import { useGraphData } from './hooks/useGraphData';
 import { useGhostRunner } from './hooks/useGhostRunner';
 import { useNodeInteraction } from './hooks/useNodeInteraction';
+import { useTheme } from './hooks/useTheme';
 
 function AppInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { theme, toggleTheme } = useTheme();
 
   // 1. Interaction State & Handlers
   const {
@@ -108,6 +110,22 @@ function AppInner() {
             title="Learning Path"
           >
             🎯 Learn
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              padding: '6px 10px',
+              fontSize: '14px',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
           </button>
 
           <ProjectUpload onUploadSuccess={onUploadSuccess} />

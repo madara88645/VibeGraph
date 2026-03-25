@@ -36,7 +36,7 @@ const CustomNode = ({ data, selected }) => {
                     style={{
                         fontSize: '0.82rem',
                         fontWeight: 600,
-                        color: '#e2e8f0',
+                        color: 'var(--text-primary)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -66,12 +66,12 @@ const CustomNode = ({ data, selected }) => {
             {(fileName || data.lineno) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                     {fileName && (
-                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             📄 {fileName}
                         </span>
                     )}
                     {data.lineno && (
-                        <span style={{ fontSize: '0.6rem', color: '#64748b', marginLeft: 'auto' }}>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                             L{data.lineno}
                         </span>
                     )}
