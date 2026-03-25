@@ -262,6 +262,32 @@ class TestAnalyzerForSearch(unittest.TestCase):
 # 2. Chat Endpoint Tests (/api/chat)
 # ---------------------------------------------------------------------------
 
+from app.routers.chat import format_sse_event
+
+
+class TestFormatSseEvent(unittest.TestCase):
+    """Tests for the pure function format_sse_event utility."""
+
+    def test_single_line(self):
+        """A single line string should be formatted as a single data line."""
+        result = format_sse_event("hello")
+        self.assertEqual(result, "data: hello\n\n")
+
+    def test_multi_line(self):
+        """A multi-line string should be split and formatted as multiple data lines."""
+        result = format_sse_event("hello\nworld")
+        self.assertEqual(result, "data: hello\ndata: world\n\n")
+
+    def test_empty_string(self):
+        """An empty string should yield a single empty data line."""
+        result = format_sse_event("")
+        self.assertEqual(result, "data: \n\n")
+
+    def test_non_string_input(self):
+        """Non-string inputs (like ints) should be cast to string and formatted."""
+        result = format_sse_event(123)
+        self.assertEqual(result, "data: 123\n\n")
+
 
 class TestChatEndpoint(unittest.TestCase):
     """Tests for POST /api/chat.
