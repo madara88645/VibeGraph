@@ -123,26 +123,33 @@ class CodeAnalyzer:
         self.definitions = []
 
         graphs = []
-        for root, dirs, files in os.walk(dir_path):
-            # PERFORMANCE OPTIMIZATION (Bolt): Skip heavy ignored directories entirely
-            # Modify `dirs` in-place so os.walk does not traverse into them
-            dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+
+        # PERFORMANCE OPTIMIZATION (Bolt): Use os.scandir() instead of os.walk()
+        # to avoid unnecessary object allocation and overhead.
+        stack = [dir_path]
+        while stack:
+            current_dir = stack.pop()
 
             # Skip venv/node_modules/etc just in case they are nested oddly
-            # PERFORMANCE OPTIMIZATION (Bolt): Check directory path once instead of full_path per file
             if (
-                "site-packages" in root
-                or "node_modules" in root
-                or "__pycache__" in root
+                "site-packages" in current_dir
+                or "node_modules" in current_dir
+                or "__pycache__" in current_dir
             ):
                 continue
 
-            for file in files:
-                if file.endswith(".py"):
-                    full_path = os.path.join(root, file)
-                    result = self._analyze_single_file(full_path, merge=True)
-                    if "graph" in result:
-                        graphs.append(result["graph"])
+            try:
+                with os.scandir(current_dir) as it:
+                    for entry in it:
+                        if entry.is_dir():
+                            if entry.name not in IGNORED_DIRS:
+                                stack.append(entry.path)
+                        elif entry.is_file() and entry.name.endswith(".py"):
+                            result = self._analyze_single_file(entry.path, merge=True)
+                            if "graph" in result:
+                                graphs.append(result["graph"])
+            except OSError as e:
+                self.errors.append(f"Error reading directory {current_dir}: {e}")
 
         if graphs:
             self.graph = nx.compose_all(graphs)
@@ -272,26 +279,27 @@ class CodeAnalyzer:
         """
         local_mods = set()
 
-        for root, dirs, files in os.walk(project_root):
-            # Same ignored dirs logic as analyze_directory
-            dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+        # PERFORMANCE OPTIMIZATION (Bolt): Use os.scandir() instead of os.walk()
+        # to avoid unnecessary object allocation and overhead.
+        stack = [(project_root, [])]
 
-            # Compute relative module path components
-            rel_dir = os.path.relpath(root, project_root)
-            if rel_dir == ".":
-                base_parts = []
-            else:
-                base_parts = rel_dir.split(os.sep)
-                local_mods.add(".".join(base_parts))  # The package dir itself
+        while stack:
+            current_dir, base_parts = stack.pop()
 
-            for file in files:
-                if file.endswith(".py"):
-                    # Strip .py
-                    mod_name = file[:-3]
-                    if mod_name == "__init__":
-                        continue
-
-                    parts = base_parts + [mod_name]
-                    local_mods.add(".".join(parts))
+            try:
+                with os.scandir(current_dir) as it:
+                    for entry in it:
+                        if entry.is_dir():
+                            if entry.name not in IGNORED_DIRS:
+                                new_parts = base_parts + [entry.name]
+                                local_mods.add(".".join(new_parts))
+                                stack.append((entry.path, new_parts))
+                        elif entry.is_file() and entry.name.endswith(".py"):
+                            mod_name = entry.name[:-3]
+                            if mod_name == "__init__":
+                                continue
+                            local_mods.add(".".join(base_parts + [mod_name]))
+            except OSError:
+                pass
 
         return frozenset(local_mods)
