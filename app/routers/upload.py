@@ -72,7 +72,6 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
                     safe_members = []
-                    total_size = 0
                     for member in zip_ref.infolist():
                         safe_filename = member.filename.lstrip("/\\")
                         extracted_path = os.path.abspath(
@@ -86,18 +85,32 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
-                        
-                        total_size += member.file_size
-                        if total_size > MAX_UNCOMPRESSED_SIZE:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
-                            )
 
                         member.filename = safe_filename
-                        safe_members.append(member)
+                        safe_members.append((member, extracted_path))
 
-                    zip_ref.extractall(tmp_dir, members=safe_members)
+                    total_size = 0
+                    for member, extracted_path in safe_members:
+                        if member.is_dir():
+                            os.makedirs(extracted_path, exist_ok=True)
+                            continue
+
+                        os.makedirs(os.path.dirname(extracted_path), exist_ok=True)
+                        with (
+                            zip_ref.open(member) as source,
+                            open(extracted_path, "wb") as target,
+                        ):
+                            while True:
+                                chunk = source.read(8192)
+                                if not chunk:
+                                    break
+                                total_size += len(chunk)
+                                if total_size > MAX_UNCOMPRESSED_SIZE:
+                                    raise HTTPException(
+                                        status_code=400,
+                                        detail=f"Zip contents too large (max {MAX_UNCOMPRESSED_SIZE} bytes)",
+                                    )
+                                target.write(chunk)
                 os.remove(file_path)
 
         result = CodeAnalyzer().analyze_file(tmp_dir)
