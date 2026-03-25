@@ -57,6 +57,7 @@ def upload_project(
     tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
 
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100 MB
+    MAX_ZIP_FILES = 10000
 
     try:
         for file in files:
@@ -72,7 +73,16 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
                     safe_members = []
+                    total_size = 0
+                    file_count = 0
                     for member in zip_ref.infolist():
+                        file_count += 1
+                        if file_count > MAX_ZIP_FILES:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Too many files in zip archive (max {MAX_ZIP_FILES})",
+                            )
+
                         safe_filename = member.filename.lstrip("/\\")
                         extracted_path = os.path.abspath(
                             os.path.join(tmp_dir_abs, safe_filename)
@@ -84,6 +94,13 @@ def upload_project(
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
+                            )
+
+                        total_size += member.file_size
+                        if total_size > MAX_UNCOMPRESSED_SIZE:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
                             )
 
                         member.filename = safe_filename
