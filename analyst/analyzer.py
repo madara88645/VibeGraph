@@ -5,6 +5,19 @@ import networkx as nx
 from typing import Any
 
 
+IGNORED_DIRS = frozenset(
+    {
+        ".git",
+        "node_modules",
+        "site-packages",
+        "venv",
+        "env",
+        ".venv",
+        "__pycache__",
+    }
+)
+
+
 class CallGraphVisitor(ast.NodeVisitor):
     def __init__(self, file_path: str):
         self.graph = nx.DiGraph()
@@ -113,20 +126,7 @@ class CodeAnalyzer:
         for root, dirs, files in os.walk(dir_path):
             # PERFORMANCE OPTIMIZATION (Bolt): Skip heavy ignored directories entirely
             # Modify `dirs` in-place so os.walk does not traverse into them
-            dirs[:] = [
-                d
-                for d in dirs
-                if d
-                not in {
-                    ".git",
-                    "node_modules",
-                    "site-packages",
-                    "venv",
-                    "env",
-                    ".venv",
-                    "__pycache__",
-                }
-            ]
+            dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
             # Skip venv/node_modules/etc just in case they are nested oddly
             # PERFORMANCE OPTIMIZATION (Bolt): Check directory path once instead of full_path per file
@@ -274,20 +274,7 @@ class CodeAnalyzer:
 
         for root, dirs, files in os.walk(project_root):
             # Same ignored dirs logic as analyze_directory
-            dirs[:] = [
-                d
-                for d in dirs
-                if d
-                not in {
-                    ".git",
-                    "node_modules",
-                    "site-packages",
-                    "venv",
-                    "env",
-                    ".venv",
-                    "__pycache__",
-                }
-            ]
+            dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
             # Compute relative module path components
             rel_dir = os.path.relpath(root, project_root)
