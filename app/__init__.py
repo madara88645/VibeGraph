@@ -86,7 +86,16 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     configure_logging()
 
-    application = FastAPI(title="Vibe Learning System API")
+    application = FastAPI(
+        title="VibeGraph API",
+        version="1.0.0",
+        description=(
+            "VibeGraph transforms Python codebases into interactive call graphs "
+            "and provides AI-powered explanations, chat, and learning paths via Groq LLM."
+        ),
+        contact={"name": "VibeGraph", "url": "https://github.com/madara88645/VibeGraph"},
+        license_info={"name": "MIT"},
+    )
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)

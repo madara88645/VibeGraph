@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useToast } from '../hooks/useToast';
 
 /**
  * CodePanel — Bottom panel that shows code for the active node.
@@ -18,6 +19,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const highlightRef = useRef(null);
     const lastFetchedId = useRef(null);
+    const addToast = useToast();
 
     // Fetch code when active node changes
     useEffect(() => {
@@ -123,6 +125,19 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                        onClick={() => {
+                            const text = codeData?.full_source || codeData?.snippet || '';
+                            navigator.clipboard.writeText(text).then(
+                                () => addToast('Code copied to clipboard!', 'success'),
+                                () => addToast('Failed to copy', 'error')
+                            );
+                        }}
+                        title="Copy code"
+                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px 8px', fontSize: '13px' }}
+                    >
+                        Copy
+                    </button>
                     <button
                         className="code-panel-close"
                         onClick={() => setIsFullscreen(prev => !prev)}
