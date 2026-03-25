@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "dagre": "^0.8.5",
-    "html-to-image": "^1.11.13",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",

@@ -13,6 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 
 from analyst.analyzer import CodeAnalyzer
 import app.dependencies as deps
+from app.models import UploadResponse
 from app.utils.security import UPLOAD_PREFIX, normalize_uploaded_filename
 
 router = APIRouter(prefix="/api", tags=["upload"])
@@ -45,7 +46,7 @@ def cleanup_expired_upload_dirs(
             continue
 
 
-@router.post("/upload-project")
+@router.post("/upload-project", response_model=UploadResponse, summary="Upload and analyse a project")
 def upload_project(
     background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
 ):

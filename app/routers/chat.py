@@ -36,7 +36,7 @@ def chat_with_node(request: ChatRequest):
     return {"answer": answer, "node_id": request.node_id}
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", summary="Stream chat about a code node")
 def chat_stream(request: ChatRequest):
     """
     Streaming version of /api/chat. Returns Server-Sent Events
