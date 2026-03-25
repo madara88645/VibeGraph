@@ -22,12 +22,13 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
         }
     }, [isOpen]);
 
-    // Reset messages when selected node changes
+    // Reset messages when selected node identity changes
+    const selectedNodeId = selectedNode?.id;
     useEffect(() => {
-        if (selectedNode) {
+        if (selectedNodeId) {
             setMessages([]);
         }
-    }, [selectedNode]);
+    }, [selectedNodeId]);
 
     const sendMessage = useCallback(async () => {
         const text = inputText.trim();
