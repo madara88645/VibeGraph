@@ -45,7 +45,7 @@ describe('CodePanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockWriteText.mockResolvedValue(undefined);
-        global.fetch = vi.fn();
+        globalThis.fetch = vi.fn();
     });
 
     it('renders toggle button when closed', () => {
@@ -80,7 +80,7 @@ describe('CodePanel', () => {
             end_line: 2,
             full_source: null,
         };
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: () => Promise.resolve(mockData),
         });
@@ -93,7 +93,7 @@ describe('CodePanel', () => {
         });
 
         await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
+            expect(globalThis.fetch).toHaveBeenCalledWith(
                 '/api/snippet',
                 expect.objectContaining({ method: 'POST' })
             );
@@ -101,7 +101,7 @@ describe('CodePanel', () => {
     });
 
     it('shows error when fetch fails', async () => {
-        global.fetch.mockRejectedValue(new Error('Network error'));
+        globalThis.fetch.mockRejectedValue(new Error('Network error'));
 
         renderPanel({
             activeNode: {
@@ -137,7 +137,7 @@ describe('CodePanel', () => {
             end_line: null,
             full_source: null,
         };
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: () => Promise.resolve(mockData),
         });
@@ -149,7 +149,7 @@ describe('CodePanel', () => {
             },
         });
 
-        await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
         await user.click(screen.getByTitle('Copy code'));
 
         // Verify toast was shown (clipboard behavior confirmed via toast)
@@ -186,7 +186,7 @@ describe('CodePanel', () => {
             end_line: null,
             full_source: null,
         };
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: () => Promise.resolve(mockData),
         });
@@ -199,7 +199,7 @@ describe('CodePanel', () => {
             },
         });
 
-        await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
         expect(screen.getByText(/Following/)).toBeInTheDocument();
     });
 });

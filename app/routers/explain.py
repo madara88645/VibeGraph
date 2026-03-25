@@ -9,7 +9,11 @@ import app.dependencies as deps
 router = APIRouter(prefix="/api", tags=["explain"])
 
 
-@router.post("/snippet", response_model=SnippetResponse, summary="Get raw code snippet for a node")
+@router.post(
+    "/snippet",
+    response_model=SnippetResponse,
+    summary="Get raw code snippet for a node",
+)
 def get_snippet(request: SnippetRequest):
     """
     Returns just the code snippet for a given node, without AI explanation.
@@ -29,7 +33,9 @@ def get_snippet(request: SnippetRequest):
     }
 
 
-@router.post("/explain", response_model=ExplainResponse, summary="AI explanation for a code node")
+@router.post(
+    "/explain", response_model=ExplainResponse, summary="AI explanation for a code node"
+)
 def explain_node(request: ExplainRequest):
     """
     Finds the source code for *node_id* in the given file and asks the

@@ -75,7 +75,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
                         try {
                             await exportAsPng(graphRef.current);
                             addToast('Graph exported as PNG', 'success');
-                        } catch (e) {
+                        } catch {
                             addToast('Export failed', 'error');
                         }
                     }}
@@ -89,7 +89,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
                         try {
                             await exportAsSvg(graphRef.current);
                             addToast('Graph exported as SVG', 'success');
-                        } catch (e) {
+                        } catch {
                             addToast('Export failed', 'error');
                         }
                     }}

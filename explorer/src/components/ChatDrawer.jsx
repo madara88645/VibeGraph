@@ -27,7 +27,7 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
         if (selectedNode) {
             setMessages([]);
         }
-    }, [selectedNode?.id]);
+    }, [selectedNode]);
 
     const sendMessage = useCallback(async () => {
         const text = inputText.trim();
@@ -162,7 +162,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         } finally {
             setLoading(false);
         }
-    }, [inputText, messages, loading, selectedNode]);
+    }, [allNodes, inputText, loading, messages, selectedNode]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

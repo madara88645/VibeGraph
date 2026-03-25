@@ -93,7 +93,10 @@ def create_app() -> FastAPI:
             "VibeGraph transforms Python codebases into interactive call graphs "
             "and provides AI-powered explanations, chat, and learning paths via Groq LLM."
         ),
-        contact={"name": "VibeGraph", "url": "https://github.com/madara88645/VibeGraph"},
+        contact={
+            "name": "VibeGraph",
+            "url": "https://github.com/madara88645/VibeGraph",
+        },
         license_info={"name": "MIT"},
     )
 
