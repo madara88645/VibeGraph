@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.models import ChatRequest
+from app.models import ChatRequest, ChatResponse
 from app.utils.snippet import extract_snippet
 import app.dependencies as deps
 
@@ -16,7 +16,7 @@ def format_sse_event(data: str) -> str:
     return "".join(f"data: {line}\n" for line in lines) + "\n"
 
 
-@router.post("/chat")
+@router.post("/chat", response_model=ChatResponse, summary="Chat about a code node")
 def chat_with_node(request: ChatRequest):
     """
     Free-form conversation about the code behind *node_id*.
@@ -36,7 +36,7 @@ def chat_with_node(request: ChatRequest):
     return {"answer": answer, "node_id": request.node_id}
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", summary="Stream chat about a code node")
 def chat_stream(request: ChatRequest):
     """
     Streaming version of /api/chat. Returns Server-Sent Events

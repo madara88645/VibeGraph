@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useToast } from '../hooks/useToast';
 
 /**
  * CodePanel — Bottom panel that shows code for the active node.
@@ -18,6 +19,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const highlightRef = useRef(null);
     const lastFetchedId = useRef(null);
+    const addToast = useToast();
 
     // Fetch code when active node changes
     useEffect(() => {
@@ -123,6 +125,70 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                        onClick={() => {
+                            const text = codeData?.full_source || codeData?.snippet;
+                            if (!text) {
+                                addToast('Nothing to copy yet', 'error');
+                                return;
+                            }
+
+                            const fallbackCopyText = (value) => {
+                                try {
+                                    const textarea = document.createElement('textarea');
+                                    textarea.value = value;
+                                    textarea.style.position = 'fixed';
+                                    textarea.style.top = '0';
+                                    textarea.style.left = '0';
+                                    textarea.style.opacity = '0';
+                                    document.body.appendChild(textarea);
+                                    textarea.focus();
+                                    textarea.select();
+                                    const successful = document.execCommand('copy');
+                                    document.body.removeChild(textarea);
+                                    return successful;
+                                } catch (err) {
+                                    console.error('Fallback copy failed', err);
+                                    return false;
+                                }
+                            };
+
+                            const notifyResult = (ok) => {
+                                if (ok) {
+                                    addToast('Code copied to clipboard!', 'success');
+                                } else {
+                                    addToast('Failed to copy', 'error');
+                                }
+                            };
+
+                            try {
+                                if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                                    navigator.clipboard.writeText(text).then(
+                                        () => addToast('Code copied to clipboard!', 'success'),
+                                        () => notifyResult(fallbackCopyText(text))
+                                    );
+                                } else {
+                                    notifyResult(fallbackCopyText(text));
+                                }
+                            } catch (err) {
+                                console.error('Clipboard copy failed', err);
+                                notifyResult(fallbackCopyText(text));
+                            }
+                        }}
+                        title="Copy code"
+                        disabled={!(codeData && (codeData.full_source || codeData.snippet))}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-secondary)',
+                            cursor: codeData && (codeData.full_source || codeData.snippet) ? 'pointer' : 'not-allowed',
+                            padding: '4px 8px',
+                            fontSize: '13px',
+                            opacity: codeData && (codeData.full_source || codeData.snippet) ? 1 : 0.5,
+                        }}
+                    >
+                        Copy
+                    </button>
                     <button
                         className="code-panel-close"
                         onClick={() => setIsFullscreen(prev => !prev)}

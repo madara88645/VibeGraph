@@ -4,7 +4,7 @@ import os
 
 from fastapi import APIRouter, HTTPException
 
-from app.models import LearningPathRequest
+from app.models import LearningPathRequest, LearningPathResponse
 from app.utils.security import is_safe_path
 from analyst.analyzer import CodeAnalyzer
 import app.dependencies as deps
@@ -12,7 +12,11 @@ import app.dependencies as deps
 router = APIRouter(prefix="/api", tags=["learning"])
 
 
-@router.post("/learning-path")
+@router.post(
+    "/learning-path",
+    response_model=LearningPathResponse,
+    summary="AI-suggested learning order for a file",
+)
 def suggest_learning_path(request: LearningPathRequest):
     """
     Analyzes *file_path*, extracts its nodes/edges, and asks the LLM
