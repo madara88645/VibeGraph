@@ -127,14 +127,65 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 <div style={{ display: 'flex', gap: '4px' }}>
                     <button
                         onClick={() => {
-                            const text = codeData?.full_source || codeData?.snippet || '';
-                            navigator.clipboard.writeText(text).then(
-                                () => addToast('Code copied to clipboard!', 'success'),
-                                () => addToast('Failed to copy', 'error')
-                            );
+                            const text = codeData?.full_source || codeData?.snippet;
+                            if (!text) {
+                                addToast('Nothing to copy yet', 'error');
+                                return;
+                            }
+
+                            const fallbackCopyText = (value) => {
+                                try {
+                                    const textarea = document.createElement('textarea');
+                                    textarea.value = value;
+                                    textarea.style.position = 'fixed';
+                                    textarea.style.top = '0';
+                                    textarea.style.left = '0';
+                                    textarea.style.opacity = '0';
+                                    document.body.appendChild(textarea);
+                                    textarea.focus();
+                                    textarea.select();
+                                    const successful = document.execCommand('copy');
+                                    document.body.removeChild(textarea);
+                                    return successful;
+                                } catch (err) {
+                                    console.error('Fallback copy failed', err);
+                                    return false;
+                                }
+                            };
+
+                            const notifyResult = (ok) => {
+                                if (ok) {
+                                    addToast('Code copied to clipboard!', 'success');
+                                } else {
+                                    addToast('Failed to copy', 'error');
+                                }
+                            };
+
+                            try {
+                                if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                                    navigator.clipboard.writeText(text).then(
+                                        () => addToast('Code copied to clipboard!', 'success'),
+                                        () => notifyResult(fallbackCopyText(text))
+                                    );
+                                } else {
+                                    notifyResult(fallbackCopyText(text));
+                                }
+                            } catch (err) {
+                                console.error('Clipboard copy failed', err);
+                                notifyResult(fallbackCopyText(text));
+                            }
                         }}
                         title="Copy code"
-                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px 8px', fontSize: '13px' }}
+                        disabled={!(codeData && (codeData.full_source || codeData.snippet))}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-secondary)',
+                            cursor: codeData && (codeData.full_source || codeData.snippet) ? 'pointer' : 'not-allowed',
+                            padding: '4px 8px',
+                            fontSize: '13px',
+                            opacity: codeData && (codeData.full_source || codeData.snippet) ? 1 : 0.5,
+                        }}
                     >
                         Copy
                     </button>

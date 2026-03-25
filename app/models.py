@@ -1,7 +1,7 @@
 """Pydantic request/response models for the VibeGraph API."""
 
 from typing import Any, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ class ChatRequest(BaseModel):
     file_path: str | None = None
     project_context: str | None = None
     question: str
-    history: list[ChatMessage] = []
+    history: list[ChatMessage] = Field(default_factory=list)
 
     model_config = {
         "json_schema_extra": {
@@ -85,7 +85,7 @@ class ExplanationDetail(BaseModel):
 
 class ExplainResponse(BaseModel):
     node_id: str
-    explanation: ExplanationDetail | dict
+    explanation: ExplanationDetail
     snippet: str
 
 
@@ -111,11 +111,11 @@ class LearningStep(BaseModel):
 
 class LearningPathResponse(BaseModel):
     file_path: str
-    steps: list[LearningStep | dict]
+    steps: list[LearningStep]
 
 
 class UploadResponse(BaseModel):
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
-    file_dependencies: dict[str, Any] | None = None
+    file_dependencies: list[dict[str, Any]] | None = None
     project_context: str | None = None
