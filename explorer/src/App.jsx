@@ -115,6 +115,7 @@ function AppInner() {
           <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             style={{
               background: 'none',
               border: '1px solid var(--border-subtle)',

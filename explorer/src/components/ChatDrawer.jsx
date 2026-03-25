@@ -245,6 +245,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     onClick={sendMessage}
                     disabled={loading || !inputText.trim()}
                     aria-label="Send message"
+                    title={loading ? "Waiting for AI response..." : !inputText.trim() ? "Type a message to send" : "Send message"}
                 >
                     ↑
                 </button>
