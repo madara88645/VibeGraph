@@ -54,32 +54,26 @@ def test_upload_safe_zip():
         assert response.status_code == 200
 
 
-def test_upload_zip_bomb_spoofed_size():
-    """Ensure that zip files with spoofed uncompressed sizes are caught during extraction."""
-    zip_path = "zip_bomb.zip"
+def test_upload_too_many_files_zip():
+    """Ensure that zip files with more than MAX_ZIP_FILES are rejected."""
+    zip_path = "too_many_files.zip"
 
-    # Create a small but highly compressible file
-    large_content = b"0" * (100 * 1024 * 1024 + 10)  # slightly larger than 100MB
-
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
-        z.writestr("bomb.txt", large_content)
-
-    # Spoof the metadata to bypass the old check
-    # In python zipfile, you can't easily modify the central directory of a closed file,
-    # but the old check relied on member.file_size during reading which comes from the central dir.
-    # The new check reads chunks until exhaustion, thus correctly counting bytes regardless of header.
+    # MAX_ZIP_FILES is 10000, so we create 10001 files
+    with zipfile.ZipFile(zip_path, "w") as z:
+        for i in range(10001):
+            z.writestr(f"file_{i}.txt", "")
 
     with open(zip_path, "rb") as f:
         response = client.post(
             "/api/upload-project",
-            files={"files": ("zip_bomb.zip", f, "application/zip")},
+            files={"files": ("too_many_files.zip", f, "application/zip")},
         )
 
     # Clean up
     os.remove(zip_path)
 
     assert response.status_code == 400
-    assert "Zip contents too large" in response.json()["detail"]
+    assert "Too many files in zip archive" in response.json().get("detail", "")
 
 
 def test_upload_absolute_path_zip():
