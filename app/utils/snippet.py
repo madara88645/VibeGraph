@@ -12,19 +12,32 @@ from app.utils.security import is_safe_path
 @functools.lru_cache(maxsize=128)
 def _get_parsed_ast(
     resolved_path: str, mtime: float
-) -> tuple[str | None, ast.AST | None, str | None]:
+) -> tuple[
+    str | None,
+    ast.AST | None,
+    list[str] | None,
+    dict[str, tuple[int, int | None]] | None,
+    str | None,
+]:
     try:
         with open(resolved_path, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError as e:
-        return None, None, f"# Error reading file: {e}"
+        return None, None, None, None, f"# Error reading file: {e}"
 
     try:
         tree = ast.parse(source, filename=resolved_path)
     except SyntaxError as e:
-        return source, None, f"# Syntax error in {resolved_path}: {e}"
+        return source, None, None, None, f"# Syntax error in {resolved_path}: {e}"
 
-    return source, tree, None
+    lines = source.splitlines()
+    nodes = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name not in nodes:
+                nodes[node.name] = (node.lineno, node.end_lineno)
+
+    return source, tree, lines, nodes, None
 
 
 def extract_snippet(
@@ -61,26 +74,26 @@ def extract_snippet(
     except OSError:
         mtime = 0.0
 
-    source, tree, error = _get_parsed_ast(resolved, mtime)
+    source, tree, lines, nodes, error = _get_parsed_ast(resolved, mtime)
 
     if error:
         if source is not None:
             return error, None, None, source
         return error, None, None, None
 
-    # At this point source and tree are guaranteed non-None (no error path)
+    # At this point source, tree, lines, and nodes are guaranteed non-None (no error path)
     assert source is not None
     assert tree is not None
+    assert lines is not None
+    assert nodes is not None
 
     target_name = node_id.split(".")[-1]
-    lines = source.splitlines()
 
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if node.name == target_name:
-                start = node.lineno - 1
-                end = node.end_lineno or len(lines)
-                return "\n".join(lines[start:end]), node.lineno, node.end_lineno, source
+    if target_name in nodes:
+        lineno, end_lineno = nodes[target_name]
+        start = lineno - 1
+        end = end_lineno or len(lines)
+        return "\n".join(lines[start:end]), lineno, end_lineno, source
 
     return (
         f"# Code for '{node_id}' not found in {file_path} (analysis mismatch).",
