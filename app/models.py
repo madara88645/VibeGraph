@@ -8,6 +8,7 @@ from pydantic import BaseModel
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class ExplainRequest(BaseModel):
     file_path: str | None = None
     node_id: str
@@ -32,9 +33,7 @@ class SnippetRequest(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": [
-                {"file_path": "my_project/app.py", "node_id": "main"}
-            ]
+            "examples": [{"file_path": "my_project/app.py", "node_id": "main"}]
         }
     }
 
@@ -69,15 +68,14 @@ class LearningPathRequest(BaseModel):
     file_path: str
 
     model_config = {
-        "json_schema_extra": {
-            "examples": [{"file_path": "my_project/app.py"}]
-        }
+        "json_schema_extra": {"examples": [{"file_path": "my_project/app.py"}]}
     }
 
 
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
+
 
 class ExplanationDetail(BaseModel):
     analogy: str

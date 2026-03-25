@@ -22,12 +22,13 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
         }
     }, [isOpen]);
 
-    // Reset messages when selected node changes
+    // Reset messages when selected node identity changes
+    const selectedNodeId = selectedNode?.id;
     useEffect(() => {
-        if (selectedNode) {
+        if (selectedNodeId) {
             setMessages([]);
         }
-    }, [selectedNode?.id]);
+    }, [selectedNodeId]);
 
     const sendMessage = useCallback(async () => {
         const text = inputText.trim();
@@ -162,7 +163,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         } finally {
             setLoading(false);
         }
-    }, [inputText, messages, loading, selectedNode]);
+    }, [allNodes, inputText, loading, messages, selectedNode]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

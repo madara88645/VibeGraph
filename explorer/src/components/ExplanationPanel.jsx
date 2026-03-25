@@ -17,7 +17,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         if (node && fetchExplanation) {
             fetchExplanation(node, tab, level);
         }
-    }, [tab, level, node]);
+    }, [fetchExplanation, level, node, tab]);
 
     if (!node) return null;
 

@@ -12,7 +12,11 @@ import app.dependencies as deps
 router = APIRouter(prefix="/api", tags=["learning"])
 
 
-@router.post("/learning-path", response_model=LearningPathResponse, summary="AI-suggested learning order for a file")
+@router.post(
+    "/learning-path",
+    response_model=LearningPathResponse,
+    summary="AI-suggested learning order for a file",
+)
 def suggest_learning_path(request: LearningPathRequest):
     """
     Analyzes *file_path*, extracts its nodes/edges, and asks the LLM

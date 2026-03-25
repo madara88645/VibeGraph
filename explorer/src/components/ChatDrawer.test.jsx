@@ -38,7 +38,7 @@ function renderDrawer(props = {}) {
 describe('ChatDrawer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        global.fetch = vi.fn();
+        globalThis.fetch = vi.fn();
     });
 
     it('renders FAB button when closed', () => {
@@ -122,7 +122,7 @@ describe('ChatDrawer', () => {
                 controller.close();
             },
         });
-        global.fetch.mockResolvedValue({ ok: true, body: stream });
+        globalThis.fetch.mockResolvedValue({ ok: true, body: stream });
 
         renderDrawer({ selectedNode: MOCK_NODE });
 
@@ -136,7 +136,7 @@ describe('ChatDrawer', () => {
     it('falls back to /api/chat when streaming fails', async () => {
         const user = userEvent.setup();
         // First call (stream) fails
-        global.fetch
+        globalThis.fetch
             .mockResolvedValueOnce({ ok: false, body: null })
             .mockResolvedValueOnce({
                 ok: true,
@@ -155,7 +155,7 @@ describe('ChatDrawer', () => {
 
     it('shows error message when both stream and fallback fail', async () => {
         const user = userEvent.setup();
-        global.fetch.mockRejectedValue(new Error('Network error'));
+        globalThis.fetch.mockRejectedValue(new Error('Network error'));
 
         renderDrawer({ selectedNode: MOCK_NODE });
 
@@ -176,20 +176,20 @@ describe('ChatDrawer', () => {
                 controller.close();
             },
         });
-        global.fetch.mockResolvedValue({ ok: true, body: stream });
+        globalThis.fetch.mockResolvedValue({ ok: true, body: stream });
 
         renderDrawer({ selectedNode: MOCK_NODE });
 
         const input = screen.getByPlaceholderText('Ask a question…');
         await user.type(input, 'Enter key test{Enter}');
 
-        expect(global.fetch).toHaveBeenCalled();
+        expect(globalThis.fetch).toHaveBeenCalled();
     });
 
     it('resets messages when selected node changes', async () => {
         const user = userEvent.setup();
         const encoder = new TextEncoder();
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             body: new ReadableStream({
                 start(controller) {
