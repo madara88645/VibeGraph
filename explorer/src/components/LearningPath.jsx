@@ -130,4 +130,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
     );
 };
 
-export default LearningPath;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap LearningPath in React.memo() to prevent unnecessary re-renders
+// during rapid simulation state changes in the App.
+export default React.memo(LearningPath);
