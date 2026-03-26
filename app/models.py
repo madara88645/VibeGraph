@@ -57,9 +57,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     node_id: str | None = Field(default=None, max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
-    project_context: str | None = Field(default=None, max_length=MAX_PROJECT_CONTEXT_LENGTH)
+    project_context: str | None = Field(
+        default=None, max_length=MAX_PROJECT_CONTEXT_LENGTH
+    )
     question: str = Field(max_length=MAX_QUESTION_LENGTH)
-    history: list[ChatMessage] = Field(default_factory=list, max_length=MAX_HISTORY_LENGTH)
+    history: list[ChatMessage] = Field(
+        default_factory=list, max_length=MAX_HISTORY_LENGTH
+    )
 
     model_config = {
         "json_schema_extra": {
