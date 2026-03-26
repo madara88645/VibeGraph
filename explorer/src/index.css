@@ -1191,6 +1191,10 @@ body {
   color: var(--text-muted);
 }
 
+.chat-send-wrapper {
+  display: inline-flex;
+}
+
 .chat-send {
   width: 36px;
   height: 36px;
