@@ -85,7 +85,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                     className="lp-bar-nav"
                     onClick={() => goToStep(currentStep - 1)}
                     disabled={currentStep === 0 || loading}
-                    title="Previous Step"
+                    title={loading ? "Analyzing File..." : currentStep === 0 ? "Already at first step" : "Previous Step"}
                     aria-label="Previous Step"
                 >
                     ←
@@ -110,7 +110,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                     className="lp-bar-nav"
                     onClick={() => goToStep(currentStep + 1)}
                     disabled={currentStep === steps.length - 1 || loading}
-                    title="Next Step"
+                    title={loading ? "Analyzing File..." : currentStep === steps.length - 1 ? "Already at last step" : "Next Step"}
                     aria-label="Next Step"
                 >
                     →

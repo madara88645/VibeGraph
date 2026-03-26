@@ -82,7 +82,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 className="modal-close-btn"
                                 onClick={() => setIsModalOpen(false)}
                                 disabled={isAnalyzing}
-                                title="Close Upload Modal"
+                                title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}
                                 aria-label="Close Upload Modal"
                             >✕</button>
                         </div>
