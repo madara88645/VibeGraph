@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 
 class ExplainRequest(BaseModel):
-    file_path: str | None = None
-    node_id: str
+    file_path: str | None = Field(default=None, max_length=1000)
+    node_id: str = Field(max_length=255)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
 
     model_config = {
@@ -28,8 +28,8 @@ class ExplainRequest(BaseModel):
 
 
 class SnippetRequest(BaseModel):
-    file_path: str | None = None
-    node_id: str
+    file_path: str | None = Field(default=None, max_length=1000)
+    node_id: str = Field(max_length=255)
 
     model_config = {
         "json_schema_extra": {
@@ -40,14 +40,14 @@ class SnippetRequest(BaseModel):
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(max_length=4000)
 
 
 class ChatRequest(BaseModel):
-    node_id: str | None = None
-    file_path: str | None = None
-    project_context: str | None = None
-    question: str
+    node_id: str | None = Field(default=None, max_length=255)
+    file_path: str | None = Field(default=None, max_length=1000)
+    project_context: str | None = Field(default=None, max_length=4000)
+    question: str = Field(max_length=2000)
     history: list[ChatMessage] = Field(default_factory=list)
 
     model_config = {
@@ -65,7 +65,7 @@ class ChatRequest(BaseModel):
 
 
 class LearningPathRequest(BaseModel):
-    file_path: str
+    file_path: str = Field(max_length=1000)
 
     model_config = {
         "json_schema_extra": {"examples": [{"file_path": "my_project/app.py"}]}
