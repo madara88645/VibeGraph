@@ -240,14 +240,19 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     onKeyDown={handleKeyDown}
                     rows={1}
                 />
-                <button
-                    className="chat-send"
-                    onClick={sendMessage}
-                    disabled={loading || !inputText.trim()}
-                    aria-label="Send message"
+                <span
+                    className="chat-send-wrapper"
+                    title={loading ? "Waiting for AI response..." : !inputText.trim() ? "Type a message to send" : "Send message"}
                 >
-                    ↑
-                </button>
+                    <button
+                        className="chat-send"
+                        onClick={sendMessage}
+                        disabled={loading || !inputText.trim()}
+                        aria-label="Send message"
+                    >
+                        ↑
+                    </button>
+                </span>
             </div>
         </div>
     );
