@@ -141,7 +141,7 @@ class CodeAnalyzer:
             try:
                 with os.scandir(current_dir) as it:
                     for entry in it:
-                        if entry.is_dir():
+                        if entry.is_dir(follow_symlinks=False):
                             if entry.name not in IGNORED_DIRS:
                                 stack.append(entry.path)
                         elif entry.is_file() and entry.name.endswith(".py"):
