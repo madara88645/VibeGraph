@@ -5,13 +5,24 @@ from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+MAX_FILE_PATH_LENGTH = 1000
+MAX_NODE_ID_LENGTH = 255
+MAX_PROJECT_CONTEXT_LENGTH = 4000
+MAX_QUESTION_LENGTH = 2000
+MAX_CONTENT_LENGTH = 4000
+MAX_HISTORY_LENGTH = 100
+
+# ---------------------------------------------------------------------------
 # Request models
 # ---------------------------------------------------------------------------
 
 
 class ExplainRequest(BaseModel):
-    file_path: str | None = None
-    node_id: str
+    file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
 
     model_config = {
@@ -28,8 +39,8 @@ class ExplainRequest(BaseModel):
 
 
 class SnippetRequest(BaseModel):
-    file_path: str | None = None
-    node_id: str
+    file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
 
     model_config = {
         "json_schema_extra": {
@@ -40,15 +51,19 @@ class SnippetRequest(BaseModel):
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(max_length=MAX_CONTENT_LENGTH)
 
 
 class ChatRequest(BaseModel):
-    node_id: str | None = None
-    file_path: str | None = None
-    project_context: str | None = None
-    question: str
-    history: list[ChatMessage] = Field(default_factory=list)
+    node_id: str | None = Field(default=None, max_length=MAX_NODE_ID_LENGTH)
+    file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    project_context: str | None = Field(
+        default=None, max_length=MAX_PROJECT_CONTEXT_LENGTH
+    )
+    question: str = Field(max_length=MAX_QUESTION_LENGTH)
+    history: list[ChatMessage] = Field(
+        default_factory=list, max_length=MAX_HISTORY_LENGTH
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -65,7 +80,7 @@ class ChatRequest(BaseModel):
 
 
 class LearningPathRequest(BaseModel):
-    file_path: str
+    file_path: str = Field(max_length=MAX_FILE_PATH_LENGTH)
 
     model_config = {
         "json_schema_extra": {"examples": [{"file_path": "my_project/app.py"}]}
