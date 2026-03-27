@@ -175,7 +175,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 notifyResult(fallbackCopyText(text));
                             }
                         }}
-                        title="Copy code"
+                        title={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
                         disabled={!(codeData && (codeData.full_source || codeData.snippet))}
                         style={{
                             background: 'none',
