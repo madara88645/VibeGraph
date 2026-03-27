@@ -8,12 +8,16 @@ from fastapi import HTTPException
 
 from app.utils.security import is_safe_path
 
+MAX_FILE_SIZE = 1024 * 1024  # 1MB
+
 
 @functools.lru_cache(maxsize=128)
 def _get_parsed_ast(
     resolved_path: str, mtime: float
 ) -> tuple[str | None, ast.AST | None, str | None]:
     try:
+        if os.path.getsize(resolved_path) > MAX_FILE_SIZE:
+            return None, None, f"# Error: File too large ({resolved_path})"
         with open(resolved_path, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError as e:

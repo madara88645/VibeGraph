@@ -12,3 +12,8 @@
 **Vulnerability:** Unhandled exceptions and caught exceptions within API endpoints leaked raw stack traces and internal strings back to the client.
 **Learning:** Broad exception blocks should catch internal details but only expose generic error strings to the outside world.
 **Prevention:** Always implement global exception handlers that return generic 500 errors and avoid stringifying Exception e directly into API response objects.
+
+## 2025-03-03 - Asymmetric DoS via Unbounded File Size Parsing
+**Vulnerability:** Endpoints that accepted paths and parsed them with `ast.parse` (e.g. `analyst/analyzer.py` and `app/utils/snippet.py`) lacked limits on the file sizes processed. An attacker could upload or specify a massive Python file, causing the server to exhaust memory and CPU attempting to parse it into an AST, resulting in Denial of Service.
+**Learning:** AST parsing is a complex operation that does not scale linearly with file size. Checking file boundaries or types is insufficient when the content payload can dynamically consume excessive server resources.
+**Prevention:** Always enforce a `MAX_FILE_SIZE` limit (e.g. 1MB) and validate files via `os.path.getsize(file_path)` before calling expensive string generation or parsing operations like `read()` and `ast.parse()`.

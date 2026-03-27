@@ -86,7 +86,7 @@ def upload_project(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
-                        
+
                         total_size += member.file_size
                         if total_size > MAX_UNCOMPRESSED_SIZE:
                             raise HTTPException(

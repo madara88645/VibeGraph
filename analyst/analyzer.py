@@ -81,6 +81,9 @@ class CallGraphVisitor(ast.NodeVisitor):
         return None
 
 
+MAX_FILE_SIZE = 1024 * 1024  # 1MB
+
+
 class CodeAnalyzer:
     def __init__(self):
         self.graph = nx.DiGraph()
@@ -102,6 +105,8 @@ class CodeAnalyzer:
         if os.path.isdir(target_path):
             return self._analyze_directory(target_path)
         else:
+            if os.path.getsize(target_path) > MAX_FILE_SIZE:
+                return {"error": f"File too large: {target_path}"}
             return self._analyze_single_file(target_path)
 
     def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
@@ -156,6 +161,14 @@ class CodeAnalyzer:
     def _analyze_single_file(
         self, file_path: str, merge: bool = False
     ) -> dict[str, Any]:
+        if os.path.getsize(file_path) > MAX_FILE_SIZE:
+            error_msg = f"File too large: {file_path}"
+            if merge:
+                print(error_msg)
+                self.errors.append(error_msg)
+                return {}
+            return {"error": error_msg}
+
         with open(file_path, encoding="utf-8") as f:
             try:
                 tree = ast.parse(f.read(), filename=file_path)
@@ -214,6 +227,9 @@ class CodeAnalyzer:
         if project_root is None:
             project_root = os.path.dirname(resolved)
         project_root = os.path.abspath(project_root)
+
+        if os.path.getsize(resolved) > MAX_FILE_SIZE:
+            return {"error": f"File too large: {resolved}"}
 
         try:
             with open(resolved, encoding="utf-8") as f:
