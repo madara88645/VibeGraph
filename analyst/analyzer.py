@@ -17,6 +17,8 @@ IGNORED_DIRS = frozenset(
     }
 )
 
+MAX_FILE_SIZE = 1024 * 1024  # 1MB per-file limit to prevent Asymmetric DoS
+
 
 class CallGraphVisitor(ast.NodeVisitor):
     def __init__(self, file_path: str):
@@ -115,6 +117,10 @@ class CodeAnalyzer:
         if os.path.isdir(target_path):
             return self._analyze_directory(target_path)
         else:
+            if os.path.getsize(target_path) > MAX_FILE_SIZE:
+                return {
+                    "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {target_path}"
+                }
             return self._analyze_single_file(target_path)
 
     def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
@@ -164,6 +170,13 @@ class CodeAnalyzer:
     def _analyze_single_file(
         self, file_path: str, merge: bool = False
     ) -> dict[str, Any]:
+        if os.path.getsize(file_path) > MAX_FILE_SIZE:
+            error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {file_path}"
+            if merge:
+                self.errors.append(error_msg)
+                return {}
+            return {"error": error_msg}
+
         with open(file_path, encoding="utf-8") as f:
             try:
                 tree = ast.parse(f.read(), filename=file_path)
@@ -218,6 +231,11 @@ class CodeAnalyzer:
         resolved = os.path.abspath(file_path)
         if not os.path.isfile(resolved):
             return {"error": f"File not found: {file_path}"}
+
+        if os.path.getsize(resolved) > MAX_FILE_SIZE:
+            return {
+                "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {file_path}"
+            }
 
         if project_root is None:
             project_root = os.path.dirname(resolved)

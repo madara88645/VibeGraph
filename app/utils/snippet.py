@@ -6,6 +6,7 @@ import os
 
 from fastapi import HTTPException
 
+from analyst.analyzer import MAX_FILE_SIZE
 from app.utils.security import is_safe_path
 
 
@@ -20,6 +21,14 @@ def _get_parsed_ast(
     str | None,
 ]:
     try:
+        if os.path.getsize(resolved_path) > MAX_FILE_SIZE:
+            return (
+                None,
+                None,
+                None,
+                None,
+                f"# Error: File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {resolved_path}",
+            )
         with open(resolved_path, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError as e:
