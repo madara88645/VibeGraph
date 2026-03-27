@@ -132,4 +132,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     );
 };
 
-export default SearchBar;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap SearchBar in React.memo() to prevent O(N) fuzzy search evaluations
+// or re-renders during rapid simulation state changes in the App.
+export default React.memo(SearchBar);
