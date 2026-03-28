@@ -18,5 +18,5 @@ def run_benchmark(n=1000):
 
 
 if __name__ == "__main__":
-    duration = run_benchmark(100)
-    print(f"Baseline for 100 requests: {duration:.3f} seconds")
+    duration = run_benchmark(1000)
+    print(f"Baseline for 1000 requests: {duration:.3f} seconds")
