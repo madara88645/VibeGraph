@@ -1,11 +1,12 @@
 """Routes for AI chat conversations about code."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from app.models import ChatRequest, ChatResponse
-from app.utils.snippet import extract_snippet
 import app.dependencies as deps
+from app.models import ChatRequest, ChatResponse
+from app.rate_limit import CHAT_LIMIT, limiter
+from app.utils.snippet import extract_snippet
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -17,39 +18,41 @@ def format_sse_event(data: str) -> str:
 
 
 @router.post("/chat", response_model=ChatResponse, summary="Chat about a code node")
-def chat_with_node(request: ChatRequest):
+@limiter.limit(CHAT_LIMIT)
+def chat_with_node(request: Request, chat_request: ChatRequest):
     """
     Free-form conversation about the code behind *node_id*.
     Supports multi-turn via *history*.
     """
-    snippet, _, _, _ = extract_snippet(request.file_path, request.node_id)
+    snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
 
-    history_dicts = [{"role": m.role, "content": m.content} for m in request.history]
+    history_dicts = [{"role": m.role, "content": m.content} for m in chat_request.history]
 
     answer = deps.teacher.chat(
         code_snippet=snippet,
-        project_context=request.project_context or "",
-        question=request.question,
+        project_context=chat_request.project_context or "",
+        question=chat_request.question,
         history=history_dicts,
     )
 
-    return {"answer": answer, "node_id": request.node_id}
+    return {"answer": answer, "node_id": chat_request.node_id}
 
 
 @router.post("/chat/stream", summary="Stream chat about a code node")
-def chat_stream(request: ChatRequest):
+@limiter.limit(CHAT_LIMIT)
+def chat_stream(request: Request, chat_request: ChatRequest):
     """
     Streaming version of /api/chat. Returns Server-Sent Events
     with token-by-token output for real-time UI updates.
     """
-    snippet, _, _, _ = extract_snippet(request.file_path, request.node_id)
-    history_dicts = [{"role": m.role, "content": m.content} for m in request.history]
+    snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
+    history_dicts = [{"role": m.role, "content": m.content} for m in chat_request.history]
 
     def event_generator():
         for token in deps.teacher.stream_chat(
             code_snippet=snippet,
-            project_context=request.project_context or "",
-            question=request.question,
+            project_context=chat_request.project_context or "",
+            question=chat_request.question,
             history=history_dicts,
         ):
             yield format_sse_event(token)

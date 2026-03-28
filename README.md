@@ -59,13 +59,23 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
 | | Feature | Description |
 |---|---------|-------------|
 | 🧬 | **Interactive Call Graph** | Functions, classes, and relationships as a zoomable, pannable graph |
-| 👻 | **Ghost Runner** | Watch an AI "ghost" traverse execution paths in real time (Slow / Normal / Fast) |
+| 👻 | **Ghost Runner v2** | Intelligent code traversal with 5 strategies (Smart, Entry Flow, Hub Tour, By File, Random), AI narration, Explore mode, progress tracking, and run summaries |
 | 🔍 | **Node Search** | Fuzzy search across all nodes with `Ctrl+K` — instantly zooms and highlights |
 | 💬 | **AI Chat** | Multi-turn conversation about any node — AI holds the full source as context |
 | 🎓 | **Learning Path** | AI-suggested study order: start here, then go here, for any file |
 | 📝 | **Code Panel** | Source code with line numbers for every selected node |
 | 💡 | **AI Explanations** | Beginner / Intermediate / Advanced levels, Technical or Analogy mode |
 | 📤 | **Upload Any Project** | Drop `.py` files or a `.zip` of your whole project — graph appears instantly |
+
+### Ghost Runner v2
+
+The Ghost Runner has been upgraded from a simple random walk to an intelligent, AI-powered code exploration tool:
+
+- **5 Traversal Strategies** — **Smart** (DFS from entry points with hub pause), **Entry Flow** (follow real execution paths), **Hub Tour** (visit most-connected nodes first), **By File** (explore file by file), **Random** (classic mode)
+- **AI Narration** — Each step gets a brief AI-generated explanation: what the function does and how it connects to the previous one
+- **Explore Mode** — Switch from Auto to Explore to guide the ghost yourself — choose which connected node to visit next
+- **Progress Tracking** — Live coverage bar showing nodes visited vs total, with visited-node highlighting
+- **Run Summary** — On pause, see a summary: nodes/files covered, most connected hub, unvisited entry points
 
 ---
 

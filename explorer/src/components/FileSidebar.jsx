@@ -7,7 +7,7 @@ const typeIcons = {
     default: '○',
 };
 
-const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCount }) => {
+const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCount, mobileOpen }) => {
     const [activeTab, setActiveTab] = useState('files');
     const [deps, setDeps] = useState(null);
 
@@ -27,7 +27,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
     }, []);
 
     return (
-        <div className="file-sidebar">
+        <div className={`file-sidebar${mobileOpen ? ' sidebar-open' : ''}`}>
             {/* Tabs */}
             <div className="sidebar-tabs" role="tablist" aria-label="Sidebar views">
                 <button

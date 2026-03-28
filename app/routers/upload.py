@@ -8,11 +8,12 @@ import time
 import zipfile
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
 
-from analyst.analyzer import CodeAnalyzer
 import app.dependencies as deps
+from analyst.analyzer import CodeAnalyzer
 from app.models import UploadResponse
+from app.rate_limit import UPLOAD_LIMIT, limiter
 from app.utils.security import UPLOAD_PREFIX, normalize_uploaded_filename
 
 router = APIRouter(prefix="/api", tags=["upload"])
@@ -56,8 +57,11 @@ def cleanup_expired_upload_dirs(
     response_model=UploadResponse,
     summary="Upload and analyse a project",
 )
+@limiter.limit(UPLOAD_LIMIT)
 def upload_project(
-    background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
+    request: Request,
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
 ):
     """
     Receives dynamic uploads (single .py, multiple files, or .zip), saves to a
@@ -66,7 +70,7 @@ def upload_project(
     background_tasks.add_task(cleanup_expired_upload_dirs)
     tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
 
-    MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100 MB
+    MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
     MAX_ZIP_FILES = 10000
 
     try:
@@ -78,7 +82,6 @@ def upload_project(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            # If it's a zip file, validate and extract it
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_abs = os.path.abspath(tmp_dir)
@@ -160,5 +163,6 @@ def upload_project(
         logger.error(f"Upload/Analysis failed: {e}", exc_info=True)
         cleanup_tmp_dir(tmp_dir)
         raise HTTPException(
-            status_code=500, detail="Upload/Analysis failed due to an internal error."
+            status_code=500,
+            detail="Upload/Analysis failed due to an internal error.",
         )

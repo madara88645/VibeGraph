@@ -124,3 +124,25 @@ def test_explain_code_cache_uses_lru_recency():
         teacher.explain_code("print('b')")
 
         assert teacher.client.chat.completions.create.call_count == 4
+
+
+def test_narrate_step_cache_is_scoped_by_file_path():
+    teacher = GroqTeacher()
+    teacher.client = MagicMock()
+
+    def fake_create(*args, **kwargs):
+        payload = {
+            "narration": kwargs["messages"][1]["content"].splitlines()[0],
+            "relationship": "",
+            "importance": "medium",
+        }
+        return MagicMock(
+            choices=[MagicMock(message=MagicMock(content=json.dumps(payload)))]
+        )
+
+    teacher.client.chat.completions.create.side_effect = fake_create
+
+    teacher.narrate_step("print('a')", "main", file_path="proj_a/main.py")
+    teacher.narrate_step("print('b')", "main", file_path="proj_b/main.py")
+
+    assert teacher.client.chat.completions.create.call_count == 2

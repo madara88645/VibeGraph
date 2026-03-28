@@ -5,6 +5,7 @@ import { useNodeInteraction } from './useNodeInteraction';
 describe('useNodeInteraction - explanation cache', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        localStorage.clear();
     });
 
     const mockNode = {

@@ -1,22 +1,23 @@
-import React, { useCallback } from 'react';
-import { ReactFlowProvider, useNodesState, useEdgesState } from 'reactflow';
+import React, { useCallback, useState } from 'react';
+import { ReactFlowProvider, useEdgesState, useNodesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import GraphViewer from './components/GraphViewer';
+import ChatDrawer from './components/ChatDrawer';
+import CodePanel from './components/CodePanel';
+import ErrorBoundary from './components/ErrorBoundary';
 import ExplanationPanel from './components/ExplanationPanel';
 import FileSidebar from './components/FileSidebar';
-import CodePanel from './components/CodePanel';
-import SearchBar from './components/SearchBar';
-import ChatDrawer from './components/ChatDrawer';
+import GhostChoices from './components/GhostChoices';
+import GhostNarration from './components/GhostNarration';
+import GhostRunSummary from './components/GhostRunSummary';
+import GraphViewer from './components/GraphViewer';
 import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
+import SearchBar from './components/SearchBar';
 import SimulationControls from './components/SimulationControls';
-import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
-
-// Custom Hooks
-import { useGraphData } from './hooks/useGraphData';
 import { useGhostRunner } from './hooks/useGhostRunner';
+import { useGraphData } from './hooks/useGraphData';
 import { useNodeInteraction } from './hooks/useNodeInteraction';
 import { useTheme } from './hooks/useTheme';
 
@@ -24,8 +25,8 @@ function AppInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { theme, toggleTheme } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 1. Interaction State & Handlers
   const {
     selectedNode,
     setSelectedNode,
@@ -42,10 +43,9 @@ function AppInner() {
     fetchExplanation,
     handleSelectNode,
     onNodeClick,
-    resetInteractionState
+    resetInteractionState,
   } = useNodeInteraction();
 
-  // 2. Ghost Runner State & Handlers
   const {
     isPlaying,
     setIsPlaying,
@@ -54,54 +54,96 @@ function AppInner() {
     setSpeed,
     currentLabel,
     onResetSimulation,
-    setActiveNodeId
+    strategy,
+    setStrategy,
+    mode,
+    setMode,
+    visitedCount,
+    totalNodes,
+    availableNextNodes,
+    onUserChooseNext,
+    narration,
+    runSummary,
   } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode);
 
-  // 3. Graph Data & Global File State
   const {
     allNodes,
     selectedFile,
     setSelectedFile,
     files,
     nodeStats,
-    handleUploadSuccess
+    handleUploadSuccess,
   } = useGraphData(setNodes, setEdges);
 
-  // Helper for Upload component that resets simulation and selection
-  const onUploadSuccess = useCallback((result) => {
-    handleUploadSuccess(result, () => {
-      resetInteractionState();
-      setIsPlaying(false);
-      setActiveNodeId(null);
-    });
-  }, [handleUploadSuccess, resetInteractionState, setIsPlaying, setActiveNodeId]);
+  const onUploadSuccess = useCallback(
+    (result) => {
+      handleUploadSuccess(result, () => {
+        resetInteractionState();
+        onResetSimulation();
+      });
+    },
+    [handleUploadSuccess, onResetSimulation, resetInteractionState]
+  );
 
-  // PERFORMANCE OPTIMIZATION (Bolt):
-  // Stabilize callbacks passed to memoized components to prevent breaking React.memo
-  const handleToggleSimulation = useCallback(() => setIsPlaying(prev => !prev), [setIsPlaying]);
-  const handleToggleChat = useCallback(() => setChatOpen(prev => !prev), [setChatOpen]);
-  const handleToggleCodePanel = useCallback(() => setCodePanelOpen(prev => !prev), [setCodePanelOpen]);
-  const handleCloseLearningPath = useCallback(() => setLearningPathOpen(false), [setLearningPathOpen]);
+  const handleToggleSimulation = useCallback(
+    () => setIsPlaying((prev) => !prev),
+    [setIsPlaying]
+  );
+  const handleToggleChat = useCallback(
+    () => setChatOpen((prev) => !prev),
+    [setChatOpen]
+  );
+  const handleToggleCodePanel = useCallback(
+    () => setCodePanelOpen((prev) => !prev),
+    [setCodePanelOpen]
+  );
+  const handleCloseLearningPath = useCallback(
+    () => setLearningPathOpen(false),
+    [setLearningPathOpen]
+  );
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'sidebar-open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       <FileSidebar
         files={files}
         selectedFile={selectedFile}
-        onSelectFile={setSelectedFile}
+        onSelectFile={(file) => {
+          setSelectedFile(file);
+          setSidebarOpen(false);
+        }}
         nodeStats={nodeStats}
         totalNodeCount={allNodes.length}
+        mobileOpen={sidebarOpen}
       />
 
-      {/* Main Area */}
       <div className="main-area">
         <div className="vibe-header">
-          <h1>⚡ Vibe Learning</h1>
+          <button
+            className="hamburger-btn"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="Toggle sidebar"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              fontSize: '20px',
+              padding: '4px 8px',
+              display: 'none',
+            }}
+          >
+            {'\u2630'}
+          </button>
+          <h1>{'\u26A1'} Vibe Learning</h1>
           <span className="status-badge">AI Active</span>
           {selectedFile && (
             <span className="current-file-badge">
-              📄 {selectedFile.split(/[/\\]/).pop()}
+              {'\uD83D\uDCC4'} {selectedFile.split(/[/\\]/).pop()}
             </span>
           )}
           <button
@@ -109,7 +151,7 @@ function AppInner() {
             onClick={() => setLearningPathOpen(true)}
             title="Learning Path"
           >
-            🎯 Learn
+            {'\uD83C\uDFAF'} Learn
           </button>
 
           <button
@@ -126,7 +168,7 @@ function AppInner() {
               fontSize: '14px',
             }}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
           </button>
 
           <ProjectUpload onUploadSuccess={onUploadSuccess} />
@@ -138,7 +180,6 @@ function AppInner() {
           />
         </div>
 
-        {/* Graph */}
         <div className="graph-shell">
           <ErrorBoundary>
             <GraphViewer
@@ -150,6 +191,15 @@ function AppInner() {
             />
           </ErrorBoundary>
 
+          <GhostNarration narration={narration} isPlaying={isPlaying} />
+          <GhostChoices
+            availableNextNodes={availableNextNodes}
+            onChoose={onUserChooseNext}
+            isPlaying={isPlaying}
+            mode={mode}
+          />
+          <GhostRunSummary runSummary={runSummary} isPlaying={isPlaying} />
+
           <SimulationControls
             isPlaying={isPlaying}
             onToggle={handleToggleSimulation}
@@ -158,6 +208,12 @@ function AppInner() {
             speed={speed}
             onSpeedChange={setSpeed}
             currentLabel={currentLabel}
+            strategy={strategy}
+            onStrategyChange={setStrategy}
+            mode={mode}
+            onModeChange={setMode}
+            visitedCount={visitedCount}
+            totalNodes={totalNodes}
           />
 
           <ExplanationPanel
@@ -168,7 +224,6 @@ function AppInner() {
             fetchExplanation={fetchExplanation}
           />
 
-          {/* Chat Drawer */}
           <ErrorBoundary>
             <ChatDrawer
               selectedNode={selectedNode}
@@ -179,7 +234,6 @@ function AppInner() {
           </ErrorBoundary>
         </div>
 
-        {/* Code Panel — Bottom */}
         <CodePanel
           activeNode={codePanelNode}
           isGhostRunning={isPlaying}
@@ -188,7 +242,6 @@ function AppInner() {
         />
       </div>
 
-      {/* Learning Path Overlay */}
       <LearningPath
         selectedFile={selectedFile}
         allNodes={allNodes}
@@ -201,7 +254,6 @@ function AppInner() {
   );
 }
 
-// Wrap with ReactFlowProvider so SearchBar and LearningPath can use useReactFlow()
 export default function App() {
   return (
     <ErrorBoundary>

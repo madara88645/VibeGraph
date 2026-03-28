@@ -36,8 +36,10 @@ describe('SimulationControls', () => {
         await user.click(screen.getByLabelText('Show guide'));
 
         // Ghost Runner section
-        expect(screen.getByText(/randomly walks through your call graph/)).toBeInTheDocument();
+        expect(screen.getByText(/walks through your call graph/)).toBeInTheDocument();
         expect(screen.getByText(/Trail/)).toBeInTheDocument();
+        expect(screen.getByText(/Strategies/)).toBeInTheDocument();
+        expect(screen.getByText(/Progress/)).toBeInTheDocument();
 
         // Code Analyzer section
         expect(screen.getByText(/Abstract Syntax Tree/)).toBeInTheDocument();

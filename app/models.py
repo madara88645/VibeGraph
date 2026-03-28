@@ -1,12 +1,11 @@
 """Pydantic request/response models for the VibeGraph API."""
 
 from typing import Any, Literal
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field, field_validator
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
+from app.utils.sanitize import sanitize_llm_input
+
 
 MAX_FILE_PATH_LENGTH = 1000
 MAX_NODE_ID_LENGTH = 255
@@ -14,10 +13,6 @@ MAX_PROJECT_CONTEXT_LENGTH = 4000
 MAX_QUESTION_LENGTH = 2000
 MAX_CONTENT_LENGTH = 4000
 MAX_HISTORY_LENGTH = 100
-
-# ---------------------------------------------------------------------------
-# Request models
-# ---------------------------------------------------------------------------
 
 
 class ExplainRequest(BaseModel):
@@ -53,16 +48,25 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(max_length=MAX_CONTENT_LENGTH)
 
+    @field_validator("content", mode="before")
+    @classmethod
+    def sanitize_content(cls, value: str) -> str:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
 
 class ChatRequest(BaseModel):
     node_id: str | None = Field(default=None, max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     project_context: str | None = Field(
-        default=None, max_length=MAX_PROJECT_CONTEXT_LENGTH
+        default=None,
+        max_length=MAX_PROJECT_CONTEXT_LENGTH,
     )
     question: str = Field(max_length=MAX_QUESTION_LENGTH)
     history: list[ChatMessage] = Field(
-        default_factory=list, max_length=MAX_HISTORY_LENGTH
+        default_factory=list,
+        max_length=MAX_HISTORY_LENGTH,
     )
 
     model_config = {
@@ -78,6 +82,13 @@ class ChatRequest(BaseModel):
         }
     }
 
+    @field_validator("question", mode="before")
+    @classmethod
+    def sanitize_question(cls, value: str) -> str:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
 
 class LearningPathRequest(BaseModel):
     file_path: str = Field(max_length=MAX_FILE_PATH_LENGTH)
@@ -87,9 +98,15 @@ class LearningPathRequest(BaseModel):
     }
 
 
-# ---------------------------------------------------------------------------
-# Response models
-# ---------------------------------------------------------------------------
+class GhostNarrateRequest(BaseModel):
+    node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
+    file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    previous_node_id: str | None = Field(
+        default=None,
+        max_length=MAX_NODE_ID_LENGTH,
+    )
+    strategy: str = Field(default="smart", max_length=50)
+    context_nodes: list[str] = Field(default_factory=list, max_length=10)
 
 
 class ExplanationDetail(BaseModel):

@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from '../hooks/useToast';
 
 const ProjectUpload = ({ onUploadSuccess }) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -16,6 +17,51 @@ const ProjectUpload = ({ onUploadSuccess }) => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isModalOpen, isAnalyzing]);
+
+    const handleDragOver = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDragEnter = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    }, []);
+
+    const handleDrop = useCallback(async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (!files.length) return;
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i], files[i].name);
+        }
+
+        setIsAnalyzing(true);
+        try {
+            const response = await fetch('/api/upload-project', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+            const result = await response.json();
+            if (onUploadSuccess) onUploadSuccess(result);
+            showToast('Project uploaded successfully!', 'success');
+            setIsModalOpen(false);
+        } catch (err) {
+            showToast(`Upload failed: ${err.message}`, 'error');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    }, [onUploadSuccess, showToast]);
 
     const handleUpload = async (event) => {
         const files = event.target.files;
@@ -97,7 +143,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 </div>
                             ) : (
                                 <div
-                                    className="upload-zone"
+                                    className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
                                     onClick={() => fileInputRef.current?.click()}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
@@ -105,10 +151,28 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                             fileInputRef.current?.click();
                                         }
                                     }}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragEnter}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
                                     tabIndex={0}
                                     role="button"
                                     aria-label="Select a project folder to analyze"
+                                    style={{ position: 'relative' }}
                                 >
+                                    {isDragging && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0,
+                                            background: 'rgba(56, 189, 248, 0.1)',
+                                            border: '2px dashed var(--color-accent-ice)',
+                                            borderRadius: 'var(--radius-md)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: 'var(--color-accent-ice)', fontSize: '16px', fontWeight: 600,
+                                            zIndex: 10,
+                                        }}>
+                                            Drop files here
+                                        </div>
+                                    )}
                                     <div className="upload-icon" aria-hidden="true">📤</div>
                                     <p>Select a project folder to analyze</p>
                                     <span className="upload-hint">Uploads all .py files to the server</span>

@@ -46,6 +46,17 @@ class GraphExporter:
             }
             nodes.append(node_dict)
 
+        # Detect cycles
+        cycle_edges = set()
+        try:
+            for cycle in nx.simple_cycles(graph):
+                if len(cycle) >= 2:
+                    for i in range(len(cycle)):
+                        edge = (cycle[i], cycle[(i + 1) % len(cycle)])
+                        cycle_edges.add(edge)
+        except nx.NetworkXError:
+            pass  # Graph may not support cycle detection
+
         # Convert edges
         for u, v, data in graph.edges(data=True):
             edge_dict = {
@@ -53,6 +64,7 @@ class GraphExporter:
                 "source": u,
                 "target": v,
                 "animated": True,  # Optional visual polish
+                "data": {"is_cycle_edge": (u, v) in cycle_edges},
             }
             edges.append(edge_dict)
 

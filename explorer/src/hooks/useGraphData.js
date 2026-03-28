@@ -12,6 +12,16 @@ export function useGraphData(setNodes, setEdges) {
     // Load graph data
     useEffect(() => {
         const fetchData = async () => {
+            // Load cached graph data first for instant display
+            const cached = localStorage.getItem('vg_v1_graph');
+            if (cached) {
+                try {
+                    const { nodes, edges } = JSON.parse(cached);
+                    setAllNodes(nodes);
+                    setAllEdges(edges);
+                } catch {}
+            }
+
             try {
                 const response = await fetch('/graph_data.json');
                 if (!response.ok) return;
@@ -30,6 +40,10 @@ export function useGraphData(setNodes, setEdges) {
 
                 setAllNodes(customNodes);
                 setAllEdges(data.edges);
+
+                try {
+                    localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: data.edges }));
+                } catch {}
 
                 // Auto-select first file that has an entry point, or just the first file
                 const filesSet = new Set();
@@ -100,6 +114,10 @@ export function useGraphData(setNodes, setEdges) {
         setAllNodes(customNodes);
         setAllEdges(newEdges);
 
+        try {
+            localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: newEdges }));
+        } catch {}
+
         // Provide a callback to reset external state (like ghost runner, selections)
         if (resetGhostStateCallback) {
             resetGhostStateCallback();
@@ -153,13 +171,41 @@ export function useGraphData(setNodes, setEdges) {
 
         const styledEdges = relevantEdges.map(e => {
             const isInternal = fileNodeIds.has(e.source) && fileNodeIds.has(e.target);
+            const isCycle = e.data?.is_cycle_edge === true;
+
+            if (isCycle) {
+                const style = { stroke: '#f97316', strokeWidth: 3, strokeDasharray: '8 4' };
+                return {
+                    ...e,
+                    style,
+                    animated: true,
+                    className: 'cycle-edge',
+                    label: '\u27F3',
+                    labelStyle: { fill: '#f97316', fontSize: 12 },
+                    data: {
+                        ...e.data,
+                        ghostBaseClassName: 'cycle-edge',
+                        ghostBaseAnimated: true,
+                        ghostBaseStyle: style,
+                    },
+                };
+            }
+
+            const style = isInternal
+                ? { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 }
+                : { stroke: 'rgba(148, 163, 184, 0.25)', strokeWidth: 2, strokeDasharray: '6 4' };
+            const className = isInternal ? '' : 'external-edge';
             return {
                 ...e,
-                style: isInternal
-                    ? { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 }
-                    : { stroke: 'rgba(148, 163, 184, 0.25)', strokeWidth: 2, strokeDasharray: '6 4' },
+                style,
                 animated: false,
-                className: isInternal ? '' : 'external-edge',
+                className,
+                data: {
+                    ...e.data,
+                    ghostBaseClassName: className,
+                    ghostBaseAnimated: false,
+                    ghostBaseStyle: style,
+                },
             };
         });
 

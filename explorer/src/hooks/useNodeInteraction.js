@@ -4,7 +4,19 @@ export function useNodeInteraction() {
     const [selectedNode, setSelectedNode] = useState(null);
     const [explanation, setExplanation] = useState(null);
     const [loading, setLoading] = useState(false);
-    const explanationCacheRef = useRef(new Map());
+    const explanationCacheRef = useRef(null);
+    if (explanationCacheRef.current === null) {
+        try {
+            const saved = localStorage.getItem('vg_v1_explanationCache');
+            if (saved) {
+                explanationCacheRef.current = new Map(JSON.parse(saved));
+            } else {
+                explanationCacheRef.current = new Map();
+            }
+        } catch {
+            explanationCacheRef.current = new Map();
+        }
+    }
 
     // Code Panel state
     const [codePanelOpen, setCodePanelOpen] = useState(true);
@@ -42,6 +54,9 @@ export function useNodeInteraction() {
             const data = await response.json();
             const result = data.explanation ? data : "No explanation returned.";
             explanationCacheRef.current.set(cacheKey, result);
+            try {
+                localStorage.setItem('vg_v1_explanationCache', JSON.stringify([...explanationCacheRef.current.entries()]));
+            } catch {}
             setExplanation(result);
         } catch (err) {
             console.error(err);
@@ -67,6 +82,7 @@ export function useNodeInteraction() {
         setSelectedNode(null);
         setExplanation(null);
         explanationCacheRef.current.clear();
+        try { localStorage.removeItem('vg_v1_explanationCache'); } catch {}
     }, []);
 
     return {

@@ -286,6 +286,13 @@ body {
   border-color: rgba(244, 63, 94, 0.15) !important;
 }
 
+/* Ghost Runner — VISITED node (already explored, not in trail) */
+.react-flow__node.ghost-visited {
+  border-color: rgba(52, 211, 153, 0.25) !important;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.08) !important;
+  opacity: 0.85;
+}
+
 /* ===== EDGES ===== */
 .react-flow__edge-path {
   stroke: rgba(100, 116, 139, 0.3);
@@ -317,6 +324,12 @@ body {
   to {
     stroke-dashoffset: 0;
   }
+}
+
+/* ===== CYCLE EDGES ===== */
+.react-flow__edge.cycle-edge path {
+  stroke: #f97316 !important;
+  stroke-width: 3px;
 }
 
 /* Animated edge (React Flow built-in) */
@@ -1856,6 +1869,328 @@ body {
   white-space: nowrap;
 }
 
+/* ── Mode Toggle ── */
+.sim-mode-group {
+  display: flex;
+  gap: 2px;
+}
+
+.sim-mode-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.sim-mode-btn.active {
+  background: rgba(125, 211, 252, 0.14);
+  border-color: rgba(125, 211, 252, 0.3);
+  color: var(--color-accent-ice);
+}
+
+.sim-mode-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+
+/* ── Strategy Selector ── */
+.sim-strategy-wrapper {
+  position: relative;
+}
+
+.sim-strategy-btn {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.sim-strategy-btn:hover,
+.sim-strategy-btn.active {
+  border-color: rgba(125, 211, 252, 0.35);
+  color: var(--color-accent-ice);
+  background: rgba(125, 211, 252, 0.08);
+}
+
+.sim-strategy-picker {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-gradient);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  min-width: 220px;
+  animation: guideSlideUp 0.2s ease-out;
+  z-index: 500;
+}
+
+.sim-strategy-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.74rem;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.sim-strategy-option:hover {
+  background: rgba(125, 211, 252, 0.08);
+}
+
+.sim-strategy-option.active {
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--color-accent-ice);
+}
+
+.sim-strategy-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sim-strategy-label {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sim-strategy-hint {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  margin-left: auto;
+}
+
+/* ── Progress Bar ── */
+.sim-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.sim-progress-bar {
+  width: 40px;
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sim-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-entry), var(--color-accent-ice));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.sim-progress-text {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sim-progress-pct {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ── Explore Hint ── */
+.sim-explore-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Ghost Narration Bubble ── */
+.ghost-narration {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 480px;
+  background: var(--panel-gradient);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  z-index: 99;
+  animation: guideSlideUp 0.3s ease-out;
+}
+
+.ghost-narration-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ghost-narration-text {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  display: block;
+}
+
+.ghost-narration-rel {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  display: block;
+  font-style: italic;
+}
+
+.ghost-narration-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ghost-narration-importance {
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.ghost-narration-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.ghost-narration-toggle:hover {
+  opacity: 1;
+  color: var(--text-primary);
+  background: var(--surface-soft);
+}
+
+/* ── Ghost Choices (Explore Mode) ── */
+.ghost-choices {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 500px;
+  z-index: 99;
+  animation: guideSlideUp 0.25s ease-out;
+}
+
+.ghost-choice-btn {
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 999px;
+  background: rgba(244, 63, 94, 0.08);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.ghost-choice-btn:hover {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: var(--accent-ghost);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.15);
+}
+
+.ghost-choice-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ghost-choices-title {
+  width: 100%;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+/* ── Run Summary ── */
+.ghost-run-summary {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-gradient);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  min-width: 280px;
+  max-width: 400px;
+  z-index: 99;
+  animation: guideSlideUp 0.3s ease-out;
+}
+
+.ghost-summary-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-accent-ice);
+  margin: 0 0 8px;
+}
+
+.ghost-summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 6px;
+}
+
+.ghost-summary-stat {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.ghost-summary-stat strong {
+  color: var(--text-primary);
+}
+
+.ghost-summary-entries {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 .explanation-panel {
   position: absolute;
   top: 16px;
@@ -2395,4 +2730,74 @@ body {
 @keyframes badgePulse {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.7; }
+}
+
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .file-sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 100;
+    transition: left 0.3s ease;
+    background: var(--color-surface-2);
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .file-sidebar.sidebar-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+
+  .sidebar-overlay.sidebar-open {
+    display: block;
+  }
+
+  .vibe-header {
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3) !important;
+    gap: var(--space-2) !important;
+  }
+
+  .vibe-header h1 {
+    font-size: 16px !important;
+  }
+
+  .chat-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .code-panel,
+  .explanation-panel {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  .search-bar {
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .hamburger-btn {
+    display: none !important;
+  }
 }

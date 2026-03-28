@@ -13,6 +13,7 @@ import { useToast } from '../hooks/useToast';
  * Shows the full file with the relevant function highlighted.
  */
 const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
+    const { addToast } = useToast();
     const [codeData, setCodeData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -187,6 +188,20 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                             fontSize: '13px',
                             opacity: codeData && (codeData.full_source || codeData.snippet) ? 1 : 0.5,
                         }}
+                    >
+                        Copy
+                    </button>
+                    <button
+                        className="code-panel-close"
+                        onClick={() => {
+                            const text = codeData?.full_source || codeData?.snippet || '';
+                            navigator.clipboard.writeText(text).then(
+                                () => addToast('Code copied!', 'success'),
+                                () => addToast('Copy failed', 'error')
+                            );
+                        }}
+                        title="Copy code"
+                        aria-label="Copy code to clipboard"
                     >
                         Copy
                     </button>

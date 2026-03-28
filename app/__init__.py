@@ -11,10 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from app.routers import chat, explain, health, learning, upload
+from app.rate_limit import limiter
+from app.routers import chat, explain, ghost, health, learning, upload
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +105,11 @@ def create_app() -> FastAPI:
         license_info={"name": "MIT"},
     )
 
+    # Rate limiting
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    application.add_middleware(SlowAPIMiddleware)
+
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
 
@@ -141,6 +150,7 @@ def create_app() -> FastAPI:
     application.include_router(chat.router)
     application.include_router(learning.router)
     application.include_router(upload.router)
+    application.include_router(ghost.router)
 
     # Mount static files (Frontend build)
     static_dir = os.path.join("explorer", "dist")
