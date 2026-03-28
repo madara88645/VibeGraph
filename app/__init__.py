@@ -107,7 +107,7 @@ def create_app() -> FastAPI:
 
     # Rate limiting
     application.state.limiter = limiter
-    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
     application.add_middleware(SlowAPIMiddleware)
 
     # Request ID tracing
