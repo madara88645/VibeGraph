@@ -81,6 +81,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
                     }}
                     style={exportBtnStyle}
                     title="Export as PNG"
+                    aria-label="Export as PNG"
                 >
                     PNG
                 </button>
@@ -95,6 +96,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
                     }}
                     style={exportBtnStyle}
                     title="Export as SVG"
+                    aria-label="Export as SVG"
                 >
                     SVG
                 </button>
