@@ -85,8 +85,8 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
 
     if (!isOpen) {
         return (
-            <button className="code-panel-toggle" onClick={onToggle}>
-                <span>{'<>'}</span> Code
+            <button className="code-panel-toggle" onClick={onToggle} aria-label="Open Code Panel">
+                <span aria-hidden="true">{'<>'}</span> Code
             </button>
         );
     }
@@ -176,6 +176,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                             }
                         }}
                         title={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
+                        aria-label={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
                         disabled={!(codeData && (codeData.full_source || codeData.snippet))}
                         style={{
                             background: 'none',

@@ -69,8 +69,9 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                 className="header-action-btn upload-btn"
                 onClick={() => setIsModalOpen(true)}
                 title="Upload new project for analysis"
+                aria-label="Upload new project for analysis"
             >
-                📁 Upload Project
+                <span aria-hidden="true">📁</span> Upload Project
             </button>
 
             {isModalOpen && (
