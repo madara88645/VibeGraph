@@ -1,9 +1,7 @@
 """Tests for /api/chat and /api/chat/stream endpoints."""
 
 import os
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("VIBEGRAPH_RATE_LIMIT_ENABLED", "false")
