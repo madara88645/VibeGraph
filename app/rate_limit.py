@@ -1,4 +1,5 @@
 """Rate limiting configuration for VibeGraph API."""
+
 import os
 import sys
 from slowapi import Limiter

@@ -56,7 +56,7 @@ export function useNodeInteraction() {
             explanationCacheRef.current.set(cacheKey, result);
             try {
                 localStorage.setItem('vg_v1_explanationCache', JSON.stringify([...explanationCacheRef.current.entries()]));
-            } catch {}
+            } catch { /* ignore */ }
             setExplanation(result);
         } catch (err) {
             console.error(err);
@@ -82,7 +82,7 @@ export function useNodeInteraction() {
         setSelectedNode(null);
         setExplanation(null);
         explanationCacheRef.current.clear();
-        try { localStorage.removeItem('vg_v1_explanationCache'); } catch {}
+        try { localStorage.removeItem('vg_v1_explanationCache'); } catch { /* ignore */ }
     }, []);
 
     return {

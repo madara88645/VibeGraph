@@ -27,12 +27,6 @@ function getOutgoingTargets(ctx) {
         .filter(isNavigableNode);
 }
 
-function getUnvisitedOutgoing(ctx) {
-    const targets = getOutgoingTargets(ctx);
-    const unvisited = targets.filter(n => !ctx.visitedSet.has(n.id));
-    return unvisited.length > 0 ? unvisited : targets;
-}
-
 function pickEntryPoint(ctx) {
     const { nodes, visitedSet } = ctx;
     const fileNodes = nodes.filter(isNavigableNode);
@@ -308,43 +302,6 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             .catch(() => { /* narration is optional, fail silently */ });
     }, [strategy]);
 
-    // ── Explore mode: user chooses next node ──
-    const onUserChooseNext = useCallback((nodeId) => {
-        if (mode !== 'explore') return;
-
-        const currentActiveId = activeNodeIdRef.current;
-        const nodesMap = nodesMapRef.current;
-        const trail = trailRef.current;
-
-        const nextNode = nodesMap.get(nodeId);
-        if (!isNavigableNode(nextNode)) return;
-
-        const newTrail = [nodeId, ...trail.filter(id => id !== nodeId)].slice(0, TRAIL_LENGTH);
-        trailRef.current = newTrail;
-        visitedSetRef.current.add(nodeId);
-
-        setActiveNodeId(nodeId);
-        setStepCount(prev => prev + 1);
-
-        setCurrentLabel(nextNode?.data?.label || '');
-
-        setCodePanelNode(nextNode);
-
-        // Fetch narration
-        fetchNarration(nodeId, currentActiveId);
-
-        // Update visuals
-        applyVisuals(newTrail, currentActiveId, nodeId);
-
-        // Compute next available choices
-        const nextTargets = getOutgoingTargets({
-            currentActiveId: nodeId,
-            edges: edgesRef.current,
-            nodesMap,
-        });
-        setAvailableNextNodes(nextTargets);
-    }, [mode, setCodePanelNode, fetchNarration]);
-
     // ── Apply visual classes to nodes and edges ──
     const applyVisuals = useCallback((newTrail, previousId, nextId) => {
         const visited = visitedSetRef.current;
@@ -403,6 +360,43 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             }));
         }
     }, [setNodes, setEdges]);
+
+    // ── Explore mode: user chooses next node ──
+    const onUserChooseNext = useCallback((nodeId) => {
+        if (mode !== 'explore') return;
+
+        const currentActiveId = activeNodeIdRef.current;
+        const nodesMap = nodesMapRef.current;
+        const trail = trailRef.current;
+
+        const nextNode = nodesMap.get(nodeId);
+        if (!isNavigableNode(nextNode)) return;
+
+        const newTrail = [nodeId, ...trail.filter(id => id !== nodeId)].slice(0, TRAIL_LENGTH);
+        trailRef.current = newTrail;
+        visitedSetRef.current.add(nodeId);
+
+        setActiveNodeId(nodeId);
+        setStepCount(prev => prev + 1);
+
+        setCurrentLabel(nextNode?.data?.label || '');
+
+        setCodePanelNode(nextNode);
+
+        // Fetch narration
+        fetchNarration(nodeId, currentActiveId);
+
+        // Update visuals
+        applyVisuals(newTrail, currentActiveId, nodeId);
+
+        // Compute next available choices
+        const nextTargets = getOutgoingTargets({
+            currentActiveId: nodeId,
+            edges: edgesRef.current,
+            nodesMap,
+        });
+        setAvailableNextNodes(nextTargets);
+    }, [mode, setCodePanelNode, fetchNarration, applyVisuals]);
 
     // ── Main Game Loop ──
     useEffect(() => {
@@ -568,7 +562,8 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             mostConnected: mostConnected ? { label: mostConnected.data?.label, degree: maxDegree } : null,
             unvisitedEntries: unvisitedEntries.map(n => n.data?.label).filter(Boolean),
         };
-    }, [nodes, degreeMap, stepCount]); // stepCount triggers recalc
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
+    }, [nodes, degreeMap, stepCount]);
 
     return {
         isPlaying,

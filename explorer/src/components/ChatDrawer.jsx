@@ -29,9 +29,7 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     try {
       const saved = localStorage.getItem(`vg_v1_chat_${selectedNode.id}`);
       setMessages(saved ? JSON.parse(saved) : []);
-    } catch {
-      setMessages([]);
-    }
+    } catch { /* ignore */ }
   }, [selectedNode?.id]);
 
   const sendMessage = useCallback(async () => {
@@ -168,7 +166,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         setMessages((prev) => {
           try {
             localStorage.setItem(`vg_v1_chat_${selectedNode.id}`, JSON.stringify(prev));
-          } catch {}
+          } catch { /* ignore */ }
           return prev;
         });
       }

@@ -1,4 +1,5 @@
 """Input sanitization utilities for LLM-bound text."""
+
 import re
 
 # Patterns that indicate prompt injection attempts

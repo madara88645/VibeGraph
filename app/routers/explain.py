@@ -47,7 +47,9 @@ def explain_node(request: Request, explain_request: ExplainRequest):
     Finds the source code for *node_id* in the given file and asks the
     Groq teacher to explain it at the requested difficulty level.
     """
-    snippet, _, _, _ = extract_snippet(explain_request.file_path, explain_request.node_id)
+    snippet, _, _, _ = extract_snippet(
+        explain_request.file_path, explain_request.node_id
+    )
 
     explanation = deps.teacher.explain_code(
         snippet,

@@ -26,7 +26,9 @@ def chat_with_node(request: Request, chat_request: ChatRequest):
     """
     snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
 
-    history_dicts = [{"role": m.role, "content": m.content} for m in chat_request.history]
+    history_dicts = [
+        {"role": m.role, "content": m.content} for m in chat_request.history
+    ]
 
     answer = deps.teacher.chat(
         code_snippet=snippet,
@@ -46,7 +48,9 @@ def chat_stream(request: Request, chat_request: ChatRequest):
     with token-by-token output for real-time UI updates.
     """
     snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
-    history_dicts = [{"role": m.role, "content": m.content} for m in chat_request.history]
+    history_dicts = [
+        {"role": m.role, "content": m.content} for m in chat_request.history
+    ]
 
     def event_generator():
         for token in deps.teacher.stream_chat(

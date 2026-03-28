@@ -5,7 +5,12 @@ import logging
 import re
 from collections import OrderedDict
 from threading import RLock
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 from groq import Groq, APIConnectionError, APITimeoutError, RateLimitError
 from dotenv import load_dotenv
 
@@ -14,7 +19,9 @@ load_dotenv()
 _groq_retry = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((APIConnectionError, APITimeoutError, RateLimitError)),
+    retry=retry_if_exception_type(
+        (APIConnectionError, APITimeoutError, RateLimitError)
+    ),
     reraise=True,
 )
 
@@ -368,9 +375,9 @@ class GroqTeacher:
         system_msg = (
             "You are Ghost Narrator for a code visualization tool. "
             "You MUST reply with ONLY a valid JSON object — no markdown, no commentary.\n"
-            "Keys: \"narration\" (1-2 sentences explaining what this function/class does and "
+            'Keys: "narration" (1-2 sentences explaining what this function/class does and '
             "why it connects to the previous one), \"relationship\" (brief: e.g. 'Called by X, calls Y'), "
-            "\"importance\" (\"high\", \"medium\", or \"low\" based on how central it is).\n"
+            '"importance" ("high", "medium", or "low" based on how central it is).\n'
             "Be concise, educational, and engaging. Output raw JSON only."
         )
 
@@ -412,7 +419,11 @@ class GroqTeacher:
 
         except APITimeoutError:
             logging.error("Groq API timeout during ghost narration", exc_info=True)
-            return {"narration": "Narration timed out.", "relationship": "", "importance": "low"}
+            return {
+                "narration": "Narration timed out.",
+                "relationship": "",
+                "importance": "low",
+            }
 
         except Exception as e:
             logging.error(f"Error during narrate_step: {e}", exc_info=True)

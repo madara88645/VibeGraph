@@ -19,7 +19,7 @@ export function useGraphData(setNodes, setEdges) {
                     const { nodes, edges } = JSON.parse(cached);
                     setAllNodes(nodes);
                     setAllEdges(edges);
-                } catch {}
+                } catch { /* ignore */ }
             }
 
             try {
@@ -43,7 +43,7 @@ export function useGraphData(setNodes, setEdges) {
 
                 try {
                     localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: data.edges }));
-                } catch {}
+                } catch { /* ignore */ }
 
                 // Auto-select first file that has an entry point, or just the first file
                 const filesSet = new Set();
@@ -116,7 +116,7 @@ export function useGraphData(setNodes, setEdges) {
 
         try {
             localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: newEdges }));
-        } catch {}
+        } catch { /* ignore */ }
 
         // Provide a callback to reset external state (like ghost runner, selections)
         if (resetGhostStateCallback) {
