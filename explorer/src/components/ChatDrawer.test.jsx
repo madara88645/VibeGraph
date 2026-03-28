@@ -39,6 +39,7 @@ describe('ChatDrawer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         globalThis.fetch = vi.fn();
+        localStorage.clear();
     });
 
     it('renders FAB button when closed', () => {

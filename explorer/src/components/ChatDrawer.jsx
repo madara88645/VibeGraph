@@ -211,7 +211,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         {messages.length === 0 && !loading && (
           <div className="chat-empty">
             {selectedNode
-              ? `Ask anything about "${selectedNode.data?.label || selectedNode.id}"...`
+              ? `Ask anything about "${selectedNode.data?.label || selectedNode.id}"…`
               : 'Ask a general question about the uploaded project!'}
           </div>
         )}
@@ -245,7 +245,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         <textarea
           ref={inputRef}
           className="chat-input"
-          placeholder="Ask a question..."
+          placeholder="Ask a question…"
           aria-label="Chat input"
           value={inputText}
           onChange={(event) => setInputText(event.target.value)}

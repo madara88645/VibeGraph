@@ -158,6 +158,30 @@ describe('CodePanel', () => {
         });
     });
 
+    it('renders a single copy button for the loaded code', async () => {
+        const mockData = {
+            snippet: 'def main(): pass',
+            file_path: 'file.py',
+            start_line: null,
+            end_line: null,
+            full_source: null,
+        };
+        globalThis.fetch.mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve(mockData),
+        });
+
+        renderPanel({
+            activeNode: {
+                id: 'main',
+                data: { label: 'main', file: 'file.py' },
+            },
+        });
+
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+        expect(screen.getAllByRole('button', { name: 'Copy code' })).toHaveLength(1);
+    });
+
     it('shows fullscreen toggle button', async () => {
         const user = userEvent.setup();
         renderPanel();
