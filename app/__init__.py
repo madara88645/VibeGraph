@@ -8,6 +8,7 @@ import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -105,6 +106,9 @@ def create_app() -> FastAPI:
 
     # Security headers
     application.add_middleware(SecurityHeadersMiddleware)
+
+    # PERFORMANCE OPTIMIZATION (Bolt): Compress large JSON payloads (e.g., AST graphs)
+    application.add_middleware(GZipMiddleware, minimum_size=1000)
 
     # CORS
     cors_origins = os.getenv(
