@@ -196,9 +196,9 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         title={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
                         aria-label={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
                     >
-                        {isFullscreen ? '⊙' : '⛶'}
+                        <span aria-hidden="true">{isFullscreen ? '⊙' : '⛶'}</span>
                     </button>
-                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel">✕</button>
+                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel"><span aria-hidden="true">✕</span></button>
                 </div>
             </div>
 

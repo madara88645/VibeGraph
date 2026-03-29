@@ -104,7 +104,7 @@ const SimulationControls = ({
                 aria-label={isPlaying ? 'Pause simulation' : 'Play simulation'}
                 aria-pressed={isPlaying}
             >
-                {isPlaying ? '⏸' : '▶'}
+                <span aria-hidden="true">{isPlaying ? '⏸' : '▶'}</span>
             </button>
 
             {/* Reset */}
@@ -114,7 +114,7 @@ const SimulationControls = ({
                 title="Reset"
                 aria-label="Reset simulation"
             >
-                ↺
+                <span aria-hidden="true">↺</span>
             </button>
 
             <div className="sim-divider" />
