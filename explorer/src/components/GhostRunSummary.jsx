@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 const GhostRunSummary = ({ runSummary, isPlaying }) => {
     // Show summary only when paused and there's data
@@ -32,4 +32,5 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
     );
 };
 
-export default GhostRunSummary;
+// Wrap GhostRunSummary in memo() to prevent unnecessary re-renders
+export default memo(GhostRunSummary);
