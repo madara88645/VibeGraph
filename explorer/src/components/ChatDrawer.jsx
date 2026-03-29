@@ -183,7 +183,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
-        {'\uD83D\uDCAC'}
+        <span aria-hidden="true">{'\uD83D\uDCAC'}</span>
       </button>
     );
   }
@@ -192,7 +192,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     <div className="chat-drawer">
       <div className="chat-drawer-header">
         <div className="chat-drawer-title">
-          <span>{'\uD83D\uDCAC'}</span>
+          <span aria-hidden="true">{'\uD83D\uDCAC'}</span>
           <span>Vibe Chat</span>
         </div>
         {selectedNode && (
@@ -201,7 +201,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           </span>
         )}
         <button className="chat-drawer-close" onClick={onToggle} aria-label="Close Chat">
-          {'\u2715'}
+          <span aria-hidden="true">{'\u2715'}</span>
         </button>
       </div>
 
@@ -266,7 +266,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             disabled={loading || !inputText.trim()}
             aria-label="Send message"
           >
-            {'\u2191'}
+            <span aria-hidden="true">{'\u2191'}</span>
           </button>
         </span>
       </div>

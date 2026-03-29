@@ -50,13 +50,13 @@ const SimulationControls = ({
                 aria-label="Show guide"
                 aria-expanded={showGuide}
             >
-                ?
+                <span aria-hidden="true">?</span>
             </button>
 
             {/* Guide Popover */}
             {showGuide && (
                 <div className="sim-guide">
-                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide">✕</button>
+                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide"><span aria-hidden="true">✕</span></button>
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
                     <ul>
@@ -104,7 +104,7 @@ const SimulationControls = ({
                 aria-label={isPlaying ? 'Pause simulation' : 'Play simulation'}
                 aria-pressed={isPlaying}
             >
-                {isPlaying ? '⏸' : '▶'}
+                <span aria-hidden="true">{isPlaying ? '⏸' : '▶'}</span>
             </button>
 
             {/* Reset */}
@@ -114,7 +114,7 @@ const SimulationControls = ({
                 title="Reset"
                 aria-label="Reset simulation"
             >
-                ↺
+                <span aria-hidden="true">↺</span>
             </button>
 
             <div className="sim-divider" />
