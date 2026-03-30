@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
     if (mode !== 'explore' || !isPlaying || !availableNextNodes || availableNextNodes.length === 0) {
@@ -27,4 +27,5 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
     );
 };
 
-export default GhostChoices;
+// Wrap GhostChoices in memo() to prevent unnecessary re-renders
+export default memo(GhostChoices);

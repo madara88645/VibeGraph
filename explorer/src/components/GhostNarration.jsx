@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 
 const GhostNarration = ({ narration, isPlaying }) => {
     const [visible, setVisible] = useState(false);
@@ -71,4 +71,5 @@ const GhostNarration = ({ narration, isPlaying }) => {
     );
 };
 
-export default GhostNarration;
+// Wrap GhostNarration in memo() to prevent unnecessary re-renders
+export default memo(GhostNarration);
