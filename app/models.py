@@ -108,6 +108,16 @@ class GhostNarrateRequest(BaseModel):
     strategy: str = Field(default="smart", max_length=50)
     context_nodes: list[str] = Field(default_factory=list, max_length=10)
 
+    @field_validator("context_nodes")
+    @classmethod
+    def validate_context_nodes(cls, v: list[str]) -> list[str]:
+        for node in v:
+            if len(node) > MAX_NODE_ID_LENGTH:
+                raise ValueError(
+                    f"context node length cannot exceed {MAX_NODE_ID_LENGTH}"
+                )
+        return v
+
 
 class ExplanationDetail(BaseModel):
     analogy: str
