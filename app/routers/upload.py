@@ -71,16 +71,28 @@ def upload_project(
     tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
 
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
+    MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB total upload limit
     MAX_ZIP_FILES = 10000
 
     try:
+        total_upload_size = 0
         for file in files:
             safe_name = normalize_uploaded_filename(file.filename)
             file_path = os.path.join(tmp_dir, safe_name)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
             with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                while True:
+                    chunk = file.file.read(8192)
+                    if not chunk:
+                        break
+                    total_upload_size += len(chunk)
+                    if total_upload_size > MAX_UPLOAD_SIZE:
+                        raise HTTPException(
+                            status_code=413,
+                            detail=f"Upload too large (max {MAX_UPLOAD_SIZE} bytes)",
+                        )
+                    buffer.write(chunk)
 
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
