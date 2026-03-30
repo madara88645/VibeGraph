@@ -104,7 +104,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             {/* Header */}
             <div className="code-panel-header">
                 <div className="code-panel-title">
-                    <span className="code-icon">{'<>'}</span>
+                    <span className="code-icon" aria-hidden="true">{'<>'}</span>
                     <span className="code-file-name">
                         {fileName || 'No file'}
                     </span>
@@ -196,9 +196,9 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         title={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
                         aria-label={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
                     >
-                        {isFullscreen ? '⊙' : '⛶'}
+                        <span aria-hidden="true">{isFullscreen ? '⊙' : '⛶'}</span>
                     </button>
-                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel">✕</button>
+                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel"><span aria-hidden="true">✕</span></button>
                 </div>
             </div>
 

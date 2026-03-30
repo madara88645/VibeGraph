@@ -137,7 +137,7 @@ function AppInner() {
               display: 'none',
             }}
           >
-            {'\u2630'}
+            <span aria-hidden="true">{'\u2630'}</span>
           </button>
           <h1>{'\u26A1'} Vibe Learning</h1>
           <span className="status-badge">AI Active</span>
@@ -168,7 +168,7 @@ function AppInner() {
               fontSize: '14px',
             }}
           >
-            {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+            <span aria-hidden="true">{theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}</span>
           </button>
 
           <ProjectUpload onUploadSuccess={onUploadSuccess} />
