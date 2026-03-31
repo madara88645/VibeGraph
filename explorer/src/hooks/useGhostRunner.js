@@ -538,6 +538,8 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
 
     // Generate run summary from visited data
     const runSummary = useMemo(() => {
+        if (isPlaying) return null;
+
         const visited = visitedSetRef.current;
         if (visited.size === 0) return null;
 
@@ -563,7 +565,7 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
             unvisitedEntries: unvisitedEntries.map(n => n.data?.label).filter(Boolean),
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
-    }, [nodes, degreeMap, stepCount]);
+    }, [nodes, degreeMap, stepCount, isPlaying]);
 
     return {
         isPlaying,
