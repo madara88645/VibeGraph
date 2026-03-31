@@ -66,7 +66,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                             onClick={() => onSelectFile(null)}
                         >
                             <div className="file-main">
-                                <span className="file-icon">🗂️</span>
+                                <span className="file-icon" aria-hidden="true">🗂️</span>
                                 <span className="file-name">All Files</span>
                                 <span className="file-count">{totalNodeCount || 0}</span>
                             </div>
@@ -84,7 +84,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                                     onClick={() => onSelectFile(file)}
                                 >
                                     <div className="file-main">
-                                        <span className="file-icon">{stats.hasEntry ? '🚀' : '📄'}</span>
+                                        <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
                                         <span className="file-name">{shortName}</span>
                                         <span className="file-count">{stats.count || 0}</span>
                                     </div>
@@ -95,7 +95,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                                         <div className="file-types">
                                             {Object.entries(stats.types).map(([type, count]) => (
                                                 <span key={type} className={`type-badge type-${type}`}>
-                                                    {typeIcons[type] || '○'} {count}
+                                                    <span aria-hidden="true">{typeIcons[type] || '○'}</span> {count}
                                                 </span>
                                             ))}
                                         </div>
@@ -145,7 +145,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                                     className="deps-file-header"
                                     onClick={() => onSelectFile(file)}
                                 >
-                                    <span className="deps-file-icon">📄</span>
+                                    <span className="deps-file-icon" aria-hidden="true">📄</span>
                                     <span className="deps-file-name">{shortName}</span>
                                 </button>
 
