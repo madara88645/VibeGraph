@@ -124,10 +124,12 @@ def main():
                 shutil.copy(public_graph_path, dist_graph_path)
 
         # 3. Start Server
-        url = "http://localhost:8000"
+        host = os.environ.get("HOST", "127.0.0.1")
+        port = int(os.environ.get("PORT", 8000))
+        url = f"http://{host}:{port}"
 
         webbrowser.open(url)
-        uvicorn.run(app, host="127.0.0.1", port=8000)  # nosec B104
+        uvicorn.run(app, host=host, port=port)  # nosec B104
 
 
 if __name__ == "__main__":
