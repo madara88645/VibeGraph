@@ -79,7 +79,7 @@ def upload_project(
         for file in files:
             safe_name = normalize_uploaded_filename(file.filename)
             file_path = os.path.join(tmp_dir, safe_name)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True, mode=0o700)
 
             with open(file_path, "wb") as buffer:
                 while True:
@@ -134,10 +134,12 @@ def upload_project(
                     total_size = 0
                     for member, extracted_path in safe_members:
                         if member.is_dir():
-                            os.makedirs(extracted_path, exist_ok=True)
+                            os.makedirs(extracted_path, exist_ok=True, mode=0o700)
                             continue
 
-                        os.makedirs(os.path.dirname(extracted_path), exist_ok=True)
+                        os.makedirs(
+                            os.path.dirname(extracted_path), exist_ok=True, mode=0o700
+                        )
                         with (
                             zip_ref.open(member) as source,
                             open(extracted_path, "wb") as target,
