@@ -11,10 +11,14 @@ class BasicTeacher:
 
         # 1. Structure Overview
         lesson_parts.append("## 1. Structural Overview\n")
-        classes = [n for n, d in graph.nodes(data=True) if d.get("type") == "class"]
-        functions = [
-            n for n, d in graph.nodes(data=True) if d.get("type") == "function"
-        ]
+        classes = []
+        functions = []
+        for n, d in graph.nodes(data=True):
+            node_type = d.get("type")
+            if node_type == "class":
+                classes.append(n)
+            elif node_type == "function":
+                functions.append(n)
 
         if classes:
             class_word = "class" if len(classes) == 1 else "classes"

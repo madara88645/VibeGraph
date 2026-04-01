@@ -126,7 +126,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     title="Close Explanation Panel"
                     aria-label="Close Explanation Panel"
                 >
-                    ✕
+                    <span aria-hidden="true">✕</span>
                 </button>
             </div>
 

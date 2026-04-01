@@ -1,9 +1,16 @@
 import argparse
+import os
+import shutil
+import subprocess
+import webbrowser
 from analyst.analyzer import CodeAnalyzer
+from analyst.exporter import GraphExporter
 from teacher.basic_reporter import BasicTeacher
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
+import uvicorn
+from serve import app
 
 console = Console()
 
@@ -55,8 +62,6 @@ def handle_export(args):
         Panel(f"[bold green]Exporting analysis of {args.target}...[/bold green]")
     )
 
-    from analyst.exporter import GraphExporter
-
     # 1. Analyze
     analyzer = CodeAnalyzer()
     result = analyzer.analyze_file(args.target)
@@ -77,14 +82,6 @@ def handle_export(args):
 
 
 def handle_start(args):
-    from analyst.exporter import GraphExporter
-    import os
-    import subprocess
-    import webbrowser
-    import uvicorn
-    from serve import app
-    import shutil
-
     target = args.target if args.target else "."
 
     # 1. Analyze & Export
@@ -112,7 +109,14 @@ def handle_start(args):
     # Build if dist is missing or empty
     if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
         try:
-            npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
+            npm_exe = "npm.cmd" if os.name == "nt" else "npm"
+            npm_cmd = shutil.which(npm_exe)
+            if not npm_cmd:
+                console.print(
+                    f"[bold red]Error:[/bold red] Could not find '{npm_exe}' in PATH. Please install Node.js/npm."
+                )
+                return
+
             # Install deps if needed
             if not os.path.exists(os.path.join("explorer", "node_modules")):
                 subprocess.run([npm_cmd, "install"], cwd="explorer", check=True)
@@ -125,10 +129,12 @@ def handle_start(args):
             shutil.copy(public_graph_path, dist_graph_path)
 
     # 3. Start Server
-    url = "http://localhost:8000"
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", 8000))
+    url = f"http://{host}:{port}"
 
     webbrowser.open(url)
-    uvicorn.run(app, host="127.0.0.1", port=8000)  # nosec B104
+    uvicorn.run(app, host=host, port=port)  # nosec B104
 
 
 def main():
