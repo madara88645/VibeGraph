@@ -64,7 +64,7 @@ const GhostNarration = ({ narration, isPlaying }) => {
                     title="Disable narration"
                     aria-label="Disable ghost narration"
                 >
-                    ✕
+                    <span aria-hidden="true">✕</span>
                 </button>
             </div>
         </div>

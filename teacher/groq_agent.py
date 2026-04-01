@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from collections import OrderedDict
+from dataclasses import dataclass
 from threading import RLock
 from tenacity import (
     retry,
@@ -67,6 +68,16 @@ def _try_parse_json(text: str) -> dict:
 
 
 _MAX_CACHE_SIZE = 256
+
+
+@dataclass
+class NarrateStepContext:
+    code_snippet: str
+    node_id: str
+    file_path: str | None = None
+    previous_node_id: str | None = None
+    edge_context: str = ""
+    strategy: str = "smart"
 
 
 class GroqTeacher:
@@ -334,12 +345,7 @@ class GroqTeacher:
 
     def narrate_step(
         self,
-        code_snippet: str,
-        node_id: str,
-        file_path: str | None = None,
-        previous_node_id: str | None = None,
-        edge_context: str = "",
-        strategy: str = "smart",
+        context: NarrateStepContext,
     ) -> dict:
         """
         Generate a brief 1-2 sentence narration for a Ghost Runner step.
@@ -356,9 +362,9 @@ class GroqTeacher:
             }
 
         # Cache key includes both nodes for directional context
-        snippet_hash = hashlib.sha256(code_snippet.encode()).hexdigest()[:16]
+        snippet_hash = hashlib.sha256(context.code_snippet.encode()).hexdigest()[:16]
         cache_key = hashlib.sha256(
-            f"ghost|{file_path or ''}|{node_id}|{previous_node_id or ''}|{snippet_hash}".encode()
+            f"ghost|{context.file_path or ''}|{context.node_id}|{context.previous_node_id or ''}|{snippet_hash}".encode()
         ).hexdigest()
         with self._cache_lock:
             cached = self._explain_cache.get(cache_key)
@@ -367,10 +373,10 @@ class GroqTeacher:
                 return cached
 
         transition = ""
-        if previous_node_id:
-            transition = f"The ghost just moved from '{previous_node_id}' to '{node_id}' (strategy: {strategy})."
+        if context.previous_node_id:
+            transition = f"The ghost just moved from '{context.previous_node_id}' to '{context.node_id}' (strategy: {context.strategy})."
         else:
-            transition = f"The ghost starts at '{node_id}' (strategy: {strategy})."
+            transition = f"The ghost starts at '{context.node_id}' (strategy: {context.strategy})."
 
         system_msg = (
             "You are Ghost Narrator for a code visualization tool. "
@@ -383,8 +389,8 @@ class GroqTeacher:
 
         user_prompt = (
             f"{transition}\n"
-            f"{'Edge context: ' + edge_context + chr(10) if edge_context else ''}"
-            f"Code:\n```python\n{code_snippet[:1500]}\n```"
+            f"{'Edge context: ' + context.edge_context + chr(10) if context.edge_context else ''}"
+            f"Code:\n```python\n{context.code_snippet[:1500]}\n```"
         )
 
         try:

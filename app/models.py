@@ -89,6 +89,13 @@ class ChatRequest(BaseModel):
             return sanitize_llm_input(value, truncate=False)
         return value
 
+    @field_validator("project_context", mode="before")
+    @classmethod
+    def sanitize_project_context(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
 
 class LearningPathRequest(BaseModel):
     file_path: str = Field(max_length=MAX_FILE_PATH_LENGTH)
@@ -117,6 +124,13 @@ class GhostNarrateRequest(BaseModel):
                     f"context node length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
         return v
+
+    @field_validator("strategy", mode="before")
+    @classmethod
+    def sanitize_strategy(cls, value: str) -> str:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
 
 class ExplanationDetail(BaseModel):

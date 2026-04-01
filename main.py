@@ -111,11 +111,11 @@ def main():
         # Build if dist is missing or empty
         if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
             try:
-                npm_name = "npm.cmd" if os.name == "nt" else "npm"
-                npm_cmd = shutil.which(npm_name)
+                npm_exe = "npm.cmd" if os.name == "nt" else "npm"
+                npm_cmd = shutil.which(npm_exe)
                 if not npm_cmd:
                     console.print(
-                        f"[bold red]Error:[/bold red] {npm_name} not found in PATH"
+                        f"[bold red]Error:[/bold red] Could not find '{npm_exe}' in PATH. Please install Node.js/npm."
                     )
                     return
 
@@ -131,10 +131,12 @@ def main():
                 shutil.copy(public_graph_path, dist_graph_path)
 
         # 3. Start Server
-        url = "http://localhost:8000"
+        host = os.environ.get("HOST", "127.0.0.1")
+        port = int(os.environ.get("PORT", 8000))
+        url = f"http://{host}:{port}"
 
         webbrowser.open(url)
-        uvicorn.run(app, host="127.0.0.1", port=8000)  # nosec B104
+        uvicorn.run(app, host=host, port=port)  # nosec B104
 
 
 if __name__ == "__main__":

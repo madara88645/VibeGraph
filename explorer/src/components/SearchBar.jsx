@@ -96,7 +96,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     onKeyDown={handleKeyDown}
                 />
                 {query && (
-                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search">✕</button>
+                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search"><span aria-hidden="true">✕</span></button>
                 )}
             </div>
 

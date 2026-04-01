@@ -62,8 +62,8 @@ class TestMainStart(unittest.TestCase):
             main.main()
 
             # Verify
-            npm_name = "npm.cmd" if os.name == "nt" else "npm"
-            mock_which.assert_called_once_with(npm_name)
+            npm_exe = "npm.cmd" if os.name == "nt" else "npm"
+            mock_which.assert_called_once_with(npm_exe)
 
             # Verify subprocess.run was called with the absolute path
             expected_calls = [
@@ -119,11 +119,11 @@ class TestMainStart(unittest.TestCase):
             main.main()
 
             # Verify error printed and subprocess NOT called
-            npm_name = "npm.cmd" if os.name == "nt" else "npm"
-            mock_which.assert_called_once_with(npm_name)
+            npm_exe = "npm.cmd" if os.name == "nt" else "npm"
+            mock_which.assert_called_once_with(npm_exe)
 
             mock_print.assert_called_with(
-                f"[bold red]Error:[/bold red] {npm_name} not found in PATH"
+                f"[bold red]Error:[/bold red] Could not find '{npm_exe}' in PATH. Please install Node.js/npm."
             )
             mock_subprocess.assert_not_called()
 
