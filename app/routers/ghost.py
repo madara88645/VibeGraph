@@ -6,6 +6,7 @@ from app.models import GhostNarrateRequest
 from app.rate_limit import limiter, GHOST_NARRATION_LIMIT
 from app.utils.snippet import extract_snippet
 import app.dependencies as deps
+from teacher.groq_agent import NarrateStepContext
 
 router = APIRouter(prefix="/api", tags=["ghost"])
 
@@ -25,7 +26,7 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
     if body.context_nodes:
         edge_context = f"Recent trail: {' → '.join(body.context_nodes)}"
 
-    result = deps.teacher.narrate_step(
+    context = NarrateStepContext(
         code_snippet=snippet,
         node_id=body.node_id,
         file_path=body.file_path,
@@ -33,6 +34,8 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
         edge_context=edge_context,
         strategy=body.strategy,
     )
+
+    result = deps.teacher.narrate_step(context)
 
     return {
         "node_id": body.node_id,

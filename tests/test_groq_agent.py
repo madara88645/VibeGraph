@@ -41,7 +41,7 @@ class TestTryParseJson(unittest.TestCase):
 
 
 from unittest.mock import patch, MagicMock
-from teacher.groq_agent import GroqTeacher
+from teacher.groq_agent import GroqTeacher, NarrateStepContext
 
 
 def test_explain_code_exception_leak():
@@ -142,7 +142,14 @@ def test_narrate_step_cache_is_scoped_by_file_path():
 
     teacher.client.chat.completions.create.side_effect = fake_create
 
-    teacher.narrate_step("print('a')", "main", file_path="proj_a/main.py")
-    teacher.narrate_step("print('b')", "main", file_path="proj_b/main.py")
+    ctx_a = NarrateStepContext(
+        code_snippet="print('a')", node_id="main", file_path="proj_a/main.py"
+    )
+    ctx_b = NarrateStepContext(
+        code_snippet="print('b')", node_id="main", file_path="proj_b/main.py"
+    )
+
+    teacher.narrate_step(ctx_a)
+    teacher.narrate_step(ctx_b)
 
     assert teacher.client.chat.completions.create.call_count == 2
