@@ -111,7 +111,14 @@ def main():
         # Build if dist is missing or empty
         if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
             try:
-                npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
+                npm_name = "npm.cmd" if os.name == "nt" else "npm"
+                npm_cmd = shutil.which(npm_name)
+                if not npm_cmd:
+                    console.print(
+                        f"[bold red]Error:[/bold red] {npm_name} not found in PATH"
+                    )
+                    return
+
                 # Install deps if needed
                 if not os.path.exists(os.path.join("explorer", "node_modules")):
                     subprocess.run([npm_cmd, "install"], cwd="explorer", check=True)
