@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { useToast } from '../hooks/useToast';
 
 const ProjectUpload = ({ onUploadSuccess }) => {
@@ -196,4 +196,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
     );
 };
 
-export default ProjectUpload;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap ProjectUpload in memo() to prevent re-renders on every tick
+// of the Ghost Runner simulation, as it only receives a stable callback.
+export default memo(ProjectUpload);
