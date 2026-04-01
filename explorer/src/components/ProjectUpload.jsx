@@ -131,7 +131,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 disabled={isAnalyzing}
                                 title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}
                                 aria-label="Close Upload Modal"
-                            >✕</button>
+                            ><span aria-hidden="true">✕</span></button>
                         </div>
 
                         <div className="upload-modal-body">

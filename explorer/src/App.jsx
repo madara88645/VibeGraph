@@ -151,7 +151,7 @@ function AppInner() {
             onClick={() => setLearningPathOpen(true)}
             title="Learning Path"
           >
-            {'\uD83C\uDFAF'} Learn
+            <span aria-hidden="true">{'\uD83C\uDFAF'}</span> Learn
           </button>
 
           <button
