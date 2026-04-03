@@ -47,13 +47,16 @@ class GraphExporter:
             nodes.append(node_dict)
 
         # Detect cycles
+        # PERFORMANCE OPTIMIZATION (Bolt): Replace O((N+E)C) simple_cycles with
+        # O(N+E) strongly_connected_components to prevent timeouts on large/dense graphs.
         cycle_edges = set()
         try:
-            for cycle in nx.simple_cycles(graph):
-                if len(cycle) >= 2:
-                    for i in range(len(cycle)):
-                        edge = (cycle[i], cycle[(i + 1) % len(cycle)])
-                        cycle_edges.add(edge)
+            for scc in nx.strongly_connected_components(graph):
+                if len(scc) > 1:
+                    for u in scc:
+                        for v in graph[u]:
+                            if v in scc:
+                                cycle_edges.add((u, v))
         except nx.NetworkXError:
             pass  # Graph may not support cycle detection
 
