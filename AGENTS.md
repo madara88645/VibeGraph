@@ -38,3 +38,5 @@ See `README.md` and `.github/workflows/ci.yml` for canonical commands. Quick ref
 - The Vite dev server proxies `/api` requests to `localhost:8000` (configured in `explorer/vite.config.js`), so the backend must be running first.
 - No database or external services are needed beyond the Groq API. All state is in-memory.
 - The frontend uses `npm` (lockfile: `explorer/package-lock.json`). Use `npm ci` for deterministic installs.
+- The backend reads `GROQ_API_KEY` from the `.env` file at the repo root via `python-dotenv`. When restarting the backend with a new key, kill both the parent shell process and the child `python3 serve.py` process (uvicorn spawns a child).
+- `explorer/public/graph_data.json` is a sample/seed file used by the frontend when no upload has been done. It may get overwritten during app usage — restore it with `git checkout` if the diff is unintentional.
