@@ -38,8 +38,9 @@ const CodeViewer = ({ code }) => {
                         onClick={() => setIsFullscreen(true)}
                         title="Expand code"
                         aria-label="Expand code"
+                        aria-expanded={isFullscreen}
                     >
-                        ⛶
+                        <span aria-hidden="true">⛶</span>
                     </button>
                 </div>
                 {codeBlock}
@@ -56,8 +57,9 @@ const CodeViewer = ({ code }) => {
                                 onClick={() => setIsFullscreen(false)}
                                 title="Exit fullscreen"
                                 aria-label="Exit fullscreen"
+                                aria-expanded={isFullscreen}
                             >
-                                ✕
+                                <span aria-hidden="true">✕</span>
                             </button>
                         </div>
                         {codeBlock}
