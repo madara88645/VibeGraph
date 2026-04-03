@@ -22,3 +22,7 @@
 **Vulnerability:** The `SecurityHeadersMiddleware` provided basic XSS, framing, and sniffing protection, but lacked `Strict-Transport-Security` and `Content-Security-Policy`.
 **Learning:** Default security headers are often incomplete; adding HSTS forces secure connections and a basic `default-src 'self'` CSP severely limits injection capabilities (like XSS or external data exfiltration) as a defense-in-depth measure.
 **Prevention:** Always verify if a standard security headers configuration covers both Transport Security (HSTS) and Content Restriction (CSP) for robust defense.
+## 2025-03-02 - CORS Misconfiguration Crash
+**Vulnerability:** In `app/__init__.py`, `allow_credentials=True` was used with `allow_origins=cors_origins.split(",")`. If the environment variable `VIBEGRAPH_CORS_ORIGINS` defaults to `*` or includes `*`, FastAPI (Starlette) will crash on startup with an AssertionError because `allow_credentials` cannot be true when `allow_origins` includes `*`.
+**Learning:** Combining wildcard origins with credentials is insecure and actively prevented by the framework, which throws an error that crashes the entire backend.
+**Prevention:** Always parse the origins list and conditionally set `allow_credentials="*" not in origins_list` to prevent startup crashes while keeping the fallback configuration secure.
