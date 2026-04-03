@@ -38,7 +38,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                     className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
                     onClick={() => setActiveTab('files')}
                 >
-                    📁 Files
+                    <span aria-hidden="true">📁</span> Files
                 </button>
                 <button
                     id="tab-deps"
@@ -48,7 +48,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                     className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deps')}
                 >
-                    🔗 Deps
+                    <span aria-hidden="true">🔗</span> Deps
                 </button>
             </div>
 

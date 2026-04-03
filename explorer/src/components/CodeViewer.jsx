@@ -39,7 +39,7 @@ const CodeViewer = ({ code }) => {
                         title="Expand code"
                         aria-label="Expand code"
                     >
-                        ⛶
+                        <span aria-hidden="true">⛶</span>
                     </button>
                 </div>
                 {codeBlock}
@@ -57,7 +57,7 @@ const CodeViewer = ({ code }) => {
                                 title="Exit fullscreen"
                                 aria-label="Exit fullscreen"
                             >
-                                ✕
+                                <span aria-hidden="true">✕</span>
                             </button>
                         </div>
                         {codeBlock}
