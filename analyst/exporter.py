@@ -47,24 +47,34 @@ class GraphExporter:
             nodes.append(node_dict)
 
         # Detect cycles
-        cycle_edges = set()
+        # PERFORMANCE OPTIMIZATION (Bolt): Use nx.strongly_connected_components instead
+        # of nx.simple_cycles. O(V+E) instead of O((V+E)C) which prevents exponential slowdowns
+        # on dense call graphs.
+        cycle_nodes = {}
+        component_id = 0
         try:
-            for cycle in nx.simple_cycles(graph):
-                if len(cycle) >= 2:
-                    for i in range(len(cycle)):
-                        edge = (cycle[i], cycle[(i + 1) % len(cycle)])
-                        cycle_edges.add(edge)
+            for comp in nx.strongly_connected_components(graph):
+                if len(comp) > 1:
+                    for node in comp:
+                        cycle_nodes[node] = component_id
+                    component_id += 1
         except nx.NetworkXError:
             pass  # Graph may not support cycle detection
 
         # Convert edges
         for u, v, data in graph.edges(data=True):
+            # An edge is part of a cycle if both endpoints belong to the same component of size > 1
+            is_cycle_edge = (
+                u in cycle_nodes
+                and v in cycle_nodes
+                and cycle_nodes[u] == cycle_nodes[v]
+            )
             edge_dict = {
                 "id": f"e{u}-{v}",
                 "source": u,
                 "target": v,
                 "animated": True,  # Optional visual polish
-                "data": {"is_cycle_edge": (u, v) in cycle_edges},
+                "data": {"is_cycle_edge": is_cycle_edge},
             }
             edges.append(edge_dict)
 
