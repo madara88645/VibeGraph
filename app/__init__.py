@@ -126,11 +126,11 @@ def create_app() -> FastAPI:
     # CORS
     cors_origins = os.getenv(
         "VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000"
-    )
+    ).split(",")
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_origins.split(","),
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials="*" not in cors_origins,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
     )
