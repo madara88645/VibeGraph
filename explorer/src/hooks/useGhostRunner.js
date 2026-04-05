@@ -269,11 +269,13 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
     const degreeMapRef = useRef(degreeMap);
     useEffect(() => { degreeMapRef.current = degreeMap; }, [degreeMap]);
 
-    // Visited count for progress
-    const visitedCount = nodes.filter(
-        (node) => isNavigableNode(node) && visitedSetRef.current.has(node.id)
-    ).length;
-    const totalNodes = nodes.filter(isNavigableNode).length;
+    // PERFORMANCE OPTIMIZATION (Bolt): Prevent O(N) re-render bottleneck on non-tick UI updates
+    // by memoizing the array filters. stepCount acts as the trigger to re-evaluate the visited set.
+    const visitedCount = useMemo(() => {
+        return nodes.filter((node) => isNavigableNode(node) && visitedSetRef.current.has(node.id)).length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
+    }, [nodes, stepCount]);
+    const totalNodes = useMemo(() => nodes.filter(isNavigableNode).length, [nodes]);
 
     // ── Narration fetcher (non-blocking) ──
     const fetchNarration = useCallback((nodeId, previousNodeId) => {
