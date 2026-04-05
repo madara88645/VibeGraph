@@ -3938,7 +3938,7 @@
       "data": {
         "label": "GhostNarrateRequest",
         "type": "class",
-        "lineno": 114,
+        "lineno": 120,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5570,7 +5570,7 @@
       "data": {
         "label": "ChatRequest",
         "type": "class",
-        "lineno": 61,
+        "lineno": 63,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5586,7 +5586,7 @@
       "data": {
         "label": "ChatRequest.sanitize_question",
         "type": "function",
-        "lineno": 89,
+        "lineno": 91,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5602,7 +5602,7 @@
       "data": {
         "label": "ChatRequest.sanitize_project_context",
         "type": "function",
-        "lineno": 98,
+        "lineno": 102,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5618,7 +5618,7 @@
       "data": {
         "label": "LearningPathRequest",
         "type": "class",
-        "lineno": 106,
+        "lineno": 112,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5634,7 +5634,7 @@
       "data": {
         "label": "GhostNarrateRequest.validate_context_nodes",
         "type": "function",
-        "lineno": 126,
+        "lineno": 132,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5650,7 +5650,7 @@
       "data": {
         "label": "GhostNarrateRequest.sanitize_strategy",
         "type": "function",
-        "lineno": 136,
+        "lineno": 142,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5666,7 +5666,7 @@
       "data": {
         "label": "ExplanationDetail",
         "type": "class",
-        "lineno": 144,
+        "lineno": 150,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5682,7 +5682,7 @@
       "data": {
         "label": "ExplainResponse",
         "type": "class",
-        "lineno": 150,
+        "lineno": 156,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5698,7 +5698,7 @@
       "data": {
         "label": "SnippetResponse",
         "type": "class",
-        "lineno": 156,
+        "lineno": 162,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5714,7 +5714,7 @@
       "data": {
         "label": "ChatResponse",
         "type": "class",
-        "lineno": 165,
+        "lineno": 171,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5730,7 +5730,7 @@
       "data": {
         "label": "LearningStep",
         "type": "class",
-        "lineno": 170,
+        "lineno": 176,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5746,7 +5746,7 @@
       "data": {
         "label": "LearningPathResponse",
         "type": "class",
-        "lineno": 176,
+        "lineno": 182,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
@@ -5762,7 +5762,7 @@
       "data": {
         "label": "UploadResponse",
         "type": "class",
-        "lineno": 181,
+        "lineno": 187,
         "docstring": null,
         "file": "./app/models.py",
         "entry_point": false
