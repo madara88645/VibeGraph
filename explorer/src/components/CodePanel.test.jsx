@@ -150,7 +150,7 @@ describe('CodePanel', () => {
         });
 
         await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-        await user.click(screen.getByTitle('Copy code'));
+        await user.click(screen.getByRole('button', { name: 'Copy code' }));
 
         // Verify toast was shown (clipboard behavior confirmed via toast)
         await waitFor(() => {

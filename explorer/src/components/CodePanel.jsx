@@ -125,8 +125,12 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                    <button
-                        onClick={() => {
+                    <span
+                        title={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
+                        style={{ display: 'inline-flex' }}
+                    >
+                        <button
+                            onClick={() => {
                             const text = codeData?.full_source || codeData?.snippet;
                             if (!text) {
                                 addToast('Nothing to copy yet', 'error');
@@ -175,7 +179,6 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 notifyResult(fallbackCopyText(text));
                             }
                         }}
-                        title={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
                         aria-label={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
                         disabled={!(codeData && (codeData.full_source || codeData.snippet))}
                         style={{
@@ -190,6 +193,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     >
                         Copy
                     </button>
+                    </span>
                     <button
                         className="code-panel-close"
                         onClick={() => setIsFullscreen(prev => !prev)}
