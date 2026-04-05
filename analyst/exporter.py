@@ -47,13 +47,24 @@ class GraphExporter:
             nodes.append(node_dict)
 
         # Detect cycles
+        # Optimization: Use strongly_connected_components O(V+E) instead of simple_cycles O((V+E)C)
+        # An edge is part of a cycle if both endpoints belong to the same SCC of size > 1.
         cycle_edges = set()
         try:
-            for cycle in nx.simple_cycles(graph):
-                if len(cycle) >= 2:
-                    for i in range(len(cycle)):
-                        edge = (cycle[i], cycle[(i + 1) % len(cycle)])
-                        cycle_edges.add(edge)
+            node_to_component = {}
+            for i, component in enumerate(nx.strongly_connected_components(graph)):
+                if len(component) > 1:
+                    for node in component:
+                        node_to_component[node] = i
+
+            for u, v in graph.edges():
+                if (
+                    u != v
+                    and u in node_to_component
+                    and v in node_to_component
+                    and node_to_component[u] == node_to_component[v]
+                ):
+                    cycle_edges.add((u, v))
         except nx.NetworkXError:
             pass  # Graph may not support cycle detection
 
