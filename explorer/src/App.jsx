@@ -101,21 +101,34 @@ function AppInner() {
     () => setLearningPathOpen(false),
     [setLearningPathOpen]
   );
+  const handleSelectFile = useCallback((file) => {
+    setSelectedFile(file);
+    setSidebarOpen(false);
+  }, [setSelectedFile, setSidebarOpen]);
+  const handleCloseExplanation = useCallback(
+    () => setSelectedNode(null),
+    [setSelectedNode]
+  );
+  const handleCloseSidebar = useCallback(
+    () => setSidebarOpen(false),
+    [setSidebarOpen]
+  );
+  const handleToggleSidebar = useCallback(
+    () => setSidebarOpen((prev) => !prev),
+    [setSidebarOpen]
+  );
 
   return (
     <div className="app-shell">
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'sidebar-open' : ''}`}
-        onClick={() => setSidebarOpen(false)}
+        onClick={handleCloseSidebar}
       />
 
       <FileSidebar
         files={files}
         selectedFile={selectedFile}
-        onSelectFile={(file) => {
-          setSelectedFile(file);
-          setSidebarOpen(false);
-        }}
+        onSelectFile={handleSelectFile}
         nodeStats={nodeStats}
         totalNodeCount={allNodes.length}
         mobileOpen={sidebarOpen}
@@ -125,7 +138,7 @@ function AppInner() {
         <div className="vibe-header">
           <button
             className="hamburger-btn"
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={handleToggleSidebar}
             aria-label="Toggle sidebar"
             style={{
               background: 'none',
@@ -220,7 +233,7 @@ function AppInner() {
             node={selectedNode}
             explanation={explanation}
             loading={loading}
-            onClose={() => setSelectedNode(null)}
+            onClose={handleCloseExplanation}
             fetchExplanation={fetchExplanation}
           />
 
