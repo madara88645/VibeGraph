@@ -22,3 +22,8 @@
 **Vulnerability:** The `SecurityHeadersMiddleware` provided basic XSS, framing, and sniffing protection, but lacked `Strict-Transport-Security` and `Content-Security-Policy`.
 **Learning:** Default security headers are often incomplete; adding HSTS forces secure connections and a basic `default-src 'self'` CSP severely limits injection capabilities (like XSS or external data exfiltration) as a defense-in-depth measure.
 **Prevention:** Always verify if a standard security headers configuration covers both Transport Security (HSTS) and Content Restriction (CSP) for robust defense.
+
+## 2025-03-02 - Asymmetric Denial of Service (DoS) via Unbounded Strings in `mode="before"` Validators
+**Vulnerability:** Pydantic `max_length` constraints are evaluated *after* `mode="before"` validators. Calling regex-heavy functions like `sanitize_llm_input` with `truncate=False` inside these validators allowed attackers to submit multimegabyte strings that bypassed Pydantic's length checks, causing severe CPU exhaustion (ReDoS).
+**Learning:** `mode="before"` validators process the raw, unbounded input before any built-in Pydantic length constraints are applied. Any heavy computation (like regex) performed in this phase without explicit internal bounds is a vector for Asymmetric DoS.
+**Prevention:** Always enforce strict length limits natively within the `mode="before"` validator itself (e.g., passing `truncate=True` and an explicit `max_length` to the sanitizer) rather than relying on Pydantic to filter the size post-processing.
