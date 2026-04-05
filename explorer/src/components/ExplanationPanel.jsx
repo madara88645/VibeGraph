@@ -135,8 +135,8 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 {/* Tabs */}
                 <div className="ep-tabs" role="tablist" aria-label="Explanation modes">
                     {[
-                        { key: 'technical', label: '⚙️ Technical' },
-                        { key: 'analogy', label: '🎭 Analogy' },
+                        { key: 'technical', icon: '⚙️', label: 'Technical' },
+                        { key: 'analogy', icon: '🎭', label: 'Analogy' },
                     ].map(t => (
                         <button
                             key={t.key}
@@ -147,7 +147,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             onClick={() => setTab(t.key)}
                             className={`ep-tab ${tab === t.key ? 'active' : ''}`}
                         >
-                            {t.label}
+                            <span aria-hidden="true">{t.icon}</span> {t.label}
                         </button>
                     ))}
                 </div>
