@@ -52,6 +52,10 @@ class ChatMessage(BaseModel):
     @classmethod
     def sanitize_content(cls, value: str) -> str:
         if isinstance(value, str):
+            if len(value) > MAX_CONTENT_LENGTH:
+                raise ValueError(
+                    f"String should have at most {MAX_CONTENT_LENGTH} characters"
+                )
             return sanitize_llm_input(value, truncate=False)
         return value
 
@@ -86,6 +90,10 @@ class ChatRequest(BaseModel):
     @classmethod
     def sanitize_question(cls, value: str) -> str:
         if isinstance(value, str):
+            if len(value) > MAX_QUESTION_LENGTH:
+                raise ValueError(
+                    f"String should have at most {MAX_QUESTION_LENGTH} characters"
+                )
             return sanitize_llm_input(value, truncate=False)
         return value
 
@@ -93,6 +101,10 @@ class ChatRequest(BaseModel):
     @classmethod
     def sanitize_project_context(cls, value: str | None) -> str | None:
         if isinstance(value, str):
+            if len(value) > MAX_PROJECT_CONTEXT_LENGTH:
+                raise ValueError(
+                    f"String should have at most {MAX_PROJECT_CONTEXT_LENGTH} characters"
+                )
             return sanitize_llm_input(value, truncate=False)
         return value
 
@@ -129,6 +141,8 @@ class GhostNarrateRequest(BaseModel):
     @classmethod
     def sanitize_strategy(cls, value: str) -> str:
         if isinstance(value, str):
+            if len(value) > 50:
+                raise ValueError("String should have at most 50 characters")
             return sanitize_llm_input(value, truncate=False)
         return value
 
