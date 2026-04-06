@@ -132,14 +132,19 @@ def upload_project(
                         safe_members.append((member, extracted_path))
 
                     total_size = 0
+                    created_dirs = set()
                     for member, extracted_path in safe_members:
                         if member.is_dir():
-                            os.makedirs(extracted_path, exist_ok=True, mode=0o700)
+                            if extracted_path not in created_dirs:
+                                os.makedirs(extracted_path, exist_ok=True, mode=0o700)
+                                created_dirs.add(extracted_path)
                             continue
 
-                        os.makedirs(
-                            os.path.dirname(extracted_path), exist_ok=True, mode=0o700
-                        )
+                        dir_name = os.path.dirname(extracted_path)
+                        if dir_name not in created_dirs:
+                            os.makedirs(dir_name, exist_ok=True, mode=0o700)
+                            created_dirs.add(dir_name)
+
                         with (
                             zip_ref.open(member) as source,
                             open(extracted_path, "wb") as target,

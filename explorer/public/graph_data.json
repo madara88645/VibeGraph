@@ -14563,9 +14563,27 @@
       }
     },
     {
+      "id": "eupload_project-set",
+      "source": "upload_project",
+      "target": "set",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
       "id": "eupload_project-is_dir",
       "source": "upload_project",
       "target": "is_dir",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eupload_project-add",
+      "source": "upload_project",
+      "target": "add",
       "animated": true,
       "data": {
         "is_cycle_edge": false
