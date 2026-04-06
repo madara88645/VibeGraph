@@ -125,13 +125,14 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                     <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="upload-modal-header">
                             <h3>Upload Project</h3>
-                            <button
-                                className="modal-close-btn"
-                                onClick={() => setIsModalOpen(false)}
-                                disabled={isAnalyzing}
-                                title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}
-                                aria-label="Close Upload Modal"
-                            ><span aria-hidden="true">✕</span></button>
+                            <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}>
+                                <button
+                                    className="modal-close-btn"
+                                    onClick={() => setIsModalOpen(false)}
+                                    disabled={isAnalyzing}
+                                    aria-label="Close Upload Modal"
+                                ><span aria-hidden="true">✕</span></button>
+                            </span>
                         </div>
 
                         <div className="upload-modal-body">
