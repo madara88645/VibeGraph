@@ -95,6 +95,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const hasFullSource = codeData?.full_source;
     const startLine = codeData?.start_line;
     const endLine = codeData?.end_line;
+    const hasCopyText = Boolean(codeData?.full_source || codeData?.snippet);
 
     return (
         <div className={`code-panel ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
@@ -125,8 +126,26 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
+                    {!hasCopyText && (
+                        <span
+                            id="copy-btn-hint"
+                            style={{
+                                position: 'absolute',
+                                width: '1px',
+                                height: '1px',
+                                padding: 0,
+                                margin: '-1px',
+                                overflow: 'hidden',
+                                clip: 'rect(0,0,0,0)',
+                                whiteSpace: 'nowrap',
+                                borderWidth: 0,
+                            }}
+                        >
+                            Nothing to copy yet
+                        </span>
+                    )}
                     <span
-                        title={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
+                        title={hasCopyText ? "Copy code" : "Nothing to copy yet"}
                         style={{ display: 'inline-flex' }}
                     >
                         <button
@@ -179,16 +198,17 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 notifyResult(fallbackCopyText(text));
                             }
                         }}
-                        aria-label={!(codeData && (codeData.full_source || codeData.snippet)) ? "Nothing to copy yet" : "Copy code"}
-                        disabled={!(codeData && (codeData.full_source || codeData.snippet))}
+                        aria-label="Copy code"
+                        aria-describedby={!hasCopyText ? "copy-btn-hint" : undefined}
+                        disabled={!hasCopyText}
                         style={{
                             background: 'none',
                             border: 'none',
                             color: 'var(--text-secondary)',
-                            cursor: codeData && (codeData.full_source || codeData.snippet) ? 'pointer' : 'not-allowed',
+                            cursor: hasCopyText ? 'pointer' : 'not-allowed',
                             padding: '4px 8px',
                             fontSize: '13px',
-                            opacity: codeData && (codeData.full_source || codeData.snippet) ? 1 : 0.5,
+                            opacity: hasCopyText ? 1 : 0.5,
                         }}
                     >
                         Copy
