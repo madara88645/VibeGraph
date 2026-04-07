@@ -81,15 +81,16 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
 
             {/* Navigation & Info */}
             <div className="lp-bar-main">
-                <button
-                    className="lp-bar-nav"
-                    onClick={() => goToStep(currentStep - 1)}
-                    disabled={currentStep === 0 || loading}
-                    title={loading ? "Analyzing File..." : currentStep === 0 ? "Already at first step" : "Previous Step"}
-                    aria-label="Previous Step"
-                >
-                    <span aria-hidden="true">←</span>
-                </button>
+                <span style={{ display: 'inline-flex' }} title={loading ? "Analyzing File..." : currentStep === 0 ? "Already at first step" : "Previous Step"}>
+                    <button
+                        className="lp-bar-nav"
+                        onClick={() => goToStep(currentStep - 1)}
+                        disabled={currentStep === 0 || loading}
+                        aria-label="Previous Step"
+                    >
+                        <span aria-hidden="true">←</span>
+                    </button>
+                </span>
 
                 <div className="lp-bar-info">
                     {loading ? (
@@ -106,15 +107,16 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
                     )}
                 </div>
 
-                <button
-                    className="lp-bar-nav"
-                    onClick={() => goToStep(currentStep + 1)}
-                    disabled={currentStep === steps.length - 1 || loading}
-                    title={loading ? "Analyzing File..." : currentStep === steps.length - 1 ? "Already at last step" : "Next Step"}
-                    aria-label="Next Step"
-                >
-                    <span aria-hidden="true">→</span>
-                </button>
+                <span style={{ display: 'inline-flex' }} title={loading ? "Analyzing File..." : currentStep === steps.length - 1 ? "Already at last step" : "Next Step"}>
+                    <button
+                        className="lp-bar-nav"
+                        onClick={() => goToStep(currentStep + 1)}
+                        disabled={currentStep === steps.length - 1 || loading}
+                        aria-label="Next Step"
+                    >
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </span>
             </div>
 
             {/* Close */}

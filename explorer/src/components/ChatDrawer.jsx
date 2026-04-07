@@ -251,6 +251,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           rows={1}
         />
         <span
+          style={{ display: 'inline-flex' }}
           className="chat-send-wrapper"
           title={
             loading
