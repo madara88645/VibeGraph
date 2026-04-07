@@ -5806,7 +5806,7 @@
       "data": {
         "label": "extract_snippet",
         "type": "function",
-        "lineno": 52,
+        "lineno": 58,
         "docstring": "Robustly extracts the source code of a function/class from *file_path*\nwhose name matches the last segment of *node_id* (e.g. \"MyClass.my_func\"\n-> looks for \"my_func\").\n\nReturns a tuple of:\n  (code_string, start_line, end_line, full_source)\nwhere start_line and end_line are 1-indexed.",
         "file": "./app/utils/snippet.py",
         "entry_point": true

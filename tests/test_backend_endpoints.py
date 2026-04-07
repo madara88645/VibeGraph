@@ -869,7 +869,9 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             snippet, _, _, _ = _extract_snippet(unreadable_file, "hidden")
-            self.assertIn("# Error reading file:", snippet)
+            self.assertIn(
+                "# Error reading file. It may be missing or inaccessible.", snippet
+            )
 
     def test_extract_snippet_syntax_error(self):
         """Should handle syntax errors in the python file."""

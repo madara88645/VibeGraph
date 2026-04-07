@@ -27,17 +27,23 @@ def _get_parsed_ast(
                 None,
                 None,
                 None,
-                f"# Error: File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {resolved_path}",
+                f"# Error: File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes).",
             )
         with open(resolved_path, "r", encoding="utf-8") as f:
             source = f.read()
-    except OSError as e:
-        return None, None, None, None, f"# Error reading file: {e}"
+    except OSError:
+        return (
+            None,
+            None,
+            None,
+            None,
+            "# Error reading file. It may be missing or inaccessible.",
+        )
 
     try:
         tree = ast.parse(source, filename=resolved_path)
     except SyntaxError as e:
-        return source, None, None, None, f"# Syntax error in {resolved_path}: {e}"
+        return source, None, None, None, f"# Syntax error in file: {e.msg}"
 
     lines = source.splitlines()
     nodes = {}
