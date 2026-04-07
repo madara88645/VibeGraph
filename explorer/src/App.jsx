@@ -140,6 +140,7 @@ function AppInner() {
             className="hamburger-btn"
             onClick={handleToggleSidebar}
             aria-label="Toggle sidebar"
+            aria-expanded={sidebarOpen}
             style={{
               background: 'none',
               border: 'none',
@@ -152,17 +153,18 @@ function AppInner() {
           >
             <span aria-hidden="true">{'\u2630'}</span>
           </button>
-          <h1>{'\u26A1'} Vibe Learning</h1>
+          <h1><span aria-hidden="true">{'\u26A1'}</span> Vibe Learning</h1>
           <span className="status-badge">AI Active</span>
           {selectedFile && (
             <span className="current-file-badge">
-              {'\uD83D\uDCC4'} {selectedFile.split(/[/\\]/).pop()}
+              <span aria-hidden="true">{'\uD83D\uDCC4'}</span> {selectedFile.split(/[/\\]/).pop()}
             </span>
           )}
           <button
             className="header-action-btn"
             onClick={() => setLearningPathOpen(true)}
             title="Learning Path"
+            aria-expanded={learningPathOpen}
           >
             <span aria-hidden="true">{'\uD83C\uDFAF'}</span> Learn
           </button>

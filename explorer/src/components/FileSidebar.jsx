@@ -64,6 +64,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                         <button
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
+                            aria-current={!selectedFile ? 'true' : undefined}
                         >
                             <div className="file-main">
                                 <span className="file-icon" aria-hidden="true">🗂️</span>
@@ -82,6 +83,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                                     key={file}
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
+                                    aria-current={isSelected ? 'true' : undefined}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>

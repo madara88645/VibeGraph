@@ -123,8 +123,10 @@ describe('SearchBar', () => {
         await user.type(input, 'a'); // matches main, FileProcessor, helper, run
 
         // Initially highlightIdx=0, first item highlighted
-        const items = screen.getAllByRole('button', { name: /⚡|🏗️|🚀/ });
-        expect(items.length).toBeGreaterThan(0);
+        // The icons have aria-hidden="true", so we match button by text instead of icon
+        const items = screen.getAllByRole('button');
+        const resultItems = items.filter(btn => btn.className.includes('search-result-item'));
+        expect(resultItems.length).toBeGreaterThan(0);
 
         await user.keyboard('{ArrowDown}');
         // highlightIdx is now 1 — no crash
@@ -163,7 +165,8 @@ describe('SearchBar', () => {
         renderSearchBar({ allNodes: manyNodes });
 
         await user.type(screen.getByPlaceholderText(/Search nodes/), 'func');
-        const results = screen.getAllByRole('button', { name: /⚡/ });
+        const items = screen.getAllByRole('button');
+        const results = items.filter(btn => btn.className.includes('search-result-item'));
         expect(results.length).toBeLessThanOrEqual(8);
     });
 });

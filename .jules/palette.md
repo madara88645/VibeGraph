@@ -5,3 +5,7 @@
 ## 2024-05-16 - Tooltips on Disabled Buttons
 **Learning:** Native `title` tooltips do not appear on standard browsers when placed directly on a `disabled` HTML element, which degrades UX by removing explanatory context.
 **Action:** Always wrap `disabled` buttons or inputs in a container element (like a `<span>` with `display: 'inline-flex'`) and apply the `title` attribute to the wrapper instead of the interactive element itself.
+
+## 2024-04-07 - Accessibility of State Indicators and Decorative Elements
+**Learning:** In highly interactive React applications like VibeGraph, relying solely on visual cues (like CSS classes for selection) leaves screen reader users without critical state information. Embellishing UI with inline emojis (e.g. ⚡, 📄, 🎯) creates disruptive and noisy voiceover experiences if not explicitly hidden.
+**Action:** Always use `aria-current="true"` on the currently selected item within a list or sidebar. Always wrap decorative or inline emojis in a `<span>` with `aria-hidden="true"`.

@@ -77,7 +77,7 @@ const LearningPath = ({ selectedFile, allNodes, onSelectNode, onSelectFile, isOp
     return (
         <div className="lp-bar">
             {/* Header / Icon */}
-            <div className="lp-bar-icon">🎯</div>
+            <div className="lp-bar-icon" aria-hidden="true">🎯</div>
 
             {/* Navigation & Info */}
             <div className="lp-bar-main">

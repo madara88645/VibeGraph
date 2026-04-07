@@ -195,7 +195,7 @@ const SimulationControls = ({
                 <>
                     <div className="sim-divider" />
                     <div className="sim-current" aria-live="polite">
-                        👻 {currentLabel}
+                        <span aria-hidden="true">👻</span> {currentLabel}
                     </div>
                 </>
             )}

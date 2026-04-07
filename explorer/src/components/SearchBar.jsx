@@ -83,7 +83,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     return (
         <div className="search-bar" ref={containerRef}>
             <div className="search-input-wrapper">
-                <span className="search-icon">🔍</span>
+                <span className="search-icon" aria-hidden="true">🔍</span>
                 <input
                     ref={inputRef}
                     type="text"
@@ -109,7 +109,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                             onClick={() => handleSelect(node)}
                             onMouseEnter={() => setHighlightIdx(idx)}
                         >
-                            <span className="search-result-icon">{typeIcon(node)}</span>
+                            <span className="search-result-icon" aria-hidden="true">{typeIcon(node)}</span>
                             <div className="search-result-text">
                                 <span className="search-result-label">{node.data?.label || node.id}</span>
                                 {node.data?.file && (
