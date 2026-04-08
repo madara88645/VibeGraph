@@ -269,6 +269,8 @@ function AppInner() {
             className="hamburger-btn"
             onClick={handleToggleSidebar}
             aria-label="Toggle sidebar"
+            aria-controls="file-sidebar-panel"
+            aria-expanded={sidebarOpen}
             style={{
               background: 'none',
               border: 'none',
@@ -282,7 +284,7 @@ function AppInner() {
             <span aria-hidden="true">Menu</span>
           </button>
 
-          <h1>Vibe Learning</h1>
+          <h1>VibeGraph Explorer</h1>
           <span className={`status-badge ${aiReady ? '' : 'status-badge-warning'}`}>
             {aiReady ? 'AI Ready' : 'Key Needed'}
           </span>
@@ -308,8 +310,10 @@ function AppInner() {
 
           <button
             className="header-action-btn"
-            onClick={() => setLearningPathOpen(true)}
+            onClick={() => setLearningPathOpen((prev) => !prev)}
             title="Learning Path"
+            aria-controls="learning-path-panel"
+            aria-expanded={learningPathOpen}
           >
             Learn
           </button>

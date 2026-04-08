@@ -2,12 +2,15 @@
 
 import ast
 import functools
+import logging
 import os
 
 from fastapi import HTTPException
 
 from analyst.analyzer import MAX_FILE_SIZE
 from app.utils.security import is_safe_path
+
+logger = logging.getLogger(__name__)
 
 
 @functools.lru_cache(maxsize=128)
@@ -27,17 +30,36 @@ def _get_parsed_ast(
                 None,
                 None,
                 None,
-                f"# Error: File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {resolved_path}",
+                f"# Error: File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes).",
             )
         with open(resolved_path, "r", encoding="utf-8") as f:
             source = f.read()
-    except OSError as e:
-        return None, None, None, None, f"# Error reading file: {e}"
+    except OSError:
+        logger.warning("Snippet read failed for %s", resolved_path, exc_info=True)
+        return (
+            None,
+            None,
+            None,
+            None,
+            "# Error reading file. It may be missing or inaccessible.",
+        )
 
     try:
         tree = ast.parse(source, filename=resolved_path)
     except SyntaxError as e:
-        return source, None, None, None, f"# Syntax error in {resolved_path}: {e}"
+        logger.info(
+            "Snippet parse failed for %s at line=%s column=%s",
+            resolved_path,
+            e.lineno,
+            e.offset,
+        )
+        location_parts = []
+        if e.lineno is not None:
+            location_parts.append(f"line {e.lineno}")
+        if e.offset is not None:
+            location_parts.append(f"column {e.offset}")
+        location = f" ({', '.join(location_parts)})" if location_parts else ""
+        return source, None, None, None, f"# Syntax error in file: {e.msg}{location}"
 
     lines = source.splitlines()
     nodes = {}

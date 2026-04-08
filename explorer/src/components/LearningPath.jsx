@@ -113,7 +113,7 @@ const LearningPath = ({
   const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
 
   return (
-    <div className="lp-bar">
+    <div id="learning-path-panel" className="lp-bar">
       <div className="lp-bar-icon">Target</div>
 
       <div className="lp-bar-main">

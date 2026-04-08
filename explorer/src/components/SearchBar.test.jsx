@@ -122,8 +122,9 @@ describe('SearchBar', () => {
         const input = screen.getByPlaceholderText(/Search nodes/);
         await user.type(input, 'a'); // matches main, FileProcessor, helper, run
 
-        // Initially highlightIdx=0, first item highlighted
-        const items = screen.getAllByRole('button', { name: /⚡|🏗️|🚀/ });
+        const items = screen.getAllByRole('button').filter((button) => (
+            ['main', 'FileProcessor', 'helper', 'run'].some((label) => button.textContent?.includes(label))
+        ));
         expect(items.length).toBeGreaterThan(0);
 
         await user.keyboard('{ArrowDown}');
@@ -163,7 +164,9 @@ describe('SearchBar', () => {
         renderSearchBar({ allNodes: manyNodes });
 
         await user.type(screen.getByPlaceholderText(/Search nodes/), 'func');
-        const results = screen.getAllByRole('button', { name: /⚡/ });
+        const results = screen.getAllByRole('button').filter((button) => (
+            button.textContent?.includes('func_')
+        ));
         expect(results.length).toBeLessThanOrEqual(8);
     });
 });
