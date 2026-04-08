@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 function shortenModelName(modelName) {
   return modelName.split('/').pop() || modelName;
@@ -25,11 +25,23 @@ const AISettingsModal = ({
     return [];
   }, [apiConfig]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) {
     return null;
   }
 
-  const handleSave = () => {
+  const handleSave = (event) => {
+    if (event) event.preventDefault();
     onSave({
       apiKey: draftApiKey,
       model: draftModel || apiConfig?.defaultModel || allowedModels[0] || '',
@@ -62,8 +74,9 @@ const AISettingsModal = ({
           </button>
         </div>
 
-        <div className="ai-settings-body">
-          <div className="ai-settings-meta">
+        <form onSubmit={handleSave}>
+          <div className="ai-settings-body">
+            <div className="ai-settings-meta">
             <span className="ai-settings-pill">
               Provider: {apiConfig?.provider || 'openrouter'}
             </span>
@@ -92,6 +105,8 @@ const AISettingsModal = ({
                 type="button"
                 className="ai-settings-secondary-btn"
                 onClick={() => setShowKey((prev) => !prev)}
+                aria-label={showKey ? 'Hide OpenRouter API Key' : 'Show OpenRouter API Key'}
+                aria-pressed={showKey}
               >
                 {showKey ? 'Hide' : 'Show'}
               </button>
@@ -120,20 +135,21 @@ const AISettingsModal = ({
               Lean model list: fast defaults plus lower-cost backup options.
             </p>
           </div>
-        </div>
+          </div>
 
-        <div className="ai-settings-footer">
-          <button
-            type="button"
-            className="ai-settings-secondary-btn"
-            onClick={onClear}
-          >
-            Clear Key
-          </button>
-          <button type="button" className="ai-settings-primary-btn" onClick={handleSave}>
-            Save
-          </button>
-        </div>
+          <div className="ai-settings-footer">
+            <button
+              type="button"
+              className="ai-settings-secondary-btn"
+              onClick={onClear}
+            >
+              Clear Key
+            </button>
+            <button type="submit" className="ai-settings-primary-btn">
+              Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
