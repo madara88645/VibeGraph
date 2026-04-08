@@ -50,7 +50,7 @@ const AISettingsModal = ({
           <div>
             <h2 id="ai-settings-title">AI Settings</h2>
             <p className="ai-settings-subtitle">
-              OpenRouter keyi sadece bu browser session&apos;inda tutulur.
+              Your OpenRouter key stays in this browser session only.
             </p>
           </div>
           <button
@@ -98,8 +98,8 @@ const AISettingsModal = ({
             </div>
             <p className="ai-settings-help">
               {apiConfig?.requiresUserKey
-                ? 'Production modunda kendi anahtarin gerekli.'
-                : 'Istersen kendi anahtarinla override edebilirsin.'}
+                ? 'Production requires your own key.'
+                : 'You can override the server key with your own key.'}
             </p>
           </div>
 
@@ -117,7 +117,7 @@ const AISettingsModal = ({
               ))}
             </select>
             <p className="ai-settings-help">
-              Hafif ve guvenli bir model listesi tutuluyor; deploy sonrasi surprise cost istemiyoruz.
+              Lean model list: fast defaults plus lower-cost backup options.
             </p>
           </div>
         </div>

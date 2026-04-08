@@ -14,6 +14,8 @@ CURATED_MODELS = [
     "anthropic/claude-haiku-4.5",
     "google/gemini-2.5-flash-lite",
     "openai/gpt-5-mini",
+    "deepseek/deepseek-chat-v3.1",
+    "x-ai/grok-4.1-fast",
 ]
 
 teacher = None

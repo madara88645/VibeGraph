@@ -36,6 +36,8 @@ def test_ai_config_reports_openrouter_defaults():
     assert "anthropic/claude-haiku-4.5" in data["allowedModels"]
     assert "google/gemini-2.5-flash-lite" in data["allowedModels"]
     assert "openai/gpt-5-mini" in data["allowedModels"]
+    assert "deepseek/deepseek-chat-v3.1" in data["allowedModels"]
+    assert "x-ai/grok-4.1-fast" in data["allowedModels"]
     assert data["requiresUserKey"] is True
 
 
