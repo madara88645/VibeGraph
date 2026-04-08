@@ -176,6 +176,17 @@ function AppInner() {
   } = useNodeInteraction(aiContext);
 
   const {
+    allNodes,
+    selectedFile,
+    setSelectedFile,
+    files,
+    nodeStats,
+    fileDependencies,
+    handleUploadSuccess,
+    currentDegreeMap,
+  } = useGraphData(setNodes, setEdges);
+
+  const {
     isPlaying,
     setIsPlaying,
     stepCount,
@@ -193,17 +204,7 @@ function AppInner() {
     onUserChooseNext,
     narration,
     runSummary,
-  } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext);
-
-  const {
-    allNodes,
-    selectedFile,
-    setSelectedFile,
-    files,
-    nodeStats,
-    fileDependencies,
-    handleUploadSuccess,
-  } = useGraphData(setNodes, setEdges);
+  } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext, currentDegreeMap);
 
   const onUploadSuccess = useCallback(
     (result) => {

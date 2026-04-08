@@ -240,6 +240,30 @@ export function useGraphData(setNodes, setEdges) {
         setEdges(layouted.edges);
     }, [selectedFile, allNodes, allEdges, setNodes, setEdges]);
 
+    // PERFORMANCE OPTIMIZATION (Bolt): Compute degree map here based on the filtered subgraph (`relevantEdges`),
+    // rather than in useGhostRunner where `edges` changes visually every animation tick.
+    // This perfectly preserves the localized hub logic while completely eliminating O(E) redundant Map allocations.
+    const currentDegreeMap = useMemo(() => {
+        const dMap = new Map();
+        if (allNodes.length === 0 || !allEdges) return dMap;
+
+        let edgesToCount = allEdges;
+        if (selectedFile) {
+            const fileNodeIds = new Set();
+            allNodes.forEach(n => {
+                const nFile = n.data?.file || '_external';
+                if (nFile === selectedFile) fileNodeIds.add(n.id);
+            });
+            edgesToCount = allEdges.filter(e => fileNodeIds.has(e.source) || fileNodeIds.has(e.target));
+        }
+
+        edgesToCount.forEach(e => {
+            dMap.set(e.source, (dMap.get(e.source) || 0) + 1);
+            dMap.set(e.target, (dMap.get(e.target) || 0) + 1);
+        });
+        return dMap;
+    }, [selectedFile, allNodes, allEdges]);
+
     return {
         allNodes,
         selectedFile,
@@ -247,6 +271,7 @@ export function useGraphData(setNodes, setEdges) {
         files,
         nodeStats,
         fileDependencies,
-        handleUploadSuccess
+        handleUploadSuccess,
+        currentDegreeMap
     };
 }

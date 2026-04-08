@@ -234,7 +234,8 @@ export function useGhostRunner(
     setNodes,
     setEdges,
     setCodePanelNode,
-    { aiApiKey = '', selectedModel = '', aiReady = true } = {}
+    { aiApiKey = '', selectedModel = '', aiReady = true } = {},
+    currentDegreeMap
 ) {
     // Ghost Runner State
     const [isPlaying, setIsPlaying] = useState(false);
@@ -265,18 +266,8 @@ export function useGhostRunner(
     useEffect(() => { edgesRef.current = edges; }, [edges]);
     useEffect(() => { activeNodeIdRef.current = activeNodeId; }, [activeNodeId]);
 
-    // Compute degree map when edges change
-    const degreeMap = useMemo(() => {
-        const map = new Map();
-        edges.forEach(e => {
-            map.set(e.source, (map.get(e.source) || 0) + 1);
-            map.set(e.target, (map.get(e.target) || 0) + 1);
-        });
-        return map;
-    }, [edges]);
-
-    const degreeMapRef = useRef(degreeMap);
-    useEffect(() => { degreeMapRef.current = degreeMap; }, [degreeMap]);
+    const degreeMapRef = useRef(currentDegreeMap || new Map());
+    useEffect(() => { degreeMapRef.current = currentDegreeMap || new Map(); }, [currentDegreeMap]);
 
     // PERFORMANCE OPTIMIZATION (Bolt): Prevent O(N) re-render bottleneck on non-tick UI updates
     // by memoizing the array filters. stepCount acts as the trigger to re-evaluate the visited set.
@@ -577,7 +568,7 @@ export function useGhostRunner(
         let mostConnected = null;
         let maxDegree = 0;
         visitedNodes.forEach(n => {
-            const d = degreeMap.get(n.id) || 0;
+            const d = (currentDegreeMap || new Map()).get(n.id) || 0;
             if (d > maxDegree) { maxDegree = d; mostConnected = n; }
         });
 
@@ -589,7 +580,7 @@ export function useGhostRunner(
             unvisitedEntries: unvisitedEntries.map(n => n.data?.label).filter(Boolean),
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
-    }, [nodes, degreeMap, stepCount, isPlaying]);
+    }, [nodes, currentDegreeMap, stepCount, isPlaying]);
 
     return {
         isPlaying,
@@ -616,6 +607,6 @@ export function useGhostRunner(
         narration,
         setNarration,
         runSummary,
-        degreeMap,
+        degreeMap: currentDegreeMap,
     };
 }
