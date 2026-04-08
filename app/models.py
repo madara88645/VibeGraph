@@ -167,6 +167,8 @@ class GhostNarrateRequest(BaseModel):
     @classmethod
     def validate_context_nodes(cls, v: list[str]) -> list[str]:
         for node in v:
+            if not node.strip():
+                raise ValueError("context node must not be empty")
             if len(node) > MAX_NODE_ID_LENGTH:
                 raise ValueError(
                     f"context node length cannot exceed {MAX_NODE_ID_LENGTH}"
