@@ -104,6 +104,8 @@ def get_teacher_for_request(
         api_key=resolve_openrouter_api_key(request),
         model_name=resolve_model_name(requested_model),
         base_url=OPENROUTER_BASE_URL,
-        http_referer=os.getenv("OPENROUTER_HTTP_REFERER", "https://vibegraph.vercel.app"),
+        http_referer=os.getenv(
+            "OPENROUTER_HTTP_REFERER", "https://vibegraph.vercel.app"
+        ),
         app_title=os.getenv("OPENROUTER_APP_TITLE", "VibeGraph"),
     )

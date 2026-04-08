@@ -38,9 +38,7 @@ class TestExtractFunction:
 
     def test_extract_class_from_valid_file(self):
         path = _write_temp(
-            "class Greeter:\n"
-            "    def greet(self):\n"
-            "        return 'hi'\n"
+            "class Greeter:\n    def greet(self):\n        return 'hi'\n"
         )
         code, start, end, full_source = extract_snippet(path, "Greeter")
         assert "class Greeter:" in code
@@ -49,9 +47,7 @@ class TestExtractFunction:
     def test_extract_dotted_node_id(self):
         """node_id like 'Greeter.greet' should resolve to 'greet'."""
         path = _write_temp(
-            "class Greeter:\n"
-            "    def greet(self):\n"
-            "        return 'hi'\n"
+            "class Greeter:\n    def greet(self):\n        return 'hi'\n"
         )
         code, start, end, _ = extract_snippet(path, "Greeter.greet")
         assert "def greet(self):" in code

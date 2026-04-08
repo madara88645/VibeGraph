@@ -5,7 +5,11 @@ import json
 import pytest
 from unittest.mock import MagicMock, patch
 
-from teacher.openrouter_teacher import OpenRouterTeacher, _try_parse_json, NarrateStepContext
+from teacher.openrouter_teacher import (
+    OpenRouterTeacher,
+    _try_parse_json,
+    NarrateStepContext,
+)
 
 
 def _mock_completion(content: str) -> MagicMock:
@@ -78,7 +82,10 @@ class TestWithoutClient:
     def test_narrate_step_returns_unavailable(self):
         ctx = NarrateStepContext(code_snippet="pass", node_id="foo")
         result = self.teacher.narrate_step(ctx)
-        assert "unavailable" in result["narration"].lower() or "missing" in result["narration"].lower()
+        assert (
+            "unavailable" in result["narration"].lower()
+            or "missing" in result["narration"].lower()
+        )
 
     def test_suggest_learning_path_returns_missing_key(self):
         result = self.teacher.suggest_learning_path(
@@ -87,7 +94,10 @@ class TestWithoutClient:
             file_path="test.py",
         )
         assert len(result) >= 1
-        assert "missing" in result[0]["reason"].lower() or "key" in result[0]["node_id"].lower()
+        assert (
+            "missing" in result[0]["reason"].lower()
+            or "key" in result[0]["node_id"].lower()
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -105,11 +115,13 @@ class TestWithMockedClient:
         self.teacher._explain_cache.clear()
 
     def test_explain_code_returns_parsed(self):
-        response_json = json.dumps({
-            "analogy": "Like a recipe",
-            "technical": "Defines a function",
-            "key_takeaway": "Functions encapsulate logic",
-        })
+        response_json = json.dumps(
+            {
+                "analogy": "Like a recipe",
+                "technical": "Defines a function",
+                "key_takeaway": "Functions encapsulate logic",
+            }
+        )
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -119,11 +131,13 @@ class TestWithMockedClient:
         assert result["key_takeaway"] == "Functions encapsulate logic"
 
     def test_explain_code_caches_results(self):
-        response_json = json.dumps({
-            "analogy": "cached",
-            "technical": "cached",
-            "key_takeaway": "cached",
-        })
+        response_json = json.dumps(
+            {
+                "analogy": "cached",
+                "technical": "cached",
+                "key_takeaway": "cached",
+            }
+        )
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -136,11 +150,13 @@ class TestWithMockedClient:
         assert self.mock_client.chat.completions.create.call_count == 1
 
     def test_narrate_step_returns_narration_dict(self):
-        response_json = json.dumps({
-            "narration": "This function initializes the app",
-            "relationship": "calls",
-            "importance": "high",
-        })
+        response_json = json.dumps(
+            {
+                "narration": "This function initializes the app",
+                "relationship": "calls",
+                "importance": "high",
+            }
+        )
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )

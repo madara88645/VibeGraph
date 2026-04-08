@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import ProjectUpload from './ProjectUpload';
 import { ToastContext } from '../hooks/useToast';
@@ -18,7 +18,7 @@ describe('ProjectUpload', () => {
 
     beforeEach(() => {
         showToast = vi.fn();
-        global.fetch = vi.fn();
+        globalThis.fetch = vi.fn();
     });
 
     afterEach(() => {
@@ -93,7 +93,7 @@ describe('ProjectUpload', () => {
 
     it('shows loading state during upload', async () => {
         // fetch that never resolves to keep the loading state visible
-        global.fetch = vi.fn(() => new Promise(() => {}));
+        globalThis.fetch = vi.fn(() => new Promise(() => {}));
 
         renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
 
@@ -119,7 +119,7 @@ describe('ProjectUpload', () => {
 
     it('handles successful upload with valid graph data', async () => {
         const mockResult = { nodes: [{ id: '1' }], edges: [{ source: '1', target: '2' }] };
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve(mockResult),
@@ -146,7 +146,7 @@ describe('ProjectUpload', () => {
     });
 
     it('handles upload errors gracefully', async () => {
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: false,
                 status: 500,
@@ -173,7 +173,7 @@ describe('ProjectUpload', () => {
     });
 
     it('handles network errors gracefully', async () => {
-        global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+        globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
 
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
@@ -194,7 +194,7 @@ describe('ProjectUpload', () => {
     });
 
     it('does not close modal while analyzing when overlay is clicked', async () => {
-        global.fetch = vi.fn(() => new Promise(() => {}));
+        globalThis.fetch = vi.fn(() => new Promise(() => {}));
 
         renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
 
