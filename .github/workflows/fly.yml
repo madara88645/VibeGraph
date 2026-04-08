@@ -31,7 +31,27 @@ jobs:
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      - name: Prepare Fly token
+        shell: bash
+        env:
+          FLY_API_TOKEN_RAW: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          raw = os.environ.get("FLY_API_TOKEN_RAW", "")
+          clean = raw.strip().replace("\r", "").replace("\n", "")
+
+          if not clean:
+              print("FLY_API_TOKEN secret is missing or only whitespace.", file=sys.stderr)
+              raise SystemExit(1)
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"FLY_API_TOKEN={clean}\n")
+
+          print("Prepared sanitized Fly token for deploy.")
+          PY
+
       - name: Deploy app
         run: flyctl deploy --remote-only --config fly.toml
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
