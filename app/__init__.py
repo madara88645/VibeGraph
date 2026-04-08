@@ -18,7 +18,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from app.rate_limit import limiter
-from app.routers import chat, explain, ghost, health, learning, upload
+from app.routers import ai, chat, explain, ghost, health, learning, upload
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ def create_app() -> FastAPI:
         version="1.0.0",
         description=(
             "VibeGraph transforms Python codebases into interactive call graphs "
-            "and provides AI-powered explanations, chat, and learning paths via Groq LLM."
+            "and provides AI-powered explanations, chat, and learning paths via OpenRouter."
         ),
         contact={
             "name": "VibeGraph",
@@ -154,6 +154,7 @@ def create_app() -> FastAPI:
 
     # Register routers
     application.include_router(health.router)
+    application.include_router(ai.router)
     application.include_router(explain.router)
     application.include_router(chat.router)
     application.include_router(learning.router)

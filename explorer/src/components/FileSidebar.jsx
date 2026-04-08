@@ -27,7 +27,10 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
     }, []);
 
     return (
-        <div className={`file-sidebar${mobileOpen ? ' sidebar-open' : ''}`}>
+        <div
+            id="file-sidebar-panel"
+            className={`file-sidebar${mobileOpen ? ' sidebar-open' : ''}`}
+        >
             {/* Tabs */}
             <div className="sidebar-tabs" role="tablist" aria-label="Sidebar views">
                 <button
@@ -64,6 +67,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                         <button
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
+                            aria-current={!selectedFile ? 'true' : undefined}
                         >
                             <div className="file-main">
                                 <span className="file-icon" aria-hidden="true">🗂️</span>
@@ -82,6 +86,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                                     key={file}
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
+                                    aria-current={isSelected ? 'true' : undefined}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>

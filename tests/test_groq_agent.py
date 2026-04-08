@@ -1,7 +1,8 @@
-import unittest
 import json
+import unittest
+from unittest.mock import MagicMock, patch
 
-from teacher.groq_agent import _try_parse_json
+from teacher.groq_agent import GroqTeacher, NarrateStepContext, _try_parse_json
 
 
 class TestTryParseJson(unittest.TestCase):
@@ -40,19 +41,14 @@ class TestTryParseJson(unittest.TestCase):
         self.assertEqual(result, {"key": "value"})
 
 
-from unittest.mock import patch, MagicMock
-from teacher.groq_agent import GroqTeacher, NarrateStepContext
-
-
 def test_explain_code_exception_leak():
     """Ensure explain_code does not leak exception details on error."""
-    with patch("teacher.groq_agent.Groq") as MockGroq:
+    with patch("teacher.openrouter_teacher.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
-        MockGroq.return_value = mock_client
+        mock_openai.return_value = mock_client
 
         teacher = GroqTeacher()
-        # Force client to exist
         teacher.client = mock_client
 
         result = teacher.explain_code("def foo(): pass")
@@ -63,10 +59,10 @@ def test_explain_code_exception_leak():
 
 def test_chat_exception_leak():
     """Ensure chat does not leak exception details on error."""
-    with patch("teacher.groq_agent.Groq") as MockGroq:
+    with patch("teacher.openrouter_teacher.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
-        MockGroq.return_value = mock_client
+        mock_openai.return_value = mock_client
 
         teacher = GroqTeacher()
         teacher.client = mock_client
@@ -74,15 +70,15 @@ def test_chat_exception_leak():
         result = teacher.chat("def foo(): pass", "hello")
 
         assert "SECRET_API_ERROR" not in result
-        assert result == "⚠️ Groq API error: An unexpected error occurred."
+        assert result == "OpenRouter API error: An unexpected error occurred."
 
 
 def test_suggest_learning_path_exception_leak():
     """Ensure suggest_learning_path does not leak exception details on error."""
-    with patch("teacher.groq_agent.Groq") as MockGroq:
+    with patch("teacher.openrouter_teacher.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = Exception("SECRET_API_ERROR")
-        MockGroq.return_value = mock_client
+        mock_openai.return_value = mock_client
 
         teacher = GroqTeacher()
         teacher.client = mock_client
@@ -95,7 +91,7 @@ def test_suggest_learning_path_exception_leak():
 
 
 def test_explain_code_cache_uses_lru_recency():
-    with patch("teacher.groq_agent._MAX_CACHE_SIZE", 2):
+    with patch("teacher.openrouter_teacher._MAX_CACHE_SIZE", 2):
         teacher = GroqTeacher()
         teacher.client = MagicMock()
 

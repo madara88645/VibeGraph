@@ -869,7 +869,10 @@ class TestExtractSnippetUnit(unittest.TestCase):
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             snippet, _, _, _ = _extract_snippet(unreadable_file, "hidden")
-            self.assertIn("# Error reading file:", snippet)
+            self.assertEqual(
+                snippet,
+                "# Error reading file. It may be missing or inaccessible.",
+            )
 
     def test_extract_snippet_syntax_error(self):
         """Should handle syntax errors in the python file."""
@@ -878,7 +881,8 @@ class TestExtractSnippetUnit(unittest.TestCase):
             f.write("def broken(:\n    pass\n")
 
         snippet, _, _, _ = _extract_snippet(broken_file, "broken")
-        self.assertIn("# Syntax error in", snippet)
+        self.assertIn("# Syntax error in file:", snippet)
+        self.assertIn("line 1", snippet)
 
     def test_extract_snippet_node_not_found(self):
         """Should return mismatch message if the node is not found in the file."""

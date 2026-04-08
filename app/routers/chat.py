@@ -29,8 +29,9 @@ def chat_with_node(request: Request, chat_request: ChatRequest):
     history_dicts = [
         {"role": m.role, "content": m.content} for m in chat_request.history
     ]
+    teacher = deps.get_teacher_for_request(request, chat_request.model)
 
-    answer = deps.teacher.chat(
+    answer = teacher.chat(
         code_snippet=snippet,
         project_context=chat_request.project_context or "",
         question=chat_request.question,
@@ -51,9 +52,10 @@ def chat_stream(request: Request, chat_request: ChatRequest):
     history_dicts = [
         {"role": m.role, "content": m.content} for m in chat_request.history
     ]
+    teacher = deps.get_teacher_for_request(request, chat_request.model)
 
     def event_generator():
-        for token in deps.teacher.stream_chat(
+        for token in teacher.stream_chat(
             code_snippet=snippet,
             project_context=chat_request.project_context or "",
             question=chat_request.question,

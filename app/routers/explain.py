@@ -51,7 +51,9 @@ def explain_node(request: Request, explain_request: ExplainRequest):
         explain_request.file_path, explain_request.node_id
     )
 
-    explanation = deps.teacher.explain_code(
+    teacher = deps.get_teacher_for_request(request, explain_request.model)
+
+    explanation = teacher.explain_code(
         snippet,
         context="External Library / Built-in" if not explain_request.file_path else "",
         level=explain_request.level,

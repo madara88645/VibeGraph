@@ -6,7 +6,7 @@ from app.models import GhostNarrateRequest
 from app.rate_limit import limiter, GHOST_NARRATION_LIMIT
 from app.utils.snippet import extract_snippet
 import app.dependencies as deps
-from teacher.groq_agent import NarrateStepContext
+from teacher.openrouter_teacher import NarrateStepContext
 
 router = APIRouter(prefix="/api", tags=["ghost"])
 
@@ -35,7 +35,8 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
         strategy=body.strategy,
     )
 
-    result = deps.teacher.narrate_step(context)
+    teacher = deps.get_teacher_for_request(request, body.model)
+    result = teacher.narrate_step(context)
 
     return {
         "node_id": body.node_id,

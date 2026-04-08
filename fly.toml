@@ -1,0 +1,30 @@
+app = "vibegraph-api"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "8000"
+  VIBEGRAPH_CORS_ORIGINS = "http://localhost:5173,https://vibegraph.vercel.app"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = "off"
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024

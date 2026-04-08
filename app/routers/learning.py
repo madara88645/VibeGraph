@@ -44,7 +44,9 @@ def suggest_learning_path(request: Request, path_request: LearningPathRequest):
     )
     edges_summary = ", ".join(f"{u} \u2192 {v}" for u, v in graph.edges())
 
-    steps = deps.teacher.suggest_learning_path(
+    teacher = deps.get_teacher_for_request(request, path_request.model)
+
+    steps = teacher.suggest_learning_path(
         nodes_summary=nodes_summary,
         edges_summary=edges_summary,
         file_path=path_request.file_path,

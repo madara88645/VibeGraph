@@ -13,12 +13,21 @@ MAX_PROJECT_CONTEXT_LENGTH = 4000
 MAX_QUESTION_LENGTH = 2000
 MAX_CONTENT_LENGTH = 4000
 MAX_HISTORY_LENGTH = 100
+MAX_MODEL_NAME_LENGTH = 120
+
+
+def _normalize_model_name(value: str | None) -> str | None:
+    if isinstance(value, str):
+        cleaned = value.strip()
+        return cleaned or None
+    return value
 
 
 class ExplainRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
+    model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
 
     model_config = {
         "json_schema_extra": {
@@ -27,10 +36,16 @@ class ExplainRequest(BaseModel):
                     "file_path": "my_project/app.py",
                     "node_id": "main",
                     "level": "beginner",
+                    "model": "anthropic/claude-haiku-4.5",
                 }
             ]
         }
     }
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def normalize_model(cls, value: str | None) -> str | None:
+        return _normalize_model_name(value)
 
 
 class SnippetRequest(BaseModel):
@@ -68,6 +83,7 @@ class ChatRequest(BaseModel):
         max_length=MAX_PROJECT_CONTEXT_LENGTH,
     )
     question: str = Field(max_length=MAX_QUESTION_LENGTH)
+    model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
     history: list[ChatMessage] = Field(
         default_factory=list,
         max_length=MAX_HISTORY_LENGTH,
@@ -80,11 +96,17 @@ class ChatRequest(BaseModel):
                     "node_id": "main",
                     "file_path": "my_project/app.py",
                     "question": "What does this function do?",
+                    "model": "anthropic/claude-haiku-4.5",
                     "history": [],
                 }
             ]
         }
     }
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def normalize_model(cls, value: str | None) -> str | None:
+        return _normalize_model_name(value)
 
     @field_validator("question", mode="before")
     @classmethod
@@ -111,10 +133,23 @@ class ChatRequest(BaseModel):
 
 class LearningPathRequest(BaseModel):
     file_path: str = Field(max_length=MAX_FILE_PATH_LENGTH)
+    model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
 
     model_config = {
-        "json_schema_extra": {"examples": [{"file_path": "my_project/app.py"}]}
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "file_path": "my_project/app.py",
+                    "model": "anthropic/claude-haiku-4.5",
+                }
+            ]
+        }
     }
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def normalize_model(cls, value: str | None) -> str | None:
+        return _normalize_model_name(value)
 
 
 class GhostNarrateRequest(BaseModel):
@@ -125,6 +160,7 @@ class GhostNarrateRequest(BaseModel):
         max_length=MAX_NODE_ID_LENGTH,
     )
     strategy: str = Field(default="smart", max_length=50)
+    model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
     context_nodes: list[str] = Field(default_factory=list, max_length=10)
 
     @field_validator("context_nodes")
@@ -145,6 +181,11 @@ class GhostNarrateRequest(BaseModel):
                 raise ValueError("String should have at most 50 characters")
             return sanitize_llm_input(value, truncate=False)
         return value
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def normalize_model(cls, value: str | None) -> str | None:
+        return _normalize_model_name(value)
 
 
 class ExplanationDetail(BaseModel):
