@@ -11,9 +11,11 @@ Upload your code → explore the call graph → ask AI anything about it.
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Groq](https://img.shields.io/badge/LLM-Groq%20%2F%20Llama3-FF6B35)](https://console.groq.com)
-[![License](https://img.shields.io/badge/License-MIT-22C55E)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-69%20passing-22C55E)](tests/)
+[![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
+[![License](https://img.shields.io/badge/License-GPLv3-22C55E)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-208%20passing-22C55E)](tests/)
+[![Backend](https://img.shields.io/badge/Backend-Fly.io-8B5CF6)](https://fly.io)
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-000000)](https://vercel.com)
 
 </div>
 
@@ -85,7 +87,7 @@ The Ghost Runner has been upgraded from a simple random walk to an intelligent, 
 
 - **Python 3.10+**
 - **Node.js 18+**
-- **Groq API key** — free tier at [console.groq.com](https://console.groq.com) (no credit card required)
+- **OpenRouter API key** — free at [openrouter.ai](https://openrouter.ai) (no credit card required)
 
 ### 1. Clone
 
@@ -109,7 +111,7 @@ cd explorer && npm install && cd ..
 Create a `.env` file in the project root:
 
 ```env
-GROQ_API_KEY=your_groq_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
 ### 4. Run
@@ -151,19 +153,56 @@ python main.py analyze path/to/your_project/
 
 ---
 
+## Deployment
+
+VibeGraph runs as a hybrid deployment:
+
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Backend API | [Fly.io](https://fly.io) | `vibegraph-api.fly.dev` |
+| Frontend SPA | [Vercel](https://vercel.com) | `vibegraph.vercel.app` |
+
+### Docker Compose (local)
+
+```bash
+docker compose up
+# Open http://localhost:8000
+```
+
+### Manual Deploy
+
+**Backend (Fly.io):**
+```bash
+fly deploy --config fly.toml --dockerfile Dockerfile.fly
+```
+
+**Frontend (Vercel):**
+Automatic deployment on push to `main` via Vercel integration.
+
+---
+
 ## Project Structure
 
 ```
 VibeGraph/
+├── app/                   # FastAPI application
+│   ├── routers/           # API route handlers (upload, explain, chat, ghost, learning)
+│   ├── utils/             # Security, sanitization, snippet extraction
+│   ├── models.py          # Pydantic request/response models
+│   ├── dependencies.py    # AI provider config (OpenRouter)
+│   └── rate_limit.py      # Rate limiting configuration
 ├── analyst/
-│   ├── analyzer.py        # AST parser → NetworkX graph (nodes + edges)
+│   ├── analyzer.py        # AST parser → NetworkX graph
 │   └── exporter.py        # NetworkX → React Flow JSON
 ├── teacher/
-│   └── groq_agent.py      # Groq LLM: explain / chat / learning path
+│   └── openrouter_teacher.py  # OpenRouter AI: explain / chat / ghost narration
 ├── explorer/              # React 19 + Vite frontend
-│   └── src/components/    # GraphViewer, ChatDrawer, CodePanel, ...
-├── tests/                 # 24 pytest tests
-├── serve.py               # FastAPI backend (all API routes)
+│   └── src/components/    # GraphViewer, ChatDrawer, CodePanel, ProjectUpload, ...
+├── tests/                 # 128+ pytest backend tests
+├── .github/workflows/     # CI/CD (lint, security, tests, deploy)
+├── fly.toml               # Fly.io deployment config
+├── Dockerfile.fly         # Backend container
+├── serve.py               # FastAPI server entry point
 ├── main.py                # CLI entry point
 └── requirements.txt
 ```
@@ -175,11 +214,14 @@ VibeGraph/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/health` | Health check |
+| `GET` | `/api/ai-config` | AI provider configuration discovery |
 | `POST` | `/api/upload-project` | Upload `.py`/`.zip`, returns graph JSON |
 | `POST` | `/api/snippet` | Extract source code for a node |
 | `POST` | `/api/explain` | AI explanation for a node |
 | `POST` | `/api/chat` | Multi-turn AI conversation |
+| `POST` | `/api/chat/stream` | SSE streaming AI conversation |
 | `POST` | `/api/learning-path` | AI-suggested learning order |
+| `POST` | `/api/ghost-narrate` | Ghost Runner AI narration |
 
 ---
 
@@ -187,19 +229,37 @@ VibeGraph/
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python, FastAPI, NetworkX, `ast` stdlib |
-| AI | Groq API — Llama 3 (free tier) |
-| Frontend | React 19, React Flow, Vite |
-| Styling | Custom CSS — dark theme, glassmorphism |
-| Tests | pytest, 24 tests |
+| Backend | Python 3.12, FastAPI, NetworkX, `ast` stdlib |
+| AI | OpenRouter — Claude Haiku 4.5, Gemini Flash, GPT-5-mini, DeepSeek, Grok |
+| Frontend | React 19, React Flow, Vite 7 |
+| Styling | Custom CSS — dark/light themes, glassmorphism |
+| Testing | pytest (128 tests), Vitest (80 tests) |
+| Deploy | Fly.io (backend), Vercel (frontend) |
+| Security | Rate limiting, path traversal protection, zip bomb prevention, prompt sanitization |
 
 ---
 
 ## Tests
 
 ```bash
-pytest tests/ -v
+# Backend (128 tests)
+python -m pytest tests/ -v
+
+# Frontend (80 tests)
+cd explorer && npx vitest run
 ```
+
+---
+
+## Privacy & Data Isolation
+
+VibeGraph is designed with complete data isolation:
+
+- **No database** — No user accounts, no persistent storage on the server
+- **Ephemeral uploads** — Files are analyzed in a temporary directory and deleted immediately after processing
+- **Client-side persistence** — Analysis results are stored only in your browser's `localStorage`
+- **No cross-user visibility** — Each user's data is completely isolated; no one else can see your uploads
+- **Automatic cleanup** — Temporary upload directories are purged after 1 hour
 
 ---
 
