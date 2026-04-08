@@ -40,6 +40,7 @@ const exportBtnStyle = {
 const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }) => {
   const graphRef = useRef(null);
   const showToast = useToast();
+  const hasGraph = nodes.length > 0 || edges.length > 0;
 
   const handleExportPng = async () => {
     try {
@@ -112,6 +113,13 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
           SVG
         </button>
       </div>
+      {!hasGraph ? (
+        <div className="graph-empty-state" aria-live="polite">
+          <span className="graph-empty-kicker">Upload-first workspace</span>
+          <h2>Upload a project to start exploring.</h2>
+          <p>Your last uploaded graph will come back here after refresh.</p>
+        </div>
+      ) : null}
     </div>
   );
 };

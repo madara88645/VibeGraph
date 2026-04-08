@@ -14,10 +14,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-      },
-      '/graph_data.json': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
       }
     },
   },

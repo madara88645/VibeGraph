@@ -57,6 +57,15 @@ describe('GraphViewer', () => {
     expect(screen.getByTestId('react-flow')).toBeInTheDocument();
   });
 
+  it('shows an upload-first empty state when no graph has been loaded yet', () => {
+    renderViewer();
+
+    expect(screen.getByText('Upload a project to start exploring.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Your last uploaded graph will come back here after refresh.')
+    ).toBeInTheDocument();
+  });
+
   it('renders PNG export button', () => {
     renderViewer();
     expect(screen.getByTitle('Export as PNG')).toBeInTheDocument();

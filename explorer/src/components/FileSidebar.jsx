@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 const typeIcons = {
     function: '⚡',
@@ -7,24 +7,40 @@ const typeIcons = {
     default: '○',
 };
 
-const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCount, mobileOpen }) => {
+const FileSidebar = ({
+    files,
+    selectedFile,
+    onSelectFile,
+    nodeStats,
+    totalNodeCount,
+    mobileOpen,
+    fileDependencies,
+}) => {
     const [activeTab, setActiveTab] = useState('files');
-    const [deps, setDeps] = useState(null);
+    const deps = useMemo(() => {
+        if (!Array.isArray(fileDependencies) || fileDependencies.length === 0) {
+            return null;
+        }
 
-    // Load file_dependencies from graph_data.json
-    useEffect(() => {
-        const loadDeps = async () => {
-            try {
-                const res = await fetch('/graph_data.json');
-                if (!res.ok) return;
-                const data = await res.json();
-                setDeps(data.file_dependencies || null);
-            } catch {
-                // silently fail
+        const grouped = {};
+        fileDependencies.forEach((dependency) => {
+            const sourceFile = dependency.source_file || 'unknown';
+            if (!grouped[sourceFile]) {
+                grouped[sourceFile] = {
+                    imports: [],
+                    imports_from: [],
+                    imported_by: [],
+                };
             }
-        };
-        loadDeps();
-    }, []);
+
+            grouped[sourceFile].imports.push({
+                module: dependency.target_file,
+                names: dependency.imports || [],
+            });
+        });
+
+        return grouped;
+    }, [fileDependencies]);
 
     return (
         <div
@@ -130,7 +146,7 @@ const FileSidebar = ({ files, selectedFile, onSelectFile, nodeStats, totalNodeCo
                 >
                     {!deps && (
                         <div className="deps-empty">
-                            No dependency data. Run analysis with <code>--deps</code> flag.
+                            Dependency view appears after you upload and analyze a project.
                         </div>
                     )}
 

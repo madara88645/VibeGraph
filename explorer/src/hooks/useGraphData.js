@@ -1,68 +1,67 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getLayoutedElements } from '../utils/layout';
 
+function getInitialSelectedFile(nodes) {
+    const filesSet = new Set();
+    let entryFile = null;
+
+    nodes.forEach((node) => {
+        const file = node.data?.file;
+        if (!file) {
+            return;
+        }
+
+        filesSet.add(file);
+        if (node.data?.entry_point && !entryFile) {
+            entryFile = file;
+        }
+    });
+
+    return entryFile || [...filesSet][0] || null;
+}
+
+function readCachedGraph(cacheKey) {
+    const emptyGraph = {
+        nodes: [],
+        edges: [],
+        fileDependencies: null,
+        selectedFile: null,
+    };
+
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (!cached) {
+            return emptyGraph;
+        }
+
+        const { nodes, edges, fileDependencies } = JSON.parse(cached);
+        const safeNodes = Array.isArray(nodes) ? nodes : [];
+        const safeEdges = Array.isArray(edges) ? edges : [];
+        const safeDependencies = Array.isArray(fileDependencies) ? fileDependencies : null;
+
+        return {
+            nodes: safeNodes,
+            edges: safeEdges,
+            fileDependencies: safeDependencies,
+            selectedFile: getInitialSelectedFile(safeNodes),
+        };
+    } catch {
+        localStorage.removeItem(cacheKey);
+        return emptyGraph;
+    }
+}
+
 export function useGraphData(setNodes, setEdges) {
+    const cacheKey = 'vg_v1_graph';
+    const [initialGraph] = useState(() => readCachedGraph(cacheKey));
+
     // All graph data (unfiltered)
-    const [allNodes, setAllNodes] = useState([]);
-    const [allEdges, setAllEdges] = useState([]);
+    const [allNodes, setAllNodes] = useState(initialGraph.nodes);
+    const [allEdges, setAllEdges] = useState(initialGraph.edges);
+    const [fileDependencies, setFileDependencies] = useState(initialGraph.fileDependencies);
 
     // File selection
-    const [selectedFile, setSelectedFile] = useState(null);
-
-    // Load graph data
-    useEffect(() => {
-        const fetchData = async () => {
-            // Load cached graph data first for instant display
-            const cached = localStorage.getItem('vg_v1_graph');
-            if (cached) {
-                try {
-                    const { nodes, edges } = JSON.parse(cached);
-                    setAllNodes(nodes);
-                    setAllEdges(edges);
-                } catch { /* ignore */ }
-            }
-
-            try {
-                const response = await fetch('/graph_data.json');
-                if (!response.ok) return;
-                const data = await response.json();
-
-                const customNodes = data.nodes.map(n => ({
-                    ...n,
-                    type: 'custom',
-                    data: {
-                        ...n.data,
-                        file: n.data.file || n.data.original_data?.file || null,
-                        lineno: n.data.lineno || n.data.original_data?.lineno,
-                        entry_point: n.data.entry_point || false,
-                    }
-                }));
-
-                setAllNodes(customNodes);
-                setAllEdges(data.edges);
-
-                try {
-                    localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: data.edges }));
-                } catch { /* ignore */ }
-
-                // Auto-select first file that has an entry point, or just the first file
-                const filesSet = new Set();
-                let entryFile = null;
-                customNodes.forEach(n => {
-                    const f = n.data.file;
-                    if (f) {
-                        filesSet.add(f);
-                        if (n.data.entry_point && !entryFile) entryFile = f;
-                    }
-                });
-                setSelectedFile(entryFile || [...filesSet][0] || null);
-
-            } catch (error) {
-                console.error("Failed to fetch graph data:", error);
-            }
-        };
-        fetchData();
-    }, []);
+    const [selectedFile, setSelectedFile] = useState(initialGraph.selectedFile);
 
     // Compute file list and stats
     const { files, nodeStats } = useMemo(() => {
@@ -86,7 +85,7 @@ export function useGraphData(setNodes, setEdges) {
     }, [allNodes]);
 
     const handleUploadSuccess = useCallback((result, resetGhostStateCallback) => {
-        const { nodes: newNodes, edges: newEdges } = result;
+        const { nodes: newNodes, edges: newEdges, file_dependencies: newFileDependencies } = result;
 
         // Process nodes to match the "custom" type and add metadata
         const customNodes = newNodes.map(n => ({
@@ -107,15 +106,21 @@ export function useGraphData(setNodes, setEdges) {
         });
 
         const newFiles = [...filesSet];
-        if (newFiles.length > 0) {
-            setSelectedFile(newFiles[0]);
-        }
+        setSelectedFile(newFiles[0] || null);
 
         setAllNodes(customNodes);
         setAllEdges(newEdges);
+        setFileDependencies(Array.isArray(newFileDependencies) ? newFileDependencies : null);
 
         try {
-            localStorage.setItem('vg_v1_graph', JSON.stringify({ nodes: customNodes, edges: newEdges }));
+            localStorage.setItem(
+                cacheKey,
+                JSON.stringify({
+                    nodes: customNodes,
+                    edges: newEdges,
+                    fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
+                })
+            );
         } catch { /* ignore */ }
 
         // Provide a callback to reset external state (like ghost runner, selections)
@@ -224,6 +229,7 @@ export function useGraphData(setNodes, setEdges) {
         setSelectedFile,
         files,
         nodeStats,
+        fileDependencies,
         handleUploadSuccess
     };
 }
