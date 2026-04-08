@@ -9,7 +9,12 @@ from threading import RLock
 
 from dotenv import load_dotenv
 from openai import APIConnectionError, APITimeoutError, OpenAI, RateLimitError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 load_dotenv()
 
@@ -80,21 +85,18 @@ class OpenRouterTeacher:
     ):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         self.model_name = (
-            (model_name or os.getenv("OPENROUTER_DEFAULT_MODEL") or "").strip()
-            or "anthropic/claude-haiku-4.5"
-        )
+            model_name or os.getenv("OPENROUTER_DEFAULT_MODEL") or ""
+        ).strip() or "anthropic/claude-haiku-4.5"
         self.timeout_seconds = timeout_seconds or int(
             os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30")
         )
         self.base_url = base_url
         self.http_referer = (
-            (http_referer or os.getenv("OPENROUTER_HTTP_REFERER") or "").strip()
-            or None
-        )
+            http_referer or os.getenv("OPENROUTER_HTTP_REFERER") or ""
+        ).strip() or None
         self.app_title = (
-            (app_title or os.getenv("OPENROUTER_APP_TITLE") or "").strip()
-            or None
-        )
+            app_title or os.getenv("OPENROUTER_APP_TITLE") or ""
+        ).strip() or None
         self._explain_cache: OrderedDict[str, dict] = OrderedDict()
         self._cache_lock = RLock()
 

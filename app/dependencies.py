@@ -74,10 +74,7 @@ def resolve_model_name(requested_model: str | None) -> str:
     if model_name not in allowed_models:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Unsupported model. "
-                f"Allowed models: {', '.join(allowed_models)}"
-            ),
+            detail=(f"Unsupported model. Allowed models: {', '.join(allowed_models)}"),
         )
     return model_name
 
