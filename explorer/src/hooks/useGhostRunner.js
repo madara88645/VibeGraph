@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
+import { buildAiHeaders } from '../utils/aiClient';
+
 const TRAIL_LENGTH = 4;
 const DEFAULT_EDGE_STYLE = { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 };
 const GHOST_ACTIVE_EDGE_STYLE = { stroke: '#f43f5e', strokeWidth: 7 };
@@ -226,7 +228,14 @@ const strategies = {
 
 // ─── Hook ─────────────────────────────────────────────────────────────
 
-export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode) {
+export function useGhostRunner(
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    setCodePanelNode,
+    { aiApiKey = '', selectedModel = '', aiReady = true } = {}
+) {
     // Ghost Runner State
     const [isPlaying, setIsPlaying] = useState(false);
     const [activeNodeId, setActiveNodeId] = useState(null);
@@ -289,19 +298,22 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
 
     // ── Narration fetcher (non-blocking) ──
     const fetchNarration = useCallback((nodeId, previousNodeId) => {
+        if (!aiReady) return;
+
         const requestId = ++narrationRequestIdRef.current;
         const node = nodesMapRef.current.get(nodeId);
         if (!node?.data?.file) return;
 
         fetch('/api/ghost-narrate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: buildAiHeaders(aiApiKey),
             body: JSON.stringify({
                 node_id: nodeId,
                 file_path: node.data.file,
                 previous_node_id: previousNodeId,
                 strategy,
                 context_nodes: trailRef.current.slice(0, 3),
+                model: selectedModel || null,
             }),
         })
             .then(r => r.ok ? r.json() : null)
@@ -312,7 +324,7 @@ export function useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNod
                 }
             })
             .catch(() => { /* narration is optional, fail silently */ });
-    }, [strategy]);
+    }, [aiApiKey, aiReady, selectedModel, strategy]);
 
     // ── Apply visual classes to nodes and edges ──
     const applyVisuals = useCallback((newTrail, previousId, nextId) => {

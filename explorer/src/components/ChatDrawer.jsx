@@ -1,9 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
+import {
+  buildAiHeaders,
+  ensureAiReady,
+  fetchAiJson,
+  getFriendlyAiErrorMessage,
+} from '../utils/aiClient';
 import { consumeSseChunk } from '../utils/sse';
 
-const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
+const MISSING_KEY_MESSAGE =
+  'Open AI Settings and add your OpenRouter key before starting a chat.';
+
+const ChatDrawer = ({
+  selectedNode,
+  allNodes,
+  isOpen,
+  onToggle,
+  apiKey,
+  selectedModel,
+  aiReady,
+  onOpenAiSettings,
+}) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,16 +47,46 @@ const ChatDrawer = ({ selectedNode, allNodes, isOpen, onToggle }) => {
     try {
       const saved = localStorage.getItem(`vg_v1_chat_${selectedNode.id}`);
       setMessages(saved ? JSON.parse(saved) : []);
-    } catch { /* ignore */ }
+    } catch {
+      setMessages([]);
+    }
   }, [selectedNode?.id]);
+
+  const persistMessages = useCallback(
+    (nextMessages) => {
+      if (!selectedNode?.id) {
+        return;
+      }
+      try {
+        localStorage.setItem(`vg_v1_chat_${selectedNode.id}`, JSON.stringify(nextMessages));
+      } catch {
+        // Ignore storage write issues.
+      }
+    },
+    [selectedNode?.id]
+  );
 
   const sendMessage = useCallback(async () => {
     const text = inputText.trim();
-    if (!text || loading) return;
+    if (!text || loading) {
+      return;
+    }
+
+    if (!ensureAiReady(aiReady, onOpenAiSettings, MISSING_KEY_MESSAGE)) {
+      const promptMessages = [
+        ...messages,
+        { role: 'user', content: text },
+        { role: 'assistant', content: MISSING_KEY_MESSAGE },
+      ];
+      setMessages(promptMessages);
+      persistMessages(promptMessages);
+      setInputText('');
+      return;
+    }
 
     const userMsg = { role: 'user', content: text };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
+    const nextMessages = [...messages, userMsg];
+    setMessages([...nextMessages, { role: 'assistant', content: '' }]);
     setInputText('');
     setLoading(true);
 
@@ -65,45 +113,47 @@ Files included: ${fileNames.join(', ')}
 Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     }
 
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+    const requestBody = {
+      node_id: selectedNode?.id || null,
+      file_path: selectedNode?.data?.file || null,
+      project_context: projectContext,
+      question: text,
+      history: nextMessages.slice(-10),
+      model: selectedModel || null,
+    };
 
     try {
-      const requestBody = JSON.stringify({
-        node_id: selectedNode?.id || null,
-        file_path: selectedNode?.data?.file || null,
-        project_context: projectContext,
-        question: text,
-        history: newMessages.slice(-10),
-      });
-
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: requestBody,
+        headers: buildAiHeaders(apiKey),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok || !response.body) {
-        const fallbackResp = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const fallbackData = await fetchAiJson('/api/chat', {
+          apiKey,
           body: requestBody,
         });
-        const data = await fallbackResp.json();
-        const aiContent = data.answer || data.response || data.message || 'No response.';
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: 'assistant', content: aiContent };
-          return updated;
-        });
+        const aiContent =
+          fallbackData.answer ||
+          fallbackData.response ||
+          fallbackData.message ||
+          'No response.';
+        const updatedMessages = [...nextMessages, { role: 'assistant', content: aiContent }];
+        setMessages(updatedMessages);
+        persistMessages(updatedMessages);
       } else {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
         let streamDone = false;
+        let assistantContent = '';
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
 
           const chunk = decoder.decode(value, { stream: true });
           const parsed = consumeSseChunk(buffer, chunk);
@@ -115,15 +165,8 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
               break;
             }
 
-            setMessages((prev) => {
-              const updated = [...prev];
-              const last = updated[updated.length - 1];
-              updated[updated.length - 1] = {
-                ...last,
-                content: last.content + eventData,
-              };
-              return updated;
-            });
+            assistantContent += eventData;
+            setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
           }
 
           if (streamDone) {
@@ -137,41 +180,45 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             if (eventData === '[DONE]') {
               break;
             }
-
-            setMessages((prev) => {
-              const updated = [...prev];
-              const last = updated[updated.length - 1];
-              updated[updated.length - 1] = {
-                ...last,
-                content: last.content + eventData,
-              };
-              return updated;
-            });
+            assistantContent += eventData;
           }
+          setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
         }
+
+        persistMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
       }
-    } catch (err) {
-      console.error('Chat error:', err);
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
+    } catch (error) {
+      const errorMessage = getFriendlyAiErrorMessage(
+        error,
+        'Could not reach the backend. Is serve.py running?'
+      );
+      if (errorMessage.toLowerCase().includes('api key')) {
+        onOpenAiSettings?.(errorMessage);
+      }
+      const updatedMessages = [
+        ...nextMessages,
+        {
           role: 'assistant',
-          content: '\u26A0\uFE0F Could not reach the backend. Is serve.py running?',
-        };
-        return updated;
-      });
+          content: errorMessage,
+        },
+      ];
+      setMessages(updatedMessages);
+      persistMessages(updatedMessages);
     } finally {
       setLoading(false);
-      if (selectedNode?.id) {
-        setMessages((prev) => {
-          try {
-            localStorage.setItem(`vg_v1_chat_${selectedNode.id}`, JSON.stringify(prev));
-          } catch { /* ignore */ }
-          return prev;
-        });
-      }
     }
-  }, [allNodes, inputText, loading, messages, selectedNode]);
+  }, [
+    aiReady,
+    allNodes,
+    apiKey,
+    inputText,
+    loading,
+    messages,
+    onOpenAiSettings,
+    persistMessages,
+    selectedModel,
+    selectedNode,
+  ]);
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -183,7 +230,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
-        <span aria-hidden="true">{'\uD83D\uDCAC'}</span>
+        <span aria-hidden="true">{'Chat'}</span>
       </button>
     );
   }
@@ -192,27 +239,40 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     <div className="chat-drawer">
       <div className="chat-drawer-header">
         <div className="chat-drawer-title">
-          <span aria-hidden="true">{'\uD83D\uDCAC'}</span>
+          <span aria-hidden="true">{'Chat'}</span>
           <span>Vibe Chat</span>
         </div>
-        {selectedNode && (
+        {selectedNode ? (
           <span className="chat-context-badge">
             Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
           </span>
-        )}
+        ) : null}
         <button className="chat-drawer-close" onClick={onToggle} aria-label="Close Chat">
-          <span aria-hidden="true">{'\u2715'}</span>
+          <span aria-hidden="true">x</span>
         </button>
       </div>
 
       <div className="chat-messages">
-        {messages.length === 0 && !loading && (
+        {messages.length === 0 && !loading ? (
           <div className="chat-empty">
-            {selectedNode
-              ? `Ask anything about "${selectedNode.data?.label || selectedNode.id}"…`
-              : 'Ask a general question about the uploaded project!'}
+            {!aiReady ? (
+              <>
+                <p>Open AI Settings and add your OpenRouter key to start chatting.</p>
+                <button
+                  type="button"
+                  className="header-action-btn"
+                  onClick={() => onOpenAiSettings?.(MISSING_KEY_MESSAGE)}
+                >
+                  Open AI Settings
+                </button>
+              </>
+            ) : selectedNode ? (
+              `Ask anything about "${selectedNode.data?.label || selectedNode.id}"...`
+            ) : (
+              'Ask a general question about the uploaded project!'
+            )}
           </div>
-        )}
+        ) : null}
 
         {messages.map((msg, idx) => (
           <div key={idx} className={`chat-message chat-message-${msg.role}`}>
@@ -226,15 +286,15 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           </div>
         ))}
 
-        {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
+        {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
           <div className="chat-message chat-message-assistant">
             <div className="chat-bubble chat-typing">
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
             </div>
           </div>
-        )}
+        ) : null}
 
         <div ref={messagesEndRef} />
       </div>
@@ -243,7 +303,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         <textarea
           ref={inputRef}
           className="chat-input"
-          placeholder="Ask a question…"
+          placeholder="Ask a question..."
           aria-label="Chat input"
           value={inputText}
           onChange={(event) => setInputText(event.target.value)}
@@ -267,7 +327,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             disabled={loading || !inputText.trim()}
             aria-label="Send message"
           >
-            <span aria-hidden="true">{'\u2191'}</span>
+            <span aria-hidden="true">{'^'}</span>
           </button>
         </span>
       </div>

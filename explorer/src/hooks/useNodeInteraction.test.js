@@ -1,84 +1,131 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useNodeInteraction } from './useNodeInteraction';
 
 describe('useNodeInteraction - explanation cache', () => {
-    beforeEach(() => {
-        vi.restoreAllMocks();
-        localStorage.clear();
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const mockNode = {
+    id: 'test_func',
+    data: { file: 'test.py', label: 'test_func' },
+  };
+
+  it('caches explanation and skips fetch on second call with same params', async () => {
+    const mockResponse = { explanation: { technical: 'cached result' } };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
     });
 
-    const mockNode = {
-        id: 'test_func',
-        data: { file: 'test.py', label: 'test_func' },
-    };
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
 
-    it('caches explanation and skips fetch on second call with same params', async () => {
-        const mockResponse = { explanation: { technical: 'cached result' } };
-        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-            json: () => Promise.resolve(mockResponse),
-        });
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(result.current.explanation).toEqual(mockResponse);
 
-        const { result } = renderHook(() => useNodeInteraction());
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
 
-        // First call — should fetch
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-        expect(result.current.explanation).toEqual(mockResponse);
+  it('fetches again for different tab or level combination', async () => {
+    const mockResponse1 = { explanation: { technical: 'tech beginner' } };
+    const mockResponse2 = { explanation: { analogy: 'analogy beginner' } };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse1),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse2),
+      });
 
-        // Second call with same params — should use cache
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(1); // No additional fetch
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'analogy', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens AI settings prompt instead of fetching when key is missing', async () => {
+    const onRequireAiKey = vi.fn();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: '',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: false,
+        onRequireAiKey,
+      })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
     });
 
-    it('fetches again for different tab/level combination', async () => {
-        const mockResponse1 = { explanation: { technical: 'tech beginner' } };
-        const mockResponse2 = { explanation: { analogy: 'analogy beginner' } };
-        const fetchSpy = vi.spyOn(globalThis, 'fetch')
-            .mockResolvedValueOnce({ json: () => Promise.resolve(mockResponse1) })
-            .mockResolvedValueOnce({ json: () => Promise.resolve(mockResponse2) });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(onRequireAiKey).toHaveBeenCalledTimes(1);
+    expect(result.current.explanation).toMatch(/Open AI Settings/i);
+  });
 
-        const { result } = renderHook(() => useNodeInteraction());
-
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-
-        // Different type — should fetch again
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'analogy', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(2);
+  it('clears cache on resetInteractionState', async () => {
+    const mockResponse = { explanation: { technical: 'result' } };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
     });
 
-    it('clears cache on resetInteractionState', async () => {
-        const mockResponse = { explanation: { technical: 'result' } };
-        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-            json: () => Promise.resolve(mockResponse),
-        });
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
 
-        const { result } = renderHook(() => useNodeInteraction());
-
-        // Populate cache
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-
-        // Reset clears cache
-        act(() => {
-            result.current.resetInteractionState();
-        });
-
-        // Same params should fetch again after reset
-        await act(async () => {
-            await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
-        });
-        expect(fetchSpy).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
     });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.resetInteractionState();
+    });
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
