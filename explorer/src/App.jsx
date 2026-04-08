@@ -201,6 +201,7 @@ function AppInner() {
     setSelectedFile,
     files,
     nodeStats,
+    fileDependencies,
     handleUploadSuccess,
   } = useGraphData(setNodes, setEdges);
 
@@ -261,6 +262,7 @@ function AppInner() {
         nodeStats={nodeStats}
         totalNodeCount={allNodes.length}
         mobileOpen={sidebarOpen}
+        fileDependencies={fileDependencies}
       />
 
       <div className="main-area">
