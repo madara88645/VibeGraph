@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getLayoutedElements } from '../utils/layout';
 
+const GRAPH_CACHE_SCHEMA_VERSION = 2;
+const GRAPH_CACHE_SOURCE = 'user_upload';
+
 function getInitialSelectedFile(nodes) {
     const filesSet = new Set();
     let entryFile = null;
@@ -34,7 +37,19 @@ function readCachedGraph(cacheKey) {
             return emptyGraph;
         }
 
-        const { nodes, edges, fileDependencies } = JSON.parse(cached);
+        const {
+            schemaVersion,
+            source,
+            nodes,
+            edges,
+            fileDependencies,
+        } = JSON.parse(cached);
+
+        if (schemaVersion !== GRAPH_CACHE_SCHEMA_VERSION || source !== GRAPH_CACHE_SOURCE) {
+            localStorage.removeItem(cacheKey);
+            return emptyGraph;
+        }
+
         const safeNodes = Array.isArray(nodes) ? nodes : [];
         const safeEdges = Array.isArray(edges) ? edges : [];
         const safeDependencies = Array.isArray(fileDependencies) ? fileDependencies : null;
@@ -116,6 +131,8 @@ export function useGraphData(setNodes, setEdges) {
             localStorage.setItem(
                 cacheKey,
                 JSON.stringify({
+                    schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
+                    source: GRAPH_CACHE_SOURCE,
                     nodes: customNodes,
                     edges: newEdges,
                     fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
