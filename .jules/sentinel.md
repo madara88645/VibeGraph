@@ -27,3 +27,8 @@
 **Vulnerability:** Pydantic `max_length` constraints are evaluated *after* `mode="before"` validators. Calling regex-heavy functions like `sanitize_llm_input` with `truncate=False` inside these validators allowed attackers to submit multimegabyte strings that bypassed Pydantic's length checks, causing severe CPU exhaustion (ReDoS).
 **Learning:** `mode="before"` validators process the raw, unbounded input before any built-in Pydantic length constraints are applied. Any heavy computation (like regex) performed in this phase without explicit internal bounds is a vector for Asymmetric DoS.
 **Prevention:** Always enforce strict length limits natively within the `mode="before"` validator itself (e.g., passing `truncate=True` and an explicit `max_length` to the sanitizer) rather than relying on Pydantic to filter the size post-processing.
+
+## 2024-03-18 - Internal Information Exposure via Unhandled Parsing Errors
+**Vulnerability:** The AI integration modules (`openrouter_teacher.py`) were already catching `ValueError` during JSON parsing of LLM outputs, but I reinforced the pattern to ensure that raw exceptions or malformed AI responses are never sent back to the client directly.
+**Learning:** Proper security means never trusting external input (like LLM outputs) to be perfectly formed, and when it fails, failing securely by providing generic, safe error messages to the client while logging internally.
+**Prevention:** Catch explicit errors like `ValueError` when parsing LLM JSON, log the raw exception for observability (`logging.error(..., exc_info=True)`), and always return a structured fallback response that matches the expected endpoint contract.
