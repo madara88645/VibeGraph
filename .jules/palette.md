@@ -5,3 +5,7 @@
 ## 2024-05-16 - Tooltips on Disabled Buttons
 **Learning:** Native `title` tooltips do not appear on standard browsers when placed directly on a `disabled` HTML element, which degrades UX by removing explanatory context.
 **Action:** Always wrap `disabled` buttons or inputs in a container element (like a `<span>` with `display: 'inline-flex'`) and apply the `title` attribute to the wrapper instead of the interactive element itself.
+
+## 2024-05-17 - Accessible Combobox Pattern for Search
+**Learning:** When implementing a search input with auto-complete or dropdown suggestions, using standard elements like inputs and buttons is not enough for screen readers. They need to understand the relationship between the text input and the list of suggestions.
+**Action:** Always apply the ARIA combobox pattern to search components. Give the input `role="combobox"`, `aria-expanded`, `aria-controls` (linking to the listbox ID), `aria-autocomplete="list"`, and `aria-activedescendant` (linking to the active option ID). The suggestion container should have `role="listbox"` and items should have `role="option"` with `aria-selected` reflecting keyboard focus.

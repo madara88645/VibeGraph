@@ -80,6 +80,8 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         return '⚡';
     };
 
+    const listboxId = "search-results-listbox";
+
     return (
         <div className="search-bar" ref={containerRef}>
             <div className="search-input-wrapper">
@@ -87,6 +89,11 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                 <input
                     ref={inputRef}
                     type="text"
+                    role="combobox"
+                    aria-expanded={isOpen}
+                    aria-controls={isOpen ? listboxId : undefined}
+                    aria-autocomplete="list"
+                    aria-activedescendant={isOpen && results[highlightIdx] ? `search-result-${results[highlightIdx].id}` : undefined}
                     className="search-input"
                     placeholder="Search nodes... (Ctrl+K)"
                     aria-label="Search nodes"
@@ -101,10 +108,13 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
             </div>
 
             {isOpen && results.length > 0 && (
-                <div className="search-results">
+                <div id={listboxId} role="listbox" className="search-results">
                     {results.map((node, idx) => (
                         <button
                             key={node.id}
+                            id={`search-result-${node.id}`}
+                            role="option"
+                            aria-selected={idx === highlightIdx}
                             className={`search-result-item ${idx === highlightIdx ? 'highlighted' : ''}`}
                             onClick={() => handleSelect(node)}
                             onMouseEnter={() => setHighlightIdx(idx)}
