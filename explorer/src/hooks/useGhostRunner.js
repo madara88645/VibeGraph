@@ -85,9 +85,19 @@ const strategies = {
             // Prefer unvisited entry points, then hubs
             const unvisitedEntries = allUnvisited.filter(n => n.data?.entry_point);
             if (unvisitedEntries.length > 0) return unvisitedEntries[0].id;
-            // Sort by degree (hubs first)
-            allUnvisited.sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-            return allUnvisited[0].id;
+
+            // Find highest degree unvisited node (hubs first)
+            let bestUnvisited = null;
+            let bestDegree = -1;
+            for (let i = 0; i < allUnvisited.length; i++) {
+                const n = allUnvisited[i];
+                const degree = degreeMap.get(n.id) || 0;
+                if (degree > bestDegree) {
+                    bestDegree = degree;
+                    bestUnvisited = n;
+                }
+            }
+            return bestUnvisited?.id || null;
         }
 
         // Everything visited — pick random
@@ -134,27 +144,59 @@ const strategies = {
     hubsFirst(ctx) {
         const { currentActiveId, nodes, visitedSet, degreeMap } = ctx;
         if (!currentActiveId) {
-            // Pick highest degree unvisited node
-            const sorted = [...nodes]
-                .filter(n => n.data?.file)
-                .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-            const unvisited = sorted.find(n => !visitedSet.has(n.id));
-            return unvisited?.id || sorted[0]?.id || null;
+            let bestUnvisited = null;
+            let bestUnvisitedDegree = -1;
+            let bestOverall = null;
+            let bestOverallDegree = -1;
+
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                if (n.data?.file) {
+                    const degree = degreeMap.get(n.id) || 0;
+                    if (degree > bestOverallDegree) {
+                        bestOverallDegree = degree;
+                        bestOverall = n;
+                    }
+                    if (!visitedSet.has(n.id) && degree > bestUnvisitedDegree) {
+                        bestUnvisitedDegree = degree;
+                        bestUnvisited = n;
+                    }
+                }
+            }
+            return bestUnvisited?.id || bestOverall?.id || null;
         }
 
         // Follow edges, prefer higher-degree targets
         const targets = getOutgoingTargets(ctx);
-        const unvisited = targets
-            .filter(n => !visitedSet.has(n.id))
-            .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
+        let bestTarget = null;
+        let bestTargetDegree = -1;
+        for (let i = 0; i < targets.length; i++) {
+            const n = targets[i];
+            if (!visitedSet.has(n.id)) {
+                const degree = degreeMap.get(n.id) || 0;
+                if (degree > bestTargetDegree) {
+                    bestTargetDegree = degree;
+                    bestTarget = n;
+                }
+            }
+        }
 
-        if (unvisited.length > 0) return unvisited[0].id;
+        if (bestTarget) return bestTarget.id;
 
         // Jump to next highest-degree unvisited
-        const allSorted = [...nodes]
-            .filter(n => n.data?.file && !visitedSet.has(n.id))
-            .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-        return allSorted[0]?.id || null;
+        let bestUnvisited = null;
+        let bestDegree = -1;
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (n.data?.file && !visitedSet.has(n.id)) {
+                const degree = degreeMap.get(n.id) || 0;
+                if (degree > bestDegree) {
+                    bestDegree = degree;
+                    bestUnvisited = n;
+                }
+            }
+        }
+        return bestUnvisited?.id || null;
     },
 
     // ── By File: Visit all nodes in one file before moving to the next ──
