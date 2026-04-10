@@ -90,6 +90,10 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     className="search-input"
                     placeholder="Search nodes... (Ctrl+K)"
                     aria-label="Search nodes"
+                    role="combobox"
+                    aria-expanded={isOpen}
+                    aria-controls="search-results-list"
+                    aria-autocomplete="list"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}
@@ -101,10 +105,12 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
             </div>
 
             {isOpen && results.length > 0 && (
-                <div className="search-results">
+                <div id="search-results-list" className="search-results" role="listbox">
                     {results.map((node, idx) => (
                         <button
                             key={node.id}
+                            role="option"
+                            aria-selected={idx === highlightIdx}
                             className={`search-result-item ${idx === highlightIdx ? 'highlighted' : ''}`}
                             onClick={() => handleSelect(node)}
                             onMouseEnter={() => setHighlightIdx(idx)}
