@@ -135,11 +135,16 @@ const strategies = {
         const { currentActiveId, nodes, visitedSet, degreeMap } = ctx;
         if (!currentActiveId) {
             // Pick highest degree unvisited node
-            const sorted = [...nodes]
-                .filter(n => n.data?.file)
+            const navigableNodes = [...nodes].filter(n => n.data?.file);
+            const unvisitedSorted = navigableNodes
+                .filter(n => !visitedSet.has(n.id))
                 .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-            const unvisited = sorted.find(n => !visitedSet.has(n.id));
-            return unvisited?.id || sorted[0]?.id || null;
+
+            if (unvisitedSorted.length > 0) return unvisitedSorted[0].id;
+
+            // Fallback: most connected node overall
+            const allSorted = navigableNodes.sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
+            return allSorted[0]?.id || null;
         }
 
         // Follow edges, prefer higher-degree targets
