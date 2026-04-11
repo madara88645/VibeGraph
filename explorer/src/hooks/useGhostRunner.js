@@ -87,9 +87,19 @@ const strategies = {
             // Prefer unvisited entry points, then hubs
             const unvisitedEntries = allUnvisited.filter(n => n.data?.entry_point);
             if (unvisitedEntries.length > 0) return unvisitedEntries[0].id;
-            // Sort by degree (hubs first)
-            allUnvisited.sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-            return allUnvisited[0].id;
+
+            // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N log N) sort with O(N) linear scan
+            let maxNode = null;
+            let maxDegree = -1;
+            for (let i = 0; i < allUnvisited.length; i++) {
+                const node = allUnvisited[i];
+                const degree = degreeMap.get(node.id) || 0;
+                if (degree > maxDegree) {
+                    maxDegree = degree;
+                    maxNode = node;
+                }
+            }
+            return maxNode?.id || allUnvisited[0].id;
         }
 
         // Everything visited — pick random
@@ -136,27 +146,63 @@ const strategies = {
     hubsFirst(ctx) {
         const { currentActiveId, nodes, visitedSet, degreeMap } = ctx;
         if (!currentActiveId) {
-            // Pick highest degree unvisited node
-            const sorted = [...nodes]
-                .filter(n => n.data?.file)
-                .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-            const unvisited = sorted.find(n => !visitedSet.has(n.id));
-            return unvisited?.id || sorted[0]?.id || null;
+            // Pick highest degree unvisited node (or highest degree overall if all visited)
+            // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N log N) sort with O(N) linear scans
+            let maxUnvisitedNode = null;
+            let maxUnvisitedDegree = -1;
+            let maxVisitedNode = null;
+            let maxVisitedDegree = -1;
+
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                if (n.data?.file) {
+                    const degree = degreeMap.get(n.id) || 0;
+                    if (!visitedSet.has(n.id)) {
+                        if (degree > maxUnvisitedDegree) {
+                            maxUnvisitedDegree = degree;
+                            maxUnvisitedNode = n;
+                        }
+                    } else {
+                        if (degree > maxVisitedDegree) {
+                            maxVisitedDegree = degree;
+                            maxVisitedNode = n;
+                        }
+                    }
+                }
+            }
+            return maxUnvisitedNode?.id || maxVisitedNode?.id || null;
         }
 
         // Follow edges, prefer higher-degree targets
         const targets = getOutgoingTargets(ctx);
-        const unvisited = targets
-            .filter(n => !visitedSet.has(n.id))
-            .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-
-        if (unvisited.length > 0) return unvisited[0].id;
+        let bestTarget = null;
+        let bestDegree = -1;
+        for (let i = 0; i < targets.length; i++) {
+            const n = targets[i];
+            if (!visitedSet.has(n.id)) {
+                const degree = degreeMap.get(n.id) || 0;
+                if (degree > bestDegree) {
+                    bestDegree = degree;
+                    bestTarget = n;
+                }
+            }
+        }
+        if (bestTarget) return bestTarget.id;
 
         // Jump to next highest-degree unvisited
-        const allSorted = [...nodes]
-            .filter(n => n.data?.file && !visitedSet.has(n.id))
-            .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0));
-        return allSorted[0]?.id || null;
+        let nextJumpNode = null;
+        let nextJumpDegree = -1;
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (n.data?.file && !visitedSet.has(n.id)) {
+                const degree = degreeMap.get(n.id) || 0;
+                if (degree > nextJumpDegree) {
+                    nextJumpDegree = degree;
+                    nextJumpNode = n;
+                }
+            }
+        }
+        return nextJumpNode?.id || null;
     },
 
     // ── By File: Visit all nodes in one file before moving to the next ──
