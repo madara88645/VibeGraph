@@ -96,7 +96,7 @@ def upload_project(
 
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
-                    tmp_dir_abs = os.path.abspath(tmp_dir)
+                    tmp_dir_real = os.path.realpath(tmp_dir)
                     safe_members = []
                     total_size = 0
                     file_count = 0
@@ -109,13 +109,17 @@ def upload_project(
                             )
 
                         safe_filename = member.filename.lstrip("/\\")
-                        extracted_path = os.path.abspath(
-                            os.path.join(tmp_dir_abs, safe_filename)
+                        extracted_path = os.path.realpath(
+                            os.path.join(tmp_dir_real, safe_filename)
                         )
-                        if (
-                            not extracted_path.startswith(tmp_dir_abs + os.sep)
-                            and extracted_path != tmp_dir_abs
-                        ):
+
+                        try:
+                            if (
+                                os.path.commonpath([tmp_dir_real, extracted_path])
+                                != tmp_dir_real
+                            ):
+                                raise ValueError("Path traversal detected")
+                        except ValueError:
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
