@@ -11,3 +11,10 @@
 **Action:** Pre-compute a `frozenset` of all local python modules using a single directory scan (`os.walk`), and perform O(1) set membership lookups instead of hitting the filesystem for each import.## 2024-11-20 - O(N log N) Array Sorts in High-Frequency Execution Paths
 **Learning:** In React hooks like `useGhostRunner`, using `[...array].filter().sort().find()` inside high-frequency interval ticks introduces significant overhead due to object cloning and O(N log N) sorting just to find a single maximum element.
 **Action:** Replace `O(N log N)` array sorts with `O(N)` single-pass linear loops that track tracking variables when searching for a single element (e.g., node with the highest degree). Explicitly track default states (like `> -1` for non-negative graph degrees) to cleanly preserve original fallback and error behaviors.
+## 2024-05-24 - Efficient Path Normalization
+**Learning:** In path parsing functions like `normalize_uploaded_filename`, using `split("/")` repeatedly and creating multiple intermediate lists before checking for `".." ` causes measurable allocation overhead.
+**Action:** Use a single `for` loop over `split("/")` to process segments and check for `".." ` early.
+
+## 2024-05-24 - Pre-compiled Regex over String Generator Expressions
+**Learning:** Checking path segments with a generator expression (`any(part.startswith('.') for part in parts)`) causes significant overhead in high-frequency functions like `is_safe_path` due to list allocation from `split()` and generator setup in Python.
+**Action:** Replace `split()` and `any()` loops with a single C-optimized `re.search()` using a pre-compiled regular expression (like `HIDDEN_RE`).
