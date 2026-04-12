@@ -136,14 +136,6 @@ class CodeAnalyzer:
         while stack:
             current_dir = stack.pop()
 
-            # Skip venv/node_modules/etc just in case they are nested oddly
-            if (
-                "site-packages" in current_dir
-                or "node_modules" in current_dir
-                or "__pycache__" in current_dir
-            ):
-                continue
-
             try:
                 with os.scandir(current_dir) as it:
                     for entry in it:
