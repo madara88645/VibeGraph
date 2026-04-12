@@ -70,7 +70,7 @@ const AISettingsModal = ({
             onClick={onClose}
             aria-label="Close AI Settings"
           >
-            x
+            <span aria-hidden="true">x</span>
           </button>
         </div>
 
