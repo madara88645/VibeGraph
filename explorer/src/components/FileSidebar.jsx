@@ -106,7 +106,7 @@ const FileSidebar = ({
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
-                                        <span className="file-name">{shortName}</span>
+                                        <span className="file-name" title={file}>{shortName}</span>
                                         <span className="file-count">{stats.count || 0}</span>
                                     </div>
                                     {dirName && (
@@ -167,7 +167,7 @@ const FileSidebar = ({
                                     onClick={() => onSelectFile(file)}
                                 >
                                     <span className="deps-file-icon" aria-hidden="true">📄</span>
-                                    <span className="deps-file-name">{shortName}</span>
+                                    <span className="deps-file-name" title={file}>{shortName}</span>
                                 </button>
 
                                 {imports.length > 0 && (
