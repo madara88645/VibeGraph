@@ -146,8 +146,8 @@ class CodeAnalyzer:
                             result = self._analyze_single_file(entry.path, merge=True)
                             if "graph" in result:
                                 graphs.append(result["graph"])
-            except OSError as e:
-                self.errors.append(f"Error reading directory {current_dir}: {e}")
+            except OSError:
+                self.errors.append("Error reading directory structure.")
 
         if graphs:
             self.graph = nx.compose_all(graphs)
@@ -162,8 +162,9 @@ class CodeAnalyzer:
     def _analyze_single_file(
         self, file_path: str, merge: bool = False
     ) -> dict[str, Any]:
+        safe_name = os.path.basename(file_path)
         if os.path.getsize(file_path) > MAX_FILE_SIZE:
-            error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {file_path}"
+            error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_name}"
             if merge:
                 self.errors.append(error_msg)
                 return {}
@@ -172,14 +173,14 @@ class CodeAnalyzer:
         with open(file_path, encoding="utf-8") as f:
             try:
                 tree = ast.parse(f.read(), filename=file_path)
-            except SyntaxError as e:
+            except SyntaxError:
                 # In directory mode, we might just log this and continue
                 if merge:
-                    error_msg = f"Syntax error in {file_path}: {e}"
+                    error_msg = f"Syntax error in {safe_name}"
                     print(error_msg)
                     self.errors.append(error_msg)
                     return {}
-                return {"error": f"Syntax error in {file_path}: {e}"}
+                return {"error": f"Syntax error in {safe_name}"}
 
         visitor = CallGraphVisitor(file_path)
         visitor.visit(tree)
@@ -221,12 +222,13 @@ class CodeAnalyzer:
         Each dependency: ``{"module": str, "names": [str], "is_local": bool}``
         """
         resolved = os.path.abspath(file_path)
+        safe_name = os.path.basename(file_path)
         if not os.path.isfile(resolved):
-            return {"error": f"File not found: {file_path}"}
+            return {"error": f"File not found: {safe_name}"}
 
         if os.path.getsize(resolved) > MAX_FILE_SIZE:
             return {
-                "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {file_path}"
+                "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_name}"
             }
 
         if project_root is None:
@@ -236,8 +238,8 @@ class CodeAnalyzer:
         try:
             with open(resolved, encoding="utf-8") as f:
                 tree = ast.parse(f.read(), filename=resolved)
-        except SyntaxError as e:
-            return {"error": f"Syntax error in {file_path}: {e}"}
+        except SyntaxError:
+            return {"error": f"Syntax error in {safe_name}"}
 
         dependencies: list[dict[str, Any]] = []
 
