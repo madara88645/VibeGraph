@@ -59,7 +59,8 @@ def _get_parsed_ast(
         if e.offset is not None:
             location_parts.append(f"column {e.offset}")
         location = f" ({', '.join(location_parts)})" if location_parts else ""
-        return source, None, None, None, f"# Syntax error in file: {e.msg}{location}"
+        # Provide a generic, safe error message to avoid information exposure
+        return source, None, None, None, f"# Syntax error in file.{location}"
 
     lines = source.splitlines()
     nodes = {}
