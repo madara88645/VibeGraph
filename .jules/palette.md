@@ -9,3 +9,7 @@
 ## 2024-05-17 - Accessible Combobox Pattern for Search
 **Learning:** When implementing a search input with auto-complete or dropdown suggestions, using standard elements like inputs and buttons is not enough for screen readers. They need to understand the relationship between the text input and the list of suggestions.
 **Action:** Always apply the ARIA combobox pattern to search components. Give the input `role="combobox"`, `aria-expanded`, `aria-controls` (linking to the listbox ID), `aria-autocomplete="list"`, and `aria-activedescendant` (linking to the active option ID). The suggestion container should have `role="listbox"` and items should have `role="option"` with `aria-selected` reflecting keyboard focus.
+
+## 2024-05-18 - ARIA Hidden on Decorative Button Characters
+**Learning:** Decorative text characters like "x" inside buttons can confuse screen readers if an `aria-label` is already present on the parent button. The screen reader will announce both the label and the text character sequentially.
+**Action:** Always add `aria-hidden="true"` to decorative characters or symbols when wrapping them in a button that receives a descriptive `aria-label`.
