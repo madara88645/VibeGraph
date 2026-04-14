@@ -68,6 +68,7 @@ const AISettingsModal = ({
           <button
             className="ai-settings-close"
             onClick={onClose}
+            title="Close AI Settings"
             aria-label="Close AI Settings"
           >
             x

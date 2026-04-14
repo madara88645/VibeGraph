@@ -247,7 +247,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
           </span>
         ) : null}
-        <button className="chat-drawer-close" onClick={onToggle} aria-label="Close Chat">
+        <button className="chat-drawer-close" onClick={onToggle} title="Close Chat" aria-label="Close Chat">
           <span aria-hidden="true">x</span>
         </button>
       </div>
