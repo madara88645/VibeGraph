@@ -19,3 +19,7 @@
 ## 2025-02-20 - Array slice over-fetching overhead
 **Learning:** In React components that perform fuzzy search filtering over large datasets (like `SearchBar.jsx` evaluating thousands of nodes), using `array.filter(condition).slice(0, K)` creates a massive hidden O(N) performance bottleneck because it evaluates the condition against the entire array before discarding all but the first K results.
 **Action:** Replace `.filter().slice()` chains with standard `for` loops and an early `break` condition when the required number of top-K results is reached. This drops the execution time from an unconditional O(N) down to a best-case O(K).
+
+## 2025-02-20 - O(N) Array Iteration Chain Bottleneck
+**Learning:** In React hooks, calculating complex derived state by chaining multiple `array.filter()`, `array.map()`, and `array.forEach()` operations creates hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace multiple O(N) array method chains with a single iterative `for` loop that accumulates all required metrics in a single O(N) pass, significantly reducing CPU overhead and memory allocations.
