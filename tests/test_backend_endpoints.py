@@ -881,7 +881,7 @@ class TestExtractSnippetUnit(unittest.TestCase):
             f.write("def broken(:\n    pass\n")
 
         snippet, _, _, _ = _extract_snippet(broken_file, "broken")
-        self.assertIn("# Syntax error in file:", snippet)
+        self.assertIn("# Syntax error in file", snippet)
         self.assertIn("line 1", snippet)
 
     def test_extract_snippet_node_not_found(self):

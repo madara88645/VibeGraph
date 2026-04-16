@@ -28,9 +28,10 @@ def suggest_learning_path(request: Request, path_request: LearningPathRequest):
         raise HTTPException(status_code=403, detail="Access denied")
 
     if not os.path.isfile(path_request.file_path):
+        safe_path = os.path.basename(path_request.file_path)
         raise HTTPException(
             status_code=404,
-            detail=f"File not found: {path_request.file_path}",
+            detail=f"File not found: {safe_path}",
         )
 
     result = CodeAnalyzer().analyze_file(path_request.file_path)
