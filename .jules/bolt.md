@@ -19,3 +19,7 @@
 ## 2025-02-20 - Array slice over-fetching overhead
 **Learning:** In React components that perform fuzzy search filtering over large datasets (like `SearchBar.jsx` evaluating thousands of nodes), using `array.filter(condition).slice(0, K)` creates a massive hidden O(N) performance bottleneck because it evaluates the condition against the entire array before discarding all but the first K results.
 **Action:** Replace `.filter().slice()` chains with standard `for` loops and an early `break` condition when the required number of top-K results is reached. This drops the execution time from an unconditional O(N) down to a best-case O(K).
+
+## 2024-05-13 - Array map over-fetching overhead
+**Learning:** In React components that evaluate data arrays to build summary lists, combining `.filter(condition).slice(0, K).map()` introduces an unconditional O(N) performance bottleneck because `.filter()` processes the entire array before `.slice()` applies the limit.
+**Action:** Replace `.filter().slice().map()` chains with standard `for` loops and an early `break` condition when the desired K count is reached. This drops the execution time to a best-case O(K), drastically improving responsiveness when traversing massive node arrays.
