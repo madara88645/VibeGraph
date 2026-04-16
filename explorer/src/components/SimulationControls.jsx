@@ -56,7 +56,7 @@ const SimulationControls = ({
             {/* Guide Popover */}
             {showGuide && (
                 <div className="sim-guide">
-                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide"><span aria-hidden="true">✕</span></button>
+                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide" title="Close guide"><span aria-hidden="true">✕</span></button>
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
                     <ul>
