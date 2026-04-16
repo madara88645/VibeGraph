@@ -116,7 +116,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     {typeConfig.icon} {typeConfig.label}
                 </span>
 
-                <span className="ep-title">
+                <span className="ep-title" title={node.data.label}>
                     {node.data.label}
                 </span>
 
@@ -173,7 +173,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             {/* Footer */}
             {(node.data.file || node.data.original_data?.file) && (
                 <div className="ep-footer">
-                    <span>📄 {node.data.file || node.data.original_data?.file}</span>
+                    <span title={node.data.file || node.data.original_data?.file}>📄 {node.data.file || node.data.original_data?.file}</span>
                     {(node.data.lineno || node.data.original_data?.lineno) && (
                         <span>L{node.data.lineno || node.data.original_data?.lineno}</span>
                     )}

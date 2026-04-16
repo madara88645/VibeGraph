@@ -127,9 +127,9 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                         >
                             <span className="search-result-icon" aria-hidden="true">{typeIcon(node)}</span>
                             <div className="search-result-text">
-                                <span className="search-result-label">{node.data?.label || node.id}</span>
+                                <span className="search-result-label" title={node.data?.label || node.id}>{node.data?.label || node.id}</span>
                                 {node.data?.file && (
-                                    <span className="search-result-file">
+                                    <span className="search-result-file" title={node.data.file}>
                                         {node.data.file.split(/[/\\]/).pop()}
                                     </span>
                                 )}

@@ -106,11 +106,11 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             <div className="code-panel-header">
                 <div className="code-panel-title">
                     <span className="code-icon" aria-hidden="true">{'<>'}</span>
-                    <span className="code-file-name">
+                    <span className="code-file-name" title={codeData?.file_path || fileName || 'No file'}>
                         {fileName || 'No file'}
                     </span>
                     {activeNode && (
-                        <span className="code-node-name">
+                        <span className="code-node-name" title={activeNode.data?.label}>
                             → {activeNode.data?.label}
                         </span>
                     )}
