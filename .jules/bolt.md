@@ -1,5 +1,5 @@
 ## 2024-05-24 - React Flow Unnecessary Re-renders
-**Learning:** In React Flow, state arrays like `nodes` and `edges` trigger O(N) full re-renders on every tick during rapid animations (like Ghost Runner) if object references change, even when visual properties haven't.
+**Learning:** In React Flow, state arrays like `nodes` and `edges` trigger O(N) full re-renders on every tick during rapid animations (like Ghost Runner) if object references change, even when visual properties haven't.     
 **Action:** When mapping over `nodes` or `edges` state to update classes/styles, preserve the exact object references for items whose properties haven't changed.
 
 ## 2024-06-12 - React.memo() Anti-Pattern on Simulation Tick Prop
@@ -8,7 +8,9 @@
 
 ## 2024-06-12 - O(N*M) File System Checks during AST Analysis
 **Learning:** Repeatedly calling `os.path.isfile()` to check if a module is local inside `ast.walk` creates an O(N*M) bottleneck, where N is the number of files and M is the number of imports per file.
-**Action:** Pre-compute a `frozenset` of all local python modules using a single directory scan (`os.walk`), and perform O(1) set membership lookups instead of hitting the filesystem for each import.## 2024-11-20 - O(N log N) Array Sorts in High-Frequency Execution Paths
+**Action:** Pre-compute a `frozenset` of all local python modules using a single directory scan (`os.walk`), and perform O(1) set membership lookups instead of hitting the filesystem for each import.
+
+## 2024-11-20 - O(N log N) Array Sorts in High-Frequency Execution Paths
 **Learning:** In React hooks like `useGhostRunner`, using `[...array].filter().sort().find()` inside high-frequency interval ticks introduces significant overhead due to object cloning and O(N log N) sorting just to find a single maximum element.
 **Action:** Replace `O(N log N)` array sorts with `O(N)` single-pass linear loops that track tracking variables when searching for a single element (e.g., node with the highest degree). Explicitly track default states (like `> -1` for non-negative graph degrees) to cleanly preserve original fallback and error behaviors.
 
@@ -19,6 +21,10 @@
 ## 2025-02-20 - Array slice over-fetching overhead
 **Learning:** In React components that perform fuzzy search filtering over large datasets (like `SearchBar.jsx` evaluating thousands of nodes), using `array.filter(condition).slice(0, K)` creates a massive hidden O(N) performance bottleneck because it evaluates the condition against the entire array before discarding all but the first K results.
 **Action:** Replace `.filter().slice()` chains with standard `for` loops and an early `break` condition when the required number of top-K results is reached. This drops the execution time from an unconditional O(N) down to a best-case O(K).
+
+## 2025-02-20 - O(N) Array Iteration Chain Bottleneck
+**Learning:** In React hooks, calculating complex derived state by chaining multiple `array.filter()`, `array.map()`, and `array.forEach()` operations creates hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace multiple O(N) array method chains with a single iterative `for` loop that accumulates all required metrics in a single O(N) pass, significantly reducing CPU overhead and memory allocations.
 
 ## 2024-05-13 - Array map over-fetching overhead
 **Learning:** In React components that evaluate data arrays to build summary lists, combining `.filter(condition).slice(0, K).map()` introduces an unconditional O(N) performance bottleneck because `.filter()` processes the entire array before `.slice()` applies the limit.
