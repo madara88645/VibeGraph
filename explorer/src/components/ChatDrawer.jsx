@@ -102,7 +102,7 @@ const ChatDrawer = ({
         .join(', ');
       const fileNames = [...new Set(allNodes.map((node) => node.data?.file).filter(Boolean))];
 
-      // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 20)
+      // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 20)      
       // This drops the execution time from an unconditional O(N) down to a best-case O(K).
       const coreNodeIds = [];
       for (let i = 0; i < allNodes.length; i++) {
@@ -236,7 +236,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
-        <span aria-hidden="true">{'Chat'}</span>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'white' }}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
       </button>
     );
   }
