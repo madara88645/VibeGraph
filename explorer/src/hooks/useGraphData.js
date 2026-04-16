@@ -101,9 +101,26 @@ export function useGraphData(setNodes, setEdges) {
 
     const handleUploadSuccess = useCallback((result, resetGhostStateCallback) => {
         const { nodes: newNodes, edges: newEdges, file_dependencies: newFileDependencies } = result;
+        const safeNodes = Array.isArray(newNodes) ? newNodes : [];
+        const safeEdges = Array.isArray(newEdges) ? newEdges : [];
+
+        if (safeNodes.length === 0) {
+            setSelectedFile(null);
+            setAllNodes([]);
+            setAllEdges([]);
+            setFileDependencies(null);
+            setNodes([]);
+            setEdges([]);
+            localStorage.removeItem(cacheKey);
+
+            if (resetGhostStateCallback) {
+                resetGhostStateCallback();
+            }
+            return;
+        }
 
         // Process nodes to match the "custom" type and add metadata
-        const customNodes = newNodes.map(n => ({
+        const customNodes = safeNodes.map(n => ({
             ...n,
             type: 'custom',
             data: {
@@ -124,7 +141,7 @@ export function useGraphData(setNodes, setEdges) {
         setSelectedFile(newFiles[0] || null);
 
         setAllNodes(customNodes);
-        setAllEdges(newEdges);
+        setAllEdges(safeEdges);
         setFileDependencies(Array.isArray(newFileDependencies) ? newFileDependencies : null);
 
         try {
@@ -134,7 +151,7 @@ export function useGraphData(setNodes, setEdges) {
                     schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
                     source: GRAPH_CACHE_SOURCE,
                     nodes: customNodes,
-                    edges: newEdges,
+                    edges: safeEdges,
                     fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
                 })
             );
@@ -144,11 +161,15 @@ export function useGraphData(setNodes, setEdges) {
         if (resetGhostStateCallback) {
             resetGhostStateCallback();
         }
-    }, [setAllNodes, setAllEdges, setSelectedFile]);
+    }, [cacheKey, setAllNodes, setAllEdges, setEdges, setNodes, setSelectedFile]);
 
     // Filter nodes/edges when file selection changes
     useEffect(() => {
-        if (allNodes.length === 0) return;
+        if (allNodes.length === 0) {
+            setNodes([]);
+            setEdges([]);
+            return;
+        }
 
         // Show all nodes when no file is selected
         if (!selectedFile) {

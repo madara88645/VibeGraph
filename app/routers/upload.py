@@ -29,6 +29,25 @@ def cleanup_tmp_dir(path: str) -> None:
         shutil.rmtree(path, ignore_errors=True)
 
 
+def contains_python_file(path: str) -> bool:
+    """Return True when an uploaded tree contains at least one Python file."""
+    stack = [path]
+    while stack:
+        current_dir = stack.pop()
+        try:
+            with os.scandir(current_dir) as entries:
+                for entry in entries:
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(entry.path)
+                    elif entry.is_file(follow_symlinks=False) and entry.name.endswith(
+                        ".py"
+                    ):
+                        return True
+        except OSError:
+            continue
+    return False
+
+
 def cleanup_expired_upload_dirs(
     retention_seconds: int = UPLOAD_RETENTION_SECONDS,
 ) -> None:
@@ -169,15 +188,31 @@ def upload_project(
                                 target.write(chunk)
                 os.remove(file_path)
 
+        if not contains_python_file(tmp_dir):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "No Python files found. Upload a Python project folder or zip "
+                    "containing .py files."
+                ),
+            )
+
         result = CodeAnalyzer().analyze_file(tmp_dir)
 
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
 
-        if result.get("errors") and result["graph"].number_of_nodes() == 0:
+        graph = result["graph"]
+
+        if result.get("errors") and graph.number_of_nodes() == 0:
             raise HTTPException(status_code=400, detail=result["errors"][0])
 
-        graph = result["graph"]
+        if graph.number_of_nodes() == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No analyzable Python code found.",
+            )
+
         response_data = deps.exporter.export_to_react_flow(graph)
 
         return response_data
