@@ -34,6 +34,7 @@ export function ToastProvider({ children }) {
                             className="toast-close"
                             onClick={() => removeToast(t.id)}
                             aria-label="Dismiss notification"
+                            title="Dismiss notification"
                         >
                             <span aria-hidden="true">✕</span>
                         </button>

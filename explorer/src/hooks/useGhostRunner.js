@@ -604,26 +604,41 @@ export function useGhostRunner(
         const visited = visitedSetRef.current;
         if (visited.size === 0) return null;
 
-        const visitedNodes = nodes.filter(n => isNavigableNode(n) && visited.has(n.id));
-        const filesVisited = new Set(visitedNodes.map(n => n.data?.file).filter(Boolean));
-        const unvisitedEntries = nodes.filter(
-            (n) => isNavigableNode(n) && n.data?.entry_point && !visited.has(n.id)
-        );
-
-        // Most connected visited node
+        let visitedCount = 0;
+        let totalNodes = 0;
+        const filesVisited = new Set();
+        const unvisitedEntries = [];
         let mostConnected = null;
         let maxDegree = 0;
-        visitedNodes.forEach(n => {
-            const d = (currentDegreeMap || new Map()).get(n.id) || 0;
-            if (d > maxDegree) { maxDegree = d; mostConnected = n; }
-        });
+        const degreeMap = currentDegreeMap || new Map();
+
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (!isNavigableNode(n)) continue;
+
+            totalNodes++;
+
+            if (visited.has(n.id)) {
+                visitedCount++;
+                if (n.data?.file) {
+                    filesVisited.add(n.data.file);
+                }
+                const d = degreeMap.get(n.id) || 0;
+                if (d > maxDegree) {
+                    maxDegree = d;
+                    mostConnected = n;
+                }
+            } else if (n.data?.entry_point && n.data?.label) {
+                unvisitedEntries.push(n.data.label);
+            }
+        }
 
         return {
-            visitedCount: visitedNodes.length,
-            totalNodes: nodes.filter(isNavigableNode).length,
+            visitedCount,
+            totalNodes,
             filesVisited: filesVisited.size,
             mostConnected: mostConnected ? { label: mostConnected.data?.label, degree: maxDegree } : null,
-            unvisitedEntries: unvisitedEntries.map(n => n.data?.label).filter(Boolean),
+            unvisitedEntries,
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
     }, [nodes, currentDegreeMap, stepCount, isPlaying]);

@@ -102,11 +102,15 @@ const ChatDrawer = ({
         .join(', ');
       const fileNames = [...new Set(allNodes.map((node) => node.data?.file).filter(Boolean))];
 
-      const coreNodes = allNodes
-        .filter((node) => node.data?.type === 'class' || node.data?.type === 'function')
-        .slice(0, 20)
-        .map((node) => node.id)
-        .join(', ');
+      const coreNodesArray = [];
+      for (let i = 0; i < allNodes.length; i++) {
+        const node = allNodes[i];
+        if (node.data?.type === 'class' || node.data?.type === 'function') {
+          coreNodesArray.push(node.id);
+          if (coreNodesArray.length >= 20) break;
+        }
+      }
+      const coreNodes = coreNodesArray.join(', ');
 
       projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.
 Files included: ${fileNames.join(', ')}
@@ -230,7 +234,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
-        <span aria-hidden="true">{'Chat'}</span>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'white' }}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
       </button>
     );
   }
