@@ -29,3 +29,11 @@
 ## 2024-05-13 - Array map over-fetching overhead
 **Learning:** In React components that evaluate data arrays to build summary lists, combining `.filter(condition).slice(0, K).map()` introduces an unconditional O(N) performance bottleneck because `.filter()` processes the entire array before `.slice()` applies the limit.
 **Action:** Replace `.filter().slice().map()` chains with standard `for` loops and an early `break` condition when the desired K count is reached. This drops the execution time to a best-case O(K), drastically improving responsiveness when traversing massive node arrays.
+
+## 2024-05-13 - Array map over-fetching overhead
+**Learning:** In React components that evaluate data arrays to build summary lists, combining `.filter(condition).slice(0, K).map()` introduces an unconditional O(N) performance bottleneck because `.filter()` processes the entire array before `.slice()` applies the limit.
+**Action:** Replace `.filter().slice().map()` chains with standard `for` loops and an early `break` condition when the desired K count is reached. This drops the execution time to a best-case O(K), drastically improving responsiveness when traversing massive node arrays.
+
+## 2024-05-14 - Redundant Array Traversal and Allocation
+**Learning:** Chaining multiple array methods like `.reduce()`, `.map()`, and `.filter()` over large datasets (like `allNodes`) creates hidden O(N) bottlenecks by executing multiple full iterations and allocating temporary intermediate arrays for each step.
+**Action:** Consolidate these operations into a single imperative `for` loop to gather all required metrics and collections in one pass, minimizing memory allocations and CPU overhead without changing functionality.
