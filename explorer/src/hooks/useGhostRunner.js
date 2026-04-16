@@ -604,8 +604,10 @@ export function useGhostRunner(
         const visited = visitedSetRef.current;
         if (visited.size === 0) return null;
 
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced multiple O(N) array filter/map iterations
+        // with a single O(N) pass to gather all required metrics efficiently.
         let visitedCount = 0;
-        let totalNodes = 0;
+        let totalNavigableNodes = 0;
         const filesVisited = new Set();
         const unvisitedEntries = [];
         let mostConnected = null;
@@ -614,31 +616,35 @@ export function useGhostRunner(
 
         for (let i = 0; i < nodes.length; i++) {
             const n = nodes[i];
-            if (!isNavigableNode(n)) continue;
+            if (isNavigableNode(n)) {
+                totalNavigableNodes++;
+                const isVisited = visited.has(n.id);
 
-            totalNodes++;
+                if (isVisited) {
+                    visitedCount++;
+                    if (n.data?.file) {
+                        filesVisited.add(n.data.file);
+                    }
 
-            if (visited.has(n.id)) {
-                visitedCount++;
-                if (n.data?.file) {
-                    filesVisited.add(n.data.file);
+                    const d = degreeMap.get(n.id) || 0;
+                    if (d > maxDegree) {
+                        maxDegree = d;
+                        mostConnected = n;
+                    }
+                } else if (n.data?.entry_point) {
+                    if (n.data?.label) {
+                        unvisitedEntries.push(n.data.label);
+                    }
                 }
-                const d = degreeMap.get(n.id) || 0;
-                if (d > maxDegree) {
-                    maxDegree = d;
-                    mostConnected = n;
-                }
-            } else if (n.data?.entry_point && n.data?.label) {
-                unvisitedEntries.push(n.data.label);
             }
         }
 
         return {
-            visitedCount,
-            totalNodes,
+            visitedCount: visitedCount,
+            totalNodes: totalNavigableNodes,
             filesVisited: filesVisited.size,
             mostConnected: mostConnected ? { label: mostConnected.data?.label, degree: maxDegree } : null,
-            unvisitedEntries,
+            unvisitedEntries: unvisitedEntries,
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
     }, [nodes, currentDegreeMap, stepCount, isPlaying]);

@@ -42,13 +42,19 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const results = React.useMemo(() => {
         if (!query.trim()) return [];
         const q = query.toLowerCase();
-        return allNodes
-            .filter((n) => {
-                const label = (n.data?.label || '').toLowerCase();
-                const file = (n.data?.file || '').toLowerCase();
-                return label.includes(q) || file.includes(q);
-            })
-            .slice(0, 8);
+        const matches = [];
+        // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 8)
+        // This avoids O(N) string processing across potentially thousands of nodes once we have our 8 results.
+        for (let i = 0; i < allNodes.length; i++) {
+            if (matches.length >= 8) break;
+            const n = allNodes[i];
+            const label = (n.data?.label || '').toLowerCase();
+            const file = (n.data?.file || '').toLowerCase();
+            if (label.includes(q) || file.includes(q)) {
+                matches.push(n);
+            }
+        }
+        return matches;
     }, [query, allNodes]);
 
     const handleSelect = useCallback((node) => {
