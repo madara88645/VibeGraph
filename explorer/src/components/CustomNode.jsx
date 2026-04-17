@@ -33,6 +33,7 @@ const CustomNode = ({ data, selected }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '0.85rem' }}>{config.icon}</span>
                 <span
+                    title={data.label}
                     style={{
                         fontSize: '0.82rem',
                         fontWeight: 600,
@@ -66,7 +67,7 @@ const CustomNode = ({ data, selected }) => {
             {(fileName || data.lineno) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                     {fileName && (
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span title={fileName} style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             📄 {fileName}
                         </span>
                     )}
