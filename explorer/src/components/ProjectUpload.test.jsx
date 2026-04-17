@@ -151,6 +151,7 @@ describe('ProjectUpload', () => {
                 ok: false,
                 status: 500,
                 statusText: 'Internal Server Error',
+                json: () => Promise.resolve({ detail: 'Upload/Analysis failed due to an internal error.' }),
             })
         );
 
@@ -168,12 +169,15 @@ describe('ProjectUpload', () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         });
 
-        expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Upload failed'), 'error');
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: Upload/Analysis failed due to an internal error.',
+            'error'
+        );
         consoleSpy.mockRestore();
     });
 
     it('handles network errors gracefully', async () => {
-        globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+        globalThis.fetch = vi.fn(() => Promise.reject(new TypeError('Failed to fetch')));
 
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
@@ -189,8 +193,76 @@ describe('ProjectUpload', () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         });
 
-        expect(showToast).toHaveBeenCalledWith('Upload failed: Network error', 'error');
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: Backend is not reachable. Start the backend or check deployment.',
+            'error'
+        );
         consoleSpy.mockRestore();
+    });
+
+    it('does not treat an empty graph response as a successful upload', async () => {
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ nodes: [], edges: [] }),
+            })
+        );
+
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const fileInput = document.querySelector('input[type="file"]');
+        const file = new File(['content'], 'main.py', { type: 'text/plain' });
+
+        await act(async () => {
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        });
+
+        expect(onUploadSuccess).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: No analyzable Python code found.',
+            'error'
+        );
+        expect(screen.getByText('Select a project folder to analyze')).toBeInTheDocument();
+        consoleSpy.mockRestore();
+    });
+
+    it('validates dropped files through the same upload path', async () => {
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ nodes: [], edges: [] }),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        const file = new File(['content'], 'main.py', { type: 'text/plain' });
+
+        await act(async () => {
+            fireEvent.drop(uploadZone, {
+                dataTransfer: {
+                    files: [file],
+                },
+            });
+        });
+
+        expect(onUploadSuccess).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: No analyzable Python code found.',
+            'error'
+        );
     });
 
     it('does not close modal while analyzing when overlay is clicked', async () => {

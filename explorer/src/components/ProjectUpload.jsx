@@ -1,6 +1,41 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { useToast } from '../hooks/useToast';
 
+const EMPTY_GRAPH_MESSAGE = 'No analyzable Python code found.';
+const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
+
+async function readUploadError(response) {
+    try {
+        const payload = await response.json();
+        if (typeof payload?.detail === 'string') {
+            return payload.detail;
+        }
+    } catch {
+        // Fall back to the status text below when the backend sends no JSON body.
+    }
+
+    return response.statusText || `HTTP ${response.status}`;
+}
+
+function getUploadErrorMessage(error) {
+    if (error instanceof TypeError && /failed to fetch|network/i.test(error.message)) {
+        return NETWORK_ERROR_MESSAGE;
+    }
+    return error?.message || 'Unknown upload error.';
+}
+
+function validateGraphResult(result) {
+    if (!Array.isArray(result?.nodes) || !Array.isArray(result?.edges)) {
+        throw new Error('Analysis completed but graph data is missing.');
+    }
+
+    if (result.nodes.length === 0) {
+        throw new Error(EMPTY_GRAPH_MESSAGE);
+    }
+
+    return result;
+}
+
 const ProjectUpload = ({ onUploadSuccess }) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -29,6 +64,41 @@ const ProjectUpload = ({ onUploadSuccess }) => {
         setIsDragging(true);
     }, []);
 
+    const uploadFiles = useCallback(async (files, getPath) => {
+        if (!files || files.length === 0) return;
+
+        setIsAnalyzing(true);
+        const formData = new FormData();
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            formData.append('files', file, getPath(file));
+        }
+
+        try {
+            const response = await fetch('/api/upload-project', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(await readUploadError(response));
+            }
+
+            const result = validateGraphResult(await response.json());
+            if (onUploadSuccess) onUploadSuccess(result);
+            setIsModalOpen(false);
+            showToast('Project analyzed successfully!', 'success');
+        } catch (error) {
+            console.error("Project upload failed:", error);
+            showToast(`Upload failed: ${getUploadErrorMessage(error)}`, 'error');
+        } finally {
+            setIsAnalyzing(false);
+            // Reset input so the same folder can be uploaded again if needed.
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    }, [onUploadSuccess, showToast]);
+
     const handleDragLeave = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -43,70 +113,14 @@ const ProjectUpload = ({ onUploadSuccess }) => {
         const files = e.dataTransfer.files;
         if (!files.length) return;
 
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i], files[i].name);
-        }
-
-        setIsAnalyzing(true);
-        try {
-            const response = await fetch('/api/upload-project', { method: 'POST', body: formData });
-            if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-            const result = await response.json();
-            if (onUploadSuccess) onUploadSuccess(result);
-            showToast('Project uploaded successfully!', 'success');
-            setIsModalOpen(false);
-        } catch (err) {
-            showToast(`Upload failed: ${err.message}`, 'error');
-        } finally {
-            setIsAnalyzing(false);
-        }
-    }, [onUploadSuccess, showToast]);
+        await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
+    }, [uploadFiles]);
 
     const handleUpload = async (event) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        setIsAnalyzing(true);
-        const formData = new FormData();
-
-        // Append all files to the form data
-        // For folder upload, the relative path is critical for the backend to map files correctly
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const path = file.webkitRelativePath || file.name;
-            formData.append('files', file, path);
-        }
-
-        try {
-            const response = await fetch('/api/upload-project', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error(`Upload failed: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-
-            // Expected backend result should follow the standard graph JSON structure
-            if (result.nodes && result.edges) {
-                onUploadSuccess(result);
-                setIsModalOpen(false);
-                showToast('Project analyzed successfully!', 'success');
-            } else {
-                console.error("Analysis success but invalid graph data returned", result);
-                showToast('Analysis completed but graph data is missing.', 'error');
-            }
-        } catch (error) {
-            console.error("Project upload failed:", error);
-            showToast(`Upload failed: ${error.message}`, 'error');
-        } finally {
-            setIsAnalyzing(false);
-            // Reset input so the same folder can be uploaded again if needed
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
+        await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
     };
 
     return (

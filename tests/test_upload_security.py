@@ -29,7 +29,7 @@ def test_upload_zip_slip():
 
 
 def test_upload_safe_zip():
-    # Create a safe zip file
+    # Create a safe zip file with no Python source
     zip_path = "safe.zip"
     with zipfile.ZipFile(zip_path, "w") as z:
         z.writestr("dir/file1.txt", "Normal file 1")
@@ -43,15 +43,10 @@ def test_upload_safe_zip():
     # Clean up
     os.remove(zip_path)
 
-    # In this mock case, analysis might fail because there are no python files,
-    # but it shouldn't fail with "Unsafe zip file detected" 400 error.
-    # It might return 400 with "No Python files found" or similar if the analyzer
-    # rejects it. Let's just check it doesn't return the unsafe zip error.
-    if response.status_code == 400:
-        detail = response.json().get("detail", "")
-        assert "Unsafe zip file detected" not in detail
-    else:
-        assert response.status_code == 200
+    assert response.status_code == 400
+    detail = response.json().get("detail", "")
+    assert "No Python files found" in detail
+    assert "Unsafe zip file detected" not in detail
 
 
 def test_upload_too_many_files_zip():
