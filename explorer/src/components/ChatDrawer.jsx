@@ -92,26 +92,36 @@ const ChatDrawer = ({
 
     let projectContext = 'No project loaded.';
     if (allNodes && allNodes.length > 0) {
-      const types = allNodes.reduce((acc, node) => {
-        const type = node.data?.type || 'unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
-      const typeStr = Object.entries(types)
-        .map(([key, value]) => `${value} ${key}s`)
-        .join(', ');
-      const fileNames = [...new Set(allNodes.map((node) => node.data?.file).filter(Boolean))];
-
-      // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 20)      
-      // This drops the execution time from an unconditional O(N) down to a best-case O(K).
+      // PERFORMANCE OPTIMIZATION (Bolt): Replaced multiple O(N) array method chains
+      // (reduce, map, filter) with a single unified O(N) for-loop to accumulate types,
+      // filesSet, and coreNodeIds. This significantly reduces CPU overhead and intermediate object allocations.
+      const types = {};
+      const filesSet = new Set();
       const coreNodeIds = [];
+
       for (let i = 0; i < allNodes.length; i++) {
-        if (coreNodeIds.length >= 20) break;
         const node = allNodes[i];
-        if (node.data?.type === 'class' || node.data?.type === 'function') {
+
+        // Count types
+        const type = node.data?.type || 'unknown';
+        types[type] = (types[type] || 0) + 1;
+
+        // Collect files
+        if (node.data?.file) {
+          filesSet.add(node.data.file);
+        }
+
+        // Collect core nodes (max 20)
+        if (coreNodeIds.length < 20 && (type === 'class' || type === 'function')) {
           coreNodeIds.push(node.id);
         }
       }
+
+      const typeStr = Object.entries(types)
+        .map(([key, value]) => `${value} ${key}s`)
+        .join(', ');
+      const fileNames = [...filesSet];
+
       const coreNodes = coreNodeIds.join(', ');
 
       projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.
