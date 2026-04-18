@@ -1,0 +1,3 @@
+## 2024-04-18 - Integrated Canvas-Style Upload Modal
+**Learning:** UX benefits from avoiding standalone, floating modal dialogs when the action spans the entire core functional area of an app. Converting a file upload modal into a deeply integrated "canvas" view with full-bleed elements, darker backgrounds, and architectural borders creates a more immersive and less interruptive user flow.
+**Action:** Transformed the standard `<div className="upload-modal">` structure into a unified container spanning `max-w-4xl max-h-[600px]` with `#131313` background and subtle dashed outlines, matching industrial structural design patterns.

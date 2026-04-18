@@ -123,9 +123,8 @@ const ProjectUpload = ({ onUploadSuccess }) => {
             {isModalOpen && (
                 <div className="upload-modal-overlay" onClick={() => !isAnalyzing && setIsModalOpen(false)}>
                     <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="upload-modal-header">
-                            <h3>Upload Project</h3>
-                            <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}>
+                        <div className="upload-canvas-area p-8">
+                            <span style={{ display: 'inline-flex', position: 'absolute', top: '16px', right: '16px', zIndex: 50 }} title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}>
                                 <button
                                     className="modal-close-btn"
                                     onClick={() => setIsModalOpen(false)}
@@ -133,16 +132,13 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                     aria-label="Close Upload Modal"
                                 ><span aria-hidden="true">✕</span></button>
                             </span>
-                        </div>
-
-                        <div className="upload-modal-body">
-                            {isAnalyzing ? (
-                                <div className="analyzing-state" aria-live="polite" aria-busy="true">
-                                    <div className="vibe-spinner" aria-hidden="true"></div>
-                                    <p>Analyzing Project...</p>
-                                    <span className="analyzing-subtitle">Building call graph, mapping vibes</span>
-                                </div>
-                            ) : (
+                        {isAnalyzing ? (
+                            <div className="analyzing-state" aria-live="polite" aria-busy="true">
+                                <div className="vibe-spinner" aria-hidden="true"></div>
+                                <p>Analyzing Project...</p>
+                                <span className="analyzing-subtitle">Building call graph, mapping vibes</span>
+                            </div>
+                        ) : (
                                 <div
                                     className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
                                     onClick={() => fileInputRef.current?.click()}
@@ -164,32 +160,42 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                     {isDragging && (
                                         <div style={{
                                             position: 'absolute', inset: 0,
-                                            background: 'rgba(56, 189, 248, 0.1)',
-                                            border: '2px dashed var(--color-accent-ice)',
-                                            borderRadius: 'var(--radius-md)',
+                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            border: '1px dashed var(--outline-variant)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'var(--color-accent-ice)', fontSize: '16px', fontWeight: 600,
+                                            color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600,
                                             zIndex: 10,
                                         }}>
                                             Drop files here
                                         </div>
                                     )}
-                                    <div className="upload-icon" aria-hidden="true">📤</div>
-                                    <p>Select a project folder to analyze</p>
-                                    <span className="upload-hint">Uploads all .py files to the server</span>
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        style={{ display: 'none' }}
-                                        webkitdirectory="true"
-                                        directory="true"
-                                        onChange={handleUpload}
-                                        multiple
-                                    />
-                                    <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Select Folder</button>
+                                    <div className="corner-accent top-left"></div>
+                                    <div className="corner-accent top-right"></div>
+                                    <div className="corner-accent bottom-left"></div>
+                                    <div className="corner-accent bottom-right"></div>
+
+                                    <div className="upload-content-wrapper">
+                                        <div className="upload-icon-container">
+                                            <span className="material-symbols-outlined upload-icon" aria-hidden="true" style={{ fontVariationSettings: "'wght' 200" }}>upload_file</span>
+                                        </div>
+                                        <div className="upload-text-container">
+                                            <h2>INITIATE INGESTION</h2>
+                                            <p className="upload-hint">DRAG ASSETS TO CANVAS OR BROWSE LOCAL DIRECTORY</p>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            style={{ display: 'none' }}
+                                            webkitdirectory="true"
+                                            directory="true"
+                                            onChange={handleUpload}
+                                            multiple
+                                        />
+                                        <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">SELECT FILES</button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                        )}
+                            </div>
                     </div>
                 </div>
             )}
