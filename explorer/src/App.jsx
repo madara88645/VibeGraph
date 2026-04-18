@@ -322,18 +322,10 @@ function AppInner() {
           </button>
 
           <button
+            className="header-action-btn"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              fontSize: '14px',
-            }}
           >
             <span aria-hidden="true">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>

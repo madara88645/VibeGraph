@@ -27,15 +27,7 @@ const defaultEdgeOptions = {
   style: { strokeWidth: 2, stroke: 'rgba(148, 163, 184, 0.4)' },
 };
 
-const exportBtnStyle = {
-  background: 'var(--color-surface-2)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: 'var(--radius-sm)',
-  color: 'var(--text-primary)',
-  padding: '6px 12px',
-  cursor: 'pointer',
-  fontSize: '12px',
-};
+
 
 const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }) => {
   const graphRef = useRef(null);
@@ -83,34 +75,27 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
             style={{ borderRadius: '12px' }}
           />
           <Controls />
-          <Background variant="dots" color="rgba(125, 211, 252, 0.12)" gap={24} size={1} />
+          <Background variant="dots" color="rgba(16, 185, 129, 0.15)" gap={24} size={1} />
         </ReactFlow>
       </div>
-      <div
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          display: 'flex',
-          gap: 6,
-          zIndex: 5,
-        }}
-      >
+      <div className="export-controls">
         <button
           onClick={handleExportPng}
-          style={exportBtnStyle}
+          className="export-btn"
           title="Export as PNG"
           aria-label="Export as PNG"
         >
-          PNG
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>PNG</span>
         </button>
         <button
           onClick={handleExportSvg}
-          style={exportBtnStyle}
+          className="export-btn"
           title="Export as SVG"
           aria-label="Export as SVG"
         >
-          SVG
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          <span>SVG</span>
         </button>
       </div>
       {!hasGraph ? (

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 
 const ProjectUpload = ({ onUploadSuccess }) => {
@@ -117,87 +118,83 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                 title="Upload new project for analysis"
                 aria-label="Upload new project for analysis"
             >
-                <span aria-hidden="true">📁</span> Upload Project
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ opacity: 0.75, marginRight: '2px' }}>
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                Upload Project
             </button>
 
-            {isModalOpen && (
+            {isModalOpen && createPortal(
                 <div className="upload-modal-overlay" onClick={() => !isAnalyzing && setIsModalOpen(false)}>
                     <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="upload-canvas-area p-8">
-                            <span style={{ display: 'inline-flex', position: 'absolute', top: '16px', right: '16px', zIndex: 50 }} title={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}>
-                                <button
-                                    className="modal-close-btn"
-                                    onClick={() => setIsModalOpen(false)}
-                                    disabled={isAnalyzing}
-                                    aria-label="Close Upload Modal"
-                                ><span aria-hidden="true">✕</span></button>
-                            </span>
+                        <button
+                            className="modal-close-btn"
+                            onClick={() => setIsModalOpen(false)}
+                            disabled={isAnalyzing}
+                            aria-label="Close Upload Modal"
+                            title={isAnalyzing ? "Cannot close while analyzing project" : "Close"}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                <path d="M4 4l8 8M12 4l-8 8" />
+                            </svg>
+                        </button>
+
                         {isAnalyzing ? (
                             <div className="analyzing-state" aria-live="polite" aria-busy="true">
                                 <div className="vibe-spinner" aria-hidden="true"></div>
-                                <p>Analyzing Project...</p>
-                                <span className="analyzing-subtitle">Building call graph, mapping vibes</span>
+                                <p>Analyzing project…</p>
+                                <span className="analyzing-subtitle">Building call graph</span>
                             </div>
                         ) : (
-                                <div
-                                    className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            fileInputRef.current?.click();
-                                        }
-                                    }}
-                                    onDragOver={handleDragOver}
-                                    onDragEnter={handleDragEnter}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                    tabIndex={0}
-                                    role="button"
-                                    aria-label="Select a project folder to analyze"
-                                    style={{ position: 'relative' }}
-                                >
-                                    {isDragging && (
-                                        <div style={{
-                                            position: 'absolute', inset: 0,
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            border: '1px dashed var(--outline-variant)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600,
-                                            zIndex: 10,
-                                        }}>
-                                            Drop files here
-                                        </div>
-                                    )}
-                                    <div className="corner-accent top-left"></div>
-                                    <div className="corner-accent top-right"></div>
-                                    <div className="corner-accent bottom-left"></div>
-                                    <div className="corner-accent bottom-right"></div>
-
-                                    <div className="upload-content-wrapper">
-                                        <div className="upload-icon-container">
-                                            <span className="material-symbols-outlined upload-icon" aria-hidden="true" style={{ fontVariationSettings: "'wght' 200" }}>upload_file</span>
-                                        </div>
-                                        <div className="upload-text-container">
-                                            <h2>INITIATE INGESTION</h2>
-                                            <p className="upload-hint">DRAG ASSETS TO CANVAS OR BROWSE LOCAL DIRECTORY</p>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            style={{ display: 'none' }}
-                                            webkitdirectory="true"
-                                            directory="true"
-                                            onChange={handleUpload}
-                                            multiple
-                                        />
-                                        <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">SELECT FILES</button>
+                            <div
+                                className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                                onDragOver={handleDragOver}
+                                onDragEnter={handleDragEnter}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                tabIndex={0}
+                                role="button"
+                                aria-label="Select a project folder to analyze"
+                            >
+                                {isDragging && (
+                                    <div className="upload-zone-drop-indicator">
+                                        <span>Drop to upload</span>
                                     </div>
+                                )}
+
+                                <div className="upload-content-wrapper">
+                                    <svg className="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <div className="upload-text-container">
+                                        <h2>Upload your project</h2>
+                                        <p className="upload-hint">Drop your Python project folder here, or browse</p>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        style={{ display: 'none' }}
+                                        webkitdirectory="true"
+                                        directory="true"
+                                        onChange={handleUpload}
+                                        multiple
+                                    />
+                                    <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Browse files</button>
                                 </div>
-                        )}
                             </div>
+                        )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
