@@ -54,7 +54,7 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
     if not parts:
         raise HTTPException(status_code=400, detail=f"Invalid upload path: {raw_name}")
 
-    if any(part == ".." for part in parts):
+    if ".." in parts:
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
 
     safe_rel = "/".join(parts)
