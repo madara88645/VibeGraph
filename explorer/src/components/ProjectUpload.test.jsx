@@ -35,14 +35,14 @@ describe('ProjectUpload', () => {
         renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
 
         // Modal should not be visible initially
-        expect(screen.queryByText('INITIATE INGESTION')).not.toBeInTheDocument();
+        expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
 
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
         });
 
         // Modal should now be visible
-        expect(screen.getByText('INITIATE INGESTION')).toBeInTheDocument();
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /close upload modal/i })).toBeInTheDocument();
     });
 
@@ -53,13 +53,13 @@ describe('ProjectUpload', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
         });
-        expect(screen.getByText('INITIATE INGESTION')).toBeInTheDocument();
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
 
         // Close modal
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /close upload modal/i }));
         });
-        expect(screen.queryByText('INITIATE INGESTION')).not.toBeInTheDocument();
+        expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
     });
 
     it('closes modal when overlay is clicked', async () => {
@@ -68,13 +68,13 @@ describe('ProjectUpload', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
         });
-        expect(screen.getByText('INITIATE INGESTION')).toBeInTheDocument();
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
 
         // Click the overlay
         await act(async () => {
             fireEvent.click(document.querySelector('.upload-modal-overlay'));
         });
-        expect(screen.queryByText('INITIATE INGESTION')).not.toBeInTheDocument();
+        expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
     });
 
     it('closes modal on Escape key', async () => {
@@ -83,12 +83,12 @@ describe('ProjectUpload', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
         });
-        expect(screen.getByText('INITIATE INGESTION')).toBeInTheDocument();
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
 
         await act(async () => {
             fireEvent.keyDown(window, { key: 'Escape' });
         });
-        expect(screen.queryByText('INITIATE INGESTION')).not.toBeInTheDocument();
+        expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
     });
 
     it('shows loading state during upload', async () => {
@@ -112,7 +112,7 @@ describe('ProjectUpload', () => {
         });
 
         // Should show the analyzing state
-        expect(screen.getByText('Analyzing Project...')).toBeInTheDocument();
+        expect(screen.getByText('Analyzing project…')).toBeInTheDocument();
         // Close button should be disabled
         expect(screen.getByRole('button', { name: /close upload modal/i })).toBeDisabled();
     });
@@ -228,7 +228,7 @@ describe('ProjectUpload', () => {
             'Upload failed: No analyzable Python code found.',
             'error'
         );
-        expect(screen.getByText('Select a project folder to analyze')).toBeInTheDocument();
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
         consoleSpy.mockRestore();
     });
 
@@ -287,6 +287,6 @@ describe('ProjectUpload', () => {
         });
 
         // Modal should still be open (analyzing state prevents close)
-        expect(screen.getByText('Analyzing Project...')).toBeInTheDocument();
+        expect(screen.getByText('Analyzing project…')).toBeInTheDocument();
     });
 });
