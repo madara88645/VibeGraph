@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from io import BytesIO
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -60,6 +61,15 @@ def test_case_c_error_handling():
         f"Expected 400, got {response.status_code}: {response.text}"
     )
     assert "Syntax error" in response.json()["detail"]
+
+
+def test_upload_project_rejects_python_without_analyzable_code():
+    """A .py upload with no functions/classes/calls should not be treated as a graph."""
+    files = {"files": ("empty_module.py", BytesIO(b"ANSWER = 42\n"), "text/x-python")}
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 400
+    assert "No analyzable Python code found" in response.json()["detail"]
 
 
 def test_cleanup_tmp_dir_success():

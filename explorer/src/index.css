@@ -353,23 +353,36 @@ body {
 
 /* ===== CONTROLS & MINIMAP ===== */
 .react-flow__controls {
-  background: var(--panel-bg);
-  border: 1px solid var(--border-subtle);
+  background: transparent !important;
+  border: 1px solid transparent !important;
   border-radius: var(--radius-md);
   overflow: hidden;
+  opacity: 0.3;
+  transition: all 0.25s ease;
+  box-shadow: none !important;
+}
+
+.react-flow__controls:hover {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--border-subtle) !important;
   backdrop-filter: blur(8px);
+  opacity: 1;
 }
 
 .react-flow__controls-button {
-  background: transparent;
-  border-bottom: 1px solid var(--border-subtle);
-  fill: var(--text-muted);
+  background: transparent !important;
+  border-bottom: 1px solid transparent !important;
+  fill: var(--text-muted) !important;
   transition: all 0.15s;
 }
 
+.react-flow__controls:hover .react-flow__controls-button {
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
 .react-flow__controls-button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  fill: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05) !important;
+  fill: var(--text-primary) !important;
 }
 
 .react-flow__minimap {

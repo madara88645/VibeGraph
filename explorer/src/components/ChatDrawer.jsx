@@ -92,21 +92,37 @@ const ChatDrawer = ({
 
     let projectContext = 'No project loaded.';
     if (allNodes && allNodes.length > 0) {
-      const types = allNodes.reduce((acc, node) => {
+      // PERFORMANCE OPTIMIZATION (Bolt): Replaced multiple O(N) array method chains
+      // (reduce, map, filter) with a single unified O(N) for-loop to accumulate types,
+      // filesSet, and coreNodeIds. This significantly reduces CPU overhead and intermediate object allocations.
+      const types = {};
+      const filesSet = new Set();
+      const coreNodeIds = [];
+
+      for (let i = 0; i < allNodes.length; i++) {
+        const node = allNodes[i];
+
+        // Count types
         const type = node.data?.type || 'unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
+        types[type] = (types[type] || 0) + 1;
+
+        // Collect files
+        if (node.data?.file) {
+          filesSet.add(node.data.file);
+        }
+
+        // Collect core nodes (max 20)
+        if (coreNodeIds.length < 20 && (type === 'class' || type === 'function')) {
+          coreNodeIds.push(node.id);
+        }
+      }
+
       const typeStr = Object.entries(types)
         .map(([key, value]) => `${value} ${key}s`)
         .join(', ');
-      const fileNames = [...new Set(allNodes.map((node) => node.data?.file).filter(Boolean))];
+      const fileNames = [...filesSet];
 
-      const coreNodes = allNodes
-        .filter((node) => node.data?.type === 'class' || node.data?.type === 'function')
-        .slice(0, 20)
-        .map((node) => node.id)
-        .join(', ');
+      const coreNodes = coreNodeIds.join(', ');
 
       projectContext = `Project Overview: ${allNodes.length} total elements (${typeStr}) across ${fileNames.length} files.
 Files included: ${fileNames.join(', ')}
@@ -230,7 +246,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
-        <span aria-hidden="true">{'Chat'}</span>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'white' }}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
       </button>
     );
   }

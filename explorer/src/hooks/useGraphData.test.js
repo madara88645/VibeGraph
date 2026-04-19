@@ -103,4 +103,43 @@ describe('useGraphData', () => {
     expect(result.current.files).toEqual([]);
     expect(result.current.selectedFile).toBeNull();
   });
+
+  it('clears the rendered graph when an empty graph is received', async () => {
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+
+    const { result } = renderHook(() => useGraphData(setNodes, setEdges));
+
+    result.current.handleUploadSuccess({
+      nodes: [
+        {
+          id: 'main',
+          type: 'default',
+          data: {
+            label: 'main',
+            type: 'function',
+            file: 'src/main.py',
+            entry_point: true,
+          },
+          position: { x: 0, y: 0 },
+        },
+      ],
+      edges: [],
+    });
+
+    await waitFor(() => {
+      expect(result.current.allNodes).toHaveLength(1);
+    });
+
+    result.current.handleUploadSuccess({ nodes: [], edges: [] });
+
+    await waitFor(() => {
+      expect(result.current.allNodes).toEqual([]);
+    });
+
+    expect(result.current.selectedFile).toBeNull();
+    expect(result.current.fileDependencies).toBeNull();
+    expect(setNodes).toHaveBeenCalledWith([]);
+    expect(setEdges).toHaveBeenCalledWith([]);
+  });
 });
