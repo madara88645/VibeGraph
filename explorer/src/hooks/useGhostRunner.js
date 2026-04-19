@@ -23,17 +23,44 @@ function pickRandomFromPool(candidates) {
 
 function getOutgoingTargets(ctx) {
     const { currentActiveId, edges, nodesMap } = ctx;
-    return edges
-        .filter(e => e.source === currentActiveId)
-        .map(e => nodesMap.get(e.target))
-        .filter(isNavigableNode);
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced .filter().map().filter() chain
+    // with a single for-loop to eliminate intermediate array allocations
+    // and multiple O(E) passes during the high-frequency animation tick.
+    const targets = [];
+    for (let i = 0; i < edges.length; i++) {
+        const e = edges[i];
+        if (e.source === currentActiveId) {
+            const targetNode = nodesMap.get(e.target);
+            if (isNavigableNode(targetNode)) {
+                targets.push(targetNode);
+            }
+        }
+    }
+    return targets;
 }
 
 function pickEntryPoint(ctx) {
     const { nodes, visitedSet } = ctx;
-    const fileNodes = nodes.filter(isNavigableNode);
-    const entries = fileNodes.filter(n => n.data?.entry_point);
-    const unvisitedEntries = entries.filter(n => !visitedSet.has(n.id));
+
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced 3 consecutive .filter() loops
+    // over potentially thousands of nodes with a single O(N) pass.
+    const fileNodes = [];
+    const entries = [];
+    const unvisitedEntries = [];
+
+    for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        if (isNavigableNode(n)) {
+            fileNodes.push(n);
+            if (n.data?.entry_point) {
+                entries.push(n);
+                if (!visitedSet.has(n.id)) {
+                    unvisitedEntries.push(n);
+                }
+            }
+        }
+    }
+
     if (unvisitedEntries.length > 0) return pickRandomFromPool(unvisitedEntries);
     if (entries.length > 0) return pickRandomFromPool(entries);
     return pickRandomFromPool(fileNodes);
