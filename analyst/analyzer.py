@@ -112,14 +112,16 @@ class CodeAnalyzer:
         self.errors = []
 
         if not os.path.exists(target_path):
-            return {"error": f"Path not found: {target_path}"}
+            safe_path = os.path.basename(target_path)
+            return {"error": f"Path not found: {safe_path}"}
 
         if os.path.isdir(target_path):
             return self._analyze_directory(target_path)
         else:
             if os.path.getsize(target_path) > MAX_FILE_SIZE:
+                safe_path = os.path.basename(target_path)
                 return {
-                    "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {target_path}"
+                    "error": f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_path}"
                 }
             return self._analyze_single_file(target_path)
 

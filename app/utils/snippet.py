@@ -59,7 +59,7 @@ def _get_parsed_ast(
         if e.offset is not None:
             location_parts.append(f"column {e.offset}")
         location = f" ({', '.join(location_parts)})" if location_parts else ""
-        return source, None, None, None, f"# Syntax error in file: {e.msg}{location}"
+        return source, None, None, None, f"# Syntax error in file{location}."
 
     lines = source.splitlines()
     nodes = {}
@@ -126,8 +126,9 @@ def extract_snippet(
         end = end_lineno or len(lines)
         return "\n".join(lines[start:end]), lineno, end_lineno, source
 
+    safe_file_path = os.path.basename(file_path) if file_path else "unknown"
     return (
-        f"# Code for '{node_id}' not found in {file_path} (analysis mismatch).",
+        f"# Code for '{node_id}' not found in {safe_file_path} (analysis mismatch).",
         None,
         None,
         source,

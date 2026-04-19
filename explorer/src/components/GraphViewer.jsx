@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -109,4 +109,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick }
   );
 };
 
-export default GraphViewer;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap GraphViewer in memo() to prevent O(N) ReactFlow re-renders
+// of the entire graph when the parent App state updates rapidly (e.g. during Ghost Runner).
+export default memo(GraphViewer);
