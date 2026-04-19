@@ -37,6 +37,9 @@
 ## 2024-05-14 - Redundant Array Traversal and Allocation
 **Learning:** Chaining multiple array methods like `.reduce()`, `.map()`, and `.filter()` over large datasets (like `allNodes`) creates hidden O(N) bottlenecks by executing multiple full iterations and allocating temporary intermediate arrays for each step.
 **Action:** Consolidate these operations into a single imperative `for` loop to gather all required metrics and collections in one pass, minimizing memory allocations and CPU overhead without changing functionality.
+## 2024-05-25 - ReactFlow Re-render Optimization
+**Learning:** In React Flow applications, wrapping a heavyweight graph component (like `GraphViewer`) in `memo()` is crucial when the parent component experiences rapid, high-frequency state updates (like a simulation tick), because it prevents O(N) re-renders of the entire graph node/edge structure when the props sent to the graph remain referentially stable.
+**Action:** Use `memo()` on ReactFlow wrapper components to isolate them from parent re-renders, explicitly importing `memo` from `'react'`.
 
 ## 2025-02-21 - Array Iteration Chain Bottleneck in High-Frequency Hooks
 **Learning:** In high-frequency React hooks (e.g., `useGhostRunner.js` simulation ticks), chaining functional array methods like `.filter().map().filter()` over large datasets (like graph edges or nodes) causes severe performance bottlenecks. It creates multiple O(N) passes over the data and allocates several intermediate arrays on every single animation frame or interval tick.
