@@ -5,3 +5,7 @@
 ## 2024-04-16 - Add tooltips for visually truncated text
 **Learning:** Using `text-overflow: ellipsis` on elements without providing a native `title` attribute creates an accessibility and usability barrier, as users cannot read the full text when it's visually truncated. This pattern was prevalent in sidebars, search results, and tool panels, especially for file paths and long node names.
 **Action:** Always pair `text-overflow: ellipsis` with a `title` attribute containing the full text string to ensure native browser tooltips provide the complete content on hover.
+
+## 2024-04-21 - Add tooltips for disabled buttons
+**Learning:** Native `title` tooltips do not appear when a user hovers over a `disabled` HTML `<button>` in most browsers. This removes important context (e.g. "Cannot close while analyzing project") exactly when the user needs it to understand why an action is unavailable.
+**Action:** Wrap disabled interactive elements in a `<span>` (e.g., `display: 'inline-flex', cursor: 'not-allowed'`) and place the `title` attribute on the wrapper. This ensures the tooltip is consistently displayed regardless of the button's disabled state.
