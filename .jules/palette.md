@@ -9,3 +9,6 @@
 ## 2024-04-21 - Add tooltips for disabled buttons
 **Learning:** Native `title` tooltips do not appear when a user hovers over a `disabled` HTML `<button>` in most browsers. This removes important context (e.g. "Cannot close while analyzing project") exactly when the user needs it to understand why an action is unavailable.
 **Action:** Wrap disabled interactive elements in a `<span>` (e.g., `display: 'inline-flex', cursor: 'not-allowed'`) and place the `title` attribute on the wrapper. This ensures the tooltip is consistently displayed regardless of the button's disabled state.
+## 2024-05-18 - Global Focus Visible Ring
+**Learning:** Using component-by-component CSS overrides or utility classes for focus states can be tedious and error-prone, leaving some buttons without accessibility indicators. A single global `:focus-visible` rule in the core stylesheet provides a clean, 100% reliable fallback for keyboard users without affecting mouse users.
+**Action:** Add a global CSS rule for `:focus-visible` targeting interactive elements (`button`, `a`, `input`, `[role="button"]`, etc.) using a prominent outline color (`var(--accent-info)`) and `border-radius: inherit` to match underlying component shapes seamlessly.

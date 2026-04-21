@@ -3165,3 +3165,20 @@ body {
 .chat-empty p {
   margin: 0 0 10px;
 }
+
+/* ===== ACCESSIBILITY: FOCUS STYLES ===== */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+[role="combobox"]:focus-visible,
+[role="listbox"]:focus-visible,
+[role="option"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--accent-info);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
