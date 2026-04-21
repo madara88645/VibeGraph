@@ -93,7 +93,11 @@ const strategies = {
         if (unvisited.length > 0) {
             // If multiple unvisited, push others onto DFS stack
             if (dfsStackRef && unvisited.length > 1) {
-                dfsStackRef.current.push(...unvisited.slice(1).map(n => n.id));
+                // PERFORMANCE OPTIMIZATION (Bolt): Replaced .slice(1).map() with a simple loop
+                // to avoid multiple O(N) array allocations during high-frequency simulation ticks.
+                for (let i = 1; i < unvisited.length; i++) {
+                    dfsStackRef.current.push(unvisited[i].id);
+                }
             }
             return unvisited[0].id;
         }
@@ -109,25 +113,31 @@ const strategies = {
         }
 
         // All reachable visited — jump to an unvisited node
-        const allUnvisited = nodes.filter(n => !visitedSet.has(n.id) && n.data?.file);
-        if (allUnvisited.length > 0) {
-            // Prefer unvisited entry points, then hubs
-            const unvisitedEntries = allUnvisited.filter(n => n.data?.entry_point);
-            if (unvisitedEntries.length > 0) return unvisitedEntries[0].id;
+        // PERFORMANCE OPTIMIZATION (Bolt): Replace multiple O(N) filter chains and
+        // temporary array allocations with a single O(N) linear scan that supports early exit.
+        let maxNode = null;
+        let maxDegree = -1;
+        let firstUnvisited = null;
 
-            // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N log N) sort with O(N) linear scan
-            let maxNode = null;
-            let maxDegree = -1;
-            for (let i = 0; i < allUnvisited.length; i++) {
-                const node = allUnvisited[i];
-                const degree = degreeMap.get(node.id) || 0;
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (!visitedSet.has(n.id) && n.data?.file) {
+                if (n.data?.entry_point) {
+                    return n.id; // Immediate early exit for entry point
+                }
+                if (!firstUnvisited) {
+                    firstUnvisited = n;
+                }
+                const degree = degreeMap.get(n.id) || 0;
                 if (degree > maxDegree) {
                     maxDegree = degree;
-                    maxNode = node;
+                    maxNode = n;
                 }
             }
-            return maxNode?.id || allUnvisited[0].id;
         }
+
+        if (maxNode) return maxNode.id;
+        if (firstUnvisited) return firstUnvisited.id;
 
         // Everything visited — pick random
         const picked = pickRandomFromPool(nodes);
@@ -148,7 +158,10 @@ const strategies = {
 
         if (unvisited.length > 0) {
             if (dfsStackRef && unvisited.length > 1) {
-                dfsStackRef.current.push(...unvisited.slice(1).map(n => n.id));
+                // PERFORMANCE OPTIMIZATION (Bolt): Replaced .slice(1).map() with a simple loop
+                for (let i = 1; i < unvisited.length; i++) {
+                    dfsStackRef.current.push(unvisited[i].id);
+                }
             }
             return unvisited[0].id;
         }
@@ -260,16 +273,24 @@ const strategies = {
         // Try to stay in same file
         const currentFile = nodesMap.get(currentActiveId)?.data?.file;
         if (currentFile) {
-            const sameFileUnvisited = nodes.filter(
-                n => n.data?.file === currentFile && !visitedSet.has(n.id)
-            );
             // Prefer connected nodes in same file
             const targets = getOutgoingTargets(ctx);
-            const sameFileTargets = targets.filter(
-                n => n.data?.file === currentFile && !visitedSet.has(n.id)
-            );
-            if (sameFileTargets.length > 0) return sameFileTargets[0].id;
-            if (sameFileUnvisited.length > 0) return sameFileUnvisited[0].id;
+
+            // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) unconditional array filtering
+            // with O(N) loops that early-exit when the first match is found.
+            for (let i = 0; i < targets.length; i++) {
+                const n = targets[i];
+                if (n.data?.file === currentFile && !visitedSet.has(n.id)) {
+                    return n.id;
+                }
+            }
+
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                if (n.data?.file === currentFile && !visitedSet.has(n.id)) {
+                    return n.id;
+                }
+            }
         }
 
         // Move to next file

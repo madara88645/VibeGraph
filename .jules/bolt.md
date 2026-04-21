@@ -49,3 +49,7 @@
 ## 2025-02-21 - Array Iteration Chain Bottleneck in High-Frequency Hooks
 **Learning:** In high-frequency React hooks (e.g., `useGhostRunner.js` simulation ticks), chaining functional array methods like `.filter().map().filter()` over large datasets (like graph edges or nodes) causes severe performance bottlenecks. It creates multiple O(N) passes over the data and allocates several intermediate arrays on every single animation frame or interval tick.
 **Action:** Replace multiple O(N) functional array method chains with a single imperative `for` loop that accumulates all required metrics in a single O(N) pass. This drastically reduces CPU overhead and intermediate object allocations.
+
+## 2025-02-21 - Array Iteration Chain Bottleneck in High-Frequency Hooks
+**Learning:** In high-frequency React hooks (e.g., `useGhostRunner.js` simulation ticks), chaining functional array methods like `.filter().map().filter()` over large datasets (like graph edges or nodes) causes severe performance bottlenecks. It creates multiple O(N) passes over the data and allocates several intermediate arrays on every single animation frame or interval tick.
+**Action:** Replace multiple O(N) functional array method chains with a single imperative `for` loop that accumulates all required metrics in a single O(N) pass. This drastically reduces CPU overhead and intermediate object allocations.
