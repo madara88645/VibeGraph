@@ -132,7 +132,10 @@ def upload_project(
                         extracted_path = os.path.realpath(target_path)
 
                         try:
-                            if not extracted_path.startswith(tmp_dir_real + os.sep) and extracted_path != tmp_dir_real:
+                            if (
+                                not extracted_path.startswith(tmp_dir_real + os.sep)
+                                and extracted_path != tmp_dir_real
+                            ):
                                 raise ValueError("Path traversal detected")
                         except ValueError:
                             raise HTTPException(
