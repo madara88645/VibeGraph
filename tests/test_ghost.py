@@ -50,6 +50,50 @@ class TestGhostNarrate:
 
     @patch("app.routers.ghost.deps.get_teacher_for_request")
     @patch("app.routers.ghost.extract_snippet")
+    def test_empty_context_nodes(self, mock_snippet, mock_get_teacher):
+        mock_snippet.return_value = ("def foo(): pass", 1, 1, None)
+
+        mock_teacher = MagicMock()
+        mock_teacher.narrate_step.return_value = {
+            "narration": "test narration",
+            "relationship": "calls",
+            "importance": "high",
+        }
+        mock_get_teacher.return_value = mock_teacher
+
+        resp = client.post(
+            "/api/ghost-narrate",
+            json={
+                "node_id": "foo",
+                "file_path": "sample.py",
+                "previous_node_id": "bar",
+                "strategy": "smart",
+                "context_nodes": [],
+            },
+        )
+        assert resp.status_code == 200
+        call_args = mock_teacher.narrate_step.call_args[0][0]
+        assert call_args.edge_context == ""
+
+    @patch("app.routers.ghost.extract_snippet")
+    def test_extract_snippet_raises_exception(self, mock_snippet):
+        mock_snippet.side_effect = ValueError("Snippet extraction failed")
+
+        resp = client.post(
+            "/api/ghost-narrate",
+            json={
+                "node_id": "foo",
+                "file_path": "sample.py",
+                "previous_node_id": "bar",
+                "strategy": "smart",
+                "context_nodes": ["bar", "baz"],
+            },
+        )
+        # Note: Depending on how errors are handled in FastAPI middleware, it might be a 500
+        assert resp.status_code == 500
+
+    @patch("app.routers.ghost.deps.get_teacher_for_request")
+    @patch("app.routers.ghost.extract_snippet")
     def test_strategy_is_sanitized(self, mock_snippet, mock_get_teacher):
         mock_snippet.return_value = ("def foo(): pass", 1, 1, None)
 
