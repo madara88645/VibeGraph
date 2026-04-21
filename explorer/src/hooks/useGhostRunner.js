@@ -160,13 +160,22 @@ const strategies = {
             }
         }
 
-        // Jump to next unvisited entry point
-        const nextEntry = nodes.find(n => n.data?.entry_point && !visitedSet.has(n.id));
-        if (nextEntry) return nextEntry.id;
-
-        // Any unvisited
-        const any = nodes.find(n => !visitedSet.has(n.id) && n.data?.file);
-        return any?.id || null;
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced two separate O(N) .find() searches
+        // with a single O(N) loop to locate the next unvisited entry point or fall back
+        // to the first unvisited file node, reducing worst-case array traversals by 50%.
+        let anyUnvisited = null;
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (!visitedSet.has(n.id) && n.data?.file) {
+                if (n.data?.entry_point) {
+                    return n.id;
+                }
+                if (!anyUnvisited) {
+                    anyUnvisited = n;
+                }
+            }
+        }
+        return anyUnvisited?.id || null;
     },
 
     // ── Hubs First: Visit most-connected nodes first ──
