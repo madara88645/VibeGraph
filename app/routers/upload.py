@@ -128,14 +128,13 @@ def upload_project(
                             )
 
                         safe_filename = member.filename.lstrip("/\\")
-                        extracted_path = os.path.realpath(
-                            os.path.join(tmp_dir_real, safe_filename)
-                        )
+                        target_path = os.path.join(tmp_dir_real, safe_filename)
+                        extracted_path = os.path.realpath(target_path)
 
                         try:
                             if (
-                                os.path.commonpath([tmp_dir_real, extracted_path])
-                                != tmp_dir_real
+                                not extracted_path.startswith(tmp_dir_real + os.sep)
+                                and extracted_path != tmp_dir_real
                             ):
                                 raise ValueError("Path traversal detected")
                         except ValueError:
