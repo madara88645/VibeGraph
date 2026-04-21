@@ -1473,11 +1473,15 @@ body {
   padding: 3rem;
 }
 
-.modal-close-btn {
+.modal-close-wrapper {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
   z-index: 10;
+  display: inline-flex;
+}
+
+.modal-close-btn {
   background: transparent;
   border: none;
   color: var(--upload-muted, #4A5D52);

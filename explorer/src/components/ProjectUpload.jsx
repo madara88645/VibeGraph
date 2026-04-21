@@ -141,17 +141,21 @@ const ProjectUpload = ({ onUploadSuccess }) => {
             {isModalOpen && createPortal(
                 <div className="upload-modal-overlay" onClick={() => !isAnalyzing && setIsModalOpen(false)}>
                     <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="modal-close-btn"
-                            onClick={() => setIsModalOpen(false)}
-                            disabled={isAnalyzing}
-                            aria-label="Close Upload Modal"
+                        <span
+                            className="modal-close-wrapper"
                             title={isAnalyzing ? "Cannot close while analyzing project" : "Close"}
                         >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                                <path d="M4 4l8 8M12 4l-8 8" />
-                            </svg>
-                        </button>
+                            <button
+                                className="modal-close-btn"
+                                onClick={() => setIsModalOpen(false)}
+                                disabled={isAnalyzing}
+                                aria-label="Close Upload Modal"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                    <path d="M4 4l8 8M12 4l-8 8" />
+                                </svg>
+                            </button>
+                        </span>
 
                         {isAnalyzing ? (
                             <div className="analyzing-state" aria-live="polite" aria-busy="true">
