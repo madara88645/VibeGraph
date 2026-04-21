@@ -146,7 +146,7 @@ const strategies = {
 
     // ── Entry First: Start from entry points, DFS through call chain ──
     entryFirst(ctx) {
-        const { currentActiveId, nodes, visitedSet, dfsStackRef, nodesMap } = ctx;
+        const { currentActiveId, nodes, visitedSet, dfsStackRef, nodesMap, entryPointsRef } = ctx;
         if (!currentActiveId) {
             const start = pickEntryPoint(ctx);
             if (dfsStackRef) dfsStackRef.current = [];
@@ -174,7 +174,8 @@ const strategies = {
         }
 
         // Jump to next unvisited entry point
-        const nextEntry = nodes.find(n => n.data?.entry_point && !visitedSet.has(n.id));
+        const entryPoints = entryPointsRef?.current || nodes.filter(n => n.data?.entry_point);
+        const nextEntry = entryPoints.find(n => !visitedSet.has(n.id));
         if (nextEntry) return nextEntry.id;
 
         // Any unvisited
@@ -352,10 +353,12 @@ export function useGhostRunner(
     const dfsStackRef = useRef([]);
     const fileQueueRef = useRef([]);
     const narrationRequestIdRef = useRef(0);
+    const entryPointsRef = useRef([]);
 
     useEffect(() => {
         nodesRef.current = nodes;
         nodesMapRef.current = new Map(nodes.map(n => [n.id, n]));
+        entryPointsRef.current = nodes.filter(n => n.data?.entry_point);
     }, [nodes]);
     useEffect(() => { edgesRef.current = edges; }, [edges]);
     useEffect(() => { activeNodeIdRef.current = activeNodeId; }, [activeNodeId]);
@@ -536,6 +539,7 @@ export function useGhostRunner(
                         degreeMap: degreeMapRef.current,
                         dfsStackRef,
                         fileQueueRef,
+                        entryPointsRef,
                     };
                     const startId = strategies[strategy]?.(ctx) || strategies.smart(ctx);
                     if (startId) onUserChooseNext(startId);
@@ -562,6 +566,7 @@ export function useGhostRunner(
                 degreeMap: degreeMapRef.current,
                 dfsStackRef,
                 fileQueueRef,
+                entryPointsRef,
             };
 
             const strategyFn = strategies[strategy] || strategies.smart;
