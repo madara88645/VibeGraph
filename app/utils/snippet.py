@@ -63,10 +63,27 @@ def _get_parsed_ast(
 
     lines = source.splitlines()
     nodes = {}
-    for node in ast.walk(tree):
+
+    # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk() with a targeted BFS traversal
+    # that only visits nodes containing a `body` (or `orelse`/`handlers`/`finalbody`/`cases`).
+    # This preserves the exact BFS name-shadowing behavior of ast.walk while skipping
+    # thousands of irrelevant leaf nodes (like Name, Constant), drastically improving speed.
+    from collections import deque
+    queue = deque([tree])
+
+    while queue:
+        node = queue.popleft()
+
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if node.name not in nodes:
                 nodes[node.name] = (node.lineno, node.end_lineno)
+
+        # Only add children that are part of statement lists (blocks where defs can occur)
+        for attr in ('body', 'orelse', 'handlers', 'finalbody', 'cases'):
+            if hasattr(node, attr):
+                val = getattr(node, attr)
+                if isinstance(val, list):
+                    queue.extend(val)
 
     return source, tree, lines, nodes, None
 

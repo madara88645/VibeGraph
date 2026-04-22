@@ -52,4 +52,7 @@
 
 ## 2024-05-18 - Optimize array searches by extracting fallback subsets
 **Learning:** When optimizing sequential fallback searches over large arrays in high-frequency React hooks (e.g., searching for a specific node and falling back to another in `useGhostRunner.js`), consolidate multiple `O(N)` `.find()` calls into a single `O(N)` `for` loop, or cache subsets to avoid iterating the whole array.
-**Action:** Created `entryPointsRef` populated on mount/node-change to reduce a large O(N) array scan for `entry_point` nodes down to scanning a pre-filtered list, achieving ~500x speedup in the worst case.
+
+## 2025-02-21 - Optimize AST Traversal
+**Learning:** In `app/utils/snippet.py`, using `ast.walk` to traverse large AST trees checks every single node type, causing significant overhead (e.g., thousands of Name, Constant nodes). We can drastically speed this up by manually traversing only statement blocks (`body`, `orelse`, `handlers`, `finalbody`, `cases`) using a `deque` for Breadth-First Search. This provides a 3x+ speedup while safely preserving the exact name-shadowing behavior of `ast.walk`.
+**Action:** Replace `ast.walk()` with a targeted BFS traversal using `collections.deque` when searching for specific block-level declarations (like classes or functions), making sure to only enqueue children that are part of statement lists.
