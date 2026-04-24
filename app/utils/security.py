@@ -57,6 +57,10 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
     if any(part == ".." for part in parts):
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
 
+    # Block hidden files and directories
+    if any(part.startswith(".") for part in parts if part != "."):
+        raise HTTPException(status_code=400, detail=f"Unsafe upload path (hidden file): {raw_name}")
+
     safe_rel = "/".join(parts)
     if os.path.isabs(safe_rel):
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")

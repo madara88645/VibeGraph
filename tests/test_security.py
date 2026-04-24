@@ -58,6 +58,24 @@ def test_normalize_uploaded_filename_traversal():
     assert "Unsafe upload path" in exc_info.value.detail
 
 
+def test_normalize_uploaded_filename_hidden():
+    """Test that hidden files and directories are blocked."""
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename(".env")
+    assert exc_info.value.status_code == 400
+    assert "Unsafe upload path (hidden file)" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename("foo/.git/config")
+    assert exc_info.value.status_code == 400
+    assert "Unsafe upload path (hidden file)" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename(".hidden_dir/foo.py")
+    assert exc_info.value.status_code == 400
+    assert "Unsafe upload path (hidden file)" in exc_info.value.detail
+
+
 def test_normalize_uploaded_filename_absolute():
     """Test absolute paths are converted or blocked.
     Because empty strings are filtered out by split('/'),
