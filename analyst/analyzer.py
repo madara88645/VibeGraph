@@ -172,17 +172,28 @@ class CodeAnalyzer:
                 return {}
             return {"error": error_msg}
 
-        with open(file_path, encoding="utf-8") as f:
-            try:
-                tree = ast.parse(f.read(), filename=file_path)
-            except SyntaxError:
-                # In directory mode, we might just log this and continue
-                if merge:
-                    error_msg = f"Syntax error in {safe_name}"
-                    print(error_msg)
-                    self.errors.append(error_msg)
-                    return {}
-                return {"error": f"Syntax error in {safe_name}"}
+        # Read as bytes so ast.parse can apply Python's own source encoding
+        # detection: BOM -> utf-8, PEP 263 coding declaration -> named codec,
+        # otherwise utf-8. Hard-coding encoding="utf-8" here used to raise
+        # UnicodeDecodeError on legitimate non-UTF-8 files, crashing the
+        # entire directory analysis to a 500.
+        error_msg: str | None = None
+        try:
+            with open(file_path, "rb") as f:
+                source = f.read()
+            tree = ast.parse(source, filename=file_path)
+        except SyntaxError:
+            error_msg = f"Syntax error in {safe_name}"
+        except (UnicodeDecodeError, ValueError):
+            error_msg = f"Could not decode {safe_name}"
+        except OSError:
+            error_msg = f"Could not read {safe_name}"
+
+        if error_msg is not None:
+            if merge:
+                self.errors.append(error_msg)
+                return {}
+            return {"error": error_msg}
 
         visitor = CallGraphVisitor(file_path)
         visitor.visit(tree)
@@ -238,10 +249,15 @@ class CodeAnalyzer:
         project_root = os.path.abspath(project_root)
 
         try:
-            with open(resolved, encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=resolved)
+            with open(resolved, "rb") as f:
+                source = f.read()
+            tree = ast.parse(source, filename=resolved)
         except SyntaxError:
             return {"error": f"Syntax error in {safe_name}"}
+        except (UnicodeDecodeError, ValueError):
+            return {"error": f"Could not decode {safe_name}"}
+        except OSError:
+            return {"error": f"Could not read {safe_name}"}
 
         dependencies: list[dict[str, Any]] = []
 
