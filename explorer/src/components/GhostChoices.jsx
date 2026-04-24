@@ -14,6 +14,7 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
                     className="ghost-choice-btn"
                     onClick={() => onChoose(node.id)}
                     title={`Go to ${node.data?.label || node.id}${node.data?.file ? ` (${node.data.file.split(/[/\\]/).pop()})` : ''}`}
+                    aria-label={`Go to ${node.data?.label || node.id}${node.data?.file ? ` (${node.data.file.split(/[/\\]/).pop()})` : ''}`}
                 >
                     <span className="ghost-choice-label">
                         <span aria-hidden="true">
