@@ -366,23 +366,29 @@ export function useGhostRunner(
     const degreeMapRef = useRef(currentDegreeMap || new Map());
     useEffect(() => { degreeMapRef.current = currentDegreeMap || new Map(); }, [currentDegreeMap]);
 
-    // PERFORMANCE OPTIMIZATION (Bolt): Prevent O(N) re-render bottleneck on non-tick UI updates
-    // by memoizing the array filters. stepCount acts as the trigger to re-evaluate the visited set.
+    // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) array/string allocations with an imperative loop
+    // to calculate visitedCount without triggering GC pressure on every simulation tick.
     const visitedCount = useMemo(() => {
-        return nodes.filter((node) => isNavigableNode(node) && visitedSetRef.current.has(node.id)).length;
+        let count = 0;
+        for (let i = 0; i < nodes.length; i++) {
+            if (isNavigableNode(nodes[i]) && visitedSetRef.current.has(nodes[i].id)) {
+                count++;
+            }
+        }
+        return count;
     }, [nodes, stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger to re-read visitedSetRef.current after each step advance
-    // Encode only the fields that affect navigability into a stable key, so totalNodes is not
-    // invalidated on every tick-driven nodes array replacement (only when graph structure changes).
-    const navigableNodesKey = useMemo(
-        () => nodes.map((node) => `${node.id}:${node?.data?.file ? 1 : 0}`).join('|'),
-        [nodes]
-    );
-    // isNavigableNode ≡ Boolean(node?.data?.file), which the key encodes as `:1`. Counting those
-    // entries directly removes any `nodes` reference and keeps the dependency array complete.
-    const totalNodes = useMemo(
-        () => navigableNodesKey.split('|').filter((s) => s.endsWith(':1')).length,
-        [navigableNodesKey]
-    );
+
+    // PERFORMANCE OPTIMIZATION (Bolt): Replace expensive navigableNodesKey string-building
+    // and split/filter combo with a fast, zero-allocation loop over the nodes array.
+    const totalNodes = useMemo(() => {
+        let count = 0;
+        for (let i = 0; i < nodes.length; i++) {
+            if (isNavigableNode(nodes[i])) {
+                count++;
+            }
+        }
+        return count;
+    }, [nodes]);
 
     // ── Narration fetcher (non-blocking) ──
     const fetchNarration = useCallback((nodeId, previousNodeId) => {

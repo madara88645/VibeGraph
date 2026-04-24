@@ -53,3 +53,6 @@
 ## 2024-05-18 - Optimize array searches by extracting fallback subsets
 **Learning:** When optimizing sequential fallback searches over large arrays in high-frequency React hooks (e.g., searching for a specific node and falling back to another in `useGhostRunner.js`), consolidate multiple `O(N)` `.find()` calls into a single `O(N)` `for` loop, or cache subsets to avoid iterating the whole array.
 **Action:** Created `entryPointsRef` populated on mount/node-change to reduce a large O(N) array scan for `entry_point` nodes down to scanning a pre-filtered list, achieving ~500x speedup in the worst case.
+## $(date +%Y-%m-%d) - Zero-allocation primitives for useMemo
+**Learning:** In high-frequency React hooks (e.g., simulation ticks), creating complex string-based keys (like `array.map().join()`) or using `.split().filter()` to derive primitive counts for memoization is a severe anti-pattern that creates massive garbage collection pressure.
+**Action:** Compute these primitive values directly using a fast, zero-allocation imperative `for` loop inside the `useMemo` block. Because `useMemo` returns a primitive, downstream components still correctly bail out of renders if the value doesn't change, while eliminating the allocation overhead entirely.
