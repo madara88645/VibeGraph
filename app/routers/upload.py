@@ -109,6 +109,15 @@ def upload_project(
                             )
 
                         safe_filename = member.filename.lstrip("/\\")
+
+                        # Block hidden files and directories inside zip
+                        parts = safe_filename.split("/")
+                        if any(part.startswith(".") for part in parts if part != "."):
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Unsafe zip file detected (hidden file): {safe_name}",
+                            )
+
                         extracted_path = os.path.realpath(
                             os.path.join(tmp_dir_real, safe_filename)
                         )

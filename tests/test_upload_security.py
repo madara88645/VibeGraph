@@ -76,6 +76,28 @@ def test_upload_too_many_files_zip():
     assert "Too many files in zip archive" in response.json().get("detail", "")
 
 
+def test_upload_hidden_file_zip():
+    """Ensure that zip files containing hidden files/directories are rejected."""
+    zip_path = "hidden_file.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        # A hidden file inside a zip
+        z.writestr(".env", "SECRET=123")
+        # A normal file
+        z.writestr("normal.py", "print('hello')")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("hidden_file.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    assert response.status_code == 400
+    assert "Unsafe zip file detected (hidden file)" in response.json().get("detail", "")
+
+
 def test_upload_absolute_path_zip():
     """Ensure that absolute paths in zip files are sanitized properly."""
     zip_path = "absolute_path.zip"
