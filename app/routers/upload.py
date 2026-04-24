@@ -95,6 +95,8 @@ def upload_project(
 
     try:
         total_upload_size = 0
+        total_header_size = 0
+        total_uncompressed_size = 0
         for file in files:
             safe_name = normalize_uploaded_filename(file.filename)
             file_path = os.path.join(tmp_dir, safe_name)
@@ -117,7 +119,6 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_real = os.path.realpath(tmp_dir)
                     safe_members = []
-                    total_size = 0
                     file_count = 0
                     for member in zip_ref.infolist():
                         file_count += 1
@@ -143,17 +144,15 @@ def upload_project(
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
 
-                        total_size += member.file_size
-                        if total_size > MAX_UNCOMPRESSED_SIZE:
+                        total_header_size += member.file_size
+                        if total_header_size > MAX_UNCOMPRESSED_SIZE:
                             raise HTTPException(
                                 status_code=400,
-                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
+                                detail=f"Zip contents too large: {total_header_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
                             )
 
                         member.filename = safe_filename
                         safe_members.append((member, extracted_path))
-
-                    total_size = 0
 
                     # PERFORMANCE OPTIMIZATION (Bolt): Cache created directories
                     # during ZIP extraction to avoid redundant O(N) os.makedirs syscalls,
@@ -178,8 +177,8 @@ def upload_project(
                                 chunk = source.read(8192)
                                 if not chunk:
                                     break
-                                total_size += len(chunk)
-                                if total_size > MAX_UNCOMPRESSED_SIZE:
+                                total_uncompressed_size += len(chunk)
+                                if total_uncompressed_size > MAX_UNCOMPRESSED_SIZE:
                                     raise HTTPException(
                                         status_code=400,
                                         detail=f"Zip contents too large (max {MAX_UNCOMPRESSED_SIZE} bytes)",
