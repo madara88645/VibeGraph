@@ -181,5 +181,97 @@ def main():
         self.assertIn("error", result)
 
 
+class TestCodeAnalyzerEncoding(unittest.TestCase):
+    """Regression tests for non-UTF-8 Python source handling.
+
+    Before the fix, a single non-UTF-8 .py file anywhere in an uploaded
+    project raised UnicodeDecodeError out of _analyze_single_file. The
+    exception escaped _analyze_directory's `except OSError:` (UnicodeDecodeError
+    is a ValueError, not an OSError) and surfaced as a 500 to the user.
+    """
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.analyzer = CodeAnalyzer()
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def write_bytes(self, path: str, data: bytes) -> str:
+        full_path = os.path.join(self.test_dir, path)
+        os.makedirs(os.path.dirname(full_path) or self.test_dir, exist_ok=True)
+        with open(full_path, "wb") as f:
+            f.write(data)
+        return full_path
+
+    def test_pep263_cp1252_file_parses_successfully(self):
+        """A file with a PEP 263 coding declaration should be parsed."""
+        source = b"# -*- coding: cp1252 -*-\ndef greet():\n    return 'caf\xe9'\n"
+        file_path = self.write_bytes("legacy.py", source)
+
+        result = self.analyzer.analyze_file(file_path)
+
+        self.assertNotIn("error", result)
+        def_names = [d["name"] for d in result["definitions"]]
+        self.assertIn("greet", def_names)
+
+    def test_non_utf8_file_without_declaration_is_skipped_not_fatal(self):
+        """One bad file must not nuke the whole directory analysis."""
+        self.write_bytes("good.py", b"def a(): pass\n")
+        self.write_bytes("bad.py", b"def b():\n    return 'caf\xe9'\n")
+
+        result = self.analyzer.analyze_file(self.test_dir)
+
+        graph = result["graph"]
+        self.assertTrue(graph.has_node("a"))
+        self.assertFalse(graph.has_node("b"))
+        self.assertTrue(
+            any("bad.py" in err for err in result["errors"]),
+            f"expected an error entry mentioning bad.py, got {result['errors']}",
+        )
+
+    def test_single_bad_file_returns_error_not_exception(self):
+        """Single-file mode must degrade to an error dict, not raise."""
+        file_path = self.write_bytes("solo.py", b"def b():\n    return 'caf\xe9'\n")
+
+        result = self.analyzer.analyze_file(file_path)
+
+        self.assertIn("error", result)
+
+    def test_utf8_bom_file_parses_successfully(self):
+        """Characterization test: BOM-prefixed UTF-8 is valid Python source."""
+        source = b"\xef\xbb\xbfdef bommed(): pass\n"
+        file_path = self.write_bytes("bom.py", source)
+
+        result = self.analyzer.analyze_file(file_path)
+
+        self.assertNotIn("error", result)
+        def_names = [d["name"] for d in result["definitions"]]
+        self.assertIn("bommed", def_names)
+
+    def test_null_byte_in_source_is_skipped(self):
+        """ast.parse raises ValueError for null bytes; must be caught."""
+        source = b"def ok():\n    return 0\n\x00\n"
+        self.write_bytes("good.py", b"def a(): pass\n")
+        self.write_bytes("nullish.py", source)
+
+        result = self.analyzer.analyze_file(self.test_dir)
+
+        graph = result["graph"]
+        self.assertTrue(graph.has_node("a"))
+        self.assertTrue(
+            any("nullish.py" in err for err in result["errors"]),
+            f"expected an error entry mentioning nullish.py, got {result['errors']}",
+        )
+
+    def test_extract_dependencies_non_utf8_file(self):
+        """extract_dependencies must not raise on a non-UTF-8 file."""
+        file_path = self.write_bytes("legacy.py", b"import os\nx = 'caf\xe9'\n")
+
+        result = self.analyzer.extract_dependencies(file_path)
+
+        self.assertIn("error", result)
+
+
 if __name__ == "__main__":
     unittest.main()

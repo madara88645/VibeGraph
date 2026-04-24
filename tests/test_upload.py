@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+import zipfile
 from io import BytesIO
 from unittest.mock import patch
 
@@ -102,6 +103,36 @@ def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
 
     # Cleanup the actual temp dir since the mock prevented it
     os.rmdir(tmp_dir)
+
+
+def test_zip_with_non_utf8_file_returns_200_with_partial_graph():
+    """A non-UTF-8 file in a zip must not crash the whole upload to 500.
+
+    Regression guard for the encoding bug: previously one cp1252 file
+    without a coding declaration raised UnicodeDecodeError out of the
+    analyzer and the entire upload returned 500.
+    """
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("proj/good.py", b"def alpha():\n    return 1\n")
+        zf.writestr(
+            "proj/legacy.py",
+            b"# -*- coding: cp1252 -*-\ndef beta():\n    return 'caf\xe9'\n",
+        )
+        zf.writestr("proj/junk.py", b"def gamma():\n    return 'caf\xe9'\n")
+
+    buffer.seek(0)
+    files = {"files": ("proj.zip", buffer, "application/zip")}
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    node_ids = {node["id"] for node in data["nodes"]}
+    assert "alpha" in node_ids
+    assert "beta" in node_ids
+    assert "gamma" not in node_ids
 
 
 def test_upload_project_size_limit():
