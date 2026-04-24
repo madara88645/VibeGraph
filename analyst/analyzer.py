@@ -177,23 +177,23 @@ class CodeAnalyzer:
         # otherwise utf-8. Hard-coding encoding="utf-8" here used to raise
         # UnicodeDecodeError on legitimate non-UTF-8 files, crashing the
         # entire directory analysis to a 500.
-        error_msg: str | None = None
+        parse_error = None
         try:
             with open(file_path, "rb") as f:
                 source = f.read()
             tree = ast.parse(source, filename=file_path)
         except SyntaxError:
-            error_msg = f"Syntax error in {safe_name}"
+            parse_error = f"Syntax error in {safe_name}"
         except (UnicodeDecodeError, ValueError):
-            error_msg = f"Could not decode {safe_name}"
+            parse_error = f"Could not decode {safe_name}"
         except OSError:
-            error_msg = f"Could not read {safe_name}"
+            parse_error = f"Could not read {safe_name}"
 
-        if error_msg is not None:
+        if parse_error is not None:
             if merge:
-                self.errors.append(error_msg)
+                self.errors.append(parse_error)
                 return {}
-            return {"error": error_msg}
+            return {"error": parse_error}
 
         visitor = CallGraphVisitor(file_path)
         visitor.visit(tree)
