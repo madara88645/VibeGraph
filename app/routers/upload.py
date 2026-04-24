@@ -139,10 +139,18 @@ def upload_project(
                             ):
                                 raise ValueError("Path traversal detected")
 
-                            sensitive_names = {".env", ".git", ".ssh", ".aws", ".config"}
+                            sensitive_names = {
+                                ".env",
+                                ".git",
+                                ".ssh",
+                                ".aws",
+                                ".config",
+                            }
                             for part in safe_filename.replace("\\", "/").split("/"):
                                 if part in sensitive_names:
-                                    raise ValueError(f"Sensitive hidden file or directory not allowed: {part}")
+                                    raise ValueError(
+                                        f"Sensitive hidden file or directory not allowed: {part}"
+                                    )
                         except ValueError:
                             # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(

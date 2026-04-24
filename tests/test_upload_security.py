@@ -96,6 +96,7 @@ def test_upload_absolute_path_zip():
         detail = response.json().get("detail", "")
         assert "Unsafe zip file detected" not in detail
 
+
 def test_upload_hidden_file_zip():
     """Ensure that zip files containing hidden files/directories are rejected."""
     zip_path = "hidden_file.zip"
@@ -118,6 +119,7 @@ def test_upload_hidden_file_zip():
 
     assert response.status_code == 400
     assert "Unsafe zip file detected" in response.json()["detail"]
+
 
 def test_upload_allowed_hidden_file_zip():
     """Ensure that zip files containing benign hidden files like .gitignore are allowed."""
