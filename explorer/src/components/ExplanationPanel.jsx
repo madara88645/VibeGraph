@@ -175,7 +175,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 <div className="ep-footer">
                     <span title={node.data.file || node.data.original_data?.file}>📄 {node.data.file || node.data.original_data?.file}</span>
                     {(node.data.lineno || node.data.original_data?.lineno) && (
-                        <span>L{node.data.lineno || node.data.original_data?.lineno}</span>
+                        <span title={`Line ${node.data.lineno || node.data.original_data?.lineno}`}>L{node.data.lineno || node.data.original_data?.lineno}</span>
                     )}
                 </div>
             )}

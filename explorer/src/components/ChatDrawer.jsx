@@ -261,7 +261,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           <span>Vibe Chat</span>
         </div>
         {selectedNode ? (
-          <span className="chat-context-badge">
+          <span className="chat-context-badge" title={`Asking about: ${selectedNode.data?.label || selectedNode.id}`}>
             Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
           </span>
         ) : null}

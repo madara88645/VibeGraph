@@ -110,7 +110,7 @@ const FileSidebar = ({
                                         <span className="file-count">{stats.count || 0}</span>
                                     </div>
                                     {dirName && (
-                                        <div className="file-dir">{dirName}</div>
+                                        <div className="file-dir" title={dirName}>{dirName}</div>
                                     )}
                                     {isSelected && stats.types && (
                                         <div className="file-types">
