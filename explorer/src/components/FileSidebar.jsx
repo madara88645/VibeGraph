@@ -110,7 +110,7 @@ const FileSidebar = ({
                                         <span className="file-count">{stats.count || 0}</span>
                                     </div>
                                     {dirName && (
-                                        <div className="file-dir">{dirName}</div>
+                                        <div className="file-dir" title={dirName}>{dirName}</div>
                                     )}
                                     {isSelected && stats.types && (
                                         <div className="file-types">
@@ -178,11 +178,11 @@ const FileSidebar = ({
                                             const details = typeof imp === 'object' ? imp.names : null;
                                             return (
                                                 <div key={i} className="deps-item">
-                                                    <span className="deps-item-name">
+                                                    <span className="deps-item-name" title={impName}>
                                                         {(impName || '').split(/[/\\]/).pop()}
                                                     </span>
                                                     {details && details.length > 0 && (
-                                                        <span className="deps-item-detail">
+                                                        <span className="deps-item-detail" title={details.join(', ')}>
                                                             ({details.join(', ')})
                                                         </span>
                                                     )}
@@ -201,7 +201,7 @@ const FileSidebar = ({
                                                 className="deps-item deps-item-clickable"
                                                 onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
                                             >
-                                                <span className="deps-item-name">
+                                                <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
                                                     {(typeof ref === 'string' ? ref : ref.file || '').split(/[/\\]/).pop()}
                                                 </span>
                                             </button>
