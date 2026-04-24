@@ -143,7 +143,7 @@ def upload_project(
                             for part in safe_filename.replace("\\", "/").split("/"):
                                 if part in sensitive_names:
                                     raise ValueError(f"Sensitive hidden file or directory not allowed: {part}")
-                        except ValueError as e:
+                        except ValueError:
                             # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(
                                 status_code=400,
