@@ -1,6 +1,10 @@
 import ast
 import functools
+import hashlib
 import os
+import sys
+import threading
+from collections import OrderedDict
 import networkx as nx
 from typing import Any
 
@@ -18,6 +22,44 @@ IGNORED_DIRS = frozenset(
 )
 
 MAX_FILE_SIZE = 1024 * 1024  # 1MB per-file limit to prevent Asymmetric DoS
+
+# Content-hash AST cache. Skips repeat ast.parse() on identical bytes across
+# uploads, identical files (e.g. empty __init__.py), and CI re-runs. Cache the
+# ast.Module — NOT the per-file DiGraph — because CallGraphVisitor stamps
+# file_path into every node's `file=` attribute (consumed by the snippet
+# preview), so two paths with identical bytes must still produce path-tagged
+# graphs. The visitor walk is cheap; only the parse is expensive.
+#
+# Do not mutate cached ast.Module objects (no .parent backrefs, no
+# fix_missing_locations) — they are shared by reference.
+_AST_CACHE_MAX = 256
+_AST_CACHE: "OrderedDict[bytes, ast.Module]" = OrderedDict()
+_AST_CACHE_LOCK = threading.Lock()
+# Python version in the key invalidates across upgrades (e.g. 3.11 -> 3.12
+# adds ast.TryStar). FastAPI runs sync handlers in a threadpool, so the lock
+# is mandatory: OrderedDict mutations are not thread-safe.
+_AST_CACHE_VERSION_TAG = repr(sys.version_info[:2]).encode()
+
+
+def _parse_cached(source: bytes, filename: str) -> ast.Module:
+    key = hashlib.sha256(source).digest() + _AST_CACHE_VERSION_TAG
+    with _AST_CACHE_LOCK:
+        hit = _AST_CACHE.get(key)
+        if hit is not None:
+            _AST_CACHE.move_to_end(key)
+            return hit
+    tree = ast.parse(source, filename=filename)
+    with _AST_CACHE_LOCK:
+        _AST_CACHE[key] = tree
+        _AST_CACHE.move_to_end(key)
+        if len(_AST_CACHE) > _AST_CACHE_MAX:
+            _AST_CACHE.popitem(last=False)
+    return tree
+
+
+def _ast_cache_clear() -> None:
+    with _AST_CACHE_LOCK:
+        _AST_CACHE.clear()
 
 
 class CallGraphVisitor(ast.NodeVisitor):
@@ -181,7 +223,7 @@ class CodeAnalyzer:
         try:
             with open(file_path, "rb") as f:
                 source = f.read()
-            tree = ast.parse(source, filename=file_path)
+            tree = _parse_cached(source, filename=file_path)
         except SyntaxError:
             parse_error = f"Syntax error in {safe_name}"
         except (UnicodeDecodeError, ValueError):
@@ -251,7 +293,7 @@ class CodeAnalyzer:
         try:
             with open(resolved, "rb") as f:
                 source = f.read()
-            tree = ast.parse(source, filename=resolved)
+            tree = _parse_cached(source, filename=resolved)
         except SyntaxError:
             return {"error": f"Syntax error in {safe_name}"}
         except (UnicodeDecodeError, ValueError):
