@@ -96,6 +96,7 @@ def test_upload_absolute_path_zip():
         detail = response.json().get("detail", "")
         assert "Unsafe zip file detected" not in detail
 
+
 def test_upload_zip_with_sensitive_file():
     zip_path = "sensitive.zip"
     with zipfile.ZipFile(zip_path, "w") as z:

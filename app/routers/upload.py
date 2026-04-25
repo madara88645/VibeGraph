@@ -131,7 +131,13 @@ def upload_project(
                         safe_filename = member.filename.lstrip("/\\")
 
                         path_parts = safe_filename.replace("\\", "/").split("/")
-                        sensitive_blocklist = {".env", ".git", ".ssh", ".aws", ".config"}
+                        sensitive_blocklist = {
+                            ".env",
+                            ".git",
+                            ".ssh",
+                            ".aws",
+                            ".config",
+                        }
                         if not sensitive_blocklist.isdisjoint(path_parts):
                             raise HTTPException(
                                 status_code=400,
