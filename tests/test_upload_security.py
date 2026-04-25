@@ -95,3 +95,20 @@ def test_upload_absolute_path_zip():
     if response.status_code == 400:
         detail = response.json().get("detail", "")
         assert "Unsafe zip file detected" not in detail
+
+def test_upload_zip_with_sensitive_file():
+    zip_path = "sensitive.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        z.writestr(".env", "SECRET=123")
+        z.writestr("valid.py", "def a(): pass")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("sensitive.zip", f, "application/zip")},
+        )
+
+    os.remove(zip_path)
+
+    assert response.status_code == 400
+    assert "Zip archive contains sensitive files" in response.json().get("detail", "")

@@ -129,6 +129,15 @@ def upload_project(
                             )
 
                         safe_filename = member.filename.lstrip("/\\")
+
+                        path_parts = safe_filename.replace("\\", "/").split("/")
+                        sensitive_blocklist = {".env", ".git", ".ssh", ".aws", ".config"}
+                        if not sensitive_blocklist.isdisjoint(path_parts):
+                            raise HTTPException(
+                                status_code=400,
+                                detail="Zip archive contains sensitive files",
+                            )
+
                         target_path = os.path.join(tmp_dir_real, safe_filename)
                         extracted_path = os.path.realpath(target_path)
 
