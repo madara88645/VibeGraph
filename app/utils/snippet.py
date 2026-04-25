@@ -68,7 +68,7 @@ def _get_parsed_ast(
     # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk (which visits all leaves)
     # with a targeted BFS using deque to massively speed up parsing large ASTs,
     # while preserving BFS-first-name-wins shadowing behavior.
-    queue = collections.deque([tree])
+    queue: collections.deque[ast.AST] = collections.deque([tree])
     while queue:
         current = queue.popleft()
 
