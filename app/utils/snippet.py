@@ -1,6 +1,7 @@
 """Source code snippet extraction from Python files."""
 
 import ast
+import collections
 import functools
 import logging
 import os
@@ -63,10 +64,25 @@ def _get_parsed_ast(
 
     lines = source.splitlines()
     nodes = {}
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if node.name not in nodes:
-                nodes[node.name] = (node.lineno, node.end_lineno)
+
+    # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk (which visits all leaves)
+    # with a targeted BFS using deque to massively speed up parsing large ASTs,
+    # while preserving BFS-first-name-wins shadowing behavior.
+    queue = collections.deque([tree])
+    while queue:
+        current = queue.popleft()
+
+        if isinstance(current, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if current.name not in nodes:
+                nodes[current.name] = (current.lineno, current.end_lineno)
+
+        # Only recurse into structural blocks where new definitions can exist
+        for attr in ("body", "orelse", "handlers", "finalbody", "cases"):
+            child_list = getattr(current, attr, None)
+            if isinstance(child_list, list):
+                for child in child_list:
+                    if isinstance(child, ast.AST):
+                        queue.append(child)
 
     return source, tree, lines, nodes, None
 
