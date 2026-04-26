@@ -95,3 +95,51 @@ def test_upload_absolute_path_zip():
     if response.status_code == 400:
         detail = response.json().get("detail", "")
         assert "Unsafe zip file detected" not in detail
+
+
+def test_upload_hidden_file_zip():
+    """Ensure that zip files containing hidden files/directories are rejected."""
+    zip_path = "hidden_file.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        # A hidden file
+        z.writestr(".env", "SECRET=123")
+        # A hidden directory
+        z.writestr(".git/config", "test")
+        # A normal file
+        z.writestr("normal.py", "print('hello')")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("hidden_file.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    assert response.status_code == 400
+    assert "Unsafe zip file detected" in response.json()["detail"]
+
+
+def test_upload_allowed_hidden_file_zip():
+    """Ensure that zip files containing benign hidden files like .gitignore are allowed."""
+    zip_path = "allowed_hidden_file.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        # A benign hidden file
+        z.writestr(".gitignore", "node_modules/")
+        # A normal file
+        z.writestr("normal.py", "print('hello')")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("allowed_hidden_file.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    # Should not be rejected due to unsafe zip
+    if response.status_code == 400:
+        detail = response.json().get("detail", "")
+        assert "Unsafe zip file detected" not in detail
