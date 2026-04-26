@@ -365,12 +365,8 @@ class TestASTCaching(unittest.TestCase):
         result_a = CodeAnalyzer().analyze_file(path_a)
         result_b = CodeAnalyzer().analyze_file(path_b)
 
-        files_a = {
-            data.get("file") for _, data in result_a["graph"].nodes(data=True)
-        }
-        files_b = {
-            data.get("file") for _, data in result_b["graph"].nodes(data=True)
-        }
+        files_a = {data.get("file") for _, data in result_a["graph"].nodes(data=True)}
+        files_b = {data.get("file") for _, data in result_b["graph"].nodes(data=True)}
         self.assertEqual(files_a, {path_a})
         self.assertEqual(files_b, {path_b})
 
