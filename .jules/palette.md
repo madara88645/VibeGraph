@@ -1,11 +1,3 @@
-## 2024-04-18 - Integrated Canvas-Style Upload Modal
-**Learning:** UX benefits from avoiding standalone, floating modal dialogs when the action spans the entire core functional area of an app. Converting a file upload modal into a deeply integrated "canvas" view with full-bleed elements, darker backgrounds, and architectural borders creates a more immersive and less interruptive user flow.
-**Action:** Transformed the standard `<div className="upload-modal">` structure into a unified container spanning `max-w-4xl max-h-[600px]` with `#131313` background and subtle dashed outlines, matching industrial structural design patterns.
-
-## 2024-04-16 - Add tooltips for visually truncated text
-**Learning:** Using `text-overflow: ellipsis` on elements without providing a native `title` attribute creates an accessibility and usability barrier, as users cannot read the full text when it's visually truncated. This pattern was prevalent in sidebars, search results, and tool panels, especially for file paths and long node names.
-**Action:** Always pair `text-overflow: ellipsis` with a `title` attribute containing the full text string to ensure native browser tooltips provide the complete content on hover.
-
-## 2024-04-21 - Add tooltips for disabled buttons
-**Learning:** Native `title` tooltips do not appear when a user hovers over a `disabled` HTML `<button>` in most browsers. This removes important context (e.g. "Cannot close while analyzing project") exactly when the user needs it to understand why an action is unavailable.
-**Action:** Wrap disabled interactive elements in a `<span>` (e.g., `display: 'inline-flex', cursor: 'not-allowed'`) and place the `title` attribute on the wrapper. This ensures the tooltip is consistently displayed regardless of the button's disabled state.
+## 2024-04-24 - Disabled Buttons Tooltips
+**Learning:** Browsers natively suppress pointer events (including hover) on disabled buttons, meaning `title` tooltips won't appear. Wrapping the button in a standard `<span>` doesn't always work if the wrapper collapses or loses layout flow.
+**Action:** When wrapping a disabled button in a span to show a tooltip, always apply `style={{ display: 'inline-flex' }}` (or `block`/`inline-block` as appropriate) to the wrapper to ensure it perfectly hugs the button and reliably captures hover events.
