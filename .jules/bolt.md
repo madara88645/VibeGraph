@@ -60,3 +60,7 @@
 ## 2024-06-25 - Python AST Traversal Optimization
 **Learning:** Using `ast.walk(tree)` to find specific block-level declarations (like FunctionDef or ClassDef) is incredibly slow for large files because it recursively visits every single leaf node in the AST (names, constants, operators).
 **Action:** Replace `ast.walk()` with a custom Breadth-First Search (BFS) using `collections.deque` that strictly checks the current node type, and only appends children from structural block attributes (`body`, `orelse`, `handlers`, `finalbody`, `cases`) to the queue. This safely skips thousands of leaf nodes while preserving the exact BFS traversal order needed for correct name-shadowing behavior.
+
+## 2024-05-15 - Unnecessary Path String Parsing Overheads
+**Learning:** In JavaScript/React components rendering large lists of paths, calculating filenames or directory structures using `path.split(/[\/\\]/).pop()` or `path.split(/[\/\\]/).slice(0, -1).join('/')` creates measurable O(N) performance bottlenecks and massive garbage collection pressure by allocating numerous intermediate arrays for every single item on every render.
+**Action:** Replace array-generating `.split()` chains with zero-allocation index searches using `Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))` combined with `path.substring()`. This achieves the same outcome efficiently while drastically reducing memory allocation pressure during rapid renders.

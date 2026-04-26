@@ -94,8 +94,9 @@ const FileSidebar = ({
                         {files.map(file => {
                             const stats = nodeStats[file] || {};
                             const isSelected = file === selectedFile;
-                            const shortName = file.split(/[/\\]/).pop() || file;
-                            const dirName = file.split(/[/\\]/).slice(0, -1).join('/');
+                            const lastSlash = Math.max(file.lastIndexOf('/'), file.lastIndexOf('\\'));
+                            const shortName = lastSlash >= 0 ? file.substring(lastSlash + 1) : file;
+                            const dirName = lastSlash >= 0 ? file.substring(0, lastSlash) : '';
 
                             return (
                                 <button
@@ -155,7 +156,8 @@ const FileSidebar = ({
                     )}
 
                     {deps && Object.entries(deps).map(([file, info]) => {
-                        const shortName = file.split(/[/\\]/).pop() || file;
+                        const lastSlash = Math.max(file.lastIndexOf('/'), file.lastIndexOf('\\'));
+                        const shortName = lastSlash >= 0 ? file.substring(lastSlash + 1) : file;
                         const isSelected = file === selectedFile;
                         const imports = info.imports || info.imports_from || [];
                         const importedBy = info.imported_by || [];
@@ -176,10 +178,13 @@ const FileSidebar = ({
                                         {imports.map((imp, i) => {
                                             const impName = typeof imp === 'string' ? imp : imp.module || imp.name;
                                             const details = typeof imp === 'object' ? imp.names : null;
+                                            const safeImpName = impName || '';
+                                            const impLastSlash = Math.max(safeImpName.lastIndexOf('/'), safeImpName.lastIndexOf('\\'));
+                                            const impShortName = impLastSlash >= 0 ? safeImpName.substring(impLastSlash + 1) : safeImpName;
                                             return (
                                                 <div key={i} className="deps-item">
                                                     <span className="deps-item-name" title={impName}>
-                                                        {(impName || '').split(/[/\\]/).pop()}
+                                                        {impShortName}
                                                     </span>
                                                     {details && details.length > 0 && (
                                                         <span className="deps-item-detail" title={details.join(', ')}>
@@ -195,17 +200,22 @@ const FileSidebar = ({
                                 {importedBy.length > 0 && (
                                     <div className="deps-section">
                                         <span className="deps-section-label">← used by</span>
-                                        {importedBy.map((ref, i) => (
-                                            <button
-                                                key={i}
-                                                className="deps-item deps-item-clickable"
-                                                onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
-                                            >
-                                                <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
-                                                    {(typeof ref === 'string' ? ref : ref.file || '').split(/[/\\]/).pop()}
-                                                </span>
-                                            </button>
-                                        ))}
+                                        {importedBy.map((ref, i) => {
+                                            const refName = typeof ref === 'string' ? ref : ref.file || '';
+                                            const refLastSlash = Math.max(refName.lastIndexOf('/'), refName.lastIndexOf('\\'));
+                                            const refShortName = refLastSlash >= 0 ? refName.substring(refLastSlash + 1) : refName;
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    className="deps-item deps-item-clickable"
+                                                    onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
+                                                >
+                                                    <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
+                                                        {refShortName}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
