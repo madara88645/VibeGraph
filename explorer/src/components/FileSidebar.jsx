@@ -84,6 +84,8 @@ const FileSidebar = ({
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
                             aria-current={!selectedFile ? 'true' : undefined}
+                            aria-label="View all files"
+                            title="All Files"
                         >
                             <div className="file-main">
                                 <span className="file-icon" aria-hidden="true">🗂️</span>
@@ -103,6 +105,7 @@ const FileSidebar = ({
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
                                     aria-current={isSelected ? 'true' : undefined}
+                                    aria-label={`View file ${file}`}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
@@ -165,6 +168,8 @@ const FileSidebar = ({
                                 <button
                                     className="deps-file-header"
                                     onClick={() => onSelectFile(file)}
+                                    aria-label={`View dependencies for ${file}`}
+                                    title={file}
                                 >
                                     <span className="deps-file-icon" aria-hidden="true">📄</span>
                                     <span className="deps-file-name" title={file}>{shortName}</span>
@@ -195,17 +200,22 @@ const FileSidebar = ({
                                 {importedBy.length > 0 && (
                                     <div className="deps-section">
                                         <span className="deps-section-label">← used by</span>
-                                        {importedBy.map((ref, i) => (
-                                            <button
-                                                key={i}
-                                                className="deps-item deps-item-clickable"
-                                                onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
-                                            >
-                                                <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
-                                                    {(typeof ref === 'string' ? ref : ref.file || '').split(/[/\\]/).pop()}
-                                                </span>
-                                            </button>
-                                        ))}
+                                        {importedBy.map((ref, i) => {
+                                            const refPath = typeof ref === 'string' ? ref : ref.file;
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    className="deps-item deps-item-clickable"
+                                                    onClick={() => onSelectFile(refPath)}
+                                                    aria-label={`View file ${refPath}`}
+                                                    title={refPath}
+                                                >
+                                                    <span className="deps-item-name" title={refPath}>
+                                                        {(refPath || '').split(/[/\\]/).pop()}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>

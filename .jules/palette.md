@@ -9,3 +9,7 @@
 ## 2024-04-21 - Add tooltips for disabled buttons
 **Learning:** Native `title` tooltips do not appear when a user hovers over a `disabled` HTML `<button>` in most browsers. This removes important context (e.g. "Cannot close while analyzing project") exactly when the user needs it to understand why an action is unavailable.
 **Action:** Wrap disabled interactive elements in a `<span>` (e.g., `display: 'inline-flex', cursor: 'not-allowed'`) and place the `title` attribute on the wrapper. This ensures the tooltip is consistently displayed regardless of the button's disabled state.
+
+## 2024-04-26 - Mirror dynamic `title` to `aria-label` for buttons in lists
+**Learning:** When rendering dynamic buttons in lists or maps that utilize complex `title` attributes for rich context (e.g., displaying file paths or specific state details), relying only on `title` means screen reader users don't get the same descriptive context when focusing the button, as the button lacks an explicit accessible name encompassing the title.
+**Action:** Always mirror this dynamic text directly into the `aria-label` attribute on the `<button>`. This guarantees that screen reader users receive the exact same descriptive context as sighted users hovering over the button.
