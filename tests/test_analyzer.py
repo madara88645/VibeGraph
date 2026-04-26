@@ -1,12 +1,15 @@
+import ast
 import unittest
 import os
 import shutil
 import tempfile
 import sys
+from unittest.mock import patch
 
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from analyst import analyzer as analyzer_mod
 from analyst.analyzer import CodeAnalyzer, MAX_FILE_SIZE
 
 
@@ -271,6 +274,119 @@ class TestCodeAnalyzerEncoding(unittest.TestCase):
         result = self.analyzer.extract_dependencies(file_path)
 
         self.assertIn("error", result)
+
+
+class TestASTCaching(unittest.TestCase):
+    """Operation-count regression tests for the content-hash AST cache.
+
+    These tests assert big-O behaviour (repeat work goes to zero) instead of
+    wall-clock thresholds, which are unreliable on shared CI runners.
+    """
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        analyzer_mod._ast_cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+        analyzer_mod._ast_cache_clear()
+
+    def _write(self, name: str, body: str) -> str:
+        path = os.path.join(self.test_dir, name)
+        os.makedirs(os.path.dirname(path) or self.test_dir, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(body)
+        return path
+
+    def test_pass1_unique_files_each_parse(self):
+        for i in range(50):
+            self._write(f"u_{i}.py", f"def f_{i}():\n    return {i}\n")
+
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(self.test_dir)
+            self.assertEqual(spy.call_count, 50)
+
+    def test_pass2_identical_content_zero_reparse(self):
+        body = "def f():\n    return 1\n"
+        for i in range(50):
+            self._write(f"id_{i}.py", body)
+
+        # Warm: 50 identical files share one cache entry, so 1 actual parse.
+        CodeAnalyzer().analyze_file(self.test_dir)
+
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(self.test_dir)
+            self.assertEqual(spy.call_count, 0)
+
+    def test_pass3_modify_one_file_one_parse(self):
+        body = "def f():\n    return 1\n"
+        paths = [self._write(f"m_{i}.py", body) for i in range(50)]
+
+        # Warm.
+        CodeAnalyzer().analyze_file(self.test_dir)
+
+        # Change exactly one file's content.
+        with open(paths[0], "w", encoding="utf-8") as f:
+            f.write("def changed():\n    return 99\n")
+
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(self.test_dir)
+            self.assertEqual(spy.call_count, 1)
+
+    def test_pass4_path_independence(self):
+        body = "def f():\n    return 1\n"
+        self._write("a.py", body)
+
+        # Warm with a.py.
+        CodeAnalyzer().analyze_file(self.test_dir)
+
+        # Add b.py with identical bytes — content key is the same, so a hit.
+        self._write("b.py", body)
+
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(self.test_dir)
+            self.assertEqual(spy.call_count, 0)
+
+    def test_visitor_tags_correct_file_path(self):
+        """Correctness guard: identical bytes across two paths must still
+        produce nodes tagged with their actual file paths. This would fail if
+        a future change cached the per-file DiGraph instead of the ast.Module.
+
+        Analyze the files independently — directory composition collapses
+        same-named nodes via nx.compose_all, which is unrelated to caching.
+        """
+        body = "def shared():\n    return 1\n"
+        path_a = self._write("a.py", body)
+        path_b = self._write("b.py", body)
+
+        # First call populates the cache; second call must hit it but still
+        # tag the node with path_b (proves the cached ast.Module is reused
+        # without leaking path_a's identity into path_b's graph).
+        result_a = CodeAnalyzer().analyze_file(path_a)
+        result_b = CodeAnalyzer().analyze_file(path_b)
+
+        files_a = {data.get("file") for _, data in result_a["graph"].nodes(data=True)}
+        files_b = {data.get("file") for _, data in result_b["graph"].nodes(data=True)}
+        self.assertEqual(files_a, {path_a})
+        self.assertEqual(files_b, {path_b})
+
+        # Sanity-check: the second call did hit the cache (zero ast.parse calls).
+        analyzer_mod._ast_cache_clear()
+        CodeAnalyzer().analyze_file(path_a)  # warm
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(path_b)
+            self.assertEqual(spy.call_count, 0)
+
+    def test_syntax_error_not_cached(self):
+        """SyntaxError paths must continue to surface every call, never
+        replayed from cache (v1 design: only successful parses are cached).
+        """
+        bad_path = self._write("broken.py", "def incomplete(")
+
+        with patch.object(ast, "parse", wraps=ast.parse) as spy:
+            CodeAnalyzer().analyze_file(bad_path)
+            CodeAnalyzer().analyze_file(bad_path)
+            self.assertEqual(spy.call_count, 2)
 
 
 if __name__ == "__main__":
