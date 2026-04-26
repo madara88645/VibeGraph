@@ -226,9 +226,9 @@ def test_same_basename_files_distinguished_in_warnings():
     assert any("pkg_b/utils.py" in w for w in warnings), (
         f"expected a warning naming pkg_b/utils.py specifically, got {warnings}"
     )
-    assert not any(
-        ("pkg_a/utils.py" in w) for w in warnings
-    ), f"pkg_a/utils.py is valid and should not appear in warnings: {warnings}"
+    assert not any(("pkg_a/utils.py" in w) for w in warnings), (
+        f"pkg_a/utils.py is valid and should not appear in warnings: {warnings}"
+    )
 
 
 def test_upload_project_size_limit():
