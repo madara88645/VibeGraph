@@ -187,7 +187,9 @@ class CodeAnalyzer:
                             if entry.name not in IGNORED_DIRS:
                                 stack.append(entry.path)
                         elif entry.is_file() and entry.name.endswith(".py"):
-                            result = self._analyze_single_file(entry.path, merge=True)
+                            result = self._analyze_single_file(
+                                entry.path, merge=True, root=dir_path
+                            )
                             if "graph" in result:
                                 graphs.append(result["graph"])
             except OSError:
@@ -204,9 +206,20 @@ class CodeAnalyzer:
         }
 
     def _analyze_single_file(
-        self, file_path: str, merge: bool = False
+        self, file_path: str, merge: bool = False, root: str | None = None
     ) -> dict[str, Any]:
-        safe_name = os.path.basename(file_path)
+        # In merge mode (directory analysis), name files by their path relative
+        # to the analyzed root so that pkg_a/utils.py and pkg_b/utils.py are
+        # distinguishable in error messages. Single-file mode keeps using the
+        # basename to preserve the existing error contract.
+        if merge and root is not None:
+            try:
+                rel = os.path.relpath(file_path, root)
+            except ValueError:
+                rel = os.path.basename(file_path)
+            safe_name = rel.replace(os.sep, "/")
+        else:
+            safe_name = os.path.basename(file_path)
         if os.path.getsize(file_path) > MAX_FILE_SIZE:
             error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_name}"
             if merge:

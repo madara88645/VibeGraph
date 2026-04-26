@@ -133,6 +133,102 @@ def test_zip_with_non_utf8_file_returns_200_with_partial_graph():
     assert "alpha" in node_ids
     assert "beta" in node_ids
     assert "gamma" not in node_ids
+    # The skipped file must now be reported back to the user as a warning
+    # so they know analysis was partial.
+    warnings = data.get("warnings") or []
+    assert any("junk.py" in w for w in warnings), (
+        f"expected a warning mentioning junk.py, got {warnings}"
+    )
+
+
+def test_partial_success_multifile_returns_warnings():
+    """Multi-file upload with a mix of good/bad files: 200 + warnings list.
+
+    Previously, when a graph could be built from at least one file, every
+    other failure was silently dropped from the response. The user saw a
+    partial graph with no indication that some files were skipped.
+    """
+    good = BytesIO(b"def alpha():\n    return 1\n")
+    bad_syntax = BytesIO(b"def broken(\n")
+    # 1 MB + 1 byte: under the 50 MB upload cap, over the 1 MB analyzer cap.
+    huge = BytesIO(b"x = 1\n" + b"# pad\n" * (1024 * 1024 // 6 + 1))
+
+    files = [
+        ("files", ("good.py", good, "text/x-python")),
+        ("files", ("bad.py", bad_syntax, "text/x-python")),
+        ("files", ("huge.py", huge, "text/x-python")),
+    ]
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    node_ids = {node["id"] for node in data["nodes"]}
+    assert "alpha" in node_ids
+
+    warnings = data.get("warnings") or []
+    assert any("bad.py" in w for w in warnings), (
+        f"expected a warning mentioning bad.py, got {warnings}"
+    )
+    assert any("huge.py" in w for w in warnings), (
+        f"expected a warning mentioning huge.py, got {warnings}"
+    )
+
+
+def test_all_fail_multifile_aggregates_errors():
+    """When every uploaded file fails, the 400 detail must mention all of them.
+
+    Previously only the first error was returned, forcing users to fix and
+    re-upload N times.
+    """
+    bad_syntax = BytesIO(b"def broken(\n")
+    bad_encoding = BytesIO(b"def b():\n    return 'caf\xe9'\n")
+
+    files = [
+        ("files", ("syntax_bad.py", bad_syntax, "text/x-python")),
+        ("files", ("encoding_bad.py", bad_encoding, "text/x-python")),
+    ]
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 400, (
+        f"Expected 400, got {response.status_code}: {response.text}"
+    )
+    detail = response.json().get("detail", "")
+    assert "syntax_bad.py" in detail, (
+        f"expected detail to mention syntax_bad.py, got {detail}"
+    )
+    assert "encoding_bad.py" in detail, (
+        f"expected detail to mention encoding_bad.py, got {detail}"
+    )
+
+
+def test_same_basename_files_distinguished_in_warnings():
+    """Two files named utils.py in different subpackages must be distinguishable.
+
+    Errors used to be built from os.path.basename(file_path), so both
+    pkg_a/utils.py and pkg_b/utils.py collapsed to "utils.py" in the message.
+    """
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("pkg_a/utils.py", b"def a_helper():\n    return 1\n")
+        zf.writestr("pkg_b/utils.py", b"def broken(\n")
+
+    buffer.seek(0)
+    files = {"files": ("proj.zip", buffer, "application/zip")}
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    warnings = data.get("warnings") or []
+    assert any("pkg_b/utils.py" in w for w in warnings), (
+        f"expected a warning naming pkg_b/utils.py specifically, got {warnings}"
+    )
+    assert not any(("pkg_a/utils.py" in w) for w in warnings), (
+        f"pkg_a/utils.py is valid and should not appear in warnings: {warnings}"
+    )
 
 
 def test_upload_project_size_limit():

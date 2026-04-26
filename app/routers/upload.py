@@ -216,8 +216,25 @@ def upload_project(
 
         graph = result["graph"]
 
-        if result.get("errors") and graph.number_of_nodes() == 0:
-            raise HTTPException(status_code=400, detail=result["errors"][0])
+        # Dedupe while preserving order, then cap to keep responses bounded
+        # regardless of how many files failed.
+        raw_errors = result.get("errors") or []
+        seen = set()
+        deduped_errors = []
+        for msg in raw_errors:
+            if msg not in seen:
+                seen.add(msg)
+                deduped_errors.append(msg)
+
+        MAX_REPORTED_ERRORS = 20
+
+        if deduped_errors and graph.number_of_nodes() == 0:
+            shown = deduped_errors[:MAX_REPORTED_ERRORS]
+            extra = len(deduped_errors) - len(shown)
+            detail = "; ".join(shown)
+            if extra > 0:
+                detail += f" ({extra} more)"
+            raise HTTPException(status_code=400, detail=detail)
 
         if graph.number_of_nodes() == 0:
             raise HTTPException(
@@ -226,6 +243,13 @@ def upload_project(
             )
 
         response_data = deps.exporter.export_to_react_flow(graph)
+
+        if deduped_errors:
+            warnings = deduped_errors[:MAX_REPORTED_ERRORS]
+            extra = len(deduped_errors) - len(warnings)
+            if extra > 0:
+                warnings = warnings + [f"({extra} more skipped files)"]
+            response_data["warnings"] = warnings
 
         return response_data
 
