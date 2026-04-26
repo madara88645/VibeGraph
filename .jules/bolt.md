@@ -56,3 +56,7 @@
 ## $(date +%Y-%m-%d) - Zero-allocation primitives for useMemo
 **Learning:** In high-frequency React hooks (e.g., simulation ticks), creating complex string-based keys (like `array.map().join()`) or using `.split().filter()` to derive primitive counts for memoization is a severe anti-pattern that creates massive garbage collection pressure.
 **Action:** Compute these primitive values directly using a fast, zero-allocation imperative `for` loop inside the `useMemo` block. Because `useMemo` returns a primitive, downstream components still correctly bail out of renders if the value doesn't change, while eliminating the allocation overhead entirely.
+
+## $(date +%Y-%m-%d) - Regex String Split Over-fetching Overhead
+**Learning:** In React components rendering large lists of file paths (like `FileSidebar.jsx`), calculating short filenames and directories using `path.split(/[/\\]/).pop()` and `path.split(/[/\\]/).slice(0, -1).join('/')` creates a hidden O(N) performance bottleneck and massive garbage collection pressure by allocating temporary arrays for every path segment on every single item.
+**Action:** Replace `.split().pop()` and `.split().slice().join()` with zero-allocation index searches using `Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))` and `path.substring()`. This drops the execution time significantly and prevents memory spikes during large list renders.
