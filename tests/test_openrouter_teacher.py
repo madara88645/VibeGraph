@@ -169,3 +169,44 @@ class TestWithMockedClient:
         assert result["narration"] == "This function initializes the app"
         assert result["relationship"] == "calls"
         assert result["importance"] == "high"
+
+    def test_refine_learning_path_prompt_constrains_allowed_nodes(self):
+        response_json = json.dumps(
+            {
+                "steps": [
+                    {"node_id": "helper", "reason": "Read helper second"},
+                    {"node_id": "main", "reason": "Entry point"},
+                ]
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+
+        result = self.teacher.refine_learning_path(
+            [
+                {"node_id": "main", "reason": "Entry point"},
+                {"node_id": "helper", "reason": "Called by main"},
+            ],
+            allowed_node_ids=["main", "helper"],
+        )
+
+        assert [step["node_id"] for step in result] == ["helper", "main"]
+        kwargs = self.mock_client.chat.completions.create.call_args.kwargs
+        prompt = kwargs["messages"][1]["content"]
+        assert "You may not add, rename, or remove node_ids" in prompt
+        assert "allowed_node_ids" in prompt
+        assert "main" in prompt
+        assert "helper" in prompt
+
+    def test_refine_learning_path_malformed_response_returns_empty_refinement(self):
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            '{"unexpected": []}'
+        )
+
+        result = self.teacher.refine_learning_path(
+            [{"node_id": "main", "reason": "Entry point"}],
+            allowed_node_ids=["main"],
+        )
+
+        assert result == []

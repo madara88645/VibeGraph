@@ -27,6 +27,108 @@ class CallGraphVisitor(ast.NodeVisitor):
         self.definitions: list[dict[str, Any]] = []
         self.file_path = file_path
 
+    def _metadata_for_definition(self, node, name: str) -> dict[str, Any]:
+        end_lineno = getattr(node, "end_lineno", node.lineno)
+        calls = {
+            callee
+            for child in ast.walk(node)
+            if isinstance(child, ast.Call)
+            for callee in [self._get_callee_name(child)]
+            if callee
+        }
+        api_boundary = any(
+            self._decorator_name(decorator)
+            in {"get", "post", "put", "patch", "delete", "route"}
+            or self._decorator_name(decorator).endswith(
+                (".get", ".post", ".put", ".patch", ".delete", ".route")
+            )
+            for decorator in getattr(node, "decorator_list", [])
+        )
+        side_effect_calls = {
+            "open",
+            "read",
+            "write",
+            "remove",
+            "unlink",
+            "rmtree",
+            "copy",
+            "move",
+            "request",
+            "get",
+            "post",
+            "put",
+            "patch",
+            "delete",
+            "run",
+            "popen",
+            "connect",
+            "execute",
+        }
+        imports_side_effect_module = any(
+            isinstance(child, (ast.Import, ast.ImportFrom))
+            and any(
+                (alias.name.split(".")[0] if alias.name else "")
+                in {
+                    "os",
+                    "shutil",
+                    "subprocess",
+                    "requests",
+                    "httpx",
+                    "boto3",
+                    "socket",
+                }
+                for alias in child.names
+            )
+            for child in ast.walk(node)
+        )
+        side_effect_boundary = (
+            api_boundary
+            or imports_side_effect_module
+            or bool(calls.intersection(side_effect_calls))
+        )
+
+        return {
+            "end_lineno": end_lineno,
+            "loc": max(end_lineno - node.lineno + 1, 1),
+            "nesting_depth": self._max_nesting_depth(node),
+            "dependency_count": len(calls),
+            "public_api": not name.rsplit(".", 1)[-1].startswith("_"),
+            "api_boundary": api_boundary,
+            "side_effect_boundary": side_effect_boundary,
+        }
+
+    def _decorator_name(self, node) -> str:
+        if isinstance(node, ast.Call):
+            return self._decorator_name(node.func)
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            parent = self._decorator_name(node.value)
+            return f"{parent}.{node.attr}" if parent else node.attr
+        return ""
+
+    def _max_nesting_depth(self, node) -> int:
+        nesting_nodes = (
+            ast.If,
+            ast.For,
+            ast.AsyncFor,
+            ast.While,
+            ast.With,
+            ast.AsyncWith,
+            ast.Try,
+            ast.Match,
+        )
+
+        def walk(child, depth: int) -> int:
+            next_depth = depth + 1 if isinstance(child, nesting_nodes) else depth
+            nested = [
+                walk(grandchild, next_depth)
+                for grandchild in ast.iter_child_nodes(child)
+            ]
+            return max([next_depth, *nested])
+
+        return max((walk(child, 0) for child in ast.iter_child_nodes(node)), default=0)
+
     def visit_FunctionDef(self, node):
         previous_scope = self.current_scope
         function_name = node.name
@@ -54,6 +156,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             docstring=ast.get_docstring(node),
             file=self.file_path,
             entry_point=is_entry,
+            **self._metadata_for_definition(node, full_name),
         )
         self.definitions.append(
             {"name": full_name, "type": "function", "lineno": node.lineno}
@@ -61,6 +164,8 @@ class CallGraphVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
         self.current_scope = previous_scope
+
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ClassDef(self, node):
         previous_scope = self.current_scope
@@ -74,6 +179,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             docstring=ast.get_docstring(node),
             file=self.file_path,
             entry_point=False,
+            **self._metadata_for_definition(node, class_name),
         )
         self.definitions.append(
             {"name": class_name, "type": "class", "lineno": node.lineno}

@@ -177,6 +177,7 @@ function AppInner() {
 
   const {
     allNodes,
+    allEdges,
     selectedFile,
     setSelectedFile,
     files,
@@ -408,6 +409,7 @@ function AppInner() {
       <LearningPath
         selectedFile={selectedFile}
         allNodes={allNodes}
+        allEdges={allEdges}
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}
