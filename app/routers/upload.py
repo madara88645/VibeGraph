@@ -95,6 +95,9 @@ def upload_project(
 
     try:
         total_upload_size = 0
+        total_uncompressed_header_size = 0
+        total_extracted_size = 0
+        total_zip_files = 0
         for file in files:
             safe_name = normalize_uploaded_filename(file.filename)
             file_path = os.path.join(tmp_dir, safe_name)
@@ -117,11 +120,9 @@ def upload_project(
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_real = os.path.realpath(tmp_dir)
                     safe_members = []
-                    total_size = 0
-                    file_count = 0
                     for member in zip_ref.infolist():
-                        file_count += 1
-                        if file_count > MAX_ZIP_FILES:
+                        total_zip_files += 1
+                        if total_zip_files > MAX_ZIP_FILES:
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Too many files in zip archive (max {MAX_ZIP_FILES})",
@@ -137,23 +138,35 @@ def upload_project(
                                 and extracted_path != tmp_dir_real
                             ):
                                 raise ValueError("Path traversal detected")
+
+                            sensitive_names = {
+                                ".env",
+                                ".git",
+                                ".ssh",
+                                ".aws",
+                                ".config",
+                            }
+                            for part in safe_filename.replace("\\", "/").split("/"):
+                                if part in sensitive_names:
+                                    raise ValueError(
+                                        f"Sensitive hidden file or directory not allowed: {part}"
+                                    )
                         except ValueError:
+                            # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
 
-                        total_size += member.file_size
-                        if total_size > MAX_UNCOMPRESSED_SIZE:
+                        total_uncompressed_header_size += member.file_size
+                        if total_uncompressed_header_size > MAX_UNCOMPRESSED_SIZE:
                             raise HTTPException(
                                 status_code=400,
-                                detail=f"Zip contents too large: {total_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
+                                detail=f"Zip contents too large: {total_uncompressed_header_size} bytes (max {MAX_UNCOMPRESSED_SIZE})",
                             )
 
                         member.filename = safe_filename
                         safe_members.append((member, extracted_path))
-
-                    total_size = 0
 
                     # PERFORMANCE OPTIMIZATION (Bolt): Cache created directories
                     # during ZIP extraction to avoid redundant O(N) os.makedirs syscalls,
@@ -178,8 +191,8 @@ def upload_project(
                                 chunk = source.read(8192)
                                 if not chunk:
                                     break
-                                total_size += len(chunk)
-                                if total_size > MAX_UNCOMPRESSED_SIZE:
+                                total_extracted_size += len(chunk)
+                                if total_extracted_size > MAX_UNCOMPRESSED_SIZE:
                                     raise HTTPException(
                                         status_code=400,
                                         detail=f"Zip contents too large (max {MAX_UNCOMPRESSED_SIZE} bytes)",
@@ -203,8 +216,25 @@ def upload_project(
 
         graph = result["graph"]
 
-        if result.get("errors") and graph.number_of_nodes() == 0:
-            raise HTTPException(status_code=400, detail=result["errors"][0])
+        # Dedupe while preserving order, then cap to keep responses bounded
+        # regardless of how many files failed.
+        raw_errors = result.get("errors") or []
+        seen = set()
+        deduped_errors = []
+        for msg in raw_errors:
+            if msg not in seen:
+                seen.add(msg)
+                deduped_errors.append(msg)
+
+        MAX_REPORTED_ERRORS = 20
+
+        if deduped_errors and graph.number_of_nodes() == 0:
+            shown = deduped_errors[:MAX_REPORTED_ERRORS]
+            extra = len(deduped_errors) - len(shown)
+            detail = "; ".join(shown)
+            if extra > 0:
+                detail += f" ({extra} more)"
+            raise HTTPException(status_code=400, detail=detail)
 
         if graph.number_of_nodes() == 0:
             raise HTTPException(
@@ -213,6 +243,13 @@ def upload_project(
             )
 
         response_data = deps.exporter.export_to_react_flow(graph)
+
+        if deduped_errors:
+            warnings = deduped_errors[:MAX_REPORTED_ERRORS]
+            extra = len(deduped_errors) - len(warnings)
+            if extra > 0:
+                warnings = warnings + [f"({extra} more skipped files)"]
+            response_data["warnings"] = warnings
 
         return response_data
 

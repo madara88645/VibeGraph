@@ -1,6 +1,10 @@
 import ast
 import functools
+import hashlib
 import os
+import sys
+import threading
+from collections import OrderedDict
 import networkx as nx
 from typing import Any
 
@@ -54,6 +58,44 @@ _NESTING_NODE_TYPES = (
     ast.Try,
     ast.Match,
 )
+
+# Content-hash AST cache. Skips repeat ast.parse() on identical bytes across
+# uploads, identical files (e.g. empty __init__.py), and CI re-runs. Cache the
+# ast.Module — NOT the per-file DiGraph — because CallGraphVisitor stamps
+# file_path into every node's `file=` attribute (consumed by the snippet
+# preview), so two paths with identical bytes must still produce path-tagged
+# graphs. The visitor walk is cheap; only the parse is expensive.
+#
+# Do not mutate cached ast.Module objects (no .parent backrefs, no
+# fix_missing_locations) — they are shared by reference.
+_AST_CACHE_MAX = 256
+_AST_CACHE: "OrderedDict[bytes, ast.Module]" = OrderedDict()
+_AST_CACHE_LOCK = threading.Lock()
+# Python version in the key invalidates across upgrades (e.g. 3.11 -> 3.12
+# adds ast.TryStar). FastAPI runs sync handlers in a threadpool, so the lock
+# is mandatory: OrderedDict mutations are not thread-safe.
+_AST_CACHE_VERSION_TAG = repr(sys.version_info[:2]).encode()
+
+
+def _parse_cached(source: bytes, filename: str) -> ast.Module:
+    key = hashlib.sha256(source).digest() + _AST_CACHE_VERSION_TAG
+    with _AST_CACHE_LOCK:
+        hit = _AST_CACHE.get(key)
+        if hit is not None:
+            _AST_CACHE.move_to_end(key)
+            return hit
+    tree = ast.parse(source, filename=filename)
+    with _AST_CACHE_LOCK:
+        _AST_CACHE[key] = tree
+        _AST_CACHE.move_to_end(key)
+        if len(_AST_CACHE) > _AST_CACHE_MAX:
+            _AST_CACHE.popitem(last=False)
+    return tree
+
+
+def _ast_cache_clear() -> None:
+    with _AST_CACHE_LOCK:
+        _AST_CACHE.clear()
 
 
 class CallGraphVisitor(ast.NodeVisitor):
@@ -249,7 +291,9 @@ class CodeAnalyzer:
                             if entry.name not in IGNORED_DIRS:
                                 stack.append(entry.path)
                         elif entry.is_file() and entry.name.endswith(".py"):
-                            result = self._analyze_single_file(entry.path, merge=True)
+                            result = self._analyze_single_file(
+                                entry.path, merge=True, root=dir_path
+                            )
                             if "graph" in result:
                                 graphs.append(result["graph"])
             except OSError:
@@ -266,9 +310,20 @@ class CodeAnalyzer:
         }
 
     def _analyze_single_file(
-        self, file_path: str, merge: bool = False
+        self, file_path: str, merge: bool = False, root: str | None = None
     ) -> dict[str, Any]:
-        safe_name = os.path.basename(file_path)
+        # In merge mode (directory analysis), name files by their path relative
+        # to the analyzed root so that pkg_a/utils.py and pkg_b/utils.py are
+        # distinguishable in error messages. Single-file mode keeps using the
+        # basename to preserve the existing error contract.
+        if merge and root is not None:
+            try:
+                rel = os.path.relpath(file_path, root)
+            except ValueError:
+                rel = os.path.basename(file_path)
+            safe_name = rel.replace(os.sep, "/")
+        else:
+            safe_name = os.path.basename(file_path)
         if os.path.getsize(file_path) > MAX_FILE_SIZE:
             error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_name}"
             if merge:
@@ -276,17 +331,28 @@ class CodeAnalyzer:
                 return {}
             return {"error": error_msg}
 
-        with open(file_path, encoding="utf-8") as f:
-            try:
-                tree = ast.parse(f.read(), filename=file_path)
-            except SyntaxError:
-                # In directory mode, we might just log this and continue
-                if merge:
-                    error_msg = f"Syntax error in {safe_name}"
-                    print(error_msg)
-                    self.errors.append(error_msg)
-                    return {}
-                return {"error": f"Syntax error in {safe_name}"}
+        # Read as bytes so ast.parse can apply Python's own source encoding
+        # detection: BOM -> utf-8, PEP 263 coding declaration -> named codec,
+        # otherwise utf-8. Hard-coding encoding="utf-8" here used to raise
+        # UnicodeDecodeError on legitimate non-UTF-8 files, crashing the
+        # entire directory analysis to a 500.
+        parse_error = None
+        try:
+            with open(file_path, "rb") as f:
+                source = f.read()
+            tree = _parse_cached(source, filename=file_path)
+        except SyntaxError:
+            parse_error = f"Syntax error in {safe_name}"
+        except (UnicodeDecodeError, ValueError):
+            parse_error = f"Could not decode {safe_name}"
+        except OSError:
+            parse_error = f"Could not read {safe_name}"
+
+        if parse_error is not None:
+            if merge:
+                self.errors.append(parse_error)
+                return {}
+            return {"error": parse_error}
 
         visitor = CallGraphVisitor(file_path)
         visitor.visit(tree)
@@ -342,10 +408,15 @@ class CodeAnalyzer:
         project_root = os.path.abspath(project_root)
 
         try:
-            with open(resolved, encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=resolved)
+            with open(resolved, "rb") as f:
+                source = f.read()
+            tree = _parse_cached(source, filename=resolved)
         except SyntaxError:
             return {"error": f"Syntax error in {safe_name}"}
+        except (UnicodeDecodeError, ValueError):
+            return {"error": f"Could not decode {safe_name}"}
+        except OSError:
+            return {"error": f"Could not read {safe_name}"}
 
         dependencies: list[dict[str, Any]] = []
 

@@ -2728,6 +2728,13 @@ body {
 
 /* ===== MICRO-INTERACTIONS ===== */
 
+/* Universal focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--accent-info, #10b981);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
 /* Universal button press feedback */
 .sim-btn:active,
 .sim-speed:active,

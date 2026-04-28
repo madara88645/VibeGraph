@@ -240,3 +240,4 @@ class UploadResponse(BaseModel):
     edges: list[dict[str, Any]]
     file_dependencies: list[dict[str, Any]] | None = None
     project_context: str | None = None
+    warnings: list[str] | None = None

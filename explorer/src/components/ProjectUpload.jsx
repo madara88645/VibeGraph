@@ -143,6 +143,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                     <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
                         <span
                             className="modal-close-wrapper"
+                            style={{ display: 'inline-flex' }}
                             title={isAnalyzing ? "Cannot close while analyzing project" : "Close"}
                         >
                             <button
