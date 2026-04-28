@@ -1,6 +1,7 @@
 """Routes for AI-suggested learning paths."""
 
 import os
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -34,7 +35,7 @@ def suggest_learning_path(request: Request, path_request: LearningPathRequest):
         if has_ai_key and steps:
             teacher = deps.get_teacher_for_request(request, path_request.model)
 
-            def refine(window):
+            def refine(window: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 return teacher.refine_learning_path(
                     window,
                     allowed_node_ids=[step["node_id"] for step in window],

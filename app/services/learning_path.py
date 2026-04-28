@@ -236,12 +236,15 @@ def refine_learning_path_with_ai(
     merged_window: list[dict[str, Any]] = []
     by_id = {step["node_id"]: step for step in window}
     for item in proposed or []:
-        node_id = item.get("node_id") if isinstance(item, dict) else None
-        if node_id not in window_ids or node_id in used:
+        if not isinstance(item, dict):
+            continue
+        node_id = item.get("node_id")
+        if not isinstance(node_id, str) or node_id not in window_ids or node_id in used:
             continue
         next_step = {**by_id[node_id]}
-        if isinstance(item.get("reason"), str) and item["reason"].strip():
-            next_step["reason"] = item["reason"].strip()
+        reason = item.get("reason")
+        if isinstance(reason, str) and reason.strip():
+            next_step["reason"] = reason.strip()
         merged_window.append(next_step)
         used.add(node_id)
 
