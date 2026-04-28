@@ -94,6 +94,77 @@ def test_side_effect_boundary_gets_signal_and_reason():
     assert "side effects" in config_step["reason"].lower()
 
 
+def test_disjoint_entry_points_each_anchor_their_own_subgraph():
+    """Two unrelated entry points must both anchor traversal."""
+    nodes = [
+        {
+            "id": "cli_main",
+            "data": {
+                "label": "cli_main",
+                "file": "repo/runner.py",
+                "entry_point": True,
+                "lineno": 1,
+                "loc": 5,
+                "public_api": True,
+            },
+        },
+        {
+            "id": "cli_helper",
+            "data": {
+                "label": "cli_helper",
+                "file": "repo/runner.py",
+                "lineno": 10,
+                "loc": 4,
+                "public_api": True,
+                # High intrinsic score: marks this helper as a side-effect
+                # boundary so without the multi-entry-seed fix, the leftover
+                # sweep would surface it ahead of server_handler.
+                "side_effect_boundary": True,
+            },
+        },
+        {
+            "id": "server_main",
+            "data": {
+                "label": "server_main",
+                "file": "repo/api_server.py",
+                "entry_point": True,
+                "lineno": 1,
+                "loc": 5,
+                "public_api": True,
+            },
+        },
+        {
+            "id": "server_handler",
+            "data": {
+                "label": "server_handler",
+                "file": "repo/api_server.py",
+                "lineno": 10,
+                "loc": 4,
+                "public_api": True,
+            },
+        },
+    ]
+    edges = [
+        {"source": "cli_main", "target": "cli_helper"},
+        {"source": "server_main", "target": "server_handler"},
+    ]
+
+    steps = build_learning_path(nodes, edges)
+    ordered = [step["node_id"] for step in steps]
+
+    # Each entry must come before its own descendant.
+    assert ordered.index("cli_main") < ordered.index("cli_helper")
+    assert ordered.index("server_main") < ordered.index("server_handler")
+    # Without seeding both entries into the heap, the high-scoring cli_helper
+    # would surface in the leftover sweep AFTER cli_main but the priority
+    # traversal from server_main would already have placed server_handler
+    # before cli_main was visited at all. The fix interleaves: both subgraphs
+    # alternate by priority, so cli_helper (higher score than server_handler)
+    # appears before server_handler.
+    assert ordered.index("cli_helper") < ordered.index("server_handler")
+    assert set(ordered) == {"cli_main", "cli_helper", "server_main", "server_handler"}
+
+
 def test_ai_refinement_discards_hallucinated_nodes_and_preserves_missing_baseline():
     baseline = build_learning_path(_sample_nodes(), _sample_edges())
 

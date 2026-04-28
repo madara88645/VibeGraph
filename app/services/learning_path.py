@@ -165,8 +165,11 @@ def build_learning_path(
     entries = [
         node_id for node_id, step in scored.items() if step["signals"]["entry_point"]
     ]
+    # Seed the heap with every entry point (or every node, if there are none) so
+    # disjoint subgraphs — e.g. a CLI and a server in the same repo — each get
+    # walked from their own root rather than collapsing into the "remaining"
+    # bucket below.
     start_nodes = entries or list(scored)
-    start = sorted(start_nodes, key=lambda node_id: scored[node_id]["_sort"])[0]
 
     ordered_ids: list[str] = []
     visited: set[str] = set()
@@ -176,7 +179,8 @@ def build_learning_path(
         if node_id not in visited:
             heapq.heappush(queue, (scored[node_id]["_sort"], node_id))
 
-    push(start)
+    for node_id in start_nodes:
+        push(node_id)
     while queue:
         _, node_id = heapq.heappop(queue)
         if node_id in visited:
