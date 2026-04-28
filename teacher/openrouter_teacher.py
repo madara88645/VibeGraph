@@ -376,6 +376,18 @@ class OpenRouterTeacher:
         if not self.client:
             return []
 
+        # Send only the fields the model needs to reorder. Stripping `score`,
+        # `signals`, `step`, etc. typically halves prompt input tokens for an
+        # 8-step window without affecting refinement quality.
+        slim_steps = [
+            {
+                key: step[key]
+                for key in ("node_id", "node_name", "file_path", "reason")
+                if key in step
+            }
+            for step in baseline_steps
+        ]
+
         system_msg = (
             "You are refining a learning path for a real code graph.\n"
             "Return ONLY valid JSON. Do NOT wrap in code fences."
@@ -388,7 +400,7 @@ class OpenRouterTeacher:
             "- Keep entry points near the beginning unless there is a clear pedagogical reason.\n"
             "- Add concise reasons explaining why each step comes here.\n\n"
             f"allowed_node_ids:\n{json.dumps(allowed_node_ids)}\n\n"
-            f"baseline_steps:\n{json.dumps(baseline_steps)}\n\n"
+            f"baseline_steps:\n{json.dumps(slim_steps)}\n\n"
             'Return: {"steps": [{"node_id": "...", "reason": "..."}]}'
         )
 

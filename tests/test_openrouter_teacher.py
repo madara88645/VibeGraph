@@ -199,6 +199,40 @@ class TestWithMockedClient:
         assert "main" in prompt
         assert "helper" in prompt
 
+    def test_refine_learning_path_strips_heavy_fields_from_prompt(self):
+        """Prompt must not include score/signals/step — only the fields the
+        model needs to reorder. Saves prompt input tokens."""
+        response_json = json.dumps({"steps": []})
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+
+        self.teacher.refine_learning_path(
+            [
+                {
+                    "node_id": "main",
+                    "node_name": "main",
+                    "file_path": "repo/main.py",
+                    "reason": "Entry point",
+                    "score": 173.42,
+                    "signals": {"hub_score": 25.0, "fan_in": 3, "fan_out": 7},
+                    "step": 1,
+                },
+            ],
+            allowed_node_ids=["main"],
+        )
+
+        prompt = self.mock_client.chat.completions.create.call_args.kwargs["messages"][
+            1
+        ]["content"]
+        # Allowlist contents must still be present.
+        assert "main" in prompt
+        assert "repo/main.py" in prompt
+        # Heavy fields must be stripped from the baseline_steps payload.
+        assert "173.42" not in prompt
+        assert "hub_score" not in prompt
+        assert '"step":' not in prompt and '"step": ' not in prompt
+
     def test_refine_learning_path_malformed_response_returns_empty_refinement(self):
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             '{"unexpected": []}'
