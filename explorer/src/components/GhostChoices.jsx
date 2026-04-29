@@ -8,12 +8,15 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
     return (
         <div className="ghost-choices" role="navigation" aria-label="Ghost runner next node choices">
             <div className="ghost-choices-title">Where should the ghost go next?</div>
-            {availableNextNodes.map(node => (
+            {availableNextNodes.map(node => {
+                const titleText = `Go to ${node.data?.label || node.id}${node.data?.file ? ` (${node.data.file.split(/[/\\]/).pop()})` : ''}`;
+                return (
                 <button
                     key={node.id}
                     className="ghost-choice-btn"
                     onClick={() => onChoose(node.id)}
-                    title={`Go to ${node.data?.label || node.id}${node.data?.file ? ` (${node.data.file.split(/[/\\]/).pop()})` : ''}`}
+                    title={titleText}
+                    aria-label={titleText}
                 >
                     <span className="ghost-choice-label">
                         <span aria-hidden="true">
@@ -22,7 +25,8 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
                         {node.data?.label || node.id}
                     </span>
                 </button>
-            ))}
+                );
+            })}
         </div>
     );
 };
