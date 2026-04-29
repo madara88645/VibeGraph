@@ -115,4 +115,53 @@ describe('LearningPath', () => {
     expect(onSelectNode).toHaveBeenCalledWith(NODES[1]);
     expect(screen.getByText('Then follow the call to helper.')).toBeInTheDocument();
   });
+
+  it('fetches learning path when no file is selected but nodes exist (repo-wide path)', async () => {
+    renderLearningPath({ selectedFile: null });
+
+    await waitFor(() => {
+      expect(screen.getByText('main')).toBeInTheDocument();
+    });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      '/api/learning-path',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.selected_file).toBeNull();
+  });
+
+  it('renders "Upload a project" empty state when graph is empty', () => {
+    renderLearningPath({ allNodes: [], selectedFile: null });
+    expect(screen.getByText('Upload a project to build a learning path')).toBeInTheDocument();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('renders "No path generated." when fetch returns no steps', async () => {
+    globalThis.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ steps: [] }),
+    });
+
+    renderLearningPath();
+
+    await waitFor(() => {
+      expect(screen.getByText('No path generated.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows "Building learning path..." while fetching', async () => {
+    let resolveFetch;
+    globalThis.fetch.mockReturnValueOnce(new Promise(resolve => {
+        resolveFetch = resolve;
+    }));
+
+    renderLearningPath();
+    
+    expect(screen.getByText('Building learning path...')).toBeInTheDocument();
+    
+    resolveFetch({ ok: true, json: () => Promise.resolve({ steps: [] }) });
+  });
 });

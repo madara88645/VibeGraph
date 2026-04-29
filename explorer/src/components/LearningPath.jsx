@@ -47,8 +47,6 @@ const LearningPath = ({
 
         if (data.steps && data.steps.length > 0) {
           setSteps(data.steps);
-        } else {
-          setError('No steps found.');
         }
       } catch (requestError) {
         setError(getFriendlyAiErrorMessage(requestError, 'Could not build learning path.'));
