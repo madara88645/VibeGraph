@@ -272,6 +272,7 @@ function AppInner() {
           <button
             className="hamburger-btn"
             onClick={handleToggleSidebar}
+            title="Toggle sidebar"
             aria-label="Toggle sidebar"
             aria-controls="file-sidebar-panel"
             aria-expanded={sidebarOpen}
