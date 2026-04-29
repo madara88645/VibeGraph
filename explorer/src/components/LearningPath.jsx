@@ -24,7 +24,7 @@ const LearningPath = ({
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    if (!isOpen || !selectedFile) {
+    if (!isOpen || allNodes.length === 0) {
       return;
     }
 
@@ -47,8 +47,6 @@ const LearningPath = ({
 
         if (data.steps && data.steps.length > 0) {
           setSteps(data.steps);
-        } else {
-          setError('No steps found.');
         }
       } catch (requestError) {
         setError(getFriendlyAiErrorMessage(requestError, 'Could not build learning path.'));
@@ -109,7 +107,7 @@ const LearningPath = ({
       <div className="lp-bar-main">
         <span
           style={{ display: 'inline-flex' }}
-          title={loading ? 'Analyzing file...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
+          title={loading ? 'Building learning path...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
         >
           <button
             className="lp-bar-nav"
@@ -123,7 +121,7 @@ const LearningPath = ({
 
         <div className="lp-bar-info">
           {loading ? (
-            <span className="lp-bar-loading">Analyzing file...</span>
+            <span className="lp-bar-loading">Building learning path...</span>
           ) : error ? (
             <span className="lp-bar-error">{error}</span>
           ) : steps.length > 0 ? (
@@ -140,7 +138,9 @@ const LearningPath = ({
               ) : null}
             </>
           ) : (
-            <span className="lp-bar-empty">No steps</span>
+            <span className="lp-bar-empty">
+              {allNodes.length === 0 ? 'Upload a project to build a learning path' : 'No path generated.'}
+            </span>
           )}
         </div>
 
@@ -148,7 +148,7 @@ const LearningPath = ({
           style={{ display: 'inline-flex' }}
           title={
             loading
-              ? 'Analyzing file...'
+              ? 'Building learning path...'
               : currentStep === steps.length - 1
                 ? 'Already at last step'
                 : 'Next step'
