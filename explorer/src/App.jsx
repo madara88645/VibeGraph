@@ -30,6 +30,7 @@ import {
   setStoredApiKey,
   setStoredModel,
 } from './utils/aiClient';
+import { getShortName } from './utils/stringUtils';
 
 function shortenModelName(modelName) {
   return modelName.split('/').pop() || modelName;
@@ -299,7 +300,7 @@ function AppInner() {
 
           {selectedFile ? (
             <span className="current-file-badge">
-              File: {selectedFile.split(/[/\\]/).pop()}
+              File: {getShortName(selectedFile)}
             </span>
           ) : null}
 

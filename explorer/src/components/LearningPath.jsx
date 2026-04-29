@@ -5,6 +5,7 @@ import {
   fetchAiJson,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
+import { getShortName } from '../utils/stringUtils';
 
 const LearningPath = ({
   selectedFile,
@@ -98,7 +99,7 @@ const LearningPath = ({
   const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
   const activeStep = steps[currentStep] || null;
   const activeFile = activeStep?.file_path || '';
-  const fileName = activeFile.split(/[/\\]/).pop();
+  const fileName = getShortName(activeFile);
 
   return (
     <div id="learning-path-panel" className="lp-bar">
