@@ -23,6 +23,74 @@ def _make_temp_py(content: str = "def hello():\n    pass\n") -> str:
 
 
 class TestLearningPath:
+    def test_graph_payload_returns_baseline_without_api_key(self):
+        nodes = [
+            {
+                "id": "main",
+                "data": {
+                    "label": "main",
+                    "file": "repo/main.py",
+                    "type": "function",
+                    "entry_point": True,
+                    "lineno": 1,
+                },
+            },
+            {
+                "id": "helper",
+                "data": {
+                    "label": "helper",
+                    "file": "repo/utils.py",
+                    "type": "function",
+                    "lineno": 4,
+                },
+            },
+        ]
+        edges = [{"source": "main", "target": "helper"}]
+
+        resp = client.post(
+            "/api/learning-path",
+            json={"nodes": nodes, "edges": edges, "selected_file": "repo/main.py"},
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["selected_file"] == "repo/main.py"
+        assert [step["node_id"] for step in data["steps"]] == ["main", "helper"]
+        assert data["steps"][0]["file_path"] == "repo/main.py"
+
+    @patch("app.routers.learning.deps.get_teacher_for_request")
+    def test_ai_refinement_filters_hallucinated_nodes(self, mock_get_teacher):
+        nodes = [
+            {
+                "id": "main",
+                "data": {"label": "main", "file": "main.py", "entry_point": True},
+            },
+            {"id": "helper", "data": {"label": "helper", "file": "helper.py"}},
+        ]
+        edges = [{"source": "main", "target": "helper"}]
+        mock_teacher = MagicMock()
+        mock_teacher.refine_learning_path.return_value = [
+            {"node_id": "fake_node", "reason": "Invented"},
+            {"node_id": "helper", "reason": "Review helper next"},
+        ]
+        mock_get_teacher.return_value = mock_teacher
+
+        resp = client.post(
+            "/api/learning-path",
+            json={
+                "nodes": nodes,
+                "edges": edges,
+                "selected_file": "main.py",
+                "model": "anthropic/claude-haiku-4.5",
+            },
+            headers={"Authorization": "Bearer test-key"},
+        )
+
+        assert resp.status_code == 200
+        step_ids = [step["node_id"] for step in resp.json()["steps"]]
+        assert step_ids == ["helper", "main"]
+        assert "fake_node" not in step_ids
+
     @patch("app.routers.learning.deps.get_teacher_for_request")
     @patch("app.routers.learning.CodeAnalyzer")
     def test_valid_request(self, mock_analyzer_cls, mock_get_teacher):

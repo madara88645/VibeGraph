@@ -1418,6 +1418,20 @@ body {
   font-weight: 600;
 }
 
+.lp-bar-file {
+  color: var(--text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-bar-reason {
+  color: var(--text-secondary);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .lp-bar-loading {
   color: var(--text-muted);
   font-style: italic;
