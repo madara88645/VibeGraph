@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
+import { getShortName } from '../utils/stringUtils';
 
 /**
  * CodePanel — Bottom panel that shows code for the active node.
@@ -91,7 +92,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         );
     }
 
-    const fileName = codeData?.file_path?.split(/[/\\]/).pop() || '';
+    const fileName = getShortName(codeData?.file_path) || '';
     const hasFullSource = codeData?.full_source;
     const startLine = codeData?.start_line;
     const endLine = codeData?.end_line;

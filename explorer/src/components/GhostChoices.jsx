@@ -1,5 +1,7 @@
 import React, { memo } from 'react';
 
+import { getShortName } from '../utils/stringUtils';
+
 const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
     if (mode !== 'explore' || !isPlaying || !availableNextNodes || availableNextNodes.length === 0) {
         return null;
@@ -9,7 +11,7 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
         <div className="ghost-choices" role="navigation" aria-label="Ghost runner next node choices">
             <div className="ghost-choices-title">Where should the ghost go next?</div>
             {availableNextNodes.map(node => {
-                const titleText = `Go to ${node.data?.label || node.id}${node.data?.file ? ` (${node.data.file.split(/[/\\]/).pop()})` : ''}`;
+                const titleText = `Go to ${node.data?.label || node.id}${node.data?.file ? ` (${getShortName(node.data.file)})` : ''}`;
                 return (
                 <button
                     key={node.id}
