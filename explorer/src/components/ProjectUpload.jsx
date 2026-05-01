@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 
@@ -37,12 +37,16 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = ({ onUploadSuccess }) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
+
+    useImperativeHandle(ref, () => ({
+        openModal: () => setIsModalOpen(true),
+    }), []);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -164,7 +168,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 disabled={isAnalyzing}
                                 aria-label="Close Upload Modal"
                             >
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <path d="M4 4l8 8M12 4l-8 8" />
                                 </svg>
                             </button>
@@ -229,7 +233,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
             )}
         </div>
     );
-};
+});
 
 // PERFORMANCE OPTIMIZATION (Bolt):
 // Wrap ProjectUpload in memo() to prevent re-renders on every tick

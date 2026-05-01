@@ -287,6 +287,7 @@ export function useGraphData(setNodes, setEdges) {
 
     return {
         allNodes,
+        allEdges,
         selectedFile,
         setSelectedFile,
         files,

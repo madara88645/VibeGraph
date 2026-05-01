@@ -132,7 +132,10 @@ class ChatRequest(BaseModel):
 
 
 class LearningPathRequest(BaseModel):
-    file_path: str = Field(max_length=MAX_FILE_PATH_LENGTH)
+    file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    selected_file: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    nodes: list[dict[str, Any]] = Field(default_factory=list, max_length=5000)
+    edges: list[dict[str, Any]] = Field(default_factory=list, max_length=20000)
     model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
 
     model_config = {
@@ -220,10 +223,15 @@ class LearningStep(BaseModel):
     step: int
     node_id: str
     reason: str
+    node_name: str | None = None
+    file_path: str | None = None
+    score: float | None = None
+    signals: dict[str, Any] | None = None
 
 
 class LearningPathResponse(BaseModel):
-    file_path: str
+    file_path: str | None = None
+    selected_file: str | None = None
     steps: list[LearningStep]
 
 

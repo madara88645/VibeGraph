@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider, useEdgesState, useNodesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -30,6 +30,7 @@ import {
   setStoredApiKey,
   setStoredModel,
 } from './utils/aiClient';
+import { getShortName } from './utils/stringUtils';
 
 function shortenModelName(modelName) {
   return modelName.split('/').pop() || modelName;
@@ -40,6 +41,7 @@ function AppInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { theme, toggleTheme } = useTheme();
+  const uploadRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [apiKey, setApiKeyState] = useState(() => getStoredApiKey());
@@ -177,6 +179,7 @@ function AppInner() {
 
   const {
     allNodes,
+    allEdges,
     selectedFile,
     setSelectedFile,
     files,
@@ -232,6 +235,10 @@ function AppInner() {
     () => setLearningPathOpen(false),
     [setLearningPathOpen]
   );
+  const handleRequestUpload = useCallback(
+    () => uploadRef.current?.openModal(),
+    []
+  );
   const handleSelectFile = useCallback(
     (file) => {
       setSelectedFile(file);
@@ -271,6 +278,7 @@ function AppInner() {
           <button
             className="hamburger-btn"
             onClick={handleToggleSidebar}
+            title="Toggle sidebar"
             aria-label="Toggle sidebar"
             aria-controls="file-sidebar-panel"
             aria-expanded={sidebarOpen}
@@ -298,7 +306,7 @@ function AppInner() {
 
           {selectedFile ? (
             <span className="current-file-badge">
-              File: {selectedFile.split(/[/\\]/).pop()}
+              File: {getShortName(selectedFile)}
             </span>
           ) : null}
 
@@ -330,7 +338,7 @@ function AppInner() {
             <span aria-hidden="true">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
 
-          <ProjectUpload onUploadSuccess={onUploadSuccess} />
+          <ProjectUpload ref={uploadRef} onUploadSuccess={onUploadSuccess} />
 
           <SearchBar
             allNodes={allNodes}
@@ -347,6 +355,7 @@ function AppInner() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onNodeClick={onNodeClick}
+              onRequestUpload={handleRequestUpload}
             />
           </ErrorBoundary>
 
@@ -408,6 +417,7 @@ function AppInner() {
       <LearningPath
         selectedFile={selectedFile}
         allNodes={allNodes}
+        allEdges={allEdges}
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
         isOpen={learningPathOpen}

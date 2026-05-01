@@ -10,7 +10,15 @@ export function ToastProvider({ children }) {
     const removeToast = useCallback((id) => {
         clearTimeout(timersRef.current[id]);
         delete timersRef.current[id];
-        setToasts(prev => prev.filter(t => t.id !== id));
+        setToasts(prev => {
+            const next = [];
+            for (let i = 0; i < prev.length; i++) {
+                if (prev[i].id !== id) {
+                    next.push(prev[i]);
+                }
+            }
+            return next;
+        });
     }, []);
 
     const showToast = useCallback((message, type = 'info') => {

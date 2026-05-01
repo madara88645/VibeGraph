@@ -183,6 +183,36 @@ def main():
         result = self.analyzer.extract_dependencies(file_path)
         self.assertIn("error", result)
 
+    def test_dict_get_does_not_flag_side_effect_boundary(self):
+        """`dict.get` / `cache.get` must not be treated as a network call."""
+        code = """
+def lookup(cache, key):
+    value = cache.get(key)
+    return value if value is not None else {}.get("fallback")
+"""
+        file_path = self.create_file("dict_get.py", code)
+        result = self.analyzer.analyze_file(file_path)
+
+        node = result["graph"].nodes["lookup"]
+        self.assertFalse(
+            node["side_effect_boundary"],
+            "dict.get/cache.get should not flag side_effect_boundary",
+        )
+        self.assertFalse(node["api_boundary"])
+
+    def test_real_io_call_still_flags_side_effect_boundary(self):
+        """Genuine I/O like open() must still be detected."""
+        code = """
+def read_file(path):
+    with open(path) as f:
+        return f.read()
+"""
+        file_path = self.create_file("real_io.py", code)
+        result = self.analyzer.analyze_file(file_path)
+
+        node = result["graph"].nodes["read_file"]
+        self.assertTrue(node["side_effect_boundary"])
+
 
 class TestCodeAnalyzerEncoding(unittest.TestCase):
     """Regression tests for non-UTF-8 Python source handling.
