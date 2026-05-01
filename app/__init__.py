@@ -65,6 +65,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "max-age=31536000; includeSubDomains"
         )
         response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+        # Prevent caching for sensitive API responses
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+
         return response
 
 
