@@ -60,3 +60,7 @@
 ## 2024-06-25 - Python AST Traversal Optimization
 **Learning:** Using `ast.walk(tree)` to find specific block-level declarations (like FunctionDef or ClassDef) is incredibly slow for large files because it recursively visits every single leaf node in the AST (names, constants, operators).
 **Action:** Replace `ast.walk()` with a custom Breadth-First Search (BFS) using `collections.deque` that strictly checks the current node type, and only appends children from structural block attributes (`body`, `orelse`, `handlers`, `finalbody`, `cases`) to the queue. This safely skips thousands of leaf nodes while preserving the exact BFS traversal order needed for correct name-shadowing behavior.
+
+## 2024-04-28 - Zero-allocation string processing in high-frequency React renders
+**Learning:** Using regex `split()` (e.g., `path.split(/[/\\]/).pop()`) inside `map` operations in high-frequency renders or large lists causes severe O(N) array allocation overhead, triggering excessive Garbage Collection pauses and degrading frame rate.
+**Action:** Replace `split().pop()` or `split().slice().join()` on strings inside large list iterations with zero-allocation fallback strategies using standard primitive functions like `lastIndexOf()` and `substring()` to significantly reduce memory footprint and calculation overhead.

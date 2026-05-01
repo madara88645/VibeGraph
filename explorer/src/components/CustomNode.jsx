@@ -1,6 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 
+import { getShortName } from '../utils/stringUtils';
+
 const typeConfig = {
     'function': { icon: '⚡', accent: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'fn' },
     'class': { icon: '🏗️', accent: '#a855f7', bg: 'rgba(168, 85, 247, 0.08)', label: 'cls' },
@@ -13,7 +15,7 @@ const CustomNode = ({ data, selected }) => {
     const config = typeConfig[nodeType] || typeConfig['default'];
 
     // Extract short filename
-    const fileName = data.file ? data.file.split(/[/\\]/).pop() : null;
+    const fileName = data.file ? getShortName(data.file) : null;
 
     return (
         <div

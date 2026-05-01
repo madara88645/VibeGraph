@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useReactFlow } from 'reactflow';
 
+import { getShortName } from '../utils/stringUtils';
+
 const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -130,7 +132,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                                 <span className="search-result-label" title={node.data?.label || node.id}>{node.data?.label || node.id}</span>
                                 {node.data?.file && (
                                     <span className="search-result-file" title={node.data.file}>
-                                        {node.data.file.split(/[/\\]/).pop()}
+                                        {getShortName(node.data.file)}
                                     </span>
                                 )}
                             </div>

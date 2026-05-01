@@ -23,6 +23,42 @@ IGNORED_DIRS = frozenset(
 
 MAX_FILE_SIZE = 1024 * 1024  # 1MB per-file limit to prevent Asymmetric DoS
 
+_ROUTE_DECORATOR_NAMES = frozenset({"get", "post", "put", "patch", "delete", "route"})
+_ROUTE_DECORATOR_SUFFIXES = (".get", ".post", ".put", ".patch", ".delete", ".route")
+# HTTP verb names (get/post/put/patch/delete) are intentionally excluded — they
+# collide with `dict.get`, `cache.get`, `os.environ.get`, etc. API boundary
+# detection via decorators already covers FastAPI/Flask routes.
+_SIDE_EFFECT_CALLS = frozenset(
+    {
+        "open",
+        "read",
+        "write",
+        "remove",
+        "unlink",
+        "rmtree",
+        "copy",
+        "move",
+        "request",
+        "run",
+        "popen",
+        "connect",
+        "execute",
+    }
+)
+_SIDE_EFFECT_MODULES = frozenset(
+    {"os", "shutil", "subprocess", "requests", "httpx", "boto3", "socket"}
+)
+_NESTING_NODE_TYPES = (
+    ast.If,
+    ast.For,
+    ast.AsyncFor,
+    ast.While,
+    ast.With,
+    ast.AsyncWith,
+    ast.Try,
+    ast.Match,
+)
+
 # Content-hash AST cache. Skips repeat ast.parse() on identical bytes across
 # uploads, identical files (e.g. empty __init__.py), and CI re-runs. Cache the
 # ast.Module — NOT the per-file DiGraph — because CallGraphVisitor stamps
@@ -69,6 +105,70 @@ class CallGraphVisitor(ast.NodeVisitor):
         self.definitions: list[dict[str, Any]] = []
         self.file_path = file_path
 
+    def _metadata_for_definition(self, node, name: str) -> dict[str, Any]:
+        end_lineno = getattr(node, "end_lineno", node.lineno)
+
+        calls: set[str] = set()
+        imports_side_effect_module = False
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                callee = self._get_callee_name(child)
+                if callee:
+                    calls.add(callee)
+            elif isinstance(child, (ast.Import, ast.ImportFrom)):
+                if any(
+                    (alias.name.split(".")[0] if alias.name else "")
+                    in _SIDE_EFFECT_MODULES
+                    for alias in child.names
+                ):
+                    imports_side_effect_module = True
+
+        api_boundary = any(
+            (decorator_name := self._decorator_name(decorator))
+            in _ROUTE_DECORATOR_NAMES
+            or decorator_name.endswith(_ROUTE_DECORATOR_SUFFIXES)
+            for decorator in getattr(node, "decorator_list", [])
+        )
+
+        side_effect_boundary = (
+            api_boundary
+            or imports_side_effect_module
+            or bool(calls & _SIDE_EFFECT_CALLS)
+        )
+
+        return {
+            "end_lineno": end_lineno,
+            "loc": max(end_lineno - node.lineno + 1, 1),
+            "nesting_depth": self._max_nesting_depth(node),
+            "dependency_count": len(calls),
+            "public_api": not name.rsplit(".", 1)[-1].startswith("_"),
+            "api_boundary": api_boundary,
+            "side_effect_boundary": side_effect_boundary,
+        }
+
+    def _decorator_name(self, node) -> str:
+        if isinstance(node, ast.Call):
+            return self._decorator_name(node.func)
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            parent = self._decorator_name(node.value)
+            return f"{parent}.{node.attr}" if parent else node.attr
+        return ""
+
+    def _max_nesting_depth(self, node) -> int:
+        def walk(child, depth: int) -> int:
+            next_depth = depth + 1 if isinstance(child, _NESTING_NODE_TYPES) else depth
+            return max(
+                (walk(g, next_depth) for g in ast.iter_child_nodes(child)),
+                default=next_depth,
+            )
+
+        return max(
+            (walk(child, 0) for child in ast.iter_child_nodes(node)),
+            default=0,
+        )
+
     def visit_FunctionDef(self, node):
         previous_scope = self.current_scope
         function_name = node.name
@@ -96,6 +196,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             docstring=ast.get_docstring(node),
             file=self.file_path,
             entry_point=is_entry,
+            **self._metadata_for_definition(node, full_name),
         )
         self.definitions.append(
             {"name": full_name, "type": "function", "lineno": node.lineno}
@@ -103,6 +204,8 @@ class CallGraphVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
         self.current_scope = previous_scope
+
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ClassDef(self, node):
         previous_scope = self.current_scope
@@ -116,6 +219,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             docstring=ast.get_docstring(node),
             file=self.file_path,
             entry_point=False,
+            **self._metadata_for_definition(node, class_name),
         )
         self.definitions.append(
             {"name": class_name, "type": "class", "lineno": node.lineno}

@@ -2,22 +2,21 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import {
-  ensureAiReady,
   fetchAiJson,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
+import { getShortName } from '../utils/stringUtils';
 
 const LearningPath = ({
   selectedFile,
   allNodes,
+  allEdges,
   onSelectNode,
   onSelectFile,
   isOpen,
   onToggle,
   apiKey,
   selectedModel,
-  aiReady,
-  onOpenAiSettings,
 }) => {
   const [steps, setSteps] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -26,21 +25,7 @@ const LearningPath = ({
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    if (!isOpen || !selectedFile) {
-      return;
-    }
-
-    if (
-      !ensureAiReady(
-        aiReady,
-        onOpenAiSettings,
-        'Open AI Settings and add your OpenRouter key to build a learning path.'
-      )
-    ) {
-      setSteps([]);
-      setCurrentStep(0);
-      setLoading(false);
-      setError('Open AI Settings and add your OpenRouter key.');
+    if (!isOpen || allNodes.length === 0) {
       return;
     }
 
@@ -53,13 +38,16 @@ const LearningPath = ({
       try {
         const data = await fetchAiJson('/api/learning-path', {
           apiKey,
-          body: { file_path: selectedFile, model: selectedModel || null },
+          body: {
+            nodes: allNodes,
+            edges: allEdges || [],
+            selected_file: selectedFile,
+            model: selectedModel || null,
+          },
         });
 
         if (data.steps && data.steps.length > 0) {
           setSteps(data.steps);
-        } else {
-          setError('No steps found.');
         }
       } catch (requestError) {
         setError(getFriendlyAiErrorMessage(requestError, 'Could not build learning path.'));
@@ -69,7 +57,7 @@ const LearningPath = ({
     };
 
     fetchPath();
-  }, [aiReady, apiKey, isOpen, onOpenAiSettings, selectedFile, selectedModel]);
+  }, [allEdges, allNodes, apiKey, isOpen, selectedFile, selectedModel]);
 
   const goToStep = useCallback(
     (idx) => {
@@ -83,14 +71,12 @@ const LearningPath = ({
         return;
       }
 
-      const node = allNodes.find(
-        (candidate) =>
-          candidate.id === step.node_id || candidate.data?.label === step.node_name
-      );
+      const node = allNodes.find((candidate) => candidate.id === step.node_id);
 
       if (node) {
-        if (node.data?.file) {
-          onSelectFile(node.data.file);
+        const nextFile = step.file_path || node.data?.file;
+        if (nextFile) {
+          onSelectFile(nextFile);
         }
         onSelectNode(node);
 
@@ -111,6 +97,9 @@ const LearningPath = ({
   }
 
   const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
+  const activeStep = steps[currentStep] || null;
+  const activeFile = activeStep?.file_path || '';
+  const fileName = getShortName(activeFile);
 
   return (
     <div id="learning-path-panel" className="lp-bar">
@@ -119,7 +108,7 @@ const LearningPath = ({
       <div className="lp-bar-main">
         <span
           style={{ display: 'inline-flex' }}
-          title={loading ? 'Analyzing file...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
+          title={loading ? 'Building learning path...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
         >
           <button
             className="lp-bar-nav"
@@ -133,7 +122,7 @@ const LearningPath = ({
 
         <div className="lp-bar-info">
           {loading ? (
-            <span className="lp-bar-loading">Analyzing file...</span>
+            <span className="lp-bar-loading">Building learning path...</span>
           ) : error ? (
             <span className="lp-bar-error">{error}</span>
           ) : steps.length > 0 ? (
@@ -142,11 +131,17 @@ const LearningPath = ({
                 Step {currentStep + 1}/{steps.length}:
               </span>
               <span className="lp-bar-node">
-                {steps[currentStep].node_name || steps[currentStep].node_id}
+                {activeStep.node_name || activeStep.node_id}
               </span>
+              {fileName ? <span className="lp-bar-file">{fileName}</span> : null}
+              {activeStep.reason ? (
+                <span className="lp-bar-reason">{activeStep.reason}</span>
+              ) : null}
             </>
           ) : (
-            <span className="lp-bar-empty">No steps</span>
+            <span className="lp-bar-empty">
+              {allNodes.length === 0 ? 'Upload a project to build a learning path' : 'No path generated.'}
+            </span>
           )}
         </div>
 
@@ -154,7 +149,7 @@ const LearningPath = ({
           style={{ display: 'inline-flex' }}
           title={
             loading
-              ? 'Analyzing file...'
+              ? 'Building learning path...'
               : currentStep === steps.length - 1
                 ? 'Already at last step'
                 : 'Next step'

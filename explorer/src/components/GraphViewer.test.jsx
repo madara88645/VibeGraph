@@ -58,12 +58,24 @@ describe('GraphViewer', () => {
   });
 
   it('shows an upload-first empty state when no graph has been loaded yet', () => {
-    renderViewer();
+    const onRequestUpload = vi.fn();
+    renderViewer({ onRequestUpload });
 
-    expect(screen.getByText('Upload a project to start exploring.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Your last uploaded graph will come back here after refresh.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Visualize any Python codebase')).toBeInTheDocument();
+    expect(screen.getByText('Upload your Python project')).toBeInTheDocument();
+    // Feature cards
+    expect(screen.getByText('AI Explanations')).toBeInTheDocument();
+    expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
+    expect(screen.getByText('Code Chat')).toBeInTheDocument();
+  });
+
+  it('calls onRequestUpload when the empty state CTA is clicked', async () => {
+    const user = userEvent.setup();
+    const onRequestUpload = vi.fn();
+    renderViewer({ onRequestUpload });
+
+    await user.click(screen.getByText('Upload your Python project'));
+    expect(onRequestUpload).toHaveBeenCalledTimes(1);
   });
 
   it('renders PNG export button', () => {

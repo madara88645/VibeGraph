@@ -368,6 +368,63 @@ class OpenRouterTeacher:
             logging.error("Error during narrate_step: %s", exc, exc_info=True)
             return {"narration": "", "relationship": "", "importance": "low"}
 
+    def refine_learning_path(
+        self,
+        baseline_steps: list[dict],
+        allowed_node_ids: list[str],
+    ) -> list[dict]:
+        if not self.client:
+            return []
+
+        # Send only the fields the model needs to reorder. Stripping `score`,
+        # `signals`, `step`, etc. typically halves prompt input tokens for an
+        # 8-step window without affecting refinement quality.
+        slim_steps = [
+            {
+                key: step[key]
+                for key in ("node_id", "node_name", "file_path", "reason")
+                if key in step
+            }
+            for step in baseline_steps
+        ]
+
+        system_msg = (
+            "You are refining a learning path for a real code graph.\n"
+            "Return ONLY valid JSON. Do NOT wrap in code fences."
+        )
+        user_prompt = (
+            "Rules:\n"
+            "- You may reorder ONLY the provided nodes.\n"
+            "- You may not add, rename, or remove node_ids.\n"
+            "- Every node_id in your response must be from allowed_node_ids.\n"
+            "- Keep entry points near the beginning unless there is a clear pedagogical reason.\n"
+            "- Add concise reasons explaining why each step comes here.\n\n"
+            f"allowed_node_ids:\n{json.dumps(allowed_node_ids)}\n\n"
+            f"baseline_steps:\n{json.dumps(slim_steps)}\n\n"
+            'Return: {"steps": [{"node_id": "...", "reason": "..."}]}'
+        )
+
+        try:
+            completion = self._call_openrouter(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.2,
+                max_tokens=700,
+                top_p=1,
+                stream=False,
+                response_format={"type": "json_object"},
+            )
+            raw = completion.choices[0].message.content
+            parsed = _try_parse_json(raw)
+            steps = parsed.get("steps")
+            return steps if isinstance(steps, list) else []
+        except Exception as exc:
+            logging.error("Error during refine_learning_path: %s", exc, exc_info=True)
+            return []
+
     def suggest_learning_path(
         self,
         nodes_summary: str,

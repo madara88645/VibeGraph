@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 
@@ -37,12 +37,16 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = ({ onUploadSuccess }) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
+
+    useImperativeHandle(ref, () => ({
+        openModal: () => setIsModalOpen(true),
+    }), []);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -111,15 +115,27 @@ const ProjectUpload = ({ onUploadSuccess }) => {
         e.stopPropagation();
         setIsDragging(false);
 
+        const items = e.dataTransfer.items;
+        if (items && items.length > 0) {
+            const entry = items[0].webkitGetAsEntry();
+            if (entry && !entry.isDirectory) {
+                showToast('Please drop a project folder, not individual files.', 'error');
+                return;
+            }
+        }
+
         const files = e.dataTransfer.files;
-        if (!files.length) return;
+        if (!files || files.length === 0) {
+            showToast('Please drop a project folder containing files.', 'error');
+            return;
+        }
 
         await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
-    }, [uploadFiles]);
+    }, [uploadFiles, showToast]);
 
     const handleUpload = async (event) => {
         const files = event.target.files;
-        if (!files || files.length === 0) return;
+        if (!files || files.length === 0) return; // Native file dialog handles empty selections gracefully
 
         await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
     };
@@ -152,7 +168,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
                                 disabled={isAnalyzing}
                                 aria-label="Close Upload Modal"
                             >
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <path d="M4 4l8 8M12 4l-8 8" />
                                 </svg>
                             </button>
@@ -217,7 +233,7 @@ const ProjectUpload = ({ onUploadSuccess }) => {
             )}
         </div>
     );
-};
+});
 
 // PERFORMANCE OPTIMIZATION (Bolt):
 // Wrap ProjectUpload in memo() to prevent re-renders on every tick
