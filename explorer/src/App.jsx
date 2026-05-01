@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider, useEdgesState, useNodesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -41,6 +41,7 @@ function AppInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { theme, toggleTheme } = useTheme();
+  const uploadRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [apiKey, setApiKeyState] = useState(() => getStoredApiKey());
@@ -234,6 +235,10 @@ function AppInner() {
     () => setLearningPathOpen(false),
     [setLearningPathOpen]
   );
+  const handleRequestUpload = useCallback(
+    () => uploadRef.current?.openModal(),
+    []
+  );
   const handleSelectFile = useCallback(
     (file) => {
       setSelectedFile(file);
@@ -333,7 +338,7 @@ function AppInner() {
             <span aria-hidden="true">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
 
-          <ProjectUpload onUploadSuccess={onUploadSuccess} />
+          <ProjectUpload ref={uploadRef} onUploadSuccess={onUploadSuccess} />
 
           <SearchBar
             allNodes={allNodes}
@@ -350,6 +355,7 @@ function AppInner() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onNodeClick={onNodeClick}
+              onRequestUpload={handleRequestUpload}
             />
           </ErrorBoundary>
 
