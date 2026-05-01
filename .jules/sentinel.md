@@ -10,3 +10,11 @@
 **Vulnerability:** The zip extraction logic in `app/routers/upload.py` checked for relative path traversal via `os.path.commonpath` but did not inspect the individual path segments for specifically sensitive files/directories (like `.env`, `.git/`, `.ssh/`). Attackers could exploit this by including a maliciously crafted `.env` or `.git/config` file within an otherwise valid sub-directory of the zip structure, successfully deploying arbitrary configuration.
 **Learning:** Checking that a file doesn't escape the temporary directory isn't enough; we must also ensure the contents being extracted do not represent security risks (e.g., hidden config files) when dealing with user-uploaded archives. A blanket ban on all hidden files breaks standard software repositories (which often contain `.gitignore`). We need a specific blocklist.
 **Prevention:** Explicitly split paths into segments during zip extraction and compare each segment against a blocklist of sensitive hidden files and directories (like `.env`, `.git`, `.ssh`, `.aws`, `.config`). Reject extraction if any segment matches.
+
+## 2025-04-26 - Insecure File Upload Handling in Multipart
+
+**Vulnerability:** The application properly blocked sensitive hidden files (`.git`, `.env`, etc.) inside zip archive uploads, but failed to block the exact same sensitive names during standard multipart `List[UploadFile]` uploads. `normalize_uploaded_filename` only checked for empty paths and path traversals (`..`), allowing users to upload sensitive files/directories (like `.git/config` or `.env`) into the server's analysis temp directory.
+
+**Learning:** When building defense mechanisms (like sensitive file blocklists) for complex workflows that accept multiple input formats (e.g., zip files AND multipart file uploads), it is critical to apply the boundary checks at a unified, lower-level validation function (`normalize_uploaded_filename`) rather than handling it contextually in only one format's extraction loop.
+
+**Prevention:** Ensure all file paths derived from user input go through a single, comprehensive sanitization utility that applies all business and security rules (traversal checks, absolute path checks, and sensitive name blocklists) before being used in `os.path.join`.
