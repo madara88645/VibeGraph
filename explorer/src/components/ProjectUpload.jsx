@@ -115,15 +115,27 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
         e.stopPropagation();
         setIsDragging(false);
 
+        const items = e.dataTransfer.items;
+        if (items && items.length > 0) {
+            const entry = items[0].webkitGetAsEntry();
+            if (entry && !entry.isDirectory) {
+                showToast('Please drop a project folder, not individual files.', 'error');
+                return;
+            }
+        }
+
         const files = e.dataTransfer.files;
-        if (!files.length) return;
+        if (!files || files.length === 0) {
+            showToast('Please drop a project folder containing files.', 'error');
+            return;
+        }
 
         await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
-    }, [uploadFiles]);
+    }, [uploadFiles, showToast]);
 
     const handleUpload = async (event) => {
         const files = event.target.files;
-        if (!files || files.length === 0) return;
+        if (!files || files.length === 0) return; // Native file dialog handles empty selections gracefully
 
         await uploadFiles(files, (file) => file.webkitRelativePath || file.name);
     };
