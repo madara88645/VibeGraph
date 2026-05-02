@@ -99,6 +99,8 @@ const FileSidebar = ({
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
                             aria-current={!selectedFile ? 'true' : undefined}
+                            title="All Files"
+                            aria-label="All Files"
                         >
                             <div className="file-main">
                                 <span className="file-icon" aria-hidden="true">🗂️</span>
@@ -118,6 +120,8 @@ const FileSidebar = ({
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
                                     aria-current={isSelected ? 'true' : undefined}
+                                    title={file}
+                                    aria-label={file}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
@@ -180,9 +184,11 @@ const FileSidebar = ({
                                 <button
                                     className="deps-file-header"
                                     onClick={() => onSelectFile(file)}
+                                    title={file}
+                                    aria-label={file}
                                 >
                                     <span className="deps-file-icon" aria-hidden="true">📄</span>
-                                    <span className="deps-file-name" title={file}>{shortName}</span>
+                                    <span className="deps-file-name">{shortName}</span>
                                 </button>
 
                                 {imports.length > 0 && (
@@ -210,17 +216,22 @@ const FileSidebar = ({
                                 {importedBy.length > 0 && (
                                     <div className="deps-section">
                                         <span className="deps-section-label">← used by</span>
-                                        {importedBy.map((ref, i) => (
+                                        {importedBy.map((ref, i) => {
+                                            const refFile = typeof ref === 'string' ? ref : ref.file;
+                                            return (
                                             <button
                                                 key={i}
                                                 className="deps-item deps-item-clickable"
-                                                onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
+                                                onClick={() => onSelectFile(refFile)}
+                                                title={refFile}
+                                                aria-label={refFile}
                                             >
-                                                <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
-                                                    {getShortName(typeof ref === 'string' ? ref : ref.file || '')}
+                                                <span className="deps-item-name">
+                                                    {getShortName(refFile || '')}
                                                 </span>
                                             </button>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
