@@ -173,28 +173,27 @@ const strategies = {
             }
         }
 
-        // Jump to next unvisited entry point
-        const entryPoints = entryPointsRef?.current || nodes.filter(n => n.data?.entry_point);
-        // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
-        let nextEntry = null;
-        for (let i = 0; i < entryPoints.length; i++) {
-            if (!visitedSet.has(entryPoints[i].id)) {
-                nextEntry = entryPoints[i];
-                break;
+        // Jump to next unvisited entry point, then fall back to any unvisited file-backed node
+        // PERFORMANCE OPTIMIZATION (Bolt): Consolidated two consecutive array .find() operations
+        // into a single O(N) loop. Reduces array traversals and prevents redundant entryPoints filtering.
+        let fallbackId = null;
+        if (entryPointsRef?.current) {
+            for (let i = 0; i < entryPointsRef.current.length; i++) {
+                const n = entryPointsRef.current[i];
+                if (!visitedSet.has(n.id)) {
+                    return n.id;
+                }
             }
         }
-        if (nextEntry) return nextEntry.id;
 
-        // Any unvisited
-        // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
-        let any = null;
         for (let i = 0; i < nodes.length; i++) {
-            if (!visitedSet.has(nodes[i].id) && nodes[i].data?.file) {
-                any = nodes[i];
-                break;
+            const n = nodes[i];
+            if (!visitedSet.has(n.id)) {
+                if (n.data?.entry_point) return n.id;
+                if (!fallbackId && n.data?.file) fallbackId = n.id;
             }
         }
-        return any?.id || null;
+        return fallbackId;
     },
 
     // ── Hubs First: Visit most-connected nodes first ──
