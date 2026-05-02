@@ -134,7 +134,7 @@ def handle_start(args):
     url = f"http://{host}:{port}"
 
     webbrowser.open(url)
-    uvicorn.run(app, host=host, port=port)  # nosec B104
+    uvicorn.run(app, host=host, port=port, proxy_headers=True)  # nosec B104
 
 
 def main():
