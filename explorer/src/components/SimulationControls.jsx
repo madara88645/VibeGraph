@@ -88,6 +88,7 @@ const SimulationControls = ({
                         className={`sim-mode-btn ${mode === opt.value ? 'active' : ''}`}
                         aria-pressed={mode === opt.value}
                         title={opt.value === 'auto' ? 'Ghost walks automatically' : 'You guide the ghost'}
+                        aria-label={opt.value === 'auto' ? 'Auto mode: Ghost walks automatically' : 'Explore mode: You guide the ghost'}
                     >
                         <span aria-hidden="true">{opt.icon}</span> {opt.label}
                     </button>
@@ -142,6 +143,7 @@ const SimulationControls = ({
                                 }}
                                 className={`sim-strategy-option ${strategy === opt.value ? 'active' : ''}`}
                                 aria-pressed={strategy === opt.value}
+                                aria-label={`${opt.label} strategy: ${opt.hint}`}
                             >
                                 <span className="sim-strategy-icon" aria-hidden="true">{opt.icon}</span>
                                 <span className="sim-strategy-label">{opt.label}</span>
