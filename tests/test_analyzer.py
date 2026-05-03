@@ -297,6 +297,25 @@ class TestCodeAnalyzerEncoding(unittest.TestCase):
             f"expected an error entry mentioning nullish.py, got {result['errors']}",
         )
 
+    def test_deeply_nested_expression_is_skipped_not_fatal(self):
+        """A pathologically deep AST (e.g. `1+1+1+...` 500 deep) used to escape
+        _analyze_single_file as RecursionError out of CallGraphVisitor.visit
+        and tear down the whole directory analysis. It must now be downgraded
+        to a per-file error so the rest of the project still analyzes.
+        """
+        deep = b"def total():\n    return 1" + b"+1" * 500 + b"\n"
+        self.write_bytes("good.py", b"def a(): pass\n")
+        self.write_bytes("deep.py", deep)
+
+        result = self.analyzer.analyze_file(self.test_dir)
+
+        graph = result["graph"]
+        self.assertTrue(graph.has_node("a"))
+        self.assertTrue(
+            any("deep.py" in err for err in result["errors"]),
+            f"expected an error entry mentioning deep.py, got {result['errors']}",
+        )
+
     def test_extract_dependencies_non_utf8_file(self):
         """extract_dependencies must not raise on a non-UTF-8 file."""
         file_path = self.write_bytes("legacy.py", b"import os\nx = 'caf\xe9'\n")

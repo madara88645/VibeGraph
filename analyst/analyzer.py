@@ -1,12 +1,15 @@
 import ast
 import functools
 import hashlib
+import logging
 import os
 import sys
 import threading
 from collections import OrderedDict
 import networkx as nx
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 IGNORED_DIRS = frozenset(
@@ -336,26 +339,45 @@ class CodeAnalyzer:
         # otherwise utf-8. Hard-coding encoding="utf-8" here used to raise
         # UnicodeDecodeError on legitimate non-UTF-8 files, crashing the
         # entire directory analysis to a 500.
+        #
+        # The try also wraps CallGraphVisitor.visit() because the visitor
+        # recurses through the AST and can hit RecursionError on legitimate
+        # but deeply-structured input (e.g. generated `1+1+1+...` chains);
+        # without this, one such file aborted the whole batch with a 500.
         parse_error = None
+        visitor = None
         try:
             with open(file_path, "rb") as f:
                 source = f.read()
             tree = _parse_cached(source, filename=file_path)
+            visitor = CallGraphVisitor(file_path)
+            visitor.visit(tree)
         except SyntaxError:
             parse_error = f"Syntax error in {safe_name}"
         except (UnicodeDecodeError, ValueError):
             parse_error = f"Could not decode {safe_name}"
         except OSError:
             parse_error = f"Could not read {safe_name}"
+        except RecursionError:
+            parse_error = (
+                f"Could not analyze {safe_name}: structure too deeply nested"
+            )
+        except MemoryError:
+            parse_error = f"Could not analyze {safe_name}: too large to analyze"
+        except Exception:
+            # Last-resort net so a future visitor regression degrades to a
+            # per-file warning instead of resurrecting the 500-on-one-bad-file
+            # behavior. The full traceback is preserved server-side.
+            logger.warning(
+                "Unexpected error analyzing %s", safe_name, exc_info=True
+            )
+            parse_error = f"Could not analyze {safe_name}"
 
         if parse_error is not None:
             if merge:
                 self.errors.append(parse_error)
                 return {}
             return {"error": parse_error}
-
-        visitor = CallGraphVisitor(file_path)
-        visitor.visit(tree)
 
         if merge:
             self.definitions.extend(visitor.definitions)

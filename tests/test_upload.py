@@ -244,3 +244,52 @@ def test_upload_project_size_limit():
 
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
+
+
+def test_deeply_nested_file_does_not_crash_batch():
+    """A pathologically deep AST in one file must not turn the whole upload into a 500.
+
+    Regression guard: a 500-deep BinOp chain (`1+1+1+...`) is ~1KB of source — easy
+    for generated code to produce — and used to escape the analyzer as
+    RecursionError, propagating to the upload route's bare `except Exception` and
+    returning a generic "internal error". One bad file would discard the rest of
+    the batch and tell the user nothing about which file caused it.
+    """
+    good = BytesIO(b"def alpha():\n    return 1\n")
+    deep = BytesIO(b"def total():\n    return 1" + b"+1" * 500 + b"\n")
+
+    files = [
+        ("files", ("good.py", good, "text/x-python")),
+        ("files", ("deep_chain.py", deep, "text/x-python")),
+    ]
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.text}"
+    )
+    data = response.json()
+    node_ids = {node["id"] for node in data["nodes"]}
+    assert "alpha" in node_ids
+
+    warnings = data.get("warnings") or []
+    assert any("deep_chain.py" in w for w in warnings), (
+        f"expected a warning mentioning deep_chain.py, got {warnings}"
+    )
+
+
+def test_only_deeply_nested_file_returns_400_naming_file():
+    """A single deeply-nested file (no other files) should return 400 with a
+    helpful message that names the file, not a generic 500.
+    """
+    deep = BytesIO(b"def total():\n    return 1" + b"+1" * 500 + b"\n")
+    files = {"files": ("totals.py", deep, "text/x-python")}
+    response = client.post("/api/upload-project", files=files, timeout=30.0)
+
+    assert response.status_code == 400, (
+        f"Expected 400, got {response.status_code}: {response.text}"
+    )
+    detail = response.json().get("detail", "")
+    assert "totals.py" in detail, f"detail should name the file, got {detail!r}"
+    assert "deeply nested" in detail or "Could not analyze" in detail, (
+        f"detail should explain the failure mode, got {detail!r}"
+    )
