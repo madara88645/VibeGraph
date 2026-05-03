@@ -7,6 +7,7 @@ import threading
 from collections import OrderedDict
 import networkx as nx
 from typing import Any
+import copy
 
 
 IGNORED_DIRS = frozenset(
@@ -68,13 +69,17 @@ _NESTING_NODE_TYPES = (
 #
 # Do not mutate cached ast.Module objects (no .parent backrefs, no
 # fix_missing_locations) — they are shared by reference.
-_AST_CACHE_MAX = 256
+_AST_CACHE_MAX = 4096
 _AST_CACHE: "OrderedDict[bytes, ast.Module]" = OrderedDict()
 _AST_CACHE_LOCK = threading.Lock()
 # Python version in the key invalidates across upgrades (e.g. 3.11 -> 3.12
 # adds ast.TryStar). FastAPI runs sync handlers in a threadpool, so the lock
 # is mandatory: OrderedDict mutations are not thread-safe.
 _AST_CACHE_VERSION_TAG = repr(sys.version_info[:2]).encode()
+
+_GRAPH_CACHE_MAX = 4096
+_GRAPH_CACHE: "OrderedDict[bytes, tuple[nx.DiGraph, list[dict[str, Any]]]]" = OrderedDict()
+_GRAPH_CACHE_LOCK = threading.Lock()
 
 
 def _parse_cached(source: bytes, filename: str) -> ast.Module:
@@ -96,6 +101,8 @@ def _parse_cached(source: bytes, filename: str) -> ast.Module:
 def _ast_cache_clear() -> None:
     with _AST_CACHE_LOCK:
         _AST_CACHE.clear()
+    with _GRAPH_CACHE_LOCK:
+        _GRAPH_CACHE.clear()
 
 
 class CallGraphVisitor(ast.NodeVisitor):
@@ -340,6 +347,26 @@ class CodeAnalyzer:
         try:
             with open(file_path, "rb") as f:
                 source = f.read()
+            
+            # PERFORMANCE OPTIMIZATION: Check graph cache first before ast.parse
+            cache_key = hashlib.sha256(source).digest() + file_path.encode('utf-8', errors='replace') + _AST_CACHE_VERSION_TAG
+            with _GRAPH_CACHE_LOCK:
+                hit = _GRAPH_CACHE.get(cache_key)
+                if hit is not None:
+                    _GRAPH_CACHE.move_to_end(cache_key)
+                    # Use deepcopy to prevent callers from mutating the cached graph/definitions
+                    cached_graph, cached_defs = copy.deepcopy(hit)
+                    if merge:
+                        self.definitions.extend(cached_defs)
+                    else:
+                        self.graph = cached_graph
+                        self.definitions = cached_defs
+                    return {
+                        "file": file_path,
+                        "definitions": cached_defs,
+                        "graph": cached_graph,
+                    }
+
             tree = _parse_cached(source, filename=file_path)
         except SyntaxError:
             parse_error = f"Syntax error in {safe_name}"
@@ -356,6 +383,13 @@ class CodeAnalyzer:
 
         visitor = CallGraphVisitor(file_path)
         visitor.visit(tree)
+
+        # Update graph cache
+        with _GRAPH_CACHE_LOCK:
+            _GRAPH_CACHE[cache_key] = (visitor.graph, visitor.definitions)
+            _GRAPH_CACHE.move_to_end(cache_key)
+            if len(_GRAPH_CACHE) > _GRAPH_CACHE_MAX:
+                _GRAPH_CACHE.popitem(last=False)
 
         if merge:
             self.definitions.extend(visitor.definitions)
