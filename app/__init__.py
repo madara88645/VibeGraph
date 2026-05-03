@@ -133,7 +133,7 @@ def create_app() -> FastAPI:
     trusted_proxies = os.getenv("VIBEGRAPH_TRUSTED_PROXIES", "127.0.0.1")
     application.add_middleware(
         ProxyHeadersMiddleware,  # type: ignore[arg-type]
-        trusted_hosts=trusted_proxies
+        trusted_hosts=trusted_proxies,
     )
 
     # Request ID tracing
