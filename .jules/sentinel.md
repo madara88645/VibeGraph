@@ -23,3 +23,7 @@
 **Vulnerability:** When configuring `ProxyHeadersMiddleware` to correctly parse `X-Forwarded-For` proxy headers for IP-based rate limiting (via `SlowAPIMiddleware`), adding the proxy middleware *before* the rate limiter middleware in `app.add_middleware` results in the rate limiter using the raw proxy IP.
 **Learning:** FastAPI/Starlette's `add_middleware` behaves as a Last-In-First-Out (LIFO) stack. The last middleware added executes first during the request lifecycle.
 **Prevention:** To ensure rate limits are evaluated against the true client IP, `ProxyHeadersMiddleware` must be added *after* `SlowAPIMiddleware` so that it executes *first*, rewriting the client scope before the rate limiter inspects it. Additionally, always set `trusted_hosts` explicitly (e.g., defaulting to `127.0.0.1`) to prevent IP spoofing vulnerabilities when deployed without a trusted proxy.
+## 2025-05-02 - ProxyHeadersMiddleware Mypy Type Clash
+**Vulnerability:** Adding Uvicorn's `ProxyHeadersMiddleware` directly to a FastAPI application using `app.add_middleware()` causes a `mypy` typing error due to mismatched middleware type definitions between Starlette and Uvicorn.
+**Learning:** This is a known typing incompatibility, not a runtime error. `ProxyHeadersMiddleware` works perfectly with FastAPI/Starlette at runtime.
+**Prevention:** Always append `# type: ignore[arg-type]` to the `add_middleware` line when registering `ProxyHeadersMiddleware` to prevent CI build failures during static analysis.

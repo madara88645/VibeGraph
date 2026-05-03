@@ -131,7 +131,7 @@ def create_app() -> FastAPI:
     # Default to 127.0.0.1 to avoid IP spoofing vulnerabilities if deployed without a proxy
     # Must be added AFTER SlowAPIMiddleware so it executes FIRST (LIFO) and rewrites the client IP.
     trusted_proxies = os.getenv("VIBEGRAPH_TRUSTED_PROXIES", "127.0.0.1")
-    application.add_middleware(ProxyHeadersMiddleware, trusted_hosts=trusted_proxies)
+    application.add_middleware(ProxyHeadersMiddleware, trusted_hosts=trusted_proxies)  # type: ignore[arg-type]
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
