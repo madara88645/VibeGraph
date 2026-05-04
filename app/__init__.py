@@ -130,9 +130,9 @@ def create_app() -> FastAPI:
     # This securely rewrites the client IP from X-Forwarded-For headers before the rate
     # limiter evaluates it, preventing rate limiting bypass or IP spoofing.
     application.add_middleware(
-        ProxyHeadersMiddleware,
+        ProxyHeadersMiddleware,  # type: ignore[arg-type]
         trusted_hosts=os.getenv("VIBEGRAPH_TRUSTED_PROXIES", "127.0.0.1"),
-    )  # type: ignore[arg-type]
+    )
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
