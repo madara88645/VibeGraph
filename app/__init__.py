@@ -15,6 +15,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from starlette.responses import Response
 
 from app.rate_limit import limiter
@@ -123,7 +124,15 @@ def create_app() -> FastAPI:
     # Rate limiting
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
     application.add_middleware(SlowAPIMiddleware)
+    # Add ProxyHeadersMiddleware after SlowAPIMiddleware so it executes first (LIFO order).
+    # This securely rewrites the client IP from X-Forwarded-For headers before the rate
+    # limiter evaluates it, preventing rate limiting bypass or IP spoofing.
+    application.add_middleware(
+        ProxyHeadersMiddleware,
+        trusted_hosts=os.getenv("VIBEGRAPH_TRUSTED_PROXIES", "127.0.0.1"),
+    )  # type: ignore[arg-type]
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
