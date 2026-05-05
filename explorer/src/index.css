@@ -1815,7 +1815,7 @@ body {
 
 .first-steps-banner {
   position: absolute;
-  top: 12px;
+  top: 76px;
   left: 12px;
   z-index: 6;
   max-width: min(560px, calc(100% - 24px));
@@ -1825,10 +1825,10 @@ body {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid var(--border-default);
-  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  background: var(--panel-bg);
   color: var(--text-secondary);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-panel);
   font-size: 0.84rem;
   line-height: 1.45;
 }
@@ -1838,8 +1838,8 @@ body {
 }
 
 .first-steps-dismiss {
-  border: 1px solid var(--border-default);
-  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-soft);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 6px 10px;

@@ -351,8 +351,12 @@ function AppInner() {
 
         <div className="graph-shell">
           {allNodes.length > 0 && showFirstSteps ? (
-            <div className="first-steps-banner" role="status" aria-live="polite">
-              <div>
+            <div
+              className="first-steps-banner"
+              role="region"
+              aria-label="Getting started"
+            >
+              <div role="status" aria-live="polite">
                 <strong>New here?</strong> Start by selecting a node in the graph, then use
                 <strong> Explain</strong> or <strong>Chat</strong> to understand how that code fits the system.
               </div>
