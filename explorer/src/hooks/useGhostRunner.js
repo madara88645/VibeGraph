@@ -175,11 +175,25 @@ const strategies = {
 
         // Jump to next unvisited entry point
         const entryPoints = entryPointsRef?.current || nodes.filter(n => n.data?.entry_point);
-        const nextEntry = entryPoints.find(n => !visitedSet.has(n.id));
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
+        let nextEntry = null;
+        for (let i = 0; i < entryPoints.length; i++) {
+            if (!visitedSet.has(entryPoints[i].id)) {
+                nextEntry = entryPoints[i];
+                break;
+            }
+        }
         if (nextEntry) return nextEntry.id;
 
         // Any unvisited
-        const any = nodes.find(n => !visitedSet.has(n.id) && n.data?.file);
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
+        let any = null;
+        for (let i = 0; i < nodes.length; i++) {
+            if (!visitedSet.has(nodes[i].id) && nodes[i].data?.file) {
+                any = nodes[i];
+                break;
+            }
+        }
         return any?.id || null;
     },
 
@@ -267,7 +281,14 @@ const strategies = {
 
         if (!currentActiveId && fileQueueRef) {
             // Start from first unvisited in queue
-            const next = fileQueueRef.current.find(id => !visitedSet.has(id));
+            // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
+            let next = null;
+            for (let i = 0; i < fileQueueRef.current.length; i++) {
+                if (!visitedSet.has(fileQueueRef.current[i])) {
+                    next = fileQueueRef.current[i];
+                    break;
+                }
+            }
             return next || null;
         }
 
@@ -296,7 +317,14 @@ const strategies = {
 
         // Move to next file
         if (fileQueueRef) {
-            const next = fileQueueRef.current.find(id => !visitedSet.has(id));
+            // PERFORMANCE OPTIMIZATION (Bolt): Replaced `.find()` with explicit `for` loop to eliminate functional callback overhead.
+            let next = null;
+            for (let i = 0; i < fileQueueRef.current.length; i++) {
+                if (!visitedSet.has(fileQueueRef.current[i])) {
+                    next = fileQueueRef.current[i];
+                    break;
+                }
+            }
             return next || null;
         }
         return null;
