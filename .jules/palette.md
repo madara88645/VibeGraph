@@ -33,3 +33,7 @@
 ## 2024-05-23 - Context-Rich Buttons in Lists
 **Learning:** When rendering dynamic buttons in lists or maps that utilize complex `title` attributes for rich context (like hint descriptions), screen reader users are excluded if the text isn't mirrored into `aria-label`.
 **Action:** Always mirror dynamic or context-rich `title` strings directly into `aria-label` attributes for list-generated interactive elements to guarantee equivalent descriptive context for all users.
+
+## 2024-05-30 - Context-Rich Buttons with Nested Elements
+**Learning:** When rendering buttons that contain multiple text elements (e.g., an icon, a label, and a filename) and utilize complex `title` attributes for rich context, a screen reader may read the internal spans in a disjointed way while missing the combined context of the tooltip.
+**Action:** Assign an explicit, combined `aria-label` to the parent button that mirrors the rich context of the `title` attributes. This creates a natural, consolidated sentence for screen readers and ensures parity with the descriptive context sighted users receive via tooltips.

@@ -117,16 +117,22 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
 
             {isOpen && results.length > 0 && (
                 <div id={listboxId} role="listbox" className="search-results">
-                    {results.map((node, idx) => (
-                        <button
-                            key={node.id}
-                            id={`search-result-${node.id}`}
-                            role="option"
-                            aria-selected={idx === highlightIdx}
-                            className={`search-result-item ${idx === highlightIdx ? 'highlighted' : ''}`}
-                            onClick={() => handleSelect(node)}
-                            onMouseEnter={() => setHighlightIdx(idx)}
-                        >
+                    {results.map((node, idx) => {
+                        const labelText = node.data?.file
+                            ? `${node.data?.label || node.id} in ${node.data.file}`
+                            : (node.data?.label || node.id);
+
+                        return (
+                            <button
+                                key={node.id}
+                                id={`search-result-${node.id}`}
+                                role="option"
+                                aria-selected={idx === highlightIdx}
+                                aria-label={labelText}
+                                className={`search-result-item ${idx === highlightIdx ? 'highlighted' : ''}`}
+                                onClick={() => handleSelect(node)}
+                                onMouseEnter={() => setHighlightIdx(idx)}
+                            >
                             <span className="search-result-icon" aria-hidden="true">{typeIcon(node)}</span>
                             <div className="search-result-text">
                                 <span className="search-result-label" title={node.data?.label || node.id}>{node.data?.label || node.id}</span>
@@ -136,8 +142,9 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                                     </span>
                                 )}
                             </div>
-                        </button>
-                    ))}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 
