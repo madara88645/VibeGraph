@@ -7,6 +7,11 @@ const typeConfig = {
     'function': { icon: '⚡', accent: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'fn' },
     'class': { icon: '🏗️', accent: '#a855f7', bg: 'rgba(168, 85, 247, 0.08)', label: 'cls' },
     'entry_point': { icon: '🚀', accent: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', label: 'entry' },
+    'builtin': { icon: '🐍', accent: '#3b82f6', bg: 'rgba(59, 130, 246, 0.08)', label: 'builtin' },
+    'external': { icon: '📦', accent: '#f97316', bg: 'rgba(249, 115, 22, 0.08)', label: 'ext' },
+    'imported_local': { icon: '🔗', accent: '#14b8a6', bg: 'rgba(20, 184, 166, 0.08)', label: 'import' },
+    'module': { icon: '📁', accent: '#eab308', bg: 'rgba(234, 179, 8, 0.10)', label: 'mod' },
+    'unresolved': { icon: '?', accent: '#94a3b8', bg: 'rgba(148, 163, 184, 0.08)', label: 'ref' },
     'default': { icon: '○', accent: '#64748b', bg: 'rgba(100, 116, 139, 0.06)', label: 'ref' },
 };
 

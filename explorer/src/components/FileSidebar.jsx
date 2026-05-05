@@ -19,6 +19,11 @@ const typeIcons = {
     function: '⚡',
     class: '🏗️',
     entry_point: '🚀',
+    builtin: '🐍',
+    external: '📦',
+    imported_local: '🔗',
+    module: '📁',
+    unresolved: '?',
     default: '○',
 };
 
