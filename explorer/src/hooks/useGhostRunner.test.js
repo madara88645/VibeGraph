@@ -163,6 +163,73 @@ describe('useGhostRunner', () => {
     expect(cycleEdge.style.strokeDasharray).toBe('8 4');
   });
 
+  it('entryFirst dead-end fallback picks unvisited entry point before regular file node', () => {
+    // nodes order: [a (entry_point), c (file only), b (entry_point)]
+    // 'c' comes before 'b' in the nodes array; naive nodes.find() would pick 'c' first.
+    // The fallback must consult entryPointsRef and return 'b' (entry point) instead.
+    vi.spyOn(Math, 'random').mockReturnValue(0); // forces pickRandomFromPool to select index 0 → 'a'
+    const nodes = [
+      createNode('a', { entry_point: true }),
+      createNode('c'), // file-backed, NOT an entry point
+      createNode('b', { entry_point: true }),
+    ];
+    const edges = [];
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const setCodePanelNode = vi.fn(); // stable reference avoids spurious game-loop re-runs
+
+    const { result } = renderHook(() =>
+      useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, {
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
+
+    act(() => {
+      result.current.setStrategy('entryFirst');
+      result.current.setIsPlaying(true);
+    });
+    // Step 1 fires within the above act: 'a' is picked (Math.random=0 → index 0 of entry points)
+
+    act(() => { vi.advanceTimersByTime(2600); });
+    // Step 2: 'a' has no outgoing edges; DFS stack empty; fallback via entryPointsRef picks 'b'
+    // (not 'c', which appears earlier in the nodes array)
+    expect(result.current.activeNodeId).toBe('b');
+  });
+
+  it('entryFirst dead-end fallback picks any file-backed node when no entry points remain unvisited', () => {
+    const nodes = [
+      createNode('a', { entry_point: true }),
+      createNode('b'), // file-backed, NOT an entry point
+    ];
+    const edges = [];
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const setCodePanelNode = vi.fn(); // stable reference avoids spurious game-loop re-runs
+
+    const { result } = renderHook(() =>
+      useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, {
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
+
+    act(() => {
+      result.current.setStrategy('entryFirst');
+      result.current.setIsPlaying(true);
+    });
+    // Step 1 fires within the above act: 'a' is picked (only entry point)
+
+    act(() => { vi.advanceTimersByTime(2600); });
+    // Step 2: 'a' has no outgoing edges; DFS stack empty; no unvisited entry points remain;
+    // falls back to 'b' (first unvisited file-backed node)
+    expect(result.current.activeNodeId).toBe('b');
+  });
+
   it('skips narration calls when AI is not ready', () => {
     const nodes = [createNode('main', { entry_point: true })];
     const edges = [];
