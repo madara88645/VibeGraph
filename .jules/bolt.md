@@ -76,3 +76,7 @@
 ## 2026-05-06 - Prevent Unnecessary Code Block Re-renders
 **Learning:** Heavyweight syntax highlighting components (like `react-syntax-highlighter`) can cause significant CPU spikes if they re-render frequently during parent state changes, even when the underlying code hasn't changed.
 **Action:** Wrap components rendering static code blocks in `React.memo()` to short-circuit the render cycle and prevent expensive syntax re-parsing when parent state updates.
+
+## 2026-05-05 - Array slice over-fetching overhead in hooks
+**Learning:** In React hooks that execute on rapid animation or simulation ticks (like `useGhostRunner`), chaining functional array operations such as `[...array.filter()].slice()` creates hidden performance bottlenecks. This forces the engine to clone the array and perform multiple O(N) evaluations, significantly increasing garbage collection pressure.
+**Action:** Replace `.filter().slice()` chains inside high-frequency hooks with a standard `for` loop, populating a new array until a `break` condition on length is met. This avoids intermediate allocations and drops the execution time.
