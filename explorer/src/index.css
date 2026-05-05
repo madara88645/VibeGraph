@@ -1813,6 +1813,45 @@ body {
   position: relative;
 }
 
+.first-steps-banner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 6;
+  max-width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.first-steps-banner strong {
+  color: var(--text-primary);
+}
+
+.first-steps-dismiss {
+  border: 1px solid var(--border-default);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.first-steps-dismiss:hover {
+  border-color: var(--color-accent-primary);
+}
+
 .graph-canvas {
   width: 100%;
   height: 100%;

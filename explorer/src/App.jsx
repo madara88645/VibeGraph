@@ -50,6 +50,7 @@ function AppInner() {
   const [draftModel, setDraftModel] = useState(() => getStoredModel());
   const [aiConfig, setAiConfig] = useState(DEFAULT_AI_CONFIG);
   const [aiConfigError, setAiConfigError] = useState('');
+  const [showFirstSteps, setShowFirstSteps] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,6 +215,7 @@ function AppInner() {
       handleUploadSuccess(result, () => {
         resetInteractionState();
         onResetSimulation();
+        setShowFirstSteps(true);
       });
     },
     [handleUploadSuccess, onResetSimulation, resetInteractionState]
@@ -348,6 +350,21 @@ function AppInner() {
         </div>
 
         <div className="graph-shell">
+          {allNodes.length > 0 && showFirstSteps ? (
+            <div className="first-steps-banner" role="status" aria-live="polite">
+              <div>
+                <strong>New here?</strong> Start by selecting a node in the graph, then use
+                <strong> Explain</strong> or <strong>Chat</strong> to understand how that code fits the system.
+              </div>
+              <button
+                className="first-steps-dismiss"
+                onClick={() => setShowFirstSteps(false)}
+                aria-label="Dismiss first steps message"
+              >
+                Got it
+              </button>
+            </div>
+          ) : null}
           <ErrorBoundary>
             <GraphViewer
               nodes={nodes}
