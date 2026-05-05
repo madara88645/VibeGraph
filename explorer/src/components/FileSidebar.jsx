@@ -118,6 +118,8 @@ const FileSidebar = ({
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
                                     aria-current={isSelected ? 'true' : undefined}
+                                    title={file}
+                                    aria-label={file}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
@@ -180,6 +182,8 @@ const FileSidebar = ({
                                 <button
                                     className="deps-file-header"
                                     onClick={() => onSelectFile(file)}
+                                    title={file}
+                                    aria-label={file}
                                 >
                                     <span className="deps-file-icon" aria-hidden="true">📄</span>
                                     <span className="deps-file-name" title={file}>{shortName}</span>
@@ -215,6 +219,8 @@ const FileSidebar = ({
                                                 key={i}
                                                 className="deps-item deps-item-clickable"
                                                 onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
+                                                title={typeof ref === 'string' ? ref : ref.file}
+                                                aria-label={typeof ref === 'string' ? ref : ref.file}
                                             >
                                                 <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
                                                     {getShortName(typeof ref === 'string' ? ref : ref.file || '')}

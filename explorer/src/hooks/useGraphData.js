@@ -202,13 +202,20 @@ export function useGraphData(setNodes, setEdges) {
             if (!fileNodeIds.has(e.target)) externalNodeIds.add(e.target);
         });
 
-        const externalNodes = allNodes
-            .filter(n => externalNodeIds.has(n.id))
-            .map(n => ({
-                ...n,
-                className: 'external-ref',
-                data: { ...n.data, isExternal: true },
-            }));
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced .filter().map() chain with a single
+        // imperative for-loop. This prevents allocating an intermediate array and avoids
+        // a redundant O(N) pass over allNodes when building the external nodes list.
+        const externalNodes = [];
+        for (let i = 0; i < allNodes.length; i++) {
+            const n = allNodes[i];
+            if (externalNodeIds.has(n.id)) {
+                externalNodes.push({
+                    ...n,
+                    className: 'external-ref',
+                    data: { ...n.data, isExternal: true },
+                });
+            }
+        }
 
         const combinedNodes = [...fileNodes, ...externalNodes];
 
