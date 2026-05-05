@@ -29,3 +29,7 @@
 ## 2024-05-02 - Mirror Dynamic Tooltips to Aria-Labels
 **Learning:** When dynamic buttons in lists use `title` for rich contextual information (like full file paths), screen reader users are excluded if that context isn't mapped to ARIA attributes.
 **Action:** Always mirror complex dynamic `title` attributes into `aria-label` directly on the `<button>` element to ensure consistent descriptive context for all users.
+
+## 2024-05-23 - Context-Rich Buttons in Lists
+**Learning:** When rendering dynamic buttons in lists or maps that utilize complex `title` attributes for rich context (like hint descriptions), screen reader users are excluded if the text isn't mirrored into `aria-label`.
+**Action:** Always mirror dynamic or context-rich `title` strings directly into `aria-label` attributes for list-generated interactive elements to guarantee equivalent descriptive context for all users.
