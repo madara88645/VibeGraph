@@ -25,3 +25,7 @@
 ## 2026-04-29 - Added title to icon-only hamburger button
 **Learning:** The hamburger button in App.jsx had an `aria-label` for screen readers but lacked a native `title` attribute, leaving mouse users without a hover tooltip explaining the icon's function.
 **Action:** Add a `title` attribute to all icon-only buttons to ensure they provide a tooltip for mouse users in addition to `aria-label` for screen readers.
+
+## 2024-05-02 - Mirror Dynamic Tooltips to Aria-Labels
+**Learning:** When dynamic buttons in lists use `title` for rich contextual information (like full file paths), screen reader users are excluded if that context isn't mapped to ARIA attributes.
+**Action:** Always mirror complex dynamic `title` attributes into `aria-label` directly on the `<button>` element to ensure consistent descriptive context for all users.
