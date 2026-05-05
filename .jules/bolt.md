@@ -68,3 +68,7 @@
 ## 2024-05-02 - Optimize Array Searches in Simulation Hooks
 **Learning:** In high-frequency React hooks (like simulation ticks), using array functional methods like `.find()` repeatedly over large datasets causes unnecessary intermediate memory allocations and functional callback overhead, hurting performance.
 **Action:** Replace multiple `.find()` calls on large datasets during high-frequency simulation loops with explicit, zero-allocation imperative `for` loops with early exits.
+
+## 2025-02-21 - Optimize Graph Data Filtering
+**Learning:** In React hooks, calculating derived array state by chaining multiple `.filter()` and `.map()` operations over large datasets (like `allNodes` in `useGraphData`) creates hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace multiple O(N) array method chains with a single iterative `for` loop that accumulates all required metrics in a single O(N) pass, significantly reducing CPU overhead and memory allocations.
