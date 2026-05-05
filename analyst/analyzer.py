@@ -198,19 +198,14 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
                         "module": module,
                         "names": [module],
                         "asnames": [alias.asname or module],
-                        "is_local": module in local_modules
-                        or top in local_modules,
+                        "is_local": module in local_modules or top in local_modules,
                         "level": 0,
                     }
                 )
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
             top = module.split(".")[0] if module else ""
-            is_local = (
-                node.level > 0
-                or module in local_modules
-                or top in local_modules
-            )
+            is_local = node.level > 0 or module in local_modules or top in local_modules
             out.append(
                 {
                     "kind": "from",
@@ -406,11 +401,7 @@ class CallGraphVisitor(ast.NodeVisitor):
             attr_name = parts[-1] if parts else ""
             if isinstance(cur, ast.Name):
                 base = cur.id
-                if (
-                    base in ("self", "cls")
-                    and len(parts) == 1
-                    and self.class_stack
-                ):
+                if base in ("self", "cls") and len(parts) == 1 and self.class_stack:
                     return {
                         "kind": "self_method",
                         "name": attr_name,
@@ -480,18 +471,18 @@ class CodeAnalyzer:
             current_dir = stack.pop()
             try:
                 with os.scandir(current_dir) as it:
-                    for entry in it:
-                        if entry.is_dir(follow_symlinks=False):
-                            if entry.name not in IGNORED_DIRS:
-                                stack.append(entry.path)
-                        elif entry.is_file() and entry.name.endswith(".py"):
+                    for dir_entry in it:
+                        if dir_entry.is_dir(follow_symlinks=False):
+                            if dir_entry.name not in IGNORED_DIRS:
+                                stack.append(dir_entry.path)
+                        elif dir_entry.is_file() and dir_entry.name.endswith(".py"):
                             try:
-                                rel = os.path.relpath(entry.path, dir_path)
+                                rel = os.path.relpath(dir_entry.path, dir_path)
                             except ValueError:
-                                rel = entry.name
+                                rel = dir_entry.name
                             safe = rel.replace(os.sep, "/")
                             try:
-                                size = entry.stat().st_size
+                                size = dir_entry.stat().st_size
                             except OSError:
                                 size = 0
                             if size > MAX_FILE_SIZE:
@@ -499,7 +490,7 @@ class CodeAnalyzer:
                                     f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe}"
                                 )
                                 continue
-                            files.append((entry.path, safe))
+                            files.append((dir_entry.path, safe))
             except OSError:
                 self.errors.append("Error reading directory structure.")
 
@@ -607,15 +598,17 @@ class CodeAnalyzer:
             if merge:
                 return {}
             # _parse_and_visit already pushed an error string into self.errors
-            return {"error": self.errors[-1] if self.errors else f"Could not parse {safe_name}"}
+            return {
+                "error": self.errors[-1]
+                if self.errors
+                else f"Could not parse {safe_name}"
+            }
 
         visitor: CallGraphVisitor = visited["visitor"]
         imports = visited["imports"]
 
         # Build a single-file symbol table from this file's definitions only.
-        symbol_table = {
-            d["name"]: d["name"] for d in visitor.top_level_definitions
-        }
+        symbol_table = {d["name"]: d["name"] for d in visitor.top_level_definitions}
         # Local modules: scan the parent directory so siblings count as local.
         project_root = os.path.dirname(os.path.abspath(file_path))
         local_modules = CodeAnalyzer._get_local_modules(project_root)
@@ -779,7 +772,11 @@ class CodeAnalyzer:
                         # node already produced by the defining file.
                         return symbol_table[real_name], None
                     if imp["is_local"]:
-                        stub_id = f"local:{imp['module']}.{real_name}" if imp["module"] else real_name
+                        stub_id = (
+                            f"local:{imp['module']}.{real_name}"
+                            if imp["module"]
+                            else real_name
+                        )
                         return stub_id, {
                             "type": "imported_local",
                             "label": real_name,

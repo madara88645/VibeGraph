@@ -281,9 +281,7 @@ class TestCallResolution(unittest.TestCase):
         """`os.path.exists(...)` is tagged external (orange), not unresolved."""
         path = self._write(
             "uses_os.py",
-            "import os\n"
-            "def check(p):\n"
-            "    return os.path.exists(p)\n",
+            "import os\ndef check(p):\n    return os.path.exists(p)\n",
         )
         result = self.analyzer.analyze_file(path)
         types = self._types(result["graph"])
@@ -301,9 +299,7 @@ class TestCallResolution(unittest.TestCase):
         self._write("utils.py", "def helper():\n    return 1\n")
         self._write(
             "main.py",
-            "from utils import helper\n"
-            "def run():\n"
-            "    return helper()\n",
+            "from utils import helper\ndef run():\n    return helper()\n",
         )
         result = self.analyzer.analyze_file(self.test_dir)
         graph = result["graph"]
@@ -319,9 +315,7 @@ class TestCallResolution(unittest.TestCase):
         self._write("utils.py", "def helper():\n    return 1\n")
         self._write(
             "main.py",
-            "from utils import helper\n"
-            "def run():\n"
-            "    return helper()\n",
+            "from utils import helper\ndef run():\n    return helper()\n",
         )
         result = self.analyzer.analyze_file(self.test_dir)
         graph = result["graph"]
