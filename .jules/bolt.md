@@ -64,3 +64,7 @@
 ## 2024-04-28 - Zero-allocation string processing in high-frequency React renders
 **Learning:** Using regex `split()` (e.g., `path.split(/[/\\]/).pop()`) inside `map` operations in high-frequency renders or large lists causes severe O(N) array allocation overhead, triggering excessive Garbage Collection pauses and degrading frame rate.
 **Action:** Replace `split().pop()` or `split().slice().join()` on strings inside large list iterations with zero-allocation fallback strategies using standard primitive functions like `lastIndexOf()` and `substring()` to significantly reduce memory footprint and calculation overhead.
+
+## 2025-02-21 - Optimize Graph Data Filtering
+**Learning:** In React hooks, calculating derived array state by chaining multiple `.filter()` and `.map()` operations over large datasets (like `allNodes` in `useGraphData`) creates hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace multiple O(N) array method chains with a single iterative `for` loop that accumulates all required metrics in a single O(N) pass, significantly reducing CPU overhead and memory allocations.
