@@ -66,8 +66,12 @@ const ChatDrawer = ({
     [selectedNode?.id]
   );
 
-  const sendMessage = useCallback(async () => {
-    const text = inputText.trim();
+  const sendMessage = useCallback(async (overrideText) => {
+    const rawText =
+      typeof overrideText === 'string' && overrideText.trim()
+        ? overrideText
+        : inputText;
+    const text = rawText.trim();
     if (!text || loading) {
       return;
     }
@@ -285,9 +289,49 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                 </button>
               </>
             ) : selectedNode ? (
-              `Ask anything about "${selectedNode.data?.label || selectedNode.id}"...`
+              <>
+                <p className="chat-empty-lead">
+                  Ask anything about "{selectedNode.data?.label || selectedNode.id}"...
+                </p>
+                <div className="chat-suggestions" aria-label="Suggested questions">
+                  {[
+                    'Explain what this does in plain English',
+                    'How is this used elsewhere in the project?',
+                    'What could go wrong here?',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      className="chat-suggestion"
+                      onClick={() => sendMessage(prompt)}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </>
             ) : (
-              'Ask a general question about the uploaded project!'
+              <>
+                <p className="chat-empty-lead">
+                  Ask a general question about the uploaded project!
+                </p>
+                <div className="chat-suggestions" aria-label="Suggested questions">
+                  {[
+                    'What does this project do?',
+                    'Where should I start reading the code?',
+                    'What are the main entry points?',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      className="chat-suggestion"
+                      onClick={() => sendMessage(prompt)}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         ) : null}
