@@ -16,6 +16,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.rate_limit import limiter
 from app.routers import ai, chat, explain, ghost, health, learning, upload
@@ -123,7 +124,17 @@ def create_app() -> FastAPI:
     # Rate limiting
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+    # FastAPI middleware executes LIFO. We add SlowAPIMiddleware first (so it runs *after* ProxyHeadersMiddleware)
     application.add_middleware(SlowAPIMiddleware)
+
+    # Add ProxyHeadersMiddleware to properly extract client IPs from X-Forwarded-For
+    # when behind reverse proxies (like Fly.io). We use LIFO execution so this runs before SlowAPI.
+    trusted_proxies = os.getenv("VIBEGRAPH_TRUSTED_PROXIES", "127.0.0.1")
+    application.add_middleware(
+        ProxyHeadersMiddleware,  # type: ignore[arg-type]
+        trusted_hosts=trusted_proxies,
+    )
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
