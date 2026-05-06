@@ -72,3 +72,7 @@
 ## 2025-02-21 - Optimize Graph Data Filtering
 **Learning:** In React hooks, calculating derived array state by chaining multiple `.filter()` and `.map()` operations over large datasets (like `allNodes` in `useGraphData`) creates hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
 **Action:** Replace multiple O(N) array method chains with a single iterative `for` loop that accumulates all required metrics in a single O(N) pass, significantly reducing CPU overhead and memory allocations.
+
+## 2026-05-06 - Prevent Unnecessary Code Block Re-renders
+**Learning:** Heavyweight syntax highlighting components (like `react-syntax-highlighter`) can cause significant CPU spikes if they re-render frequently during parent state changes, even when the underlying code hasn't changed.
+**Action:** Wrap components rendering static code blocks in `React.memo()` to short-circuit the render cycle and prevent expensive syntax re-parsing when parent state updates.

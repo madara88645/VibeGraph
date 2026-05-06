@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import ReactDOM from 'react-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -69,4 +69,7 @@ const CodeViewer = ({ code }) => {
     );
 };
 
-export default CodeViewer;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap CodeViewer in React.memo() to prevent parsing/rendering
+// syntax highlighting on every tick during rapid simulation state changes.
+export default memo(CodeViewer);
