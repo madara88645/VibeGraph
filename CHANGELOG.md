@@ -1,5 +1,25 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.5.0] - 2026-05-07
+
+### Added
+- Multi-language analyzer architecture: JavaScript (.js, .jsx, .mjs, .cjs) and TypeScript (.ts, .tsx) support via tree-sitter
+- analyst/languages/ plugin system with LanguageAnalyzer Protocol (analyst/languages/base.py)
+- GET /api/languages endpoint returning supported language list with extensions
+- Per-language node stamping (data.language field on every graph node)
+- TypeScript-aware import filtering: import type statements excluded from runtime edges
+- NestJS/Angular route decorator detection (@Get, @Post, @Controller) marking api_boundary=True
+- First-steps onboarding banner updated to mention JS/TS project uploads
+
+### Changed
+- Upload validation now accepts Python, JS, and TS files (previously Python-only)
+- Error messages updated to reference all supported languages
+
 ## [2026-03-22] — UX Polish & Visual Enhancements
 
 ### Added
