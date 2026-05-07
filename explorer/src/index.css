@@ -1180,6 +1180,40 @@ body {
   padding: 40px 20px;
 }
 
+.chat-empty-lead {
+  margin: 0 0 14px;
+}
+
+.chat-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.chat-suggestion {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.74rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.chat-suggestion:hover {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: var(--accent-info);
+  color: var(--text-primary);
+}
+
+.chat-suggestion:active {
+  transform: scale(0.98);
+}
+
 .chat-message {
   display: flex;
 }
