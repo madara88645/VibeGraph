@@ -1,4 +1,5 @@
 import ast
+import builtins as _py_builtins
 import functools
 import hashlib
 import os
@@ -59,6 +60,62 @@ _NESTING_NODE_TYPES = (
     ast.Match,
 )
 
+# Python's built-in callables (print, len, range, open, str, ...). Used to tag
+# call targets that hit the language runtime so the frontend can render them
+# distinctly from user code or imports instead of falling back to the gray
+# "unresolved reference" style.
+PY_BUILTINS = frozenset(name for name in dir(_py_builtins) if not name.startswith("_"))
+
+# Heuristic list of common stdlib top-level modules. When a call's base
+# (e.g. `os` in `os.path.exists`) matches one of these and there's no matching
+# import in the file, we still tag it as external rather than unresolved. The
+# set is intentionally narrow — only well-known modules — to avoid mis-tagging
+# user variables.
+STDLIB_MODULES = frozenset(
+    {
+        "os",
+        "sys",
+        "json",
+        "re",
+        "math",
+        "time",
+        "random",
+        "collections",
+        "itertools",
+        "functools",
+        "typing",
+        "pathlib",
+        "datetime",
+        "logging",
+        "asyncio",
+        "threading",
+        "subprocess",
+        "shutil",
+        "tempfile",
+        "io",
+        "string",
+        "csv",
+        "argparse",
+        "abc",
+        "copy",
+        "enum",
+        "hashlib",
+        "uuid",
+        "base64",
+        "warnings",
+        "contextlib",
+        "dataclasses",
+        "inspect",
+        "ast",
+        "traceback",
+        "weakref",
+        "operator",
+        "socket",
+        "urllib",
+        "http",
+    }
+)
+
 # Content-hash AST cache. Skips repeat ast.parse() on identical bytes across
 # uploads, identical files (e.g. empty __init__.py), and CI re-runs. Cache the
 # ast.Module — NOT the per-file DiGraph — because CallGraphVisitor stamps
@@ -98,12 +155,88 @@ def _ast_cache_clear() -> None:
         _AST_CACHE.clear()
 
 
+def _file_to_module_id(file_path: str, project_root: str | None) -> str:
+    """Convert a .py path to a dotted module id (e.g. pkg/a.py -> pkg.a).
+
+    Returns just the basename (without .py) when project_root is unknown or the
+    file lives outside it. The returned id is wrapped in the "module:" prefix
+    by callers to keep module nodes from colliding with function/class nodes.
+    """
+    if project_root:
+        try:
+            rel = os.path.relpath(file_path, project_root)
+        except ValueError:
+            rel = os.path.basename(file_path)
+    else:
+        rel = os.path.basename(file_path)
+    rel = rel.replace(os.sep, "/")
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    if rel.endswith("/__init__"):
+        rel = rel[: -len("/__init__")]
+    return rel.replace("/", ".") or os.path.basename(file_path)
+
+
+def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[dict]:
+    """Walk an AST module and return its import statements as a flat list.
+
+    Each entry: {kind, module, names, asnames, is_local, level}. ``names`` is
+    the list of imported symbols (raw names) and ``asnames`` is the parallel
+    list of local aliases (asname or original name). For ``import X``, both
+    contain ``X``; for ``from M import Y as Z``, ``names=["Y"]`` and
+    ``asnames=["Z"]``.
+    """
+    out: list[dict] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module = alias.name
+                top = module.split(".")[0]
+                out.append(
+                    {
+                        "kind": "import",
+                        "module": module,
+                        "names": [module],
+                        "asnames": [alias.asname or module],
+                        "is_local": module in local_modules or top in local_modules,
+                        "level": 0,
+                    }
+                )
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            top = module.split(".")[0] if module else ""
+            is_local = node.level > 0 or module in local_modules or top in local_modules
+            out.append(
+                {
+                    "kind": "from",
+                    "module": module,
+                    "names": [a.name for a in node.names],
+                    "asnames": [a.asname or a.name for a in node.names],
+                    "is_local": is_local,
+                    "level": node.level,
+                }
+            )
+    return out
+
+
 class CallGraphVisitor(ast.NodeVisitor):
+    """AST visitor that records function/class definitions and queues calls.
+
+    Calls are NOT immediately added as edges — they are stored in
+    ``pending_calls`` so that a second pass with full cross-file knowledge
+    (symbol table, imports) can resolve them to typed targets. This is what
+    eliminates the gray "unknown reference" nodes for built-ins, imports and
+    self-method calls.
+    """
+
     def __init__(self, file_path: str):
         self.graph = nx.DiGraph()
         self.current_scope = "global"
+        self.class_stack: list[str] = []
         self.definitions: list[dict[str, Any]] = []
+        self.top_level_definitions: list[dict[str, Any]] = []
         self.file_path = file_path
+        self.pending_calls: list[tuple[str, dict]] = []
 
     def _metadata_for_definition(self, node, name: str) -> dict[str, Any]:
         end_lineno = getattr(node, "end_lineno", node.lineno)
@@ -112,7 +245,7 @@ class CallGraphVisitor(ast.NodeVisitor):
         imports_side_effect_module = False
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
-                callee = self._get_callee_name(child)
+                callee = self._raw_callee_name(child)
                 if callee:
                     calls.add(callee)
             elif isinstance(child, (ast.Import, ast.ImportFrom)):
@@ -181,14 +314,12 @@ class CallGraphVisitor(ast.NodeVisitor):
             full_name = function_name
 
         self.current_scope = full_name
+        is_top_level = previous_scope in ("global", "<module>")
 
         # Entry-point heuristics:
         #   1. Well-known names: main, run, app
         #   2. Any function at module (global) level
-        is_entry = function_name in ["main", "run", "app"] or previous_scope in (
-            "global",
-            "<module>",
-        )
+        is_entry = function_name in ["main", "run", "app"] or is_top_level
         self.graph.add_node(
             full_name,
             type="function",
@@ -198,9 +329,10 @@ class CallGraphVisitor(ast.NodeVisitor):
             entry_point=is_entry,
             **self._metadata_for_definition(node, full_name),
         )
-        self.definitions.append(
-            {"name": full_name, "type": "function", "lineno": node.lineno}
-        )
+        record = {"name": full_name, "type": "function", "lineno": node.lineno}
+        self.definitions.append(record)
+        if is_top_level:
+            self.top_level_definitions.append(record)
 
         self.generic_visit(node)
         self.current_scope = previous_scope
@@ -210,7 +342,9 @@ class CallGraphVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         previous_scope = self.current_scope
         class_name = node.name
+        is_top_level = previous_scope in ("global", "<module>")
         self.current_scope = class_name
+        self.class_stack.append(class_name)
 
         self.graph.add_node(
             class_name,
@@ -221,24 +355,73 @@ class CallGraphVisitor(ast.NodeVisitor):
             entry_point=False,
             **self._metadata_for_definition(node, class_name),
         )
-        self.definitions.append(
-            {"name": class_name, "type": "class", "lineno": node.lineno}
-        )
+        record = {"name": class_name, "type": "class", "lineno": node.lineno}
+        self.definitions.append(record)
+        if is_top_level:
+            self.top_level_definitions.append(record)
 
         self.generic_visit(node)
+        self.class_stack.pop()
         self.current_scope = previous_scope
 
     def visit_Call(self, node):
-        callee_name = self._get_callee_name(node)
-        if callee_name:
-            self.graph.add_edge(self.current_scope, callee_name)
+        info = self._extract_callee(node)
+        if info is not None:
+            info["lineno"] = getattr(node, "lineno", None)
+            self.pending_calls.append((self.current_scope, info))
         self.generic_visit(node)
 
-    def _get_callee_name(self, node) -> str | None:
+    def _raw_callee_name(self, node) -> str | None:
+        """Cheap callee name used by side-effect heuristics (unchanged contract)."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
-            return node.func.attr  # Simplified: extracts method name only
+        if isinstance(node.func, ast.Attribute):
+            return node.func.attr
+        return None
+
+    def _extract_callee(self, node) -> dict | None:
+        """Classify a Call AST into an info dict for later resolution.
+
+        Kinds:
+          - ``name``: bare ``foo()`` -> ``{"kind":"name", "name":"foo"}``
+          - ``self_method``: ``self.foo()`` / ``cls.foo()`` inside a class
+          - ``attribute``: ``obj.foo()`` / ``a.b.foo()`` -> includes base+chain
+        """
+        func = node.func
+        if isinstance(func, ast.Name):
+            return {"kind": "name", "name": func.id}
+
+        if isinstance(func, ast.Attribute):
+            # Walk the attribute chain right-to-left to recover the full path.
+            parts: list[str] = []
+            cur: ast.AST = func
+            while isinstance(cur, ast.Attribute):
+                parts.insert(0, cur.attr)
+                cur = cur.value
+            attr_name = parts[-1] if parts else ""
+            if isinstance(cur, ast.Name):
+                base = cur.id
+                if base in ("self", "cls") and len(parts) == 1 and self.class_stack:
+                    return {
+                        "kind": "self_method",
+                        "name": attr_name,
+                        "class": self.class_stack[-1],
+                    }
+                return {
+                    "kind": "attribute",
+                    "name": attr_name,
+                    "base": base,
+                    "parts": parts,
+                }
+            # Chained call like func()(x) or subscript[x](): we still record
+            # the rightmost attr name so it appears in the graph somewhere.
+            if attr_name:
+                return {
+                    "kind": "attribute",
+                    "name": attr_name,
+                    "base": None,
+                    "parts": parts,
+                }
         return None
 
 
@@ -271,36 +454,114 @@ class CodeAnalyzer:
                 }
             return self._analyze_single_file(target_path)
 
+    # ------------------------------------------------------------------
+    # Directory analysis (two-pass: collect definitions, then resolve calls)
+    # ------------------------------------------------------------------
+
     def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
-        # Clear state for a fresh directory analysis
         self.graph = nx.DiGraph()
         self.definitions = []
 
-        graphs = []
+        local_modules = CodeAnalyzer._get_local_modules(dir_path)
 
-        # PERFORMANCE OPTIMIZATION (Bolt): Use os.scandir() instead of os.walk()
-        # to avoid unnecessary object allocation and overhead.
+        # ---- Walk filesystem (single scan; AST cache makes a re-parse free) ----
+        files: list[tuple[str, str]] = []  # (file_path, safe_name)
         stack = [dir_path]
         while stack:
             current_dir = stack.pop()
-
             try:
                 with os.scandir(current_dir) as it:
-                    for entry in it:
-                        if entry.is_dir(follow_symlinks=False):
-                            if entry.name not in IGNORED_DIRS:
-                                stack.append(entry.path)
-                        elif entry.is_file() and entry.name.endswith(".py"):
-                            result = self._analyze_single_file(
-                                entry.path, merge=True, root=dir_path
-                            )
-                            if "graph" in result:
-                                graphs.append(result["graph"])
+                    for dir_entry in it:
+                        if dir_entry.is_dir(follow_symlinks=False):
+                            if dir_entry.name not in IGNORED_DIRS:
+                                stack.append(dir_entry.path)
+                        elif dir_entry.is_file() and dir_entry.name.endswith(".py"):
+                            try:
+                                rel = os.path.relpath(dir_entry.path, dir_path)
+                            except ValueError:
+                                rel = dir_entry.name
+                            safe = rel.replace(os.sep, "/")
+                            try:
+                                size = dir_entry.stat().st_size
+                            except OSError:
+                                size = 0
+                            if size > MAX_FILE_SIZE:
+                                self.errors.append(
+                                    f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe}"
+                                )
+                                continue
+                            files.append((dir_entry.path, safe))
             except OSError:
                 self.errors.append("Error reading directory structure.")
 
+        # ---- Pass 1: parse + visit each file (collects defs and pending calls) ----
+        # NB: We don't separate "collect" and "resolve" into two AST walks because
+        # _parse_cached makes a second walk free, but a single walk per file with
+        # a deferred resolve step is even simpler and traverses the AST only once.
+        per_file: list[dict] = []
+        symbol_table: dict[str, str] = {}  # short_name -> canonical id
+
+        for file_path, safe_name in files:
+            visited = self._parse_and_visit(
+                file_path, safe_name, merge=True, project_root=dir_path
+            )
+            if visited is None:
+                continue
+            per_file.append(visited)
+            for d in visited["visitor"].top_level_definitions:
+                # First definition wins on collision (deterministic by walk order).
+                # Non-top-level methods (Class.method) use qualified names that
+                # rarely collide across files.
+                symbol_table.setdefault(d["name"], d["name"])
+            self.definitions.extend(visited["visitor"].definitions)
+
+        # ---- Pass 2: resolve calls into typed edges using global symbol table ----
+        graphs: list[nx.DiGraph] = []
+        stub_metadata: dict[str, dict] = {}
+
+        for entry in per_file:
+            visitor: CallGraphVisitor = entry["visitor"]
+            imports = entry["imports"]
+            local_def_ids = set(visitor.graph.nodes())
+            for scope, info in visitor.pending_calls:
+                target_id, attrs = self._resolve_call(
+                    info=info,
+                    file_path=entry["file_path"],
+                    imports=imports,
+                    symbol_table=symbol_table,
+                    local_modules=local_modules,
+                    local_def_ids=local_def_ids,
+                )
+                visitor.graph.add_edge(scope, target_id)
+                if attrs is not None:
+                    # Record stub metadata; applied after compose so file-local
+                    # attribute orderings don't clobber real definitions.
+                    existing = stub_metadata.get(target_id)
+                    if existing is None or _is_better_stub(attrs, existing):
+                        stub_metadata[target_id] = attrs
+            graphs.append(visitor.graph)
+
         if graphs:
             self.graph = nx.compose_all(graphs)
+
+        # ---- Add module nodes + contains/imports edges ----
+        self._add_module_nodes(per_file, dir_path, local_modules, symbol_table)
+
+        # ---- Enrich any stub-only nodes with metadata ----
+        for node_id, attrs in stub_metadata.items():
+            if node_id in self.graph:
+                existing = self.graph.nodes[node_id]
+                if not existing.get("type"):
+                    existing.update(attrs)
+            else:
+                # add_edge would have created it, but just in case:
+                self.graph.add_node(node_id, **attrs)
+
+        # ---- Final safety net: any remaining type-less node becomes "unresolved" ----
+        for node_id, data in self.graph.nodes(data=True):
+            if not data.get("type"):
+                data["type"] = "unresolved"
+                data.setdefault("label", node_id)
 
         return {
             "file": dir_path,
@@ -309,13 +570,13 @@ class CodeAnalyzer:
             "errors": self.errors,
         }
 
+    # ------------------------------------------------------------------
+    # Single-file analysis
+    # ------------------------------------------------------------------
+
     def _analyze_single_file(
         self, file_path: str, merge: bool = False, root: str | None = None
     ) -> dict[str, Any]:
-        # In merge mode (directory analysis), name files by their path relative
-        # to the analyzed root so that pkg_a/utils.py and pkg_b/utils.py are
-        # distinguishable in error messages. Single-file mode keeps using the
-        # basename to preserve the existing error contract.
         if merge and root is not None:
             try:
                 rel = os.path.relpath(file_path, root)
@@ -324,6 +585,7 @@ class CodeAnalyzer:
             safe_name = rel.replace(os.sep, "/")
         else:
             safe_name = os.path.basename(file_path)
+
         if os.path.getsize(file_path) > MAX_FILE_SIZE:
             error_msg = f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe_name}"
             if merge:
@@ -331,31 +593,71 @@ class CodeAnalyzer:
                 return {}
             return {"error": error_msg}
 
-        # Read as bytes so ast.parse can apply Python's own source encoding
-        # detection: BOM -> utf-8, PEP 263 coding declaration -> named codec,
-        # otherwise utf-8. Hard-coding encoding="utf-8" here used to raise
-        # UnicodeDecodeError on legitimate non-UTF-8 files, crashing the
-        # entire directory analysis to a 500.
-        parse_error = None
-        try:
-            with open(file_path, "rb") as f:
-                source = f.read()
-            tree = _parse_cached(source, filename=file_path)
-        except SyntaxError:
-            parse_error = f"Syntax error in {safe_name}"
-        except (UnicodeDecodeError, ValueError):
-            parse_error = f"Could not decode {safe_name}"
-        except OSError:
-            parse_error = f"Could not read {safe_name}"
-
-        if parse_error is not None:
+        visited = self._parse_and_visit(file_path, safe_name, merge=merge)
+        if visited is None:
             if merge:
-                self.errors.append(parse_error)
                 return {}
-            return {"error": parse_error}
+            # _parse_and_visit already pushed an error string into self.errors
+            return {
+                "error": self.errors[-1]
+                if self.errors
+                else f"Could not parse {safe_name}"
+            }
 
-        visitor = CallGraphVisitor(file_path)
-        visitor.visit(tree)
+        visitor: CallGraphVisitor = visited["visitor"]
+        imports = visited["imports"]
+
+        # Build a single-file symbol table from this file's definitions only.
+        symbol_table = {d["name"]: d["name"] for d in visitor.top_level_definitions}
+        # Local modules: scan the parent directory so siblings count as local.
+        project_root = os.path.dirname(os.path.abspath(file_path))
+        local_modules = CodeAnalyzer._get_local_modules(project_root)
+
+        local_def_ids = set(visitor.graph.nodes())
+        stub_metadata: dict[str, dict] = {}
+        for scope, info in visitor.pending_calls:
+            target_id, attrs = self._resolve_call(
+                info=info,
+                file_path=file_path,
+                imports=imports,
+                symbol_table=symbol_table,
+                local_modules=local_modules,
+                local_def_ids=local_def_ids,
+            )
+            visitor.graph.add_edge(scope, target_id)
+            if attrs is not None:
+                existing = stub_metadata.get(target_id)
+                if existing is None or _is_better_stub(attrs, existing):
+                    stub_metadata[target_id] = attrs
+
+        # Apply stub metadata to nodes that have no type yet.
+        for node_id, attrs in stub_metadata.items():
+            if node_id in visitor.graph:
+                existing = visitor.graph.nodes[node_id]
+                if not existing.get("type"):
+                    existing.update(attrs)
+            else:
+                visitor.graph.add_node(node_id, **attrs)
+
+        # Add a module node and contains edges for this single file.
+        module_id = "module:" + _file_to_module_id(file_path, project_root)
+        if module_id not in visitor.graph:
+            visitor.graph.add_node(
+                module_id,
+                type="module",
+                file=file_path,
+                label=os.path.basename(file_path),
+                entry_point=False,
+            )
+        for d in visitor.top_level_definitions:
+            if d["name"] in visitor.graph:
+                visitor.graph.add_edge(module_id, d["name"], edge_type="contains")
+
+        # Final safety: any remaining type-less node becomes "unresolved".
+        for node_id, data in visitor.graph.nodes(data=True):
+            if not data.get("type"):
+                data["type"] = "unresolved"
+                data.setdefault("label", node_id)
 
         if merge:
             self.definitions.extend(visitor.definitions)
@@ -368,6 +670,312 @@ class CodeAnalyzer:
             "definitions": visitor.definitions,
             "graph": visitor.graph,
         }
+
+    # ------------------------------------------------------------------
+    # Shared helpers
+    # ------------------------------------------------------------------
+
+    def _parse_and_visit(
+        self,
+        file_path: str,
+        safe_name: str,
+        merge: bool,
+        project_root: str | None = None,
+    ) -> dict | None:
+        """Read, parse, walk one file. Returns None on error (and records it).
+
+        ``project_root`` controls which directory is scanned to determine which
+        imports are "local". Directory mode passes the upload root so that
+        ``from pkg.sub import X`` is recognised as local even when the file
+        being parsed is itself nested inside ``pkg/sub/``.
+        """
+        try:
+            with open(file_path, "rb") as f:
+                source = f.read()
+            tree = _parse_cached(source, filename=file_path)
+        except SyntaxError:
+            err = f"Syntax error in {safe_name}"
+        except (UnicodeDecodeError, ValueError):
+            err = f"Could not decode {safe_name}"
+        except OSError:
+            err = f"Could not read {safe_name}"
+        else:
+            visitor = CallGraphVisitor(file_path)
+            visitor.visit(tree)
+            scan_root = project_root or os.path.dirname(os.path.abspath(file_path))
+            local_modules = CodeAnalyzer._get_local_modules(scan_root)
+            imports = _extract_imports(tree, local_modules)
+            return {
+                "file_path": file_path,
+                "tree": tree,
+                "visitor": visitor,
+                "imports": imports,
+            }
+
+        self.errors.append(err)
+        return None
+
+    def _resolve_call(
+        self,
+        info: dict,
+        file_path: str,
+        imports: list[dict],
+        symbol_table: dict[str, str],
+        local_modules: frozenset[str],
+        local_def_ids: set[str],
+    ) -> tuple[str, dict | None]:
+        """Resolve a queued call to a graph node id and (optional) stub attrs.
+
+        Returns (target_id, attrs). If ``attrs`` is None, the target is a real
+        definition (already a node with full metadata) and no stub creation is
+        needed. Otherwise ``attrs`` describes the typed stub to register.
+        """
+        kind = info["kind"]
+        name = info["name"]
+
+        # ---- self.X / cls.X inside a class body ----
+        if kind == "self_method":
+            qualified = f"{info['class']}.{name}"
+            if qualified in local_def_ids:
+                return qualified, None
+            # Not a local method — likely inherited or dynamically attached.
+            stub_id = f"unresolved:{qualified}"
+            return stub_id, {
+                "type": "unresolved",
+                "label": qualified,
+                "file": None,
+            }
+
+        # ---- bare-name calls: foo() ----
+        if kind == "name":
+            # 1. Defined in this file
+            if name in local_def_ids:
+                return name, None
+            # 2. Built-in
+            if name in PY_BUILTINS:
+                stub_id = f"builtin:{name}"
+                return stub_id, {
+                    "type": "builtin",
+                    "label": name,
+                    "file": None,
+                }
+            # 3. Brought in via `from M import name [as alias]`
+            for imp in imports:
+                if imp["kind"] != "from":
+                    continue
+                if name in imp["asnames"]:
+                    # Map the local alias back to the original symbol name.
+                    idx = imp["asnames"].index(name)
+                    real_name = imp["names"][idx]
+                    if imp["is_local"] and real_name in symbol_table:
+                        # Cross-file local resolution: link to the canonical
+                        # node already produced by the defining file.
+                        return symbol_table[real_name], None
+                    if imp["is_local"]:
+                        stub_id = (
+                            f"local:{imp['module']}.{real_name}"
+                            if imp["module"]
+                            else real_name
+                        )
+                        return stub_id, {
+                            "type": "imported_local",
+                            "label": real_name,
+                            "module": imp["module"] or None,
+                            "file": None,
+                        }
+                    label = (
+                        f"{imp['module']}.{real_name}" if imp["module"] else real_name
+                    )
+                    stub_id = f"external:{label}"
+                    return stub_id, {
+                        "type": "external",
+                        "label": label,
+                        "module": imp["module"] or None,
+                        "file": None,
+                    }
+            # 4. Cross-file canonical match (no explicit import; rare but useful)
+            if name in symbol_table:
+                return symbol_table[name], None
+            # 5. Final fallthrough
+            stub_id = f"unresolved:{name}"
+            return stub_id, {
+                "type": "unresolved",
+                "label": name,
+                "file": None,
+            }
+
+        # ---- attribute calls: obj.foo() / module.foo() / a.b.c.foo() ----
+        if kind == "attribute":
+            base = info.get("base")
+            parts = info.get("parts") or [name]
+
+            # Try to map the base to an imported module / alias.
+            if base is not None:
+                for imp in imports:
+                    if imp["kind"] == "import":
+                        # `import M [as alias]` -> alias is in asnames
+                        for alias in imp["asnames"]:
+                            top = alias.split(".")[0]
+                            if base == top or base == alias:
+                                full = f"{imp['module']}." + ".".join(parts)
+                                if imp["is_local"]:
+                                    if name in symbol_table:
+                                        return symbol_table[name], None
+                                    stub_id = f"local:{full}"
+                                    return stub_id, {
+                                        "type": "imported_local",
+                                        "label": full,
+                                        "module": imp["module"],
+                                        "file": None,
+                                    }
+                                stub_id = f"external:{full}"
+                                return stub_id, {
+                                    "type": "external",
+                                    "label": full,
+                                    "module": imp["module"],
+                                    "file": None,
+                                }
+                    elif imp["kind"] == "from":
+                        # `from M import X` -> X.method() means base==X
+                        if base in imp["asnames"]:
+                            idx = imp["asnames"].index(base)
+                            real_name = imp["names"][idx]
+                            full_label = ".".join([real_name] + parts)
+                            if imp["is_local"]:
+                                # If X is a class we ingested, map to X.method
+                                qualified = f"{real_name}.{name}"
+                                if qualified in symbol_table:
+                                    return symbol_table[qualified], None
+                                stub_id = (
+                                    f"local:{imp['module']}.{full_label}"
+                                    if imp["module"]
+                                    else f"local:{full_label}"
+                                )
+                                return stub_id, {
+                                    "type": "imported_local",
+                                    "label": full_label,
+                                    "module": imp["module"] or None,
+                                    "file": None,
+                                }
+                            ext_label = (
+                                f"{imp['module']}.{full_label}"
+                                if imp["module"]
+                                else full_label
+                            )
+                            stub_id = f"external:{ext_label}"
+                            return stub_id, {
+                                "type": "external",
+                                "label": ext_label,
+                                "module": imp["module"] or None,
+                                "file": None,
+                            }
+
+                # Stdlib fallback: os.path.exists(), json.loads(), etc.
+                if base in STDLIB_MODULES:
+                    full = f"{base}." + ".".join(parts)
+                    stub_id = f"external:{full}"
+                    return stub_id, {
+                        "type": "external",
+                        "label": full,
+                        "module": base,
+                        "file": None,
+                    }
+
+            # If just the method name happens to match a known qualified
+            # method (e.g. `obj.run()` and `Foo.run` exists), skip — too
+            # ambiguous without type inference. Fall through to unresolved.
+            stub_id = f"unresolved:{name}"
+            return stub_id, {
+                "type": "unresolved",
+                "label": name,
+                "file": None,
+            }
+
+        # Defensive default — should not happen.
+        stub_id = f"unresolved:{name}"
+        return stub_id, {
+            "type": "unresolved",
+            "label": name,
+            "file": None,
+        }
+
+    def _add_module_nodes(
+        self,
+        per_file: list[dict],
+        project_root: str,
+        local_modules: frozenset[str],
+        symbol_table: dict[str, str],
+    ) -> None:
+        """Add a `module:<dotted>` node per file plus contains/imports edges.
+
+        Module nodes give the graph a coarse top-level structure: every
+        function/class is anchored to the file it lives in, and cross-file
+        imports show up as inter-module arrows so the user can read the
+        project's high-level shape at a glance.
+        """
+        # Map file -> module id once so we can connect imports to targets.
+        # Skip files with no definitions and no calls — a module node alone
+        # would be misleading (it represents nothing the user wrote).
+        file_to_module: dict[str, str] = {}
+        for entry in per_file:
+            visitor = entry["visitor"]
+            if not visitor.top_level_definitions and not visitor.pending_calls:
+                entry["module_id"] = None
+                continue
+            mod_id = "module:" + _file_to_module_id(entry["file_path"], project_root)
+            entry["module_id"] = mod_id
+            file_to_module[entry["file_path"]] = mod_id
+            self.graph.add_node(
+                mod_id,
+                type="module",
+                file=entry["file_path"],
+                label=os.path.basename(entry["file_path"]),
+                entry_point=False,
+            )
+
+        # contains: module -> top-level definitions in that file.
+        for entry in per_file:
+            mod_id = entry["module_id"]
+            if mod_id is None:
+                continue
+            for d in entry["visitor"].top_level_definitions:
+                if d["name"] in self.graph:
+                    self.graph.add_edge(mod_id, d["name"], edge_type="contains")
+
+        # imports: module -> module (only for local imports we can resolve).
+        # Map dotted module path -> module-node id.
+        module_id_by_dotted: dict[str, str] = {}
+        for entry in per_file:
+            if entry["module_id"] is None:
+                continue
+            dotted = _file_to_module_id(entry["file_path"], project_root)
+            module_id_by_dotted[dotted] = entry["module_id"]
+
+        for entry in per_file:
+            mod_id = entry["module_id"]
+            if mod_id is None:
+                continue
+            seen: set[str] = set()
+            for imp in entry["imports"]:
+                if not imp["is_local"]:
+                    continue
+                target_dotted = imp["module"]
+                if not target_dotted:
+                    continue
+                # Try direct match, then progressively shorter prefixes for
+                # `from pkg.sub import X` style imports.
+                target_node = module_id_by_dotted.get(target_dotted)
+                if target_node is None:
+                    parts = target_dotted.split(".")
+                    while parts and target_node is None:
+                        parts.pop()
+                        target_node = module_id_by_dotted.get(".".join(parts))
+                if target_node is None or target_node == mod_id:
+                    continue
+                if target_node in seen:
+                    continue
+                seen.add(target_node)
+                self.graph.add_edge(mod_id, target_node, edge_type="imports")
 
     # ------------------------------------------------------------------
     # Dependency extraction via import analysis
@@ -418,45 +1026,18 @@ class CodeAnalyzer:
         except OSError:
             return {"error": f"Could not read {safe_name}"}
 
-        dependencies: list[dict[str, Any]] = []
-
-        # PERFORMANCE OPTIMIZATION (Bolt): Cache local modules set per project_root
-        # to avoid O(N * M) os.path.isfile checks where N is files and M is imports.
         local_modules = CodeAnalyzer._get_local_modules(project_root)
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    module = alias.name
-                    # E.g. "app.models" -> check "app.models" or "app"
-                    top_level = module.split(".")[0]
-                    dependencies.append(
-                        {
-                            "module": module,
-                            "names": [alias.asname or alias.name],
-                            "is_local": module in local_modules
-                            or top_level in local_modules,
-                        }
-                    )
-
-            elif isinstance(node, ast.ImportFrom):
-                module = node.module or ""
-                names = [alias.name for alias in node.names]
-                top_level = module.split(".")[0] if module else ""
-                # Relative imports (level > 0) are always local
-                is_local = (
-                    node.level > 0
-                    or module in local_modules
-                    or top_level in local_modules
-                )
-                dependencies.append(
-                    {
-                        "module": module,
-                        "names": names,
-                        "is_local": is_local,
-                    }
-                )
-
+        raw = _extract_imports(tree, local_modules)
+        # Backwards-compat shape: keep the old fields the existing tests and
+        # API consumers depend on (module, names, is_local).
+        dependencies = [
+            {
+                "module": imp["module"],
+                "names": imp["asnames"] if imp["kind"] == "import" else imp["names"],
+                "is_local": imp["is_local"],
+            }
+            for imp in raw
+        ]
         return {"file": file_path, "dependencies": dependencies}
 
     @staticmethod
@@ -492,3 +1073,21 @@ class CodeAnalyzer:
                 pass
 
         return frozenset(local_mods)
+
+
+# Stub-attribute precedence: a more specific type beats a more generic one if
+# two callsites resolve the same id (e.g. once as builtin, once as unresolved
+# from a syntactically odd attribute chain). Keeps the most informative tag.
+_STUB_TYPE_RANK = {
+    "builtin": 4,
+    "external": 3,
+    "imported_local": 3,
+    "module": 2,
+    "unresolved": 1,
+}
+
+
+def _is_better_stub(new_attrs: dict, existing: dict) -> bool:
+    new_rank = _STUB_TYPE_RANK.get(new_attrs.get("type", ""), 0)
+    cur_rank = _STUB_TYPE_RANK.get(existing.get("type", ""), 0)
+    return new_rank > cur_rank

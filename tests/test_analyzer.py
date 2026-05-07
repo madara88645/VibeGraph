@@ -74,7 +74,9 @@ class MyClass:
         graph = result["graph"]
 
         self.assertTrue(graph.has_edge("func_a", "func_b"))
-        self.assertTrue(graph.has_edge("MyClass.method_a", "method_b"))
+        # self.method_b() now resolves to the qualified MyClass.method_b
+        # instead of the bare attribute name (eliminates a gray "ref" node).
+        self.assertTrue(graph.has_edge("MyClass.method_a", "MyClass.method_b"))
         self.assertTrue(graph.has_edge("MyClass.method_b", "func_a"))
 
     def test_analyze_directory(self):
@@ -212,6 +214,149 @@ def read_file(path):
 
         node = result["graph"].nodes["read_file"]
         self.assertTrue(node["side_effect_boundary"])
+
+
+class TestCallResolution(unittest.TestCase):
+    """Tests for the two-pass resolver that classifies call targets so the
+    frontend can render meaningful colored nodes instead of gray "ref" stubs.
+    """
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.analyzer = CodeAnalyzer()
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def _write(self, path: str, content: str) -> str:
+        full = os.path.join(self.test_dir, path)
+        os.makedirs(os.path.dirname(full) or self.test_dir, exist_ok=True)
+        with open(full, "w", encoding="utf-8") as f:
+            f.write(content)
+        return full
+
+    def _types(self, graph) -> dict[str, str]:
+        return {nid: data.get("type") for nid, data in graph.nodes(data=True)}
+
+    def test_builtins_get_builtin_type_not_default(self):
+        """`print()`, `len()` should be tagged ``builtin`` so they render in
+        the dedicated style instead of the gray fallback.
+        """
+        path = self._write(
+            "simple.py",
+            "def hello():\n    print(len([1, 2, 3]))\n",
+        )
+        result = self.analyzer.analyze_file(path)
+        types = self._types(result["graph"])
+
+        self.assertEqual(types["hello"], "function")
+        self.assertEqual(types.get("builtin:print"), "builtin")
+        self.assertEqual(types.get("builtin:len"), "builtin")
+        # No node may be left with the empty/default type.
+        for nid, t in types.items():
+            self.assertTrue(t, f"node {nid!r} has empty type")
+            self.assertNotEqual(t, "default", f"node {nid!r} fell back to default")
+
+    def test_self_method_resolves_to_qualified_name(self):
+        """`self.foo()` should link to ``Class.foo`` (the real definition),
+        not create a separate gray ``foo`` reference node."""
+        path = self._write(
+            "cls.py",
+            "class A:\n"
+            "    def a(self):\n"
+            "        self.b()\n"
+            "    def b(self):\n"
+            "        pass\n",
+        )
+        result = self.analyzer.analyze_file(path)
+        graph = result["graph"]
+
+        self.assertTrue(graph.has_edge("A.a", "A.b"))
+        # The method is the real definition node, not a stub.
+        self.assertEqual(graph.nodes["A.b"]["type"], "function")
+        # No bare 'b' stub from the old `node.func.attr`-only logic.
+        self.assertFalse(graph.has_node("b"))
+
+    def test_stdlib_attribute_call_tagged_external(self):
+        """`os.path.exists(...)` is tagged external (orange), not unresolved."""
+        path = self._write(
+            "uses_os.py",
+            "import os\ndef check(p):\n    return os.path.exists(p)\n",
+        )
+        result = self.analyzer.analyze_file(path)
+        types = self._types(result["graph"])
+
+        ext_ids = [nid for nid, t in types.items() if t == "external"]
+        self.assertTrue(
+            ext_ids,
+            f"expected an external node for os.path.exists, got types={types}",
+        )
+
+    def test_local_imported_call_links_to_definition(self):
+        """A function imported from another local module must edge-link to the
+        canonical definition (not a duplicate stub) when both live in the
+        analyzed directory."""
+        self._write("utils.py", "def helper():\n    return 1\n")
+        self._write(
+            "main.py",
+            "from utils import helper\ndef run():\n    return helper()\n",
+        )
+        result = self.analyzer.analyze_file(self.test_dir)
+        graph = result["graph"]
+
+        self.assertTrue(graph.has_node("helper"))
+        self.assertEqual(graph.nodes["helper"]["type"], "function")
+        self.assertTrue(graph.has_edge("run", "helper"))
+
+    def test_module_nodes_added_for_each_file(self):
+        """Each file with code becomes a `module:<dotted>` node and contains
+        its top-level defs; cross-file local imports become module-to-module
+        edges so the user can see the high-level project shape."""
+        self._write("utils.py", "def helper():\n    return 1\n")
+        self._write(
+            "main.py",
+            "from utils import helper\ndef run():\n    return helper()\n",
+        )
+        result = self.analyzer.analyze_file(self.test_dir)
+        graph = result["graph"]
+
+        self.assertTrue(graph.has_node("module:utils"))
+        self.assertTrue(graph.has_node("module:main"))
+        self.assertEqual(graph.nodes["module:utils"]["type"], "module")
+        self.assertTrue(graph.has_edge("module:utils", "helper"))
+        self.assertTrue(graph.has_edge("module:main", "run"))
+        self.assertTrue(graph.has_edge("module:main", "module:utils"))
+
+    def test_no_module_node_for_file_without_code(self):
+        """A constants-only file shouldn't conjure a meaningless module node;
+        upload validation in the router relies on graph emptiness."""
+        self._write("consts.py", "ANSWER = 42\n")
+        result = self.analyzer.analyze_file(self.test_dir)
+        self.assertEqual(result["graph"].number_of_nodes(), 0)
+
+    def test_no_default_typed_nodes_in_complex_file(self):
+        """End-to-end sanity: a realistic small file produces zero nodes that
+        fall back to the gray default style."""
+        path = self._write(
+            "real.py",
+            "import json\n"
+            "from typing import Any\n"
+            "\n"
+            "def load(s):\n"
+            "    return json.loads(s)\n"
+            "\n"
+            "class Box:\n"
+            "    def __init__(self, v):\n"
+            "        self.v = v\n"
+            "    def show(self):\n"
+            "        print(self.v)\n"
+            "        return str(self.v)\n",
+        )
+        result = self.analyzer.analyze_file(path)
+        for nid, data in result["graph"].nodes(data=True):
+            t = data.get("type")
+            self.assertTrue(t, f"node {nid!r} has empty type")
+            self.assertNotEqual(t, "default", f"node {nid!r} fell back to default")
 
 
 class TestCodeAnalyzerEncoding(unittest.TestCase):

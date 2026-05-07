@@ -6,6 +6,11 @@ const typeColors = {
     'function': { accent: '#06b6d4', label: 'Function', icon: '⚡' },
     'class': { accent: '#a855f7', label: 'Class', icon: '🏗️' },
     'entry_point': { accent: '#22c55e', label: 'Entry Point', icon: '🚀' },
+    'builtin': { accent: '#3b82f6', label: 'Built-in', icon: '🐍' },
+    'external': { accent: '#f97316', label: 'External', icon: '📦' },
+    'imported_local': { accent: '#14b8a6', label: 'Imported', icon: '🔗' },
+    'module': { accent: '#eab308', label: 'Module', icon: '📁' },
+    'unresolved': { accent: '#94a3b8', label: 'Reference', icon: '?' },
     'default': { accent: '#64748b', label: 'Reference', icon: '○' },
 };
 
