@@ -165,7 +165,7 @@ def get_users():
 def create_user():
     pass
 """
-        file_path = self.create_file("test_fastapi.py", code)
+        self.create_file("test_fastapi.py", code)
 
         # Use CodeAnalyzer to process api_boundary during analysis
         res = self.analyzer.analyze_file(self.test_dir)
@@ -184,7 +184,7 @@ def my_func():
     os.path.join("a")    # Stdlib
     unknown_func()       # Unresolved
 """
-        file_path = self.create_file("test_edges.py", code)
+        self.create_file("test_edges.py", code)
 
         # We need another file to act as the project so stdlib logic kicks in
         # or just test it with codeanalyzer directly.
@@ -194,21 +194,10 @@ def my_func():
         # Edges from my_func -> print, os.path.join, unknown_func
         # Verify edge properties
 
-        my_func_id = f"test_edges.my_func"
         # Node IDs in the full graph for python don't strictly require module: for defs
         # Let's just find my_func or test_edges.my_func
         my_func_node = next((n for n in graph.nodes if n.endswith("my_func")), None)
         self.assertIsNotNone(my_func_node)
-
-        # Verify nodes are in graph
-        edges = graph.out_edges(my_func_node, data=True)
-
-        # We should find edges to builtin:print, external:os.path.join, unresolved:unknown_func
-        targets = [
-            v
-            for u, v, data in edges
-            if u == my_func_node and data.get("edge_type") == "calls"
-        ]
 
         # Test node types instead, CodeAnalyzer populates nodes not necessarily specific edge names if the call isn't there
         types = {nid: data.get("type") for nid, data in graph.nodes(data=True)}
