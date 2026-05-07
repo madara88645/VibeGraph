@@ -37,3 +37,7 @@
 ## 2024-05-30 - Context-Rich Buttons with Nested Elements
 **Learning:** When rendering buttons that contain multiple text elements (e.g., an icon, a label, and a filename) and utilize complex `title` attributes for rich context, a screen reader may read the internal spans in a disjointed way while missing the combined context of the tooltip.
 **Action:** Assign an explicit, combined `aria-label` to the parent button that mirrors the rich context of the `title` attributes. This creates a natural, consolidated sentence for screen readers and ensures parity with the descriptive context sighted users receive via tooltips.
+
+## 2024-05-08 - Consolidating Context for Screen Readers
+**Learning:** When dynamic text elements (e.g. counts and types) are nested inside a button, screen readers may ignore them if the button has a static `aria-label`. This breaks context parity between sighted and screen reader users.
+**Action:** Consolidate dynamic text elements into a single, rich `aria-label` string on the parent button instead of scattering them as nested text.
