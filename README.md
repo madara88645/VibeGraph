@@ -2,6 +2,8 @@
 
 <img src="docs/screenshots/Bannervibe.png" alt="VibeGraph Banner" width="100%">
 
+<img src="docs/images/multi-language-hero.png" alt="Supports Python, JavaScript, and TypeScript - powered by tree-sitter">
+
 # VibeGraph
 
 **Turn any Python project into an interactive, AI-powered learning experience.**
