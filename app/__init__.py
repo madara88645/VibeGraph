@@ -149,13 +149,29 @@ def create_app() -> FastAPI:
     cors_origins = os.getenv(
         "VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000"
     )
-    origins_list = cors_origins.split(",")
+    # Sanitize origins: strip whitespace and filter empty strings
+    origins_list = [
+        origin.strip() for origin in cors_origins.split(",") if origin.strip()
+    ]
+
+    # Validate origins to prevent insecure wildcard bypasses (e.g. " * ")
+    validated_origins = []
+    for origin in origins_list:
+        if (
+            origin == "*"
+            or origin.startswith("http://")
+            or origin.startswith("https://")
+        ):
+            validated_origins.append(origin)
+        else:
+            logger.warning(f"Invalid CORS origin removed: {origin}")
+
     # Prevent insecure combinations of wildcard origins with credentials
-    allow_credentials = "*" not in origins_list
+    allow_credentials = "*" not in validated_origins
 
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=origins_list,
+        allow_origins=validated_origins,
         allow_credentials=allow_credentials,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
