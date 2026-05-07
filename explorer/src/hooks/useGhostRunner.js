@@ -518,7 +518,16 @@ export function useGhostRunner(
         const nextNode = nodesMap.get(nodeId);
         if (!isNavigableNode(nextNode)) return;
 
-        const newTrail = [nodeId, ...trail.filter(id => id !== nodeId)].slice(0, TRAIL_LENGTH);
+        // PERFORMANCE OPTIMIZATION (Bolt): Replace array filter().slice() chain with a fast for loop
+        // to avoid O(N) intermediate allocations during simulation ticks.
+        const newTrail = [nodeId];
+        for (let i = 0; i < trail.length; i++) {
+            if (newTrail.length >= TRAIL_LENGTH) break;
+            if (trail[i] !== nodeId) {
+                newTrail.push(trail[i]);
+            }
+        }
+
         trailRef.current = newTrail;
         visitedSetRef.current.add(nodeId);
 
@@ -613,7 +622,16 @@ export function useGhostRunner(
                 return;
             }
 
-            const newTrail = [nextNodeId, ...trail.filter(id => id !== nextNodeId)].slice(0, TRAIL_LENGTH);
+            // PERFORMANCE OPTIMIZATION (Bolt): Replace array filter().slice() chain with a fast for loop
+            // to avoid O(N) intermediate allocations during simulation ticks.
+            const newTrail = [nextNodeId];
+            for (let i = 0; i < trail.length; i++) {
+                if (newTrail.length >= TRAIL_LENGTH) break;
+                if (trail[i] !== nextNodeId) {
+                    newTrail.push(trail[i]);
+                }
+            }
+
             trailRef.current = newTrail;
             const nextNode = currentNodesMap.get(nextNodeId);
             if (!isNavigableNode(nextNode)) {
