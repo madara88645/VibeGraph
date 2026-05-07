@@ -320,6 +320,8 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                     'What does this project do?',
                     'Where should I start reading the code?',
                     'What are the main entry points?',
+                    'Where are React components defined?',
+                    'Which functions call fetch()?',
                   ].map((prompt) => (
                     <button
                       key={prompt}
