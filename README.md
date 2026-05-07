@@ -4,11 +4,13 @@
 
 # VibeGraph
 
-**Turn any Python project into an interactive, AI-powered learning experience.**
+**Turn any codebase into an interactive, AI-powered learning experience.**
 
 Upload your code → explore the call graph → ask AI anything about it.
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
@@ -23,9 +25,15 @@ Upload your code → explore the call graph → ask AI anything about it.
 
 ## What is VibeGraph?
 
-VibeGraph parses any Python codebase with AST analysis, renders it as an interactive graph, and lets you click any function or class to get an AI explanation, ask follow-up questions, or watch a "Ghost Runner" animate the execution flow in real time.
+VibeGraph parses your codebase with AST analysis, renders it as an interactive graph, and lets you click any function or class to get an AI explanation, ask follow-up questions, or watch a "Ghost Runner" animate the execution flow in real time.
 
 Built for people who learn by exploring — vibe coders, junior devs, or anyone dropped into an unfamiliar repo.
+
+### Supported languages
+
+- **Python**: Deep AST parsing for full call graph visualization.
+- **JavaScript**: Full support for ES6 modules and relationships.
+- **TypeScript**: Full support including types and interfaces.
 
 ---
 
@@ -67,7 +75,7 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
 | 🎓 | **Learning Path** | AI-suggested study order: start here, then go here, for any file |
 | 📝 | **Code Panel** | Source code with line numbers for every selected node |
 | 💡 | **AI Explanations** | Beginner / Intermediate / Advanced levels, Technical or Analogy mode |
-| 📤 | **Upload Any Project** | Drop `.py` files or a `.zip` of your whole project — graph appears instantly |
+| 📤 | **Upload Any Project** | Drop source files (like `.py`, `.js`, `.ts`) or a `.zip` of your whole project — graph appears instantly |
 
 ### Ghost Runner v2
 
@@ -143,7 +151,7 @@ Open **[http://localhost:8000](http://localhost:8000)**
 
 ### 5. Use it
 
-**Upload your project** — click **Upload Project** in the top bar, select `.py` files or a `.zip` archive. The graph appears automatically.
+**Upload your project** — click **Upload Project** in the top bar, select source files (like `.py`, `.js`, `.ts`) or a `.zip` archive. The graph appears automatically.
 
 **Analyze via CLI** (optional, for local files):
 
