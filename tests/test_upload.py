@@ -70,7 +70,7 @@ def test_upload_project_rejects_python_without_analyzable_code():
     response = client.post("/api/upload-project", files=files, timeout=30.0)
 
     assert response.status_code == 400
-    assert "No analyzable Python code found" in response.json()["detail"]
+    assert "No analyzable code" in response.json()["detail"]
 
 
 def test_cleanup_tmp_dir_success():

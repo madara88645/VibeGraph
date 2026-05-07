@@ -45,7 +45,7 @@ def test_upload_safe_zip():
 
     assert response.status_code == 400
     detail = response.json().get("detail", "")
-    assert "No Python files found" in detail
+    assert "No supported source files" in detail
     assert "Unsafe zip file detected" not in detail
 
 

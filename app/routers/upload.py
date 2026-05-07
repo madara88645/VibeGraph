@@ -29,8 +29,15 @@ def cleanup_tmp_dir(path: str) -> None:
         shutil.rmtree(path, ignore_errors=True)
 
 
-def contains_python_file(path: str) -> bool:
-    """Return True when an uploaded tree contains at least one Python file."""
+def contains_supported_file(path: str) -> bool:
+    """Return True when an uploaded tree contains at least one source file
+    in a language VibeGraph can analyse (Python, JavaScript, TypeScript,
+    …). Extensions come from the language registry, so adding a new plugin
+    automatically extends what we accept.
+    """
+    from analyst.languages import all_extensions
+
+    supported = all_extensions()
     stack = [path]
     while stack:
         current_dir = stack.pop()
@@ -39,13 +46,18 @@ def contains_python_file(path: str) -> bool:
                 for entry in entries:
                     if entry.is_dir(follow_symlinks=False):
                         stack.append(entry.path)
-                    elif entry.is_file(follow_symlinks=False) and entry.name.endswith(
-                        ".py"
-                    ):
-                        return True
+                    elif entry.is_file(follow_symlinks=False):
+                        name_lower = entry.name.lower()
+                        if any(name_lower.endswith(ext) for ext in supported):
+                            return True
         except OSError:
             continue
     return False
+
+
+# Backwards-compat shim — older external scripts may still import the
+# original name. The check is now multi-language.
+contains_python_file = contains_supported_file
 
 
 def cleanup_expired_upload_dirs(
@@ -200,12 +212,13 @@ def upload_project(
                                 target.write(chunk)
                 os.remove(file_path)
 
-        if not contains_python_file(tmp_dir):
+        if not contains_supported_file(tmp_dir):
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "No Python files found. Upload a Python project folder or zip "
-                    "containing .py files."
+                    "No supported source files found. Upload a project folder or "
+                    "zip containing Python (.py), JavaScript (.js/.jsx/.mjs/.cjs) "
+                    "or TypeScript (.ts/.tsx) files."
                 ),
             )
 
@@ -239,7 +252,7 @@ def upload_project(
         if graph.number_of_nodes() == 0:
             raise HTTPException(
                 status_code=400,
-                detail="No analyzable Python code found.",
+                detail="No analyzable code found in the supported languages.",
             )
 
         response_data = deps.exporter.export_to_react_flow(graph)
