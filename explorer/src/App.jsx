@@ -357,8 +357,7 @@ function AppInner() {
               aria-label="Getting started"
             >
               <div role="status" aria-live="polite">
-                <strong>New here?</strong> Start by selecting a node in the graph, then use
-                <strong> Explain</strong> or <strong>Chat</strong> to understand how that code fits the system.
+                <strong>New here?</strong> Upload a Python, JavaScript, or TypeScript project (single file, multi-file, or zip) to get started.
               </div>
               <button
                 className="first-steps-dismiss"
