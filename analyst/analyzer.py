@@ -459,13 +459,15 @@ class CodeAnalyzer:
     # ------------------------------------------------------------------
 
     def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
+        # Lazy import to avoid the analyst.languages → analyst.analyzer import
+        # cycle (the Python plugin imports CallGraphVisitor from this module).
+        from analyst.languages import get_analyzer_for_path
+
         self.graph = nx.DiGraph()
         self.definitions = []
 
-        local_modules = CodeAnalyzer._get_local_modules(dir_path)
-
-        # ---- Walk filesystem (single scan; AST cache makes a re-parse free) ----
-        files: list[tuple[str, str]] = []  # (file_path, safe_name)
+        # ---- Walk filesystem; pick a language plugin for each file ----
+        files: list[tuple[str, str, Any]] = []  # (file_path, safe_name, analyzer)
         stack = [dir_path]
         while stack:
             current_dir = stack.pop()
@@ -475,7 +477,10 @@ class CodeAnalyzer:
                         if dir_entry.is_dir(follow_symlinks=False):
                             if dir_entry.name not in IGNORED_DIRS:
                                 stack.append(dir_entry.path)
-                        elif dir_entry.is_file() and dir_entry.name.endswith(".py"):
+                        elif dir_entry.is_file():
+                            language_analyzer = get_analyzer_for_path(dir_entry.path)
+                            if language_analyzer is None:
+                                continue
                             try:
                                 rel = os.path.relpath(dir_entry.path, dir_path)
                             except ValueError:
@@ -490,40 +495,63 @@ class CodeAnalyzer:
                                     f"File exceeds maximum allowed size ({MAX_FILE_SIZE} bytes): {safe}"
                                 )
                                 continue
-                            files.append((dir_entry.path, safe))
+                            files.append((dir_entry.path, safe, language_analyzer))
             except OSError:
                 self.errors.append("Error reading directory structure.")
 
-        # ---- Pass 1: parse + visit each file (collects defs and pending calls) ----
-        # NB: We don't separate "collect" and "resolve" into two AST walks because
-        # _parse_cached makes a second walk free, but a single walk per file with
-        # a deferred resolve step is even simpler and traverses the AST only once.
+        # Cache local-module sets per-language for the directory so the
+        # resolver doesn't rescan disk for every file.
+        local_modules_by_lang: dict[str, frozenset[str]] = {}
+
+        def _local_modules_for(lang) -> frozenset[str]:
+            cached = local_modules_by_lang.get(lang.language_id)
+            if cached is None:
+                cached = lang.get_local_modules(dir_path)
+                local_modules_by_lang[lang.language_id] = cached
+            return cached
+
+        # ---- Pass 1: parse + visit each file via its language plugin ----
         per_file: list[dict] = []
         symbol_table: dict[str, str] = {}  # short_name -> canonical id
 
-        for file_path, safe_name in files:
-            visited = self._parse_and_visit(
-                file_path, safe_name, merge=True, project_root=dir_path
-            )
-            if visited is None:
-                continue
-            per_file.append(visited)
-            for d in visited["visitor"].top_level_definitions:
-                # First definition wins on collision (deterministic by walk order).
-                # Non-top-level methods (Class.method) use qualified names that
-                # rarely collide across files.
-                symbol_table.setdefault(d["name"], d["name"])
-            self.definitions.extend(visited["visitor"].definitions)
+        from analyst.languages.base import ParseError
 
-        # ---- Pass 2: resolve calls into typed edges using global symbol table ----
+        for file_path, safe_name, language_analyzer in files:
+            try:
+                analysis = language_analyzer.analyze_file(file_path, dir_path)
+            except ParseError as parse_err:
+                self.errors.append(parse_err.message)
+                continue
+            except Exception:
+                self.errors.append(f"Could not parse {safe_name}")
+                continue
+            if analysis is None:
+                self.errors.append(f"Could not parse {safe_name}")
+                continue
+            per_file.append(
+                {
+                    "file_path": file_path,
+                    "safe_name": safe_name,
+                    "analysis": analysis,
+                    "analyzer": language_analyzer,
+                }
+            )
+            for d in analysis.top_level_definitions:
+                # First definition wins on collision (deterministic by walk order).
+                symbol_table.setdefault(d["name"], d["name"])
+            self.definitions.extend(analysis.definitions)
+
+        # ---- Pass 2: resolve calls into typed edges ----
         graphs: list[nx.DiGraph] = []
         stub_metadata: dict[str, dict] = {}
 
         for entry in per_file:
-            visitor: CallGraphVisitor = entry["visitor"]
-            imports = entry["imports"]
-            local_def_ids = set(visitor.graph.nodes())
-            for scope, info in visitor.pending_calls:
+            analysis = entry["analysis"]
+            language_analyzer = entry["analyzer"]
+            imports = analysis.imports
+            local_def_ids = set(analysis.graph.nodes())
+            local_modules = _local_modules_for(language_analyzer)
+            for scope, info in analysis.pending_calls:
                 target_id, attrs = self._resolve_call(
                     info=info,
                     file_path=entry["file_path"],
@@ -531,21 +559,21 @@ class CodeAnalyzer:
                     symbol_table=symbol_table,
                     local_modules=local_modules,
                     local_def_ids=local_def_ids,
+                    builtins=language_analyzer.builtins,
+                    stdlib_modules=language_analyzer.stdlib_modules,
                 )
-                visitor.graph.add_edge(scope, target_id)
+                analysis.graph.add_edge(scope, target_id)
                 if attrs is not None:
-                    # Record stub metadata; applied after compose so file-local
-                    # attribute orderings don't clobber real definitions.
                     existing = stub_metadata.get(target_id)
                     if existing is None or _is_better_stub(attrs, existing):
                         stub_metadata[target_id] = attrs
-            graphs.append(visitor.graph)
+            graphs.append(analysis.graph)
 
         if graphs:
             self.graph = nx.compose_all(graphs)
 
         # ---- Add module nodes + contains/imports edges ----
-        self._add_module_nodes(per_file, dir_path, local_modules, symbol_table)
+        self._add_module_nodes(per_file, dir_path, symbol_table)
 
         # ---- Enrich any stub-only nodes with metadata ----
         for node_id, attrs in stub_metadata.items():
@@ -577,6 +605,8 @@ class CodeAnalyzer:
     def _analyze_single_file(
         self, file_path: str, merge: bool = False, root: str | None = None
     ) -> dict[str, Any]:
+        from analyst.languages import get_analyzer_for_path
+
         if merge and root is not None:
             try:
                 rel = os.path.relpath(file_path, root)
@@ -593,38 +623,52 @@ class CodeAnalyzer:
                 return {}
             return {"error": error_msg}
 
-        visited = self._parse_and_visit(file_path, safe_name, merge=merge)
-        if visited is None:
+        language_analyzer = get_analyzer_for_path(file_path)
+        if language_analyzer is None:
+            error_msg = f"Unsupported file type: {safe_name}"
+            if merge:
+                self.errors.append(error_msg)
+                return {}
+            return {"error": error_msg}
+
+        from analyst.languages.base import ParseError
+
+        project_root = os.path.dirname(os.path.abspath(file_path))
+        err: str | None = None
+        analysis = None
+        try:
+            analysis = language_analyzer.analyze_file(file_path, project_root)
+        except ParseError as parse_err:
+            err = parse_err.message
+        except Exception:
+            err = f"Could not parse {safe_name}"
+        if analysis is None:
+            if err is None:
+                err = f"Could not parse {safe_name}"
+            self.errors.append(err)
             if merge:
                 return {}
-            # _parse_and_visit already pushed an error string into self.errors
-            return {
-                "error": self.errors[-1]
-                if self.errors
-                else f"Could not parse {safe_name}"
-            }
+            return {"error": err}
 
-        visitor: CallGraphVisitor = visited["visitor"]
-        imports = visited["imports"]
-
+        graph = analysis.graph
         # Build a single-file symbol table from this file's definitions only.
-        symbol_table = {d["name"]: d["name"] for d in visitor.top_level_definitions}
-        # Local modules: scan the parent directory so siblings count as local.
-        project_root = os.path.dirname(os.path.abspath(file_path))
-        local_modules = CodeAnalyzer._get_local_modules(project_root)
+        symbol_table = {d["name"]: d["name"] for d in analysis.top_level_definitions}
+        local_modules = language_analyzer.get_local_modules(project_root)
 
-        local_def_ids = set(visitor.graph.nodes())
+        local_def_ids = set(graph.nodes())
         stub_metadata: dict[str, dict] = {}
-        for scope, info in visitor.pending_calls:
+        for scope, info in analysis.pending_calls:
             target_id, attrs = self._resolve_call(
                 info=info,
                 file_path=file_path,
-                imports=imports,
+                imports=analysis.imports,
                 symbol_table=symbol_table,
                 local_modules=local_modules,
                 local_def_ids=local_def_ids,
+                builtins=language_analyzer.builtins,
+                stdlib_modules=language_analyzer.stdlib_modules,
             )
-            visitor.graph.add_edge(scope, target_id)
+            graph.add_edge(scope, target_id)
             if attrs is not None:
                 existing = stub_metadata.get(target_id)
                 if existing is None or _is_better_stub(attrs, existing):
@@ -632,43 +676,46 @@ class CodeAnalyzer:
 
         # Apply stub metadata to nodes that have no type yet.
         for node_id, attrs in stub_metadata.items():
-            if node_id in visitor.graph:
-                existing = visitor.graph.nodes[node_id]
+            if node_id in graph:
+                existing = graph.nodes[node_id]
                 if not existing.get("type"):
                     existing.update(attrs)
             else:
-                visitor.graph.add_node(node_id, **attrs)
+                graph.add_node(node_id, **attrs)
 
         # Add a module node and contains edges for this single file.
-        module_id = "module:" + _file_to_module_id(file_path, project_root)
-        if module_id not in visitor.graph:
-            visitor.graph.add_node(
+        module_id = "module:" + language_analyzer.module_id_from_path(
+            file_path, project_root
+        )
+        if module_id not in graph:
+            graph.add_node(
                 module_id,
                 type="module",
                 file=file_path,
                 label=os.path.basename(file_path),
                 entry_point=False,
+                language=language_analyzer.language_id,
             )
-        for d in visitor.top_level_definitions:
-            if d["name"] in visitor.graph:
-                visitor.graph.add_edge(module_id, d["name"], edge_type="contains")
+        for d in analysis.top_level_definitions:
+            if d["name"] in graph:
+                graph.add_edge(module_id, d["name"], edge_type="contains")
 
         # Final safety: any remaining type-less node becomes "unresolved".
-        for node_id, data in visitor.graph.nodes(data=True):
+        for node_id, data in graph.nodes(data=True):
             if not data.get("type"):
                 data["type"] = "unresolved"
                 data.setdefault("label", node_id)
 
         if merge:
-            self.definitions.extend(visitor.definitions)
+            self.definitions.extend(analysis.definitions)
         else:
-            self.graph = visitor.graph
-            self.definitions = visitor.definitions
+            self.graph = graph
+            self.definitions = analysis.definitions
 
         return {
             "file": file_path,
-            "definitions": visitor.definitions,
-            "graph": visitor.graph,
+            "definitions": analysis.definitions,
+            "graph": graph,
         }
 
     # ------------------------------------------------------------------
@@ -723,6 +770,8 @@ class CodeAnalyzer:
         symbol_table: dict[str, str],
         local_modules: frozenset[str],
         local_def_ids: set[str],
+        builtins: frozenset[str] = PY_BUILTINS,
+        stdlib_modules: frozenset[str] = STDLIB_MODULES,
     ) -> tuple[str, dict | None]:
         """Resolve a queued call to a graph node id and (optional) stub attrs.
 
@@ -751,8 +800,8 @@ class CodeAnalyzer:
             # 1. Defined in this file
             if name in local_def_ids:
                 return name, None
-            # 2. Built-in
-            if name in PY_BUILTINS:
+            # 2. Built-in (per-language)
+            if name in builtins:
                 stub_id = f"builtin:{name}"
                 return stub_id, {
                     "type": "builtin",
@@ -871,7 +920,7 @@ class CodeAnalyzer:
                             }
 
                 # Stdlib fallback: os.path.exists(), json.loads(), etc.
-                if base in STDLIB_MODULES:
+                if base in stdlib_modules:
                     full = f"{base}." + ".".join(parts)
                     stub_id = f"external:{full}"
                     return stub_id, {
@@ -903,7 +952,6 @@ class CodeAnalyzer:
         self,
         per_file: list[dict],
         project_root: str,
-        local_modules: frozenset[str],
         symbol_table: dict[str, str],
     ) -> None:
         """Add a `module:<dotted>` node per file plus contains/imports edges.
@@ -911,26 +959,27 @@ class CodeAnalyzer:
         Module nodes give the graph a coarse top-level structure: every
         function/class is anchored to the file it lives in, and cross-file
         imports show up as inter-module arrows so the user can read the
-        project's high-level shape at a glance.
+        project's high-level shape at a glance. Module ids are computed by
+        each file's language plugin (Python strips ``.py`` and ``__init__``;
+        JavaScript strips ``.js / .jsx / .mjs / .cjs`` and ``index``).
         """
-        # Map file -> module id once so we can connect imports to targets.
-        # Skip files with no definitions and no calls — a module node alone
-        # would be misleading (it represents nothing the user wrote).
-        file_to_module: dict[str, str] = {}
         for entry in per_file:
-            visitor = entry["visitor"]
-            if not visitor.top_level_definitions and not visitor.pending_calls:
+            analysis = entry["analysis"]
+            language_analyzer = entry["analyzer"]
+            if not analysis.top_level_definitions and not analysis.pending_calls:
                 entry["module_id"] = None
                 continue
-            mod_id = "module:" + _file_to_module_id(entry["file_path"], project_root)
+            mod_id = "module:" + language_analyzer.module_id_from_path(
+                entry["file_path"], project_root
+            )
             entry["module_id"] = mod_id
-            file_to_module[entry["file_path"]] = mod_id
             self.graph.add_node(
                 mod_id,
                 type="module",
                 file=entry["file_path"],
                 label=os.path.basename(entry["file_path"]),
                 entry_point=False,
+                language=language_analyzer.language_id,
             )
 
         # contains: module -> top-level definitions in that file.
@@ -938,17 +987,18 @@ class CodeAnalyzer:
             mod_id = entry["module_id"]
             if mod_id is None:
                 continue
-            for d in entry["visitor"].top_level_definitions:
+            for d in entry["analysis"].top_level_definitions:
                 if d["name"] in self.graph:
                     self.graph.add_edge(mod_id, d["name"], edge_type="contains")
 
         # imports: module -> module (only for local imports we can resolve).
-        # Map dotted module path -> module-node id.
         module_id_by_dotted: dict[str, str] = {}
         for entry in per_file:
             if entry["module_id"] is None:
                 continue
-            dotted = _file_to_module_id(entry["file_path"], project_root)
+            dotted = entry["analyzer"].module_id_from_path(
+                entry["file_path"], project_root
+            )
             module_id_by_dotted[dotted] = entry["module_id"]
 
         for entry in per_file:
@@ -956,14 +1006,18 @@ class CodeAnalyzer:
             if mod_id is None:
                 continue
             seen: set[str] = set()
-            for imp in entry["imports"]:
+            for imp in entry["analysis"].imports:
                 if not imp["is_local"]:
                     continue
                 target_dotted = imp["module"]
                 if not target_dotted:
                     continue
                 # Try direct match, then progressively shorter prefixes for
-                # `from pkg.sub import X` style imports.
+                # `from pkg.sub import X` style imports. JS imports use
+                # relative paths like ``./foo`` — those don't match anything
+                # in module_id_by_dotted (which keys by dotted name), so they
+                # fall through to "no edge" silently. That's acceptable for
+                # the first pass; cross-file JS edges are nice-to-have.
                 target_node = module_id_by_dotted.get(target_dotted)
                 if target_node is None:
                     parts = target_dotted.split(".")

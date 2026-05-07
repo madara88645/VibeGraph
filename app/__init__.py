@@ -19,7 +19,16 @@ from starlette.responses import Response
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.rate_limit import limiter
-from app.routers import ai, chat, explain, ghost, health, learning, upload
+from app.routers import (
+    ai,
+    chat,
+    explain,
+    ghost,
+    health,
+    languages,
+    learning,
+    upload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +207,7 @@ def create_app() -> FastAPI:
     application.include_router(learning.router)
     application.include_router(upload.router)
     application.include_router(ghost.router)
+    application.include_router(languages.router)
 
     # Mount static files (Frontend build)
     static_dir = os.path.join("explorer", "dist")
