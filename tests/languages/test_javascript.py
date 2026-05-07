@@ -1,7 +1,5 @@
 import unittest
 import os
-import shutil
-import tempfile
 
 from analyst.analyzer import CodeAnalyzer
 
