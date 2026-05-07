@@ -22,6 +22,26 @@ const CustomNode = ({ data, selected }) => {
     // Extract short filename
     const fileName = data.file ? getShortName(data.file) : null;
 
+    // Language-aware logic
+    const lang = data.language || 'python';
+    let langPill = 'PY';
+    let langColor = '#3b82f6'; // Match builtin python accent
+    let displayIcon = config.icon;
+
+    if (lang === 'javascript') {
+        langPill = 'JS';
+        langColor = '#eab308'; // JS yellow
+        if (nodeType === 'builtin') displayIcon = '🟡';
+    } else if (lang === 'typescript') {
+        langPill = 'TS';
+        langColor = '#3b82f6'; // TS blue
+        if (nodeType === 'builtin') displayIcon = '🟦';
+    } else {
+        langPill = 'PY';
+        langColor = '#3b82f6'; // PY blue
+    }
+
+
     return (
         <div
             className={`vg-node ${selected ? 'vg-node-selected' : ''}`}
@@ -38,7 +58,7 @@ const CustomNode = ({ data, selected }) => {
 
             {/* Header Row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.85rem' }}>{config.icon}</span>
+                <span style={{ fontSize: '0.85rem' }}>{displayIcon}</span>
                 <span
                     title={data.label}
                     style={{
@@ -52,6 +72,22 @@ const CustomNode = ({ data, selected }) => {
                     }}
                 >
                     {data.label}
+                </span>
+
+                {/* Language pill */}
+                <span
+                    style={{
+                        fontSize: '0.6rem',
+                        fontWeight: 500,
+                        color: langColor,
+                        background: `${langColor}22`,
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.02em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {langPill}
                 </span>
                 {/* Type badge */}
                 <span
