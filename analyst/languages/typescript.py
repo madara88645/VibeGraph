@@ -195,7 +195,7 @@ def _patch_import_extraction() -> None:
     if getattr(_js, "_type_only_patched", False):
         return
 
-    original = _js._parse_import_statement
+    original = _js._parse_import_statement  # type: ignore[attr-defined]
 
     def _patched(node, source, local_modules):
         records = original(node, source, local_modules)
@@ -220,8 +220,8 @@ def _patch_import_extraction() -> None:
             r["_type_only"] = True
         return records
 
-    _js._parse_import_statement = _patched
-    _js._type_only_patched = True
+    _js._parse_import_statement = _patched  # type: ignore[attr-defined]
+    setattr(_js, "_type_only_patched", True)
 
 
 _patch_import_extraction()

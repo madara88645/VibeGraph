@@ -93,9 +93,7 @@ class LanguageAnalyzer(Protocol):
         """
         ...
 
-    def module_id_from_path(
-        self, file_path: str, project_root: str | None
-    ) -> str:
+    def module_id_from_path(self, file_path: str, project_root: str | None) -> str:
         """Return a dotted module id (without the ``module:`` prefix) for a
         source file. Used for module-node placement and cross-file import
         edges.

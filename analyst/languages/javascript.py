@@ -307,9 +307,7 @@ class JavaScriptAnalyzer:
                 continue
         return frozenset(local)
 
-    def module_id_from_path(
-        self, file_path: str, project_root: str | None
-    ) -> str:
+    def module_id_from_path(self, file_path: str, project_root: str | None) -> str:
         if project_root:
             try:
                 rel = os.path.relpath(file_path, project_root)
@@ -513,9 +511,7 @@ class _Walker:
     def _visit_class_expression(
         self, node, class_name: str, is_top_level: bool
     ) -> None:
-        self._visit_class_body(
-            node, class_name=class_name, is_top_level=is_top_level
-        )
+        self._visit_class_body(node, class_name=class_name, is_top_level=is_top_level)
 
     def _visit_class_body(self, node, class_name: str, is_top_level: bool) -> None:
         end_lineno = self._end_lineno(node)
@@ -657,15 +653,15 @@ class _Walker:
         body = node.child_by_field_name("body")
         nesting_depth = self._max_nesting_depth(body) if body is not None else 0
         calls, side_effect_imports = (
-            self._collect_immediate_metadata(body) if body is not None else (set(), False)
+            self._collect_immediate_metadata(body)
+            if body is not None
+            else (set(), False)
         )
         api_boundary = self._has_route_decorator(node)
         side_effect_boundary = (
             api_boundary or side_effect_imports or bool(calls & _JS_SIDE_EFFECT_CALLS)
         )
-        is_entry = (
-            short_name in {"main", "init", "start", "run", "app"} or is_top_level
-        )
+        is_entry = short_name in {"main", "init", "start", "run", "app"} or is_top_level
 
         self.graph.add_node(
             full_name,
@@ -795,7 +791,12 @@ class _Walker:
                     "base": base,
                     "parts": parts,
                 }
-            if cur is not None and cur.type == "this" and len(parts) == 1 and self.class_stack:
+            if (
+                cur is not None
+                and cur.type == "this"
+                and len(parts) == 1
+                and self.class_stack
+            ):
                 return {
                     "kind": "self_method",
                     "name": attr_name,

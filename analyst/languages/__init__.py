@@ -13,7 +13,7 @@ non-``.py`` files).
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Optional, cast
 
 from analyst.languages.base import FileAnalysis, LanguageAnalyzer, ParseError
 from analyst.languages.javascript import JavaScriptAnalyzer
@@ -30,10 +30,17 @@ __all__ = [
 ]
 
 
-_REGISTRY: tuple[LanguageAnalyzer, ...] = (
-    PythonAnalyzer(),
-    JavaScriptAnalyzer(),
-    TypeScriptAnalyzer(),
+# cast widens the concrete tuple to the Protocol-typed registry. mypy does
+# not auto-widen tuple element types across structural subtyping, so the
+# explicit cast is required even though each plugin satisfies the Protocol
+# at runtime (verified by ``isinstance`` against ``@runtime_checkable``).
+_REGISTRY: tuple[LanguageAnalyzer, ...] = cast(
+    "tuple[LanguageAnalyzer, ...]",
+    (
+        PythonAnalyzer(),
+        JavaScriptAnalyzer(),
+        TypeScriptAnalyzer(),
+    ),
 )
 
 _BY_EXTENSION: dict[str, LanguageAnalyzer] = {}

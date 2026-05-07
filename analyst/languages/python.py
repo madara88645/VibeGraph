@@ -44,9 +44,7 @@ class PythonAnalyzer:
 
         return CodeAnalyzer._get_local_modules(project_root)
 
-    def module_id_from_path(
-        self, file_path: str, project_root: str | None
-    ) -> str:
+    def module_id_from_path(self, file_path: str, project_root: str | None) -> str:
         from analyst.analyzer import _file_to_module_id
 
         return _file_to_module_id(file_path, project_root)
