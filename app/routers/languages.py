@@ -9,9 +9,10 @@ endpoint edits required.
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from analyst.languages import all_languages
+from app.rate_limit import limiter, CHAT_LIMIT
 
 router = APIRouter(prefix="/api", tags=["languages"])
 
@@ -20,5 +21,6 @@ router = APIRouter(prefix="/api", tags=["languages"])
     "/languages",
     summary="List source languages VibeGraph can analyse",
 )
-def list_languages() -> dict:
+@limiter.limit(CHAT_LIMIT)
+def list_languages(request: Request) -> dict:
     return {"languages": all_languages()}
