@@ -31,3 +31,4 @@
 **Vulnerability:** The `/api/languages` endpoint was missing rate limit protections. Even simple, static-response endpoints can be targeted by volumetric DoS attacks to consume thread pool capacity or network bandwidth.
 **Learning:** `slowapi` decorators (like `@limiter.limit`) require the decorated FastAPI endpoint function to accept a `request: Request` argument, even if the endpoint logic itself doesn't use the request object, because `slowapi` extracts the client IP and other metadata from it to track rate limits.
 **Prevention:** Always verify that every endpoint in a FastAPI application, including simple informational endpoints, is protected by appropriate rate limits and ensures `request: Request` is included in the signature when applying `@limiter.limit`.
+

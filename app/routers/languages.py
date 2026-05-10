@@ -12,7 +12,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 
 from analyst.languages import all_languages
-from app.rate_limit import CHAT_LIMIT, limiter
+from app.rate_limit import limiter, CHAT_LIMIT
 
 router = APIRouter(prefix="/api", tags=["languages"])
 
