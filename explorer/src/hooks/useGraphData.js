@@ -183,18 +183,23 @@ export function useGraphData(setNodes, setEdges) {
         }
 
         const fileNodeIds = new Set();
-        const fileNodes = allNodes.filter(n => {
+        const fileNodes = [];
+        for (let i = 0; i < allNodes.length; i++) {
+            const n = allNodes[i];
             const nFile = n.data?.file || '_external';
             if (nFile === selectedFile) {
                 fileNodeIds.add(n.id);
-                return true;
+                fileNodes.push(n);
             }
-            return false;
-        });
+        }
 
-        const relevantEdges = allEdges.filter(e =>
-            fileNodeIds.has(e.source) || fileNodeIds.has(e.target)
-        );
+        const relevantEdges = [];
+        for (let i = 0; i < allEdges.length; i++) {
+            const e = allEdges[i];
+            if (fileNodeIds.has(e.source) || fileNodeIds.has(e.target)) {
+                relevantEdges.push(e);
+            }
+        }
 
         const externalNodeIds = new Set();
         relevantEdges.forEach(e => {
@@ -278,11 +283,18 @@ export function useGraphData(setNodes, setEdges) {
         let edgesToCount = allEdges;
         if (selectedFile) {
             const fileNodeIds = new Set();
-            allNodes.forEach(n => {
+            for (let i = 0; i < allNodes.length; i++) {
+                const n = allNodes[i];
                 const nFile = n.data?.file || '_external';
                 if (nFile === selectedFile) fileNodeIds.add(n.id);
-            });
-            edgesToCount = allEdges.filter(e => fileNodeIds.has(e.source) || fileNodeIds.has(e.target));
+            }
+            edgesToCount = [];
+            for (let i = 0; i < allEdges.length; i++) {
+                const e = allEdges[i];
+                if (fileNodeIds.has(e.source) || fileNodeIds.has(e.target)) {
+                    edgesToCount.push(e);
+                }
+            }
         }
 
         edgesToCount.forEach(e => {

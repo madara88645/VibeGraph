@@ -1,0 +1,4 @@
+💡 What: Replaced native `.filter()` and `.find()` array methods with imperative `for` loops in `useGraphData.js` and `useGhostRunner.js`.
+🎯 Why: In high-frequency React hooks (e.g., simulation ticks for Ghost Runner and graph data filtering), native array methods create hidden performance bottlenecks by generating intermediate arrays and triggering multiple O(N) evaluations, creating severe garbage collection pressure.
+📊 Impact: Eliminates multiple intermediate array allocations and functional callback overhead, resulting in faster and more stable frame rates during rapid graph traversals.
+🔬 Measurement: Verify by running the graph visualization with large repositories and the Ghost Runner simulation. Profiling memory allocations and rendering frame rates will demonstrate reduced GC pauses and smoother animations.
