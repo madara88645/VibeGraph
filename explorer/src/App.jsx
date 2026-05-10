@@ -357,7 +357,7 @@ function AppInner() {
               aria-label="Getting started"
             >
               <div role="status" aria-live="polite">
-                <strong>New here?</strong> Upload a Python, JavaScript, or TypeScript project (single file, multi-file, or zip) to get started.
+                <strong>Graph loaded!</strong> Click any node to view its AI explanation, or use the Ghost Runner to trace execution.
               </div>
               <button
                 className="first-steps-dismiss"

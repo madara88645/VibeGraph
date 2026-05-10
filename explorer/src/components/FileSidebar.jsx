@@ -104,6 +104,7 @@ const FileSidebar = ({
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
                             aria-current={!selectedFile ? 'true' : undefined}
+                            aria-label={`All Files, ${totalNodeCount || 0} nodes`}
                         >
                             <div className="file-main">
                                 <span className="file-icon" aria-hidden="true">🗂️</span>
@@ -117,6 +118,11 @@ const FileSidebar = ({
                             const shortName = getShortName(file) || file;
                             const dirName = getDirName(file);
 
+                            const typeStr = stats.types
+                                ? Object.entries(stats.types).map(([type, count]) => `${count} ${type}${count === 1 || type.endsWith('s') ? '' : 's'}`).join(', ')
+                                : '';
+                            const ariaLabel = `${file}, ${stats.count || 0} nodes${typeStr ? `. ${typeStr}` : ''}`;
+
                             return (
                                 <button
                                     key={file}
@@ -124,7 +130,7 @@ const FileSidebar = ({
                                     onClick={() => onSelectFile(file)}
                                     aria-current={isSelected ? 'true' : undefined}
                                     title={file}
-                                    aria-label={file}
+                                    aria-label={ariaLabel}
                                 >
                                     <div className="file-main">
                                         <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>

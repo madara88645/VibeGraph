@@ -16,7 +16,12 @@ function isNavigableNode(node) {
 // Returns nextNodeId or null
 
 function pickRandomFromPool(candidates) {
-    const withFile = candidates.filter(isNavigableNode);
+    const withFile = [];
+    for (let i = 0; i < candidates.length; i++) {
+        if (isNavigableNode(candidates[i])) {
+            withFile.push(candidates[i]);
+        }
+    }
     const pool = withFile.length > 0 ? withFile : candidates;
     return pool[Math.floor(Math.random() * pool.length)] || null;
 }
@@ -88,7 +93,12 @@ const strategies = {
 
         // Try unvisited outgoing edges first (DFS behavior)
         const targets = getOutgoingTargets(ctx);
-        const unvisited = targets.filter(n => !visitedSet.has(n.id));
+        const unvisited = [];
+        for (let i = 0; i < targets.length; i++) {
+            if (!visitedSet.has(targets[i].id)) {
+                unvisited.push(targets[i]);
+            }
+        }
 
         if (unvisited.length > 0) {
             // If multiple unvisited, push others onto DFS stack
@@ -174,10 +184,25 @@ const strategies = {
         }
 
         // Jump to next unvisited entry point, then fall back to any unvisited file-backed node
-        const nextEntry = entryPointsRef?.current?.find(n => !visitedSet.has(n.id));
-        if (nextEntry) return nextEntry.id;
+        let nextEntryId = null;
+        if (entryPointsRef?.current) {
+            for (let i = 0; i < entryPointsRef.current.length; i++) {
+                const n = entryPointsRef.current[i];
+                if (!visitedSet.has(n.id)) {
+                    nextEntryId = n.id;
+                    break;
+                }
+            }
+        }
+        if (nextEntryId) return nextEntryId;
 
-        return nodes.find(n => !visitedSet.has(n.id) && n.data?.file)?.id || null;
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (!visitedSet.has(n.id) && n.data?.file) {
+                return n.id;
+            }
+        }
+        return null;
     },
 
     // ── Hubs First: Visit most-connected nodes first ──
@@ -369,7 +394,14 @@ export function useGhostRunner(
     useEffect(() => {
         nodesRef.current = nodes;
         nodesMapRef.current = new Map(nodes.map(n => [n.id, n]));
-        entryPointsRef.current = nodes.filter(n => n.data?.entry_point);
+
+        const entryPoints = [];
+        for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].data?.entry_point) {
+                entryPoints.push(nodes[i]);
+            }
+        }
+        entryPointsRef.current = entryPoints;
     }, [nodes]);
     useEffect(() => { edgesRef.current = edges; }, [edges]);
     useEffect(() => { activeNodeIdRef.current = activeNodeId; }, [activeNodeId]);
