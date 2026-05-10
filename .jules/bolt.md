@@ -84,3 +84,7 @@
 ## 2026-05-05 - Array slice over-fetching overhead in hooks
 **Learning:** In React hooks that execute on rapid animation or simulation ticks (like `useGhostRunner`), chaining functional array operations such as `[...array.filter()].slice()` creates hidden performance bottlenecks. This forces the engine to clone the array and perform multiple O(N) evaluations, significantly increasing garbage collection pressure.
 **Action:** Replace `.filter().slice()` chains inside high-frequency hooks with a standard `for` loop, populating a new array until a `break` condition on length is met. This avoids intermediate allocations and drops the execution time.
+
+## 2025-02-21 - Optimize O(E * T) nested array iterations
+**Learning:** In high-frequency React hooks (e.g., updating visuals on simulation ticks), using `.some()` to check array containment inside a `.map()` callback over a large list creates a severe O(E * T) performance bottleneck (where E is the number of edges and T is trail length).
+**Action:** Pre-compute a `Set` from the smaller list before mapping over the larger list, converting the `.some()` operation into an O(1) `Set.has()` lookup and dropping the time complexity to O(E).
