@@ -10,6 +10,7 @@ import { getShortName } from '../utils/stringUtils';
 const LearningPath = ({
   selectedFile,
   allNodes,
+  allNodesMap,
   allEdges,
   onSelectNode,
   onSelectFile,
@@ -71,7 +72,9 @@ const LearningPath = ({
         return;
       }
 
-      const node = allNodes.find((candidate) => candidate.id === step.node_id);
+      // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) array find() with O(1) Map lookup
+      // to eliminate functional callback overhead and array traversal.
+      const node = allNodesMap ? allNodesMap.get(step.node_id) : allNodes.find((candidate) => candidate.id === step.node_id);
 
       if (node) {
         const nextFile = step.file_path || node.data?.file;
@@ -89,7 +92,7 @@ const LearningPath = ({
         }, 50);
       }
     },
-    [allNodes, fitView, onSelectFile, onSelectNode, steps]
+    [allNodes, allNodesMap, fitView, onSelectFile, onSelectNode, steps]
   );
 
   if (!isOpen) {
