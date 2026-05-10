@@ -40,3 +40,4 @@
 ## 2024-05-24 - Dynamic Context Hidden by Static aria-label
 **Learning:** When using static `aria-label`s on buttons (like `aria-label={file}` or `aria-label="Choose traversal strategy"`), any visually nested elements containing dynamic context (such as node counts, types, or current state hints) are overridden and hidden from screen readers. Screen reader users receive less context than sighted users.
 **Action:** Always dynamically build `aria-label` strings to include all the relevant information that is visually nested within the component or implicitly conveyed by its state, ensuring parity between visual and auditory context.
+
