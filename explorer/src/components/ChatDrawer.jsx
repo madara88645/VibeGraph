@@ -389,7 +389,13 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             className="chat-send"
             onClick={sendMessage}
             disabled={loading || !inputText.trim()}
-            aria-label="Send message"
+            aria-label={
+              loading
+                ? 'Waiting for AI response...'
+                : !inputText.trim()
+                  ? 'Type a message to send'
+                  : 'Send message'
+            }
           >
             <span aria-hidden="true">{'^'}</span>
           </button>
