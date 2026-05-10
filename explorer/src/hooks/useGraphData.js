@@ -201,11 +201,55 @@ export function useGraphData(setNodes, setEdges) {
             }
         }
 
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced .filter().forEach().map() chain over allEdges
+        // with a single imperative for-loop. This prevents allocating multiple intermediate arrays
+        // and avoids redundant O(N) passes.
         const externalNodeIds = new Set();
-        relevantEdges.forEach(e => {
+        const styledEdges = [];
+
+        for (let i = 0; i < relevantEdges.length; i++) {
+            const e = relevantEdges[i];
             if (!fileNodeIds.has(e.source)) externalNodeIds.add(e.source);
             if (!fileNodeIds.has(e.target)) externalNodeIds.add(e.target);
-        });
+
+            const isInternal = fileNodeIds.has(e.source) && fileNodeIds.has(e.target);
+            const isCycle = e.data?.is_cycle_edge === true;
+
+            if (isCycle) {
+                const style = { stroke: '#f97316', strokeWidth: 3, strokeDasharray: '8 4' };
+                styledEdges.push({
+                    ...e,
+                    style,
+                    animated: true,
+                    className: 'cycle-edge',
+                    label: '\u27F3',
+                    labelStyle: { fill: '#f97316', fontSize: 12 },
+                    data: {
+                        ...e.data,
+                        ghostBaseClassName: 'cycle-edge',
+                        ghostBaseAnimated: true,
+                        ghostBaseStyle: style,
+                    },
+                });
+            } else {
+                const style = isInternal
+                    ? { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 }
+                    : { stroke: 'rgba(148, 163, 184, 0.25)', strokeWidth: 2, strokeDasharray: '6 4' };
+                const className = isInternal ? '' : 'external-edge';
+                styledEdges.push({
+                    ...e,
+                    style,
+                    animated: false,
+                    className,
+                    data: {
+                        ...e.data,
+                        ghostBaseClassName: className,
+                        ghostBaseAnimated: false,
+                        ghostBaseStyle: style,
+                    },
+                });
+            }
+        }
 
         // PERFORMANCE OPTIMIZATION (Bolt): Replaced .filter().map() chain with a single
         // imperative for-loop. This prevents allocating an intermediate array and avoids
@@ -224,46 +268,6 @@ export function useGraphData(setNodes, setEdges) {
 
         const combinedNodes = [...fileNodes, ...externalNodes];
 
-        const styledEdges = relevantEdges.map(e => {
-            const isInternal = fileNodeIds.has(e.source) && fileNodeIds.has(e.target);
-            const isCycle = e.data?.is_cycle_edge === true;
-
-            if (isCycle) {
-                const style = { stroke: '#f97316', strokeWidth: 3, strokeDasharray: '8 4' };
-                return {
-                    ...e,
-                    style,
-                    animated: true,
-                    className: 'cycle-edge',
-                    label: '\u27F3',
-                    labelStyle: { fill: '#f97316', fontSize: 12 },
-                    data: {
-                        ...e.data,
-                        ghostBaseClassName: 'cycle-edge',
-                        ghostBaseAnimated: true,
-                        ghostBaseStyle: style,
-                    },
-                };
-            }
-
-            const style = isInternal
-                ? { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 }
-                : { stroke: 'rgba(148, 163, 184, 0.25)', strokeWidth: 2, strokeDasharray: '6 4' };
-            const className = isInternal ? '' : 'external-edge';
-            return {
-                ...e,
-                style,
-                animated: false,
-                className,
-                data: {
-                    ...e.data,
-                    ghostBaseClassName: className,
-                    ghostBaseAnimated: false,
-                    ghostBaseStyle: style,
-                },
-            };
-        });
-
         const layouted = getLayoutedElements(
             combinedNodes.map(n => ({ ...n })),
             styledEdges
@@ -280,27 +284,28 @@ export function useGraphData(setNodes, setEdges) {
         const dMap = new Map();
         if (allNodes.length === 0 || !allEdges) return dMap;
 
-        let edgesToCount = allEdges;
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced .filter().forEach() chain with a single
+        // imperative for-loop. This avoids creating an intermediate array and saves an O(N) pass.
         if (selectedFile) {
             const fileNodeIds = new Set();
             for (let i = 0; i < allNodes.length; i++) {
-                const n = allNodes[i];
-                const nFile = n.data?.file || '_external';
-                if (nFile === selectedFile) fileNodeIds.add(n.id);
+                const nFile = allNodes[i].data?.file || '_external';
+                if (nFile === selectedFile) fileNodeIds.add(allNodes[i].id);
             }
-            edgesToCount = [];
             for (let i = 0; i < allEdges.length; i++) {
                 const e = allEdges[i];
                 if (fileNodeIds.has(e.source) || fileNodeIds.has(e.target)) {
-                    edgesToCount.push(e);
+                    dMap.set(e.source, (dMap.get(e.source) || 0) + 1);
+                    dMap.set(e.target, (dMap.get(e.target) || 0) + 1);
                 }
             }
+        } else {
+            for (let i = 0; i < allEdges.length; i++) {
+                const e = allEdges[i];
+                dMap.set(e.source, (dMap.get(e.source) || 0) + 1);
+                dMap.set(e.target, (dMap.get(e.target) || 0) + 1);
+            }
         }
-
-        edgesToCount.forEach(e => {
-            dMap.set(e.source, (dMap.get(e.source) || 0) + 1);
-            dMap.set(e.target, (dMap.get(e.target) || 0) + 1);
-        });
         return dMap;
     }, [selectedFile, allNodes, allEdges]);
 
