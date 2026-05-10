@@ -84,3 +84,6 @@
 ## 2026-05-05 - Array slice over-fetching overhead in hooks
 **Learning:** In React hooks that execute on rapid animation or simulation ticks (like `useGhostRunner`), chaining functional array operations such as `[...array.filter()].slice()` creates hidden performance bottlenecks. This forces the engine to clone the array and perform multiple O(N) evaluations, significantly increasing garbage collection pressure.
 **Action:** Replace `.filter().slice()` chains inside high-frequency hooks with a standard `for` loop, populating a new array until a `break` condition on length is met. This avoids intermediate allocations and drops the execution time.
+## 2026-05-10 - Array Iteration Chain Bottleneck Elimination in useGraphData.js
+**Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state or executing side effects by chaining functional array methods like `.filter().forEach()` and `.map()` over large datasets causes severe performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace these chains with a single imperative `for` loop to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass.

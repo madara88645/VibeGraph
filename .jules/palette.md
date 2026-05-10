@@ -37,7 +37,7 @@
 ## 2024-05-30 - Context-Rich Buttons with Nested Elements
 **Learning:** When rendering buttons that contain multiple text elements (e.g., an icon, a label, and a filename) and utilize complex `title` attributes for rich context, a screen reader may read the internal spans in a disjointed way while missing the combined context of the tooltip.
 **Action:** Assign an explicit, combined `aria-label` to the parent button that mirrors the rich context of the `title` attributes. This creates a natural, consolidated sentence for screen readers and ensures parity with the descriptive context sighted users receive via tooltips.
+## 2024-05-24 - Dynamic Context Hidden by Static aria-label
+**Learning:** When using static `aria-label`s on buttons (like `aria-label={file}` or `aria-label="Choose traversal strategy"`), any visually nested elements containing dynamic context (such as node counts, types, or current state hints) are overridden and hidden from screen readers. Screen reader users receive less context than sighted users.
+**Action:** Always dynamically build `aria-label` strings to include all the relevant information that is visually nested within the component or implicitly conveyed by its state, ensuring parity between visual and auditory context.
 
-## 2026-05-10 - ARIA Labels Hiding Visible Dynamic Content
-**Learning:** Applying a static string (like a file path) to an `aria-label` on a button completely overrides and hides any dynamic text content (like item counts or badges) nested inside that button from screen readers. This excludes screen reader users from hearing visible dynamic states.
-**Action:** When a button renders dynamic text content alongside a label (e.g. `File name` and `3 nodes`), ensure the `aria-label` combines all these visible semantic elements so they are not suppressed by a simpler static label.
