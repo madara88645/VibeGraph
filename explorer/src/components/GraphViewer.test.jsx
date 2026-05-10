@@ -61,8 +61,8 @@ describe('GraphViewer', () => {
     const onRequestUpload = vi.fn();
     renderViewer({ onRequestUpload });
 
-    expect(screen.getByText('Visualize any Python codebase')).toBeInTheDocument();
-    expect(screen.getByText('Upload your Python project')).toBeInTheDocument();
+    expect(screen.getByText('Visualize your codebase')).toBeInTheDocument();
+    expect(screen.getByText('Upload your project')).toBeInTheDocument();
     // Feature cards
     expect(screen.getByText('AI Explanations')).toBeInTheDocument();
     expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('GraphViewer', () => {
     const onRequestUpload = vi.fn();
     renderViewer({ onRequestUpload });
 
-    await user.click(screen.getByText('Upload your Python project'));
+    await user.click(screen.getByText('Upload your project'));
     expect(onRequestUpload).toHaveBeenCalledTimes(1);
   });
 

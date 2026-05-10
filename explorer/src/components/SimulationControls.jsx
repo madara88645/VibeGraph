@@ -125,7 +125,7 @@ const SimulationControls = ({
                 <button
                     onClick={() => setShowStrategyPicker(prev => !prev)}
                     className={`sim-strategy-btn ${showStrategyPicker ? 'active' : ''}`}
-                    aria-label="Choose traversal strategy"
+                    aria-label={`Traversal strategy: ${currentStrategy.label}. ${currentStrategy.hint}`}
                     aria-expanded={showStrategyPicker}
                     title={currentStrategy.hint}
                 >

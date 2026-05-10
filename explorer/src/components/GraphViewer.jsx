@@ -115,9 +115,9 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, 
               </svg>
             </div>
 
-            <h2>Visualize any Python codebase</h2>
+            <h2>Visualize your codebase</h2>
             <p className="empty-subtitle">
-              Upload a project and VibeGraph will map its functions, classes, and call relationships into an interactive graph you can explore with AI.
+              Upload a Python, JavaScript, or TypeScript project and VibeGraph will map its functions, classes, and call relationships into an interactive graph you can explore with AI.
             </p>
 
             <button
@@ -130,7 +130,7 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, 
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              Upload your Python project
+              Upload your project
             </button>
             <span className="empty-shortcut">or drag a folder anywhere on this page</span>
           </div>
