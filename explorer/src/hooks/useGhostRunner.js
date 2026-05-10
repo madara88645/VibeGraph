@@ -485,14 +485,17 @@ export function useGhostRunner(
         }));
 
         if (previousId && nextId) {
-            const trailEdgePairs = [];
+            // PERFORMANCE OPTIMIZATION (Bolt): Replace O(E * T) .some() array iteration
+            // with an O(E) pre-computed Set lookup to prevent severe high-frequency
+            // rendering bottlenecks during simulation ticks on large graphs.
+            const trailEdgeSet = new Set();
             for (let i = 0; i < newTrail.length - 1; i++) {
-                trailEdgePairs.push({ from: newTrail[i + 1], to: newTrail[i] });
+                trailEdgeSet.add(`${newTrail[i + 1]}|${newTrail[i]}`);
             }
 
             setEdges(eds => eds.map(edge => {
                 const isActive = edge.source === previousId && edge.target === nextId;
-                const isTrail = trailEdgePairs.some(p => edge.source === p.from && edge.target === p.to);
+                const isTrail = trailEdgeSet.has(`${edge.source}|${edge.target}`);
 
                 const baseVisuals = getBaseEdgeVisuals(edge);
                 let className = baseVisuals.className;
