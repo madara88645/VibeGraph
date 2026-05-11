@@ -325,6 +325,7 @@ function AppInner() {
             className="header-action-btn"
             onClick={() => setLearningPathOpen((prev) => !prev)}
             title="Learning Path"
+            aria-label="Learning Path"
             aria-controls="learning-path-panel"
             aria-expanded={learningPathOpen}
           >
