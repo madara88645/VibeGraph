@@ -140,30 +140,18 @@ def upload_project(
                                 detail=f"Too many files in zip archive (max {MAX_ZIP_FILES})",
                             )
 
-                        safe_filename = member.filename.lstrip("/\\")
-                        target_path = os.path.join(tmp_dir_real, safe_filename)
-                        extracted_path = os.path.realpath(target_path)
-
                         try:
+                            safe_filename = normalize_uploaded_filename(member.filename)
+                            target_path = os.path.join(tmp_dir_real, safe_filename)
+                            extracted_path = os.path.realpath(target_path)
+
                             if (
                                 not extracted_path.startswith(tmp_dir_real + os.sep)
                                 and extracted_path != tmp_dir_real
                             ):
                                 raise ValueError("Path traversal detected")
 
-                            sensitive_names = {
-                                ".env",
-                                ".git",
-                                ".ssh",
-                                ".aws",
-                                ".config",
-                            }
-                            for part in safe_filename.replace("\\", "/").split("/"):
-                                if part in sensitive_names:
-                                    raise ValueError(
-                                        f"Sensitive hidden file or directory not allowed: {part}"
-                                    )
-                        except ValueError:
+                        except (HTTPException, ValueError):
                             # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(
                                 status_code=400,
