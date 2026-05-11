@@ -4,6 +4,7 @@ import functools
 import hashlib
 import os
 import sys
+import time
 import threading
 from collections import OrderedDict
 import networkx as nx
@@ -128,6 +129,9 @@ STDLIB_MODULES = frozenset(
 _AST_CACHE_MAX = 256
 _AST_CACHE: "OrderedDict[bytes, ast.Module]" = OrderedDict()
 _AST_CACHE_LOCK = threading.Lock()
+# Thread-local accumulator for ?profile=1 parse timing. Set to a dict before
+# a parse pass; _parse_cached writes into it; cleared after the pass.
+_PROFILE_DATA = threading.local()
 # Python version in the key invalidates across upgrades (e.g. 3.11 -> 3.12
 # adds ast.TryStar). FastAPI runs sync handlers in a threadpool, so the lock
 # is mandatory: OrderedDict mutations are not thread-safe.
@@ -135,11 +139,19 @@ _AST_CACHE_VERSION_TAG = repr(sys.version_info[:2]).encode()
 
 
 def _parse_cached(source: bytes, filename: str) -> ast.Module:
+    prof = getattr(_PROFILE_DATA, "data", None)
+    t0 = time.perf_counter() if prof is not None else 0.0
     key = hashlib.sha256(source).digest() + _AST_CACHE_VERSION_TAG
     with _AST_CACHE_LOCK:
         hit = _AST_CACHE.get(key)
         if hit is not None:
             _AST_CACHE.move_to_end(key)
+            if prof is not None:
+                prof["parse_count"] = prof.get("parse_count", 0) + 1
+                prof["parse_cached_hits"] = prof.get("parse_cached_hits", 0) + 1
+                prof["parse_total_ms"] = (
+                    prof.get("parse_total_ms", 0.0) + (time.perf_counter() - t0) * 1000
+                )
             return hit
     tree = ast.parse(source, filename=filename)
     with _AST_CACHE_LOCK:
@@ -147,6 +159,11 @@ def _parse_cached(source: bytes, filename: str) -> ast.Module:
         _AST_CACHE.move_to_end(key)
         if len(_AST_CACHE) > _AST_CACHE_MAX:
             _AST_CACHE.popitem(last=False)
+    if prof is not None:
+        prof["parse_count"] = prof.get("parse_count", 0) + 1
+        prof["parse_total_ms"] = (
+            prof.get("parse_total_ms", 0.0) + (time.perf_counter() - t0) * 1000
+        )
     return tree
 
 
@@ -431,7 +448,7 @@ class CodeAnalyzer:
         self.definitions = []
         self.errors = []
 
-    def analyze_file(self, target_path: str) -> dict[str, Any]:
+    def analyze_file(self, target_path: str, _profile: dict | None = None) -> dict[str, Any]:
         """
         Analyzes a file or directory recursively.
         """
@@ -445,7 +462,7 @@ class CodeAnalyzer:
             return {"error": f"Path not found: {safe_path}"}
 
         if os.path.isdir(target_path):
-            return self._analyze_directory(target_path)
+            return self._analyze_directory(target_path, _profile=_profile)
         else:
             if os.path.getsize(target_path) > MAX_FILE_SIZE:
                 safe_path = os.path.basename(target_path)
@@ -458,7 +475,7 @@ class CodeAnalyzer:
     # Directory analysis (two-pass: collect definitions, then resolve calls)
     # ------------------------------------------------------------------
 
-    def _analyze_directory(self, dir_path: str) -> dict[str, Any]:
+    def _analyze_directory(self, dir_path: str, _profile: dict | None = None) -> dict[str, Any]:
         # Lazy import to avoid the analyst.languages → analyst.analyzer import
         # cycle (the Python plugin imports CallGraphVisitor from this module).
         from analyst.languages import get_analyzer_for_path
@@ -468,6 +485,7 @@ class CodeAnalyzer:
 
         # ---- Walk filesystem; pick a language plugin for each file ----
         files: list[tuple[str, str, Any]] = []  # (file_path, safe_name, analyzer)
+        _t_walk = time.perf_counter() if _profile is not None else 0.0
         stack = [dir_path]
         while stack:
             current_dir = stack.pop()
@@ -498,6 +516,8 @@ class CodeAnalyzer:
                             files.append((dir_entry.path, safe, language_analyzer))
             except OSError:
                 self.errors.append("Error reading directory structure.")
+        if _profile is not None:
+            _profile["walk_ms"] = round((time.perf_counter() - _t_walk) * 1000, 2)
 
         # Cache local-module sets per-language for the directory so the
         # resolver doesn't rescan disk for every file.
@@ -516,30 +536,40 @@ class CodeAnalyzer:
 
         from analyst.languages.base import ParseError
 
-        for file_path, safe_name, language_analyzer in files:
-            try:
-                analysis = language_analyzer.analyze_file(file_path, dir_path)
-            except ParseError as parse_err:
-                self.errors.append(parse_err.message)
-                continue
-            except Exception:
-                self.errors.append(f"Could not parse {safe_name}")
-                continue
-            if analysis is None:
-                self.errors.append(f"Could not parse {safe_name}")
-                continue
-            per_file.append(
-                {
-                    "file_path": file_path,
-                    "safe_name": safe_name,
-                    "analysis": analysis,
-                    "analyzer": language_analyzer,
-                }
-            )
-            for d in analysis.top_level_definitions:
-                # First definition wins on collision (deterministic by walk order).
-                symbol_table.setdefault(d["name"], d["name"])
-            self.definitions.extend(analysis.definitions)
+        if _profile is not None:
+            _PROFILE_DATA.data = {"parse_count": 0, "parse_cached_hits": 0, "parse_total_ms": 0.0}
+        try:
+            for file_path, safe_name, language_analyzer in files:
+                try:
+                    analysis = language_analyzer.analyze_file(file_path, dir_path)
+                except ParseError as parse_err:
+                    self.errors.append(parse_err.message)
+                    continue
+                except Exception:
+                    self.errors.append(f"Could not parse {safe_name}")
+                    continue
+                if analysis is None:
+                    self.errors.append(f"Could not parse {safe_name}")
+                    continue
+                per_file.append(
+                    {
+                        "file_path": file_path,
+                        "safe_name": safe_name,
+                        "analysis": analysis,
+                        "analyzer": language_analyzer,
+                    }
+                )
+                for d in analysis.top_level_definitions:
+                    # First definition wins on collision (deterministic by walk order).
+                    symbol_table.setdefault(d["name"], d["name"])
+                self.definitions.extend(analysis.definitions)
+        finally:
+            if _profile is not None:
+                _pd = _PROFILE_DATA.data or {}
+                _profile["parse_count"] = _pd.get("parse_count", 0)
+                _profile["parse_cached_hits"] = _pd.get("parse_cached_hits", 0)
+                _profile["parse_total_ms"] = round(_pd.get("parse_total_ms", 0.0), 2)
+                _PROFILE_DATA.data = None
 
         # ---- Pass 2: resolve calls into typed edges ----
         graphs: list[nx.DiGraph] = []
@@ -569,8 +599,11 @@ class CodeAnalyzer:
                         stub_metadata[target_id] = attrs
             graphs.append(analysis.graph)
 
+        _t_compose = time.perf_counter() if _profile is not None else 0.0
         if graphs:
             self.graph = nx.compose_all(graphs)
+        if _profile is not None:
+            _profile["compose_all_ms"] = round((time.perf_counter() - _t_compose) * 1000, 2)
 
         # ---- Add module nodes + contains/imports edges ----
         self._add_module_nodes(per_file, dir_path, symbol_table)

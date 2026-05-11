@@ -1,3 +1,5 @@
+import time
+
 import networkx as nx
 import json
 from typing import Dict, Any
@@ -12,6 +14,7 @@ class GraphExporter:
         graph: nx.DiGraph,
         output_path: str | None = None,
         dependencies: list[dict] | None = None,
+        _profile: dict | None = None,
     ) -> Dict[str, Any]:
         """
         Converts a NetworkX graph to a JSON format suitable for React Flow.
@@ -50,6 +53,7 @@ class GraphExporter:
         # Optimization: Use strongly_connected_components O(V+E) instead of simple_cycles O((V+E)C)
         # An edge is part of a cycle if both endpoints belong to the same SCC of size > 1.
         cycle_edges = set()
+        _t_scc = time.perf_counter() if _profile is not None else 0.0
         try:
             node_to_component = {}
             for i, component in enumerate(nx.strongly_connected_components(graph)):
@@ -67,8 +71,11 @@ class GraphExporter:
                     cycle_edges.add((u, v))
         except nx.NetworkXError:
             pass  # Graph may not support cycle detection
+        if _profile is not None:
+            _profile["scc_ms"] = round((time.perf_counter() - _t_scc) * 1000, 2)
 
         # Convert edges
+        _t_build = time.perf_counter() if _profile is not None else 0.0
         for u, v, data in graph.edges(data=True):
             edge_dict = {
                 "id": f"e{u}-{v}",
@@ -80,6 +87,8 @@ class GraphExporter:
             edges.append(edge_dict)
 
         output_data = {"nodes": nodes, "edges": edges}
+        if _profile is not None:
+            _profile["export_build_ms"] = round((time.perf_counter() - _t_build) * 1000, 2)
 
         # ---- file_dependencies (optional) ----
         if dependencies:

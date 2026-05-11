@@ -9,6 +9,7 @@ import zipfile
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 
 import app.dependencies as deps
 from analyst.analyzer import CodeAnalyzer
@@ -222,7 +223,12 @@ def upload_project(
                 ),
             )
 
-        result = CodeAnalyzer().analyze_file(tmp_dir)
+        profile_mode = request.query_params.get("profile") == "1"
+        profile_data: dict | None = {} if profile_mode else None
+        _t0 = time.perf_counter() if profile_data is not None else 0.0
+        result = CodeAnalyzer().analyze_file(tmp_dir, _profile=profile_data)
+        if profile_data is not None:
+            profile_data["analyze_total_ms"] = round((time.perf_counter() - _t0) * 1000, 2)
 
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
@@ -255,7 +261,10 @@ def upload_project(
                 detail="No analyzable code found in the supported languages.",
             )
 
-        response_data = deps.exporter.export_to_react_flow(graph)
+        _t1 = time.perf_counter() if profile_data is not None else 0.0
+        response_data = deps.exporter.export_to_react_flow(graph, _profile=profile_data)
+        if profile_data is not None:
+            profile_data["export_total_ms"] = round((time.perf_counter() - _t1) * 1000, 2)
 
         if deduped_errors:
             warnings = deduped_errors[:MAX_REPORTED_ERRORS]
@@ -264,6 +273,8 @@ def upload_project(
                 warnings = warnings + [f"({extra} more skipped files)"]
             response_data["warnings"] = warnings
 
+        if profile_data is not None:
+            return JSONResponse(content={**response_data, "_profile": profile_data})
         return response_data
 
     except HTTPException:
