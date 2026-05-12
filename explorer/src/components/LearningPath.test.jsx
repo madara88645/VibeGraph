@@ -109,7 +109,7 @@ describe('LearningPath', () => {
       expect(screen.getByText('Start at the real entry point.')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByLabelText('Next Step'));
+    await user.click(screen.getByLabelText('Next step'));
 
     expect(onSelectFile).toHaveBeenCalledWith('repo/utils.py');
     expect(onSelectNode).toHaveBeenCalledWith(NODES[1]);

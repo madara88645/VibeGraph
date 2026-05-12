@@ -114,7 +114,7 @@ describe('ProjectUpload', () => {
         // Should show the analyzing state
         expect(screen.getByText('Analyzing project…')).toBeInTheDocument();
         // Close button should be disabled
-        expect(screen.getByRole('button', { name: /close upload modal/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Cannot close while analyzing project/i })).toBeDisabled();
     });
 
     it('handles successful upload with valid graph data', async () => {

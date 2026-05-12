@@ -166,7 +166,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                                 className="modal-close-btn"
                                 onClick={() => setIsModalOpen(false)}
                                 disabled={isAnalyzing}
-                                aria-label="Close Upload Modal"
+                                aria-label={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}
                             >
                                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <path d="M4 4l8 8M12 4l-8 8" />

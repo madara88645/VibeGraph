@@ -199,7 +199,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 notifyResult(fallbackCopyText(text));
                             }
                         }}
-                        aria-label="Copy code"
+                        aria-label={hasCopyText ? "Copy code" : "Nothing to copy yet"}
                         aria-describedby={!hasCopyText ? "copy-btn-hint" : undefined}
                         disabled={!hasCopyText}
                         style={{

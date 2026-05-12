@@ -112,7 +112,7 @@ describe('ChatDrawer', () => {
 
   it('send button is disabled when input is empty', () => {
     renderDrawer();
-    expect(screen.getByLabelText('Send message')).toBeDisabled();
+    expect(screen.getByLabelText('Type a message to send')).toBeDisabled();
   });
 
   it('send button is enabled when input has text', async () => {
