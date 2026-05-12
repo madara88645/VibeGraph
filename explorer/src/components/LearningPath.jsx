@@ -10,6 +10,7 @@ import { getShortName } from '../utils/stringUtils';
 const LearningPath = ({
   selectedFile,
   allNodes,
+  allNodesMap,
   allEdges,
   onSelectNode,
   onSelectFile,
@@ -71,7 +72,9 @@ const LearningPath = ({
         return;
       }
 
-      const node = allNodes.find((candidate) => candidate.id === step.node_id);
+      // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) array find() with O(1) Map lookup
+      // to eliminate functional callback overhead and array traversal.
+      const node = allNodesMap ? allNodesMap.get(step.node_id) : allNodes.find((candidate) => candidate.id === step.node_id);
 
       if (node) {
         const nextFile = step.file_path || node.data?.file;
@@ -89,7 +92,7 @@ const LearningPath = ({
         }, 50);
       }
     },
-    [allNodes, fitView, onSelectFile, onSelectNode, steps]
+    [allNodes, allNodesMap, fitView, onSelectFile, onSelectNode, steps]
   );
 
   if (!isOpen) {
@@ -114,7 +117,7 @@ const LearningPath = ({
             className="lp-bar-nav"
             onClick={() => goToStep(currentStep - 1)}
             disabled={currentStep === 0 || loading}
-            aria-label="Previous Step"
+            aria-label={loading ? 'Building learning path...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
           >
             <span aria-hidden="true">{'<'}</span>
           </button>
@@ -159,7 +162,13 @@ const LearningPath = ({
             className="lp-bar-nav"
             onClick={() => goToStep(currentStep + 1)}
             disabled={currentStep === steps.length - 1 || loading || steps.length === 0}
-            aria-label="Next Step"
+            aria-label={
+              loading
+                ? 'Building learning path...'
+                : currentStep === steps.length - 1
+                  ? 'Already at last step'
+                  : 'Next step'
+            }
           >
             <span aria-hidden="true">{'>'}</span>
           </button>

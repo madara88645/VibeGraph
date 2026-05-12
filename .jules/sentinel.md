@@ -32,3 +32,8 @@
 **Learning:** `slowapi` decorators (like `@limiter.limit`) require the decorated FastAPI endpoint function to accept a `request: Request` argument, even if the endpoint logic itself doesn't use the request object, because `slowapi` extracts the client IP and other metadata from it to track rate limits.
 **Prevention:** Always verify that every endpoint in a FastAPI application, including simple informational endpoints, is protected by appropriate rate limits and ensures `request: Request` is included in the signature when applying `@limiter.limit`.
 
+
+## 2025-05-11 - Zip Extraction Path Traversal and Sensitive File Bypass
+**Vulnerability:** The ZIP extraction logic in `app/routers/upload.py` implemented custom, inline path traversal and sensitive file checks that differed from the application's standard file upload validation. This could potentially allow bypasses if edge cases were missed. Additionally, the standard normalizer (`normalize_uploaded_filename`) can be misleading if its return value is ignored.
+**Learning:** Security validation logic must be unified across all upload paths. Implementing separate inline checks for ZIP members creates an inconsistent security boundary. Furthermore, when using a normalizer, it is critical to use its *return value* as the finalized path. Calling a normalizer but continuing to use the raw unsanitized input path completely bypasses the intended security sanitizations.
+**Prevention:** Unify validation logic by always calling the core `normalize_uploaded_filename()` utility on extracted ZIP members, and explicitly using its return value (`safe_filename = normalize_uploaded_filename(...)`) for all subsequent path operations to enforce a single, robust security boundary.

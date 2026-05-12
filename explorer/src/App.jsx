@@ -180,6 +180,7 @@ function AppInner() {
 
   const {
     allNodes,
+    allNodesMap,
     allEdges,
     selectedFile,
     setSelectedFile,
@@ -325,6 +326,7 @@ function AppInner() {
             className="header-action-btn"
             onClick={() => setLearningPathOpen((prev) => !prev)}
             title="Learning Path"
+            aria-label="Learning Path"
             aria-controls="learning-path-panel"
             aria-expanded={learningPathOpen}
           >
@@ -437,6 +439,7 @@ function AppInner() {
       <LearningPath
         selectedFile={selectedFile}
         allNodes={allNodes}
+        allNodesMap={allNodesMap}
         allEdges={allEdges}
         onSelectNode={handleSelectNode}
         onSelectFile={setSelectedFile}
