@@ -216,7 +216,9 @@ def upload_project(
         _t0 = time.perf_counter() if profile_data is not None else 0.0
         result = CodeAnalyzer().analyze_file(tmp_dir, _profile=profile_data)
         if profile_data is not None:
-            profile_data["analyze_total_ms"] = round((time.perf_counter() - _t0) * 1000, 2)
+            profile_data["analyze_total_ms"] = round(
+                (time.perf_counter() - _t0) * 1000, 2
+            )
 
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
@@ -252,7 +254,9 @@ def upload_project(
         _t1 = time.perf_counter() if profile_data is not None else 0.0
         response_data = deps.exporter.export_to_react_flow(graph, _profile=profile_data)
         if profile_data is not None:
-            profile_data["export_total_ms"] = round((time.perf_counter() - _t1) * 1000, 2)
+            profile_data["export_total_ms"] = round(
+                (time.perf_counter() - _t1) * 1000, 2
+            )
 
         if deduped_errors:
             warnings = deduped_errors[:MAX_REPORTED_ERRORS]

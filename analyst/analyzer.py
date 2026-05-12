@@ -448,7 +448,9 @@ class CodeAnalyzer:
         self.definitions = []
         self.errors = []
 
-    def analyze_file(self, target_path: str, _profile: dict | None = None) -> dict[str, Any]:
+    def analyze_file(
+        self, target_path: str, _profile: dict | None = None
+    ) -> dict[str, Any]:
         """
         Analyzes a file or directory recursively.
         """
@@ -475,7 +477,9 @@ class CodeAnalyzer:
     # Directory analysis (two-pass: collect definitions, then resolve calls)
     # ------------------------------------------------------------------
 
-    def _analyze_directory(self, dir_path: str, _profile: dict | None = None) -> dict[str, Any]:
+    def _analyze_directory(
+        self, dir_path: str, _profile: dict | None = None
+    ) -> dict[str, Any]:
         # Lazy import to avoid the analyst.languages → analyst.analyzer import
         # cycle (the Python plugin imports CallGraphVisitor from this module).
         from analyst.languages import get_analyzer_for_path
@@ -537,7 +541,11 @@ class CodeAnalyzer:
         from analyst.languages.base import ParseError
 
         if _profile is not None:
-            _PROFILE_DATA.data = {"parse_count": 0, "parse_cached_hits": 0, "parse_total_ms": 0.0}
+            _PROFILE_DATA.data = {
+                "parse_count": 0,
+                "parse_cached_hits": 0,
+                "parse_total_ms": 0.0,
+            }
         try:
             for file_path, safe_name, language_analyzer in files:
                 try:
@@ -603,7 +611,9 @@ class CodeAnalyzer:
         if graphs:
             self.graph = nx.compose_all(graphs)
         if _profile is not None:
-            _profile["compose_all_ms"] = round((time.perf_counter() - _t_compose) * 1000, 2)
+            _profile["compose_all_ms"] = round(
+                (time.perf_counter() - _t_compose) * 1000, 2
+            )
 
         # ---- Add module nodes + contains/imports edges ----
         self._add_module_nodes(per_file, dir_path, symbol_table)

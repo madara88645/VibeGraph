@@ -88,7 +88,9 @@ class GraphExporter:
 
         output_data = {"nodes": nodes, "edges": edges}
         if _profile is not None:
-            _profile["export_build_ms"] = round((time.perf_counter() - _t_build) * 1000, 2)
+            _profile["export_build_ms"] = round(
+                (time.perf_counter() - _t_build) * 1000, 2
+            )
 
         # ---- file_dependencies (optional) ----
         if dependencies:
