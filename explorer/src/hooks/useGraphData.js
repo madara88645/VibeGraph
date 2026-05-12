@@ -75,6 +75,15 @@ export function useGraphData(setNodes, setEdges) {
     const [allEdges, setAllEdges] = useState(initialGraph.edges);
     const [fileDependencies, setFileDependencies] = useState(initialGraph.fileDependencies);
 
+    // O(1) Lookup Map for nodes
+    const allNodesMap = useMemo(() => {
+        const map = new Map();
+        for (let i = 0; i < allNodes.length; i++) {
+            map.set(allNodes[i].id, allNodes[i]);
+        }
+        return map;
+    }, [allNodes]);
+
     // File selection
     const [selectedFile, setSelectedFile] = useState(initialGraph.selectedFile);
 
@@ -311,6 +320,7 @@ export function useGraphData(setNodes, setEdges) {
 
     return {
         allNodes,
+        allNodesMap,
         allEdges,
         selectedFile,
         setSelectedFile,

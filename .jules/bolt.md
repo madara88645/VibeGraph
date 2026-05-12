@@ -92,3 +92,7 @@
 **Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state or executing side effects by chaining functional array methods like `.filter().forEach()` and `.map()` over large datasets causes severe performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
 **Action:** Replace these chains with a single imperative `for` loop to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass.
 
+
+## 2024-05-18 - Optimize array searches with O(1) Lookup Maps
+**Learning:** Replacing an `Array.prototype.find()` with an imperative `for` loop is an ineffective micro-optimization when the underlying issue is executing an `O(N)` search repeatedly. While a `for` loop removes callback overhead, it does not solve the time complexity bottleneck and actively harms code readability.
+**Action:** When a React component frequently searches a large array by ID, pre-compute an `O(1)` Map at the data source level (e.g., inside a custom hook using `useMemo`) and pass it down as a prop. This provides a genuine performance improvement without sacrificing readability.
