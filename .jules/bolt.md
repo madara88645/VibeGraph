@@ -53,7 +53,7 @@
 ## 2024-05-18 - Optimize array searches by extracting fallback subsets
 **Learning:** When optimizing sequential fallback searches over large arrays in high-frequency React hooks (e.g., searching for a specific node and falling back to another in `useGhostRunner.js`), consolidate multiple `O(N)` `.find()` calls into a single `O(N)` `for` loop, or cache subsets to avoid iterating the whole array.
 **Action:** Created `entryPointsRef` populated on mount/node-change to reduce a large O(N) array scan for `entry_point` nodes down to scanning a pre-filtered list, achieving ~500x speedup in the worst case.
-## $(date +%Y-%m-%d) - Zero-allocation primitives for useMemo
+## 2024-05-13 - Zero-allocation primitives for useMemo
 **Learning:** In high-frequency React hooks (e.g., simulation ticks), creating complex string-based keys (like `array.map().join()`) or using `.split().filter()` to derive primitive counts for memoization is a severe anti-pattern that creates massive garbage collection pressure.
 **Action:** Compute these primitive values directly using a fast, zero-allocation imperative `for` loop inside the `useMemo` block. Because `useMemo` returns a primitive, downstream components still correctly bail out of renders if the value doesn't change, while eliminating the allocation overhead entirely.
 
@@ -96,3 +96,7 @@
 ## 2024-05-18 - Optimize array searches with O(1) Lookup Maps
 **Learning:** Replacing an `Array.prototype.find()` with an imperative `for` loop is an ineffective micro-optimization when the underlying issue is executing an `O(N)` search repeatedly. While a `for` loop removes callback overhead, it does not solve the time complexity bottleneck and actively harms code readability.
 **Action:** When a React component frequently searches a large array by ID, pre-compute an `O(1)` Map at the data source level (e.g., inside a custom hook using `useMemo`) and pass it down as a prop. This provides a genuine performance improvement without sacrificing readability.
+
+## 2024-05-13 - Prevent Redundant Priority Queue Pushes
+**Learning:** In priority-queue traversals with static priorities (e.g. Dijkstra variations in `app/services/learning_path.py`), failing to check membership in an 'enqueued' set before pushing results in redundant nodes bloating the heap.
+**Action:** Prevent redundant pushes by checking membership in an 'enqueued' set before calling `heapq.heappush` to keep the heap size minimal.

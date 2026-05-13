@@ -173,13 +173,11 @@ def build_learning_path(
 
     ordered_ids: list[str] = []
     visited: set[str] = set()
-    enqueued: set[str] = set()
     queue: list[tuple[tuple[Any, ...], str]] = []
 
     def push(node_id: str) -> None:
-        if node_id not in visited and node_id not in enqueued:
+        if node_id not in visited:
             heapq.heappush(queue, (scored[node_id]["_sort"], node_id))
-            enqueued.add(node_id)
 
     for node_id in start_nodes:
         push(node_id)
