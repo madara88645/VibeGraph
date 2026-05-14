@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+import stat
 import tempfile
 import time
 import zipfile
@@ -142,6 +143,9 @@ def upload_project(
                             )
 
                         try:
+                            if stat.S_ISLNK(member.external_attr >> 16):
+                                raise ValueError("Symlink in zip file detected")
+
                             safe_filename = normalize_uploaded_filename(member.filename)
                             target_path = os.path.join(tmp_dir_real, safe_filename)
                             extracted_path = os.path.realpath(target_path)
