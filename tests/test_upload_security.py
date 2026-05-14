@@ -143,3 +143,30 @@ def test_upload_allowed_hidden_file_zip():
     if response.status_code == 400:
         detail = response.json().get("detail", "")
         assert "Unsafe zip file detected" not in detail
+
+
+def test_upload_symlink_zip():
+    """Ensure that zip files containing symbolic links are rejected."""
+    import stat
+
+    zip_path = "symlink_test.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        # Normal file
+        z.writestr("normal.py", "print('hello')")
+        # Symlink file (pointing to /etc/passwd)
+        zinfo = zipfile.ZipInfo("symlink.txt")
+        zinfo.create_system = 3  # Unix
+        zinfo.external_attr = stat.S_IFLNK << 16
+        z.writestr(zinfo, "/etc/passwd")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("symlink_test.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    assert response.status_code == 400
+    assert "Unsafe zip file detected" in response.json()["detail"]
