@@ -41,3 +41,6 @@
 **Learning:** When using static `aria-label`s on buttons (like `aria-label={file}` or `aria-label="Choose traversal strategy"`), any visually nested elements containing dynamic context (such as node counts, types, or current state hints) are overridden and hidden from screen readers. Screen reader users receive less context than sighted users.
 **Action:** Always dynamically build `aria-label` strings to include all the relevant information that is visually nested within the component or implicitly conveyed by its state, ensuring parity between visual and auditory context.
 
+## 2025-02-12 - Disabled Button Tooltips and Screen Reader Context
+**Learning:** Native `title` tooltips do not appear on standard browsers when placed directly on a `disabled` HTML element. In AI settings modals, disabling the "Clear Key" button when no key exists prevents useless clicks, but users need context. Wrapping it in an inline-flex `span` with a `title` solves the hover issue, but leaves screen reader users behind.
+**Action:** When wrapping a disabled button in a tooltip container to explain its state, mirror the dynamic `title` directly to the `aria-label` of the disabled button. This ensures visual hover feedback for sighted users and descriptive voice feedback for screen reader users.

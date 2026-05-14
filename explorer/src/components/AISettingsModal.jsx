@@ -139,13 +139,17 @@ const AISettingsModal = ({
           </div>
 
           <div className="ai-settings-footer">
-            <button
-              type="button"
-              className="ai-settings-secondary-btn"
-              onClick={onClear}
-            >
-              Clear Key
-            </button>
+            <span style={{ display: 'inline-flex' }} title={!draftApiKey ? 'Key is already clear' : 'Clear your API key'}>
+              <button
+                type="button"
+                className="ai-settings-secondary-btn"
+                onClick={onClear}
+                disabled={!draftApiKey}
+                aria-label={!draftApiKey ? 'Key is already clear' : 'Clear your API key'}
+              >
+                Clear Key
+              </button>
+            </span>
             <button type="submit" className="ai-settings-primary-btn">
               Save
             </button>
