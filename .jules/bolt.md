@@ -99,3 +99,7 @@
 ## 2025-02-21 - Optimize Priority Queue and Remove O(N^2) Lookup
 **Learning:** Checking list membership in comprehensions creates O(N^2) bottlenecks on large datasets, and priority queues with static priorities can bloat without an enqueued set.
 **Action:** Replace O(N^2) list checks with single-pass partition loops, use an enqueued set to prevent redundant heap pushes, and alias `heapq.heappush`/`heapq.heappop` to local variables.
+
+## 2026-05-14 - O(N) to O(1) Replacement in Simulation Loops
+**Learning:** High-frequency simulation hooks recalculating metrics (like `visitedCount`) by iterating over the entire massive node array (O(N) operation) on every tick, even with an imperative for-loop, introduces unnecessary CPU load when the valid set is already maintained independently.
+**Action:** Replace the O(N) iteration over the full node list with an O(1) property lookup (e.g., `Set.size`) of the accurately maintained set. This eliminates the iteration overhead entirely.
