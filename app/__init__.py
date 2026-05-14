@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+import urllib.parse
 import uuid
 
 from fastapi import FastAPI, Request
@@ -166,13 +167,17 @@ def create_app() -> FastAPI:
     # Validate origins to prevent insecure wildcard bypasses (e.g. " * ")
     validated_origins = []
     for origin in origins_list:
-        if (
-            origin == "*"
-            or origin.startswith("http://")
-            or origin.startswith("https://")
-        ):
+        if origin == "*":
             validated_origins.append(origin)
-        else:
+            continue
+
+        try:
+            parsed = urllib.parse.urlparse(origin)
+            if parsed.scheme in ("http", "https") and parsed.hostname:
+                validated_origins.append(origin)
+            else:
+                logger.warning(f"Invalid CORS origin removed: {origin}")
+        except Exception:
             logger.warning(f"Invalid CORS origin removed: {origin}")
 
     # Prevent insecure combinations of wildcard origins with credentials
