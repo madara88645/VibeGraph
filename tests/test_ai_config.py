@@ -9,9 +9,15 @@ from serve import app
 
 client = TestClient(app)
 
+import tempfile
+tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+test_file_path = os.path.join(tmp_dir, "case_a.py")
+with open(test_file_path, "w", encoding="utf-8") as f:
+    f.write("def main(): pass")
+
 CHAT_PAYLOAD = {
     "node_id": "main",
-    "file_path": "tests/upload_cases/case_a.py",
+    "file_path": test_file_path,
     "question": "What does this function do?",
     "history": [],
 }

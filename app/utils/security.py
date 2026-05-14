@@ -16,19 +16,11 @@ HIDDEN_RE = re.compile(
 
 
 def is_safe_path(path: str) -> bool:
-    """Ensure the path is either within the current working directory or a valid upload temp directory."""
+    """Ensure the path is within a valid upload temp directory."""
     try:
         resolved = os.path.realpath(path)
-        cwd = os.path.realpath(os.getcwd())
-
-        if os.path.commonpath([resolved, cwd]) == cwd:
-            rel_path = os.path.relpath(resolved, cwd)
-            # Block hidden files and directories
-            if HIDDEN_RE.search(rel_path):
-                return False
-            return True
     except ValueError:
-        pass
+        return False
 
     tmp_dir = os.path.realpath(tempfile.gettempdir())
     try:
