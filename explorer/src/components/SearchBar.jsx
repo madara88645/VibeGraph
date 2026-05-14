@@ -93,8 +93,12 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     return (
         <div className="search-bar" ref={containerRef}>
             <div className="search-input-wrapper">
+                <label htmlFor="search-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
+                    Search nodes
+                </label>
                 <span className="search-icon" aria-hidden="true">🔍</span>
                 <input
+                    id="search-input"
                     ref={inputRef}
                     type="text"
                     role="combobox"
