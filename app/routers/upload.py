@@ -272,6 +272,12 @@ def upload_project(
     except HTTPException:
         cleanup_tmp_dir(tmp_dir)
         raise
+    except zipfile.BadZipFile:
+        cleanup_tmp_dir(tmp_dir)
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid zip archive detected.",
+        )
     except Exception as e:
         logger.error(f"Upload/Analysis failed: {e}", exc_info=True)
         cleanup_tmp_dir(tmp_dir)
