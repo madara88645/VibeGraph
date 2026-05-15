@@ -29,6 +29,7 @@ class GraphExporter:
         edges = []
 
         # Convert nodes
+        _t_nodes = time.perf_counter() if _profile is not None else 0.0
         for node_id, data in graph.nodes(data=True):
             # Extract metadata
             node_type = data.get("type", "default")
@@ -48,6 +49,8 @@ class GraphExporter:
                 },  # Default position, frontend handles layout
             }
             nodes.append(node_dict)
+        if _profile is not None:
+            _profile["nodes_build_ms"] = round((time.perf_counter() - _t_nodes) * 1000, 2)
 
         # Detect cycles
         # Optimization: Use strongly_connected_components O(V+E) instead of simple_cycles O((V+E)C)
@@ -75,7 +78,7 @@ class GraphExporter:
             _profile["scc_ms"] = round((time.perf_counter() - _t_scc) * 1000, 2)
 
         # Convert edges
-        _t_build = time.perf_counter() if _profile is not None else 0.0
+        _t_edges = time.perf_counter() if _profile is not None else 0.0
         for u, v, data in graph.edges(data=True):
             edge_dict = {
                 "id": f"e{u}-{v}",
@@ -88,9 +91,13 @@ class GraphExporter:
 
         output_data = {"nodes": nodes, "edges": edges}
         if _profile is not None:
+            _profile["edges_build_ms"] = round((time.perf_counter() - _t_edges) * 1000, 2)
             _profile["export_build_ms"] = round(
-                (time.perf_counter() - _t_build) * 1000, 2
+                _profile.get("nodes_build_ms", 0.0) + _profile.get("edges_build_ms", 0.0),
+                2,
             )
+            _profile["export_node_count"] = len(nodes)
+            _profile["export_edge_count"] = len(edges)
 
         # ---- file_dependencies (optional) ----
         if dependencies:

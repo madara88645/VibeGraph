@@ -546,10 +546,22 @@ class CodeAnalyzer:
                 "parse_cached_hits": 0,
                 "parse_total_ms": 0.0,
             }
+            _profile.setdefault("language_profiles", {})
         try:
+            _t_pass1 = time.perf_counter() if _profile is not None else 0.0
             for file_path, safe_name, language_analyzer in files:
                 try:
-                    analysis = language_analyzer.analyze_file(file_path, dir_path)
+                    profile_bucket = None
+                    if _profile is not None:
+                        profile_bucket = _profile["language_profiles"].setdefault(
+                            language_analyzer.language_id, {}
+                        )
+                    analysis = language_analyzer.analyze_file(
+                        file_path,
+                        dir_path,
+                        local_modules_override=_local_modules_for(language_analyzer),
+                        profile_bucket=profile_bucket,
+                    )
                 except ParseError as parse_err:
                     self.errors.append(parse_err.message)
                     continue
@@ -571,6 +583,10 @@ class CodeAnalyzer:
                     # First definition wins on collision (deterministic by walk order).
                     symbol_table.setdefault(d["name"], d["name"])
                 self.definitions.extend(analysis.definitions)
+            if _profile is not None:
+                _profile["pass1_analyze_files_ms"] = round(
+                    (time.perf_counter() - _t_pass1) * 1000, 2
+                )
         finally:
             if _profile is not None:
                 _pd = _PROFILE_DATA.data or {}
@@ -583,6 +599,7 @@ class CodeAnalyzer:
         graphs: list[nx.DiGraph] = []
         stub_metadata: dict[str, dict] = {}
 
+        _t_pass2 = time.perf_counter() if _profile is not None else 0.0
         for entry in per_file:
             analysis = entry["analysis"]
             language_analyzer = entry["analyzer"]
@@ -606,6 +623,10 @@ class CodeAnalyzer:
                     if existing is None or _is_better_stub(attrs, existing):
                         stub_metadata[target_id] = attrs
             graphs.append(analysis.graph)
+        if _profile is not None:
+            _profile["pass2_resolve_calls_ms"] = round(
+                (time.perf_counter() - _t_pass2) * 1000, 2
+            )
 
         _t_compose = time.perf_counter() if _profile is not None else 0.0
         if graphs:
@@ -616,7 +637,12 @@ class CodeAnalyzer:
             )
 
         # ---- Add module nodes + contains/imports edges ----
+        _t_module = time.perf_counter() if _profile is not None else 0.0
         self._add_module_nodes(per_file, dir_path, symbol_table)
+        if _profile is not None:
+            _profile["module_nodes_ms"] = round(
+                (time.perf_counter() - _t_module) * 1000, 2
+            )
 
         # ---- Enrich any stub-only nodes with metadata ----
         for node_id, attrs in stub_metadata.items():
@@ -633,6 +659,15 @@ class CodeAnalyzer:
             if not data.get("type"):
                 data["type"] = "unresolved"
                 data.setdefault("label", node_id)
+
+        if _profile is not None:
+            _profile["graphs_count"] = len(graphs)
+            _profile["final_node_count"] = self.graph.number_of_nodes()
+            _profile["final_edge_count"] = self.graph.number_of_edges()
+            for lang_profile in _profile.get("language_profiles", {}).values():
+                for key in ("tree_sitter_parse_ms", "local_modules_lookup_ms", "walker_ms"):
+                    if key in lang_profile:
+                        lang_profile[key] = round(lang_profile[key], 2)
 
         return {
             "file": dir_path,
