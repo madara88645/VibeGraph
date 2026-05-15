@@ -33,6 +33,7 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
         previous_node_id=body.previous_node_id,
         edge_context=edge_context,
         strategy=body.strategy,
+        neighbors=body.context_nodes,
     )
 
     teacher = deps.get_teacher_for_request(request, body.model)

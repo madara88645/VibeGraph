@@ -47,6 +47,13 @@ class ExplainRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
+    @field_validator("node_id", "file_path", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
 
 class SnippetRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
@@ -57,6 +64,13 @@ class SnippetRequest(BaseModel):
             "examples": [{"file_path": "my_project/app.py", "node_id": "main"}]
         }
     }
+
+    @field_validator("node_id", "file_path", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
 
 class ChatMessage(BaseModel):
