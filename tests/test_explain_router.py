@@ -68,6 +68,9 @@ class TestExplainEndpoint:
         assert data["explanation"]["analogy"] == "A greeting card"
         assert data["explanation"]["technical"] == "Defines a no-op function"
         assert data["explanation"]["key_takeaway"] == "Simple function definition"
+        _, kwargs = mock_teacher.explain_code.call_args
+        assert kwargs["node_id"] == "hello"
+        assert kwargs["file_path"] == "sample.py"
 
     @patch("app.routers.explain.deps.get_teacher_for_request")
     def test_explain_without_api_key_returns_401(self, mock_get_teacher):

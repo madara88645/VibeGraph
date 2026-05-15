@@ -118,6 +118,8 @@ class TestLearningPath:
         assert data["file_path"] == path
         assert len(data["steps"]) == 2
         assert data["steps"][0]["node_id"] == "hello"
+        _, kwargs = mock_teacher.suggest_learning_path.call_args
+        assert kwargs["allowed_node_ids"] == ["hello", "world"]
 
     def test_nonexistent_file_returns_404(self):
         tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")

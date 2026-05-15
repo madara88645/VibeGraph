@@ -28,6 +28,9 @@ def test_chat_returns_answer(mock_teacher):
     assert "answer" in data
     assert data["answer"] == MOCK_ANSWER
     assert data["node_id"] == "main"
+    _, kwargs = mock_teacher.chat.call_args
+    assert kwargs["node_id"] == "main"
+    assert kwargs["file_path"] == "tests/upload_cases/case_a.py"
 
 
 @patch("app.dependencies.teacher")
