@@ -23,6 +23,7 @@ from analyst.languages.javascript import (
 from analyst.tree_sitter_loader import get_parser
 
 import os
+import time
 
 
 _TSX_EXTENSIONS: frozenset[str] = frozenset({".tsx"})
@@ -62,7 +63,11 @@ class TypeScriptAnalyzer(JavaScriptAnalyzer):
     _ts_language_name: str = "typescript"
 
     def analyze_file(
-        self, file_path: str, project_root: str | None
+        self,
+        file_path: str,
+        project_root: str | None,
+        local_modules_override: frozenset[str] | None = None,
+        profile_bucket: dict[str, Any] | None = None,
     ) -> FileAnalysis | None:
         try:
             with open(file_path, "rb") as f:
@@ -75,6 +80,7 @@ class TypeScriptAnalyzer(JavaScriptAnalyzer):
         ext = os.path.splitext(file_path)[1].lower()
         lang_name = "tsx" if ext in _TSX_EXTENSIONS else "typescript"
 
+        t_parse = time.perf_counter() if profile_bucket is not None else 0.0
         try:
             parser = get_parser(lang_name)
             tree = parser.parse(source)
@@ -82,10 +88,26 @@ class TypeScriptAnalyzer(JavaScriptAnalyzer):
             return None
         if tree is None or tree.root_node is None:
             return None
+        if profile_bucket is not None:
+            profile_bucket["tree_sitter_parse_ms"] = profile_bucket.get(
+                "tree_sitter_parse_ms", 0.0
+            ) + (time.perf_counter() - t_parse) * 1000
 
         scan_root = project_root or os.path.dirname(os.path.abspath(file_path))
-        local_modules = self.get_local_modules(scan_root)
+        t_modules = time.perf_counter() if profile_bucket is not None else 0.0
+        local_modules = local_modules_override
+        if local_modules is None:
+            local_modules = self.get_local_modules(scan_root)
+            if profile_bucket is not None:
+                profile_bucket["local_modules_scan_count"] = profile_bucket.get(
+                    "local_modules_scan_count", 0
+                ) + 1
+        if profile_bucket is not None:
+            profile_bucket["local_modules_lookup_ms"] = profile_bucket.get(
+                "local_modules_lookup_ms", 0.0
+            ) + (time.perf_counter() - t_modules) * 1000
 
+        t_walk = time.perf_counter() if profile_bucket is not None else 0.0
         walker = _TypeScriptWalker(
             file_path=file_path,
             source=source,
@@ -93,6 +115,10 @@ class TypeScriptAnalyzer(JavaScriptAnalyzer):
         )
         walker.walk_module(tree.root_node)
         imports = _extract_imports(tree.root_node, source, local_modules)
+        if profile_bucket is not None:
+            profile_bucket["walker_ms"] = profile_bucket.get("walker_ms", 0.0) + (
+                time.perf_counter() - t_walk
+            ) * 1000
         # Drop type-only imports — they leave no runtime trace, so import
         # edges for them are misleading.
         imports = [imp for imp in imports if not imp.get("_type_only")]

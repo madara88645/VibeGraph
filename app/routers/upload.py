@@ -107,6 +107,9 @@ def upload_project(
     MAX_ZIP_FILES = 10000
 
     try:
+        profile_mode = request.query_params.get("profile") == "1"
+        profile_data: dict | None = {} if profile_mode else None
+        _t_upload = time.perf_counter() if profile_data is not None else 0.0
         total_upload_size = 0
         total_uncompressed_header_size = 0
         total_extracted_size = 0
@@ -201,6 +204,12 @@ def upload_project(
                                 target.write(chunk)
                 os.remove(file_path)
 
+        if profile_data is not None:
+            profile_data["upload_io_ms"] = round(
+                (time.perf_counter() - _t_upload) * 1000, 2
+            )
+
+        _t_contains = time.perf_counter() if profile_data is not None else 0.0
         if not contains_supported_file(tmp_dir):
             raise HTTPException(
                 status_code=400,
@@ -210,9 +219,10 @@ def upload_project(
                     "or TypeScript (.ts/.tsx) files."
                 ),
             )
-
-        profile_mode = request.query_params.get("profile") == "1"
-        profile_data: dict | None = {} if profile_mode else None
+        if profile_data is not None:
+            profile_data["contains_supported_ms"] = round(
+                (time.perf_counter() - _t_contains) * 1000, 2
+            )
         _t0 = time.perf_counter() if profile_data is not None else 0.0
         result = CodeAnalyzer().analyze_file(tmp_dir, _profile=profile_data)
         if profile_data is not None:

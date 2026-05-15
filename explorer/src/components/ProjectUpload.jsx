@@ -90,7 +90,18 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                 throw new Error(await readUploadError(response));
             }
 
-            const result = validateGraphResult(await response.json());
+            const parseStart = performance.now();
+            const parsedPayload = await response.json();
+            if (import.meta.env.DEV) {
+                const parseMs = performance.now() - parseStart;
+                console.debug('[perf] upload response json parse', {
+                    parseMs: Number(parseMs.toFixed(2)),
+                    nodeCount: Array.isArray(parsedPayload?.nodes) ? parsedPayload.nodes.length : 0,
+                    edgeCount: Array.isArray(parsedPayload?.edges) ? parsedPayload.edges.length : 0,
+                });
+            }
+
+            const result = validateGraphResult(parsedPayload);
             if (onUploadSuccess) onUploadSuccess(result);
             setIsModalOpen(false);
             showToast('Project analyzed successfully!', 'success');
