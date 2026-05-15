@@ -360,7 +360,11 @@ class OpenRouterTeacher:
             result = (
                 normalize_ghost_payload(parsed, refs)
                 if isinstance(parsed, dict)
-                else {"narration": "", "relationship": refs.render(), "importance": "low"}
+                else {
+                    "narration": "",
+                    "relationship": refs.render(),
+                    "importance": "low",
+                }
             )
             with self._cache_lock:
                 self._explain_cache[cache_key] = result

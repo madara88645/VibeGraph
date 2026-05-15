@@ -50,7 +50,9 @@ class GraphExporter:
             }
             nodes.append(node_dict)
         if _profile is not None:
-            _profile["nodes_build_ms"] = round((time.perf_counter() - _t_nodes) * 1000, 2)
+            _profile["nodes_build_ms"] = round(
+                (time.perf_counter() - _t_nodes) * 1000, 2
+            )
 
         # Detect cycles
         # Optimization: Use strongly_connected_components O(V+E) instead of simple_cycles O((V+E)C)
@@ -91,9 +93,12 @@ class GraphExporter:
 
         output_data = {"nodes": nodes, "edges": edges}
         if _profile is not None:
-            _profile["edges_build_ms"] = round((time.perf_counter() - _t_edges) * 1000, 2)
+            _profile["edges_build_ms"] = round(
+                (time.perf_counter() - _t_edges) * 1000, 2
+            )
             _profile["export_build_ms"] = round(
-                _profile.get("nodes_build_ms", 0.0) + _profile.get("edges_build_ms", 0.0),
+                _profile.get("nodes_build_ms", 0.0)
+                + _profile.get("edges_build_ms", 0.0),
                 2,
             )
             _profile["export_node_count"] = len(nodes)
