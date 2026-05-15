@@ -92,7 +92,7 @@ describe('GraphViewer', () => {
     const user = userEvent.setup();
     renderViewer();
 
-    await user.click(screen.getByTitle('Export as PNG'));
+    await user.click(screen.getByRole('button', { name: 'Export as PNG' }));
 
     await waitFor(() => {
       expect(mockExportAsPng).toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('GraphViewer', () => {
     const user = userEvent.setup();
     renderViewer();
 
-    await user.click(screen.getByTitle('Export as SVG'));
+    await user.click(screen.getByRole('button', { name: 'Export as SVG' }));
 
     await waitFor(() => {
       expect(mockExportAsSvg).toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe('GraphViewer', () => {
     mockExportAsPng.mockRejectedValueOnce(new Error('Canvas error'));
     renderViewer();
 
-    await user.click(screen.getByTitle('Export as PNG'));
+    await user.click(screen.getByRole('button', { name: 'Export as PNG' }));
 
     await waitFor(() => {
       expect(mockAddToast).toHaveBeenCalledWith('PNG export failed', 'error');
@@ -133,7 +133,7 @@ describe('GraphViewer', () => {
     mockExportAsSvg.mockRejectedValueOnce(new Error('SVG error'));
     renderViewer();
 
-    await user.click(screen.getByTitle('Export as SVG'));
+    await user.click(screen.getByRole('button', { name: 'Export as SVG' }));
 
     await waitFor(() => {
       expect(mockAddToast).toHaveBeenCalledWith('SVG export failed', 'error');

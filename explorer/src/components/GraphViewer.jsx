@@ -1,4 +1,4 @@
-import React, { useRef, memo } from 'react';
+import React, { useRef, useState, memo } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -32,23 +32,30 @@ const defaultEdgeOptions = {
 const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, onRequestUpload }) => {
   const graphRef = useRef(null);
   const showToast = useToast();
+  const [isExporting, setIsExporting] = useState(false);
   const hasGraph = nodes.length > 0 || edges.length > 0;
 
   const handleExportPng = async () => {
+    setIsExporting(true);
     try {
       await exportAsPng(graphRef.current);
       showToast('Graph exported as PNG', 'success');
     } catch {
       showToast('PNG export failed', 'error');
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleExportSvg = async () => {
+    setIsExporting(true);
     try {
       await exportAsSvg(graphRef.current);
       showToast('Graph exported as SVG', 'success');
     } catch {
       showToast('SVG export failed', 'error');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -79,24 +86,36 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, 
         </ReactFlow>
       </div>
       <div className="export-controls">
-        <button
-          onClick={handleExportPng}
-          className="export-btn"
-          title="Export as PNG"
-          aria-label="Export as PNG"
-        >
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <span>PNG</span>
-        </button>
-        <button
-          onClick={handleExportSvg}
-          className="export-btn"
-          title="Export as SVG"
-          aria-label="Export as SVG"
-        >
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-          <span>SVG</span>
-        </button>
+        <span style={{ display: 'inline-flex' }} title={isExporting ? "Export in progress..." : "Export as PNG"}>
+          <button
+            onClick={handleExportPng}
+            className="export-btn"
+            aria-label={isExporting ? "Export in progress..." : "Export as PNG"}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <span className="vibe-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', marginRight: '6px' }} aria-hidden="true" />
+            ) : (
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            )}
+            <span>PNG</span>
+          </button>
+        </span>
+        <span style={{ display: 'inline-flex' }} title={isExporting ? "Export in progress..." : "Export as SVG"}>
+          <button
+            onClick={handleExportSvg}
+            className="export-btn"
+            aria-label={isExporting ? "Export in progress..." : "Export as SVG"}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <span className="vibe-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', marginRight: '6px' }} aria-hidden="true" />
+            ) : (
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            )}
+            <span>SVG</span>
+          </button>
+        </span>
       </div>
       {!hasGraph ? (
         <div className="graph-empty-state" aria-live="polite">
