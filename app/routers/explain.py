@@ -59,6 +59,9 @@ def explain_node(request: Request, explain_request: ExplainRequest):
         level=explain_request.level,
         node_id=explain_request.node_id,
         file_path=explain_request.file_path,
+        callers=explain_request.callers,
+        callees=explain_request.callees,
+        neighbors=explain_request.neighbors,
     )
 
     return {

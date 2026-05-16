@@ -23,6 +23,9 @@ _BASE_PAYLOAD = {
     "file_path": test_file_path,
     "question": "What does this function do?",
     "history": [],
+    "callers": ["bootstrap.init"],
+    "callees": ["utils.run"],
+    "neighbors": ["bootstrap.init", "utils.run"],
 }
 
 
@@ -38,6 +41,9 @@ def test_chat_returns_answer(mock_teacher):
     _, kwargs = mock_teacher.chat.call_args
     assert kwargs["node_id"] == "main"
     assert kwargs["file_path"] == "tests/upload_cases/case_a.py"
+    assert kwargs["callers"] == ["bootstrap.init"]
+    assert kwargs["callees"] == ["utils.run"]
+    assert kwargs["neighbors"] == ["bootstrap.init", "utils.run"]
 
 
 @patch("app.dependencies.teacher")
@@ -91,6 +97,10 @@ def test_chat_stream_returns_sse(mock_teacher):
     content = response.text
     assert "data: Hello" in content
     assert "data: [DONE]" in content
+    _, kwargs = mock_teacher.stream_chat.call_args
+    assert kwargs["callers"] == ["bootstrap.init"]
+    assert kwargs["callees"] == ["utils.run"]
+    assert kwargs["neighbors"] == ["bootstrap.init", "utils.run"]
 
 
 @patch("app.dependencies.teacher")
