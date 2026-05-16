@@ -160,6 +160,19 @@ function AppInner() {
   );
 
   const {
+    allNodes,
+    allNodesMap,
+    allEdges,
+    selectedFile,
+    setSelectedFile,
+    files,
+    nodeStats,
+    fileDependencies,
+    handleUploadSuccess,
+    currentDegreeMap,
+  } = useGraphData(setNodes, setEdges);
+
+  const {
     selectedNode,
     setSelectedNode,
     explanation,
@@ -176,20 +189,7 @@ function AppInner() {
     handleSelectNode,
     onNodeClick,
     resetInteractionState,
-  } = useNodeInteraction(aiContext);
-
-  const {
-    allNodes,
-    allNodesMap,
-    allEdges,
-    selectedFile,
-    setSelectedFile,
-    files,
-    nodeStats,
-    fileDependencies,
-    handleUploadSuccess,
-    currentDegreeMap,
-  } = useGraphData(setNodes, setEdges);
+  } = useNodeInteraction({ ...aiContext, allNodes, allEdges });
 
   const {
     isPlaying,
@@ -418,6 +418,7 @@ function AppInner() {
             <ChatDrawer
               selectedNode={selectedNode}
               allNodes={allNodes}
+              allEdges={allEdges}
               isOpen={chatOpen}
               onToggle={handleToggleChat}
               apiKey={apiKey}

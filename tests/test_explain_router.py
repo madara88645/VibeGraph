@@ -61,7 +61,14 @@ class TestExplainEndpoint:
 
         resp = client.post(
             "/api/explain",
-            json={"file_path": "sample.py", "node_id": "hello", "level": "beginner"},
+            json={
+                "file_path": "sample.py",
+                "node_id": "hello",
+                "level": "beginner",
+                "callers": ["entry.main"],
+                "callees": ["helper.clean"],
+                "neighbors": ["entry.main", "helper.clean"],
+            },
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -71,6 +78,9 @@ class TestExplainEndpoint:
         _, kwargs = mock_teacher.explain_code.call_args
         assert kwargs["node_id"] == "hello"
         assert kwargs["file_path"] == "sample.py"
+        assert kwargs["callers"] == ["entry.main"]
+        assert kwargs["callees"] == ["helper.clean"]
+        assert kwargs["neighbors"] == ["entry.main", "helper.clean"]
 
     @patch("app.routers.explain.deps.get_teacher_for_request")
     def test_explain_without_api_key_returns_401(self, mock_get_teacher):

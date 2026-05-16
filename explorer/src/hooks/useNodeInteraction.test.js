@@ -13,6 +13,11 @@ describe('useNodeInteraction - explanation cache', () => {
     id: 'test_func',
     data: { file: 'test.py', label: 'test_func' },
   };
+  const graphNodes = [mockNode, { id: 'caller_fn', data: {} }, { id: 'callee_fn', data: {} }];
+  const graphEdges = [
+    { source: 'caller_fn', target: 'test_func' },
+    { source: 'test_func', target: 'callee_fn' },
+  ];
 
   it('caches explanation and skips fetch on second call with same params', async () => {
     const mockResponse = { explanation: { technical: 'cached result' } };
@@ -27,6 +32,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -35,6 +42,11 @@ describe('useNodeInteraction - explanation cache', () => {
     });
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result.current.explanation).toEqual(mockResponse);
+    expect(JSON.parse(fetchSpy.mock.calls[0][1].body)).toMatchObject({
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
+    });
 
     await act(async () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
@@ -62,6 +74,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -86,6 +100,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: false,
         onRequireAiKey,
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -111,6 +127,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -140,6 +158,11 @@ describe('useNodeInteraction - onNodeClick', () => {
     id: 'test_func',
     data: { file: 'test.py', label: 'test_func' },
   };
+  const graphNodes = [mockNode, { id: 'caller_fn', data: {} }, { id: 'callee_fn', data: {} }];
+  const graphEdges = [
+    { source: 'caller_fn', target: 'test_func' },
+    { source: 'test_func', target: 'callee_fn' },
+  ];
 
   it('selects the node, clears explanation, and fetches technical intermediate', async () => {
     const mockResponse = {
@@ -159,6 +182,8 @@ describe('useNodeInteraction - onNodeClick', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -192,6 +217,9 @@ describe('useNodeInteraction - onNodeClick', () => {
       node_id: 'test_func',
       type: 'technical',
       level: 'intermediate',
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
     });
   });
 });
