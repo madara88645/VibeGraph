@@ -107,7 +107,7 @@ class GraphExporter:
             }
             edges.append(edge_dict)
 
-        output_data = {"nodes": nodes, "edges": edges}
+        output_data: Dict[str, Any] = {"nodes": nodes, "edges": edges}
         output_data["meta"] = {
             "truncated": truncated,
             "total_nodes": total_v,
