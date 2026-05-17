@@ -230,6 +230,62 @@ describe('useGhostRunner', () => {
     expect(result.current.activeNodeId).toBe('b');
   });
 
+  it('tracks guided tutorial phases and step summaries along a linear graph', () => {
+    const nodes = [
+      createNode('n1', { entry_point: true, file: 'f1.py' }),
+      createNode('n2', { file: 'f2.py' }),
+      createNode('n3', { file: 'f3.py' }),
+      createNode('n4', { file: 'f4.py' }),
+    ];
+    const edges = [
+      { id: 'e1', source: 'n1', target: 'n2' },
+      { id: 'e2', source: 'n2', target: 'n3' },
+      { id: 'e3', source: 'n3', target: 'n4' },
+    ];
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const setCodePanelNode = vi.fn();
+
+    const { result } = renderHook(() =>
+      useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, {
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+      })
+    );
+
+    expect(result.current.ghostTutorial.phaseIndex).toBe(0);
+    expect(result.current.ghostTutorial.runState).toBe('idle');
+
+    act(() => {
+      result.current.setStrategy('entryFirst');
+      result.current.setIsPlaying(true);
+    });
+
+    expect(result.current.ghostTutorial.phaseIndex).toBeGreaterThanOrEqual(1);
+
+    let guard = 0;
+    while (result.current.stepCount < 4 && guard < 12) {
+      act(() => {
+        vi.advanceTimersByTime(2600);
+      });
+      guard += 1;
+    }
+
+    expect(result.current.stepCount).toBeGreaterThanOrEqual(4);
+    expect(result.current.ghostTutorial.phaseIndex).toBe(3);
+    expect(result.current.stepSummaries.length).toBeGreaterThan(0);
+
+    act(() => {
+      result.current.setIsPlaying(false);
+    });
+
+    expect(result.current.ghostTutorial.isComplete).toBe(true);
+    expect(result.current.runSummary?.guidedTourComplete).toBe(true);
+    expect(result.current.runSummary?.recentSteps?.length).toBeGreaterThan(0);
+  });
+
   it('skips narration calls when AI is not ready', () => {
     const nodes = [createNode('main', { entry_point: true })];
     const edges = [];

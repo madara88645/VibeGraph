@@ -1,4 +1,5 @@
 import os
+import tempfile
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -9,9 +10,20 @@ from serve import app
 
 client = TestClient(app)
 
+
+def _make_temp_py(content: str = "def main(): pass") -> str:
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    path = os.path.join(tmp_dir, "case_a.py")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return path
+
+
+test_file_path = _make_temp_py()
+
 CHAT_PAYLOAD = {
     "node_id": "main",
-    "file_path": "tests/upload_cases/case_a.py",
+    "file_path": test_file_path,
     "question": "What does this function do?",
     "history": [],
 }
