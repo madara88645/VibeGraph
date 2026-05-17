@@ -665,7 +665,11 @@ class CodeAnalyzer:
             _profile["final_node_count"] = self.graph.number_of_nodes()
             _profile["final_edge_count"] = self.graph.number_of_edges()
             for lang_profile in _profile.get("language_profiles", {}).values():
-                for key in ("tree_sitter_parse_ms", "local_modules_lookup_ms", "walker_ms"):
+                for key in (
+                    "tree_sitter_parse_ms",
+                    "local_modules_lookup_ms",
+                    "walker_ms",
+                ):
                     if key in lang_profile:
                         lang_profile[key] = round(lang_profile[key], 2)
 
