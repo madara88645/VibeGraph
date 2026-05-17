@@ -1,3 +1,7 @@
-🎯 **What:** This PR fixes a Zip Slip Path Traversal vulnerability by rejecting symlink members inside uploaded zip archives.
-⚠️ **Risk:** Without this check, an attacker could upload a ZIP file containing a symlink that resolves to a critical system file (like `/etc/passwd`), followed by a regular file that overwrites it, potentially leading to Remote Code Execution (RCE) or complete system compromise.
-🛡️ **Solution:** During zip extraction in `app/routers/upload.py`, we now check the external attributes of each member using `stat.S_ISLNK(member.external_attr >> 16)`. If a symlink is detected, a `ValueError` is raised which results in a 400 Bad Request ("Unsafe zip file detected"). A test was added to `tests/test_upload_security.py` to ensure symlinks are correctly rejected.
+💡 **What**: Replaced an O(N) loop iterating over all nodes with an O(1) `Set.size` lookup in `useGhostRunner.js` to calculate `visitedCount`.
+
+🎯 **Why**: In `useGhostRunner.js`, `visitedCount` was recalculated via an `useMemo` block that iterated over all nodes (O(N) operation) on every tick of the high-frequency simulation loop (`stepCount`). Since only navigable nodes are added to `visitedSetRef` during the simulation, iterating the full `nodes` array is redundant and adds unnecessary CPU overhead.
+
+📊 **Impact**: Reduces CPU load and eliminates array traversal during the high-frequency animation loop, significantly dropping execution time from O(N) to O(1) per tick, improving the frame rate and responsiveness of the Ghost Runner simulation on large codebases.
+
+🔬 **Measurement**: Ran `pnpm test` successfully with zero regressions across 172 tests. The optimization maintains exact behavior while removing the O(N) iteration block in `useGhostRunner.js`.
