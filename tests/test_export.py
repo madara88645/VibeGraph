@@ -194,5 +194,73 @@ def my_function():
         self.assertEqual(file_deps[1]["imports"], ["ClassA"])
 
 
+class TestGraphExportNodeBudget(unittest.TestCase):
+    """Regression tests for the max_nodes budget in GraphExporter."""
+
+    def test_export_respects_node_budget(self):
+        import networkx as nx
+
+        # Build a 100-node graph: node "0" is a hub connected to all others
+        # (so it has degree 99 and should always survive truncation).
+        graph = nx.DiGraph()
+        for i in range(100):
+            graph.add_node(str(i), type="function")
+        for i in range(1, 100):
+            graph.add_edge("0", str(i))
+        # Add a couple of low-degree edges that should be elided.
+        graph.add_edge("50", "51")
+        graph.add_edge("60", "61")
+
+        exporter = GraphExporter()
+        out = exporter.export_to_react_flow(graph, max_nodes=10)
+
+        self.assertEqual(len(out["nodes"]), 10)
+        kept_ids = {n["id"] for n in out["nodes"]}
+        self.assertIn("0", kept_ids, "highest-degree hub must survive truncation")
+
+        # No edge may reference an elided node.
+        for edge in out["edges"]:
+            self.assertIn(edge["source"], kept_ids)
+            self.assertIn(edge["target"], kept_ids)
+
+        meta = out["meta"]
+        self.assertTrue(meta["truncated"])
+        self.assertEqual(meta["total_nodes"], 100)
+        self.assertEqual(meta["total_edges"], 101)
+        self.assertEqual(meta["kept_nodes"], 10)
+        self.assertEqual(meta["budget"], 10)
+
+    def test_export_meta_when_not_truncated(self):
+        import networkx as nx
+
+        graph = nx.DiGraph()
+        for i in range(5):
+            graph.add_node(f"n{i}", type="function")
+        graph.add_edge("n0", "n1")
+
+        exporter = GraphExporter()
+        out = exporter.export_to_react_flow(graph, max_nodes=10)
+
+        self.assertEqual(len(out["nodes"]), 5)
+        self.assertEqual(len(out["edges"]), 1)
+        self.assertFalse(out["meta"]["truncated"])
+        self.assertEqual(out["meta"]["kept_nodes"], 5)
+        self.assertEqual(out["meta"]["total_nodes"], 5)
+        self.assertEqual(out["meta"]["budget"], 10)
+
+    def test_export_no_budget_emits_meta(self):
+        import networkx as nx
+
+        graph = nx.DiGraph()
+        graph.add_node("solo", type="function")
+
+        exporter = GraphExporter()
+        out = exporter.export_to_react_flow(graph)
+
+        self.assertIn("meta", out)
+        self.assertFalse(out["meta"]["truncated"])
+        self.assertIsNone(out["meta"]["budget"])
+
+
 if __name__ == "__main__":
     unittest.main()
