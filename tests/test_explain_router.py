@@ -87,8 +87,9 @@ class TestExplainEndpoint:
         mock_get_teacher.side_effect = HTTPException(
             status_code=401, detail="API key required"
         )
+        test_file_path = _make_temp_py()
         resp = client.post(
             "/api/explain",
-            json={"file_path": "sample.py", "node_id": "hello"},
+            json={"file_path": test_file_path, "node_id": "hello"},
         )
         assert resp.status_code == 401
