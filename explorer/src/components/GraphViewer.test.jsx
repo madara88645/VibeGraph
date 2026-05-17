@@ -151,4 +151,19 @@ describe('GraphViewer', () => {
     await user.click(screen.getByTestId('react-flow'));
     expect(onNodeClick).toHaveBeenCalled();
   });
+
+  it('shows a summary warning when the uploaded graph was truncated', () => {
+    renderViewer({
+      nodes: [{ id: 'main', data: { label: 'main' }, position: { x: 0, y: 0 } }],
+      graphMeta: {
+        truncated: true,
+        kept_nodes: 1500,
+        total_nodes: 2143,
+      },
+    });
+
+    expect(
+      screen.getByText('Showing 1500 of 2143 nodes. This is a summary view for a very large graph.')
+    ).toBeInTheDocument();
+  });
 });

@@ -188,6 +188,7 @@ function AppInner() {
     files,
     nodeStats,
     fileDependencies,
+    graphMeta,
     handleUploadSuccess,
     currentDegreeMap,
   } = useGraphData(setNodes, setEdges);
@@ -377,6 +378,7 @@ function AppInner() {
             <GraphViewer
               nodes={nodes}
               edges={edges}
+              graphMeta={graphMeta}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onNodeClick={onNodeClick}

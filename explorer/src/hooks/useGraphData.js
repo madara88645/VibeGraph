@@ -1,8 +1,23 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getLayoutedElements } from '../utils/layout';
 
-const GRAPH_CACHE_SCHEMA_VERSION = 2;
+const GRAPH_CACHE_SCHEMA_VERSION = 3;
 const GRAPH_CACHE_SOURCE = 'user_upload';
+
+function normalizeGraphMeta(meta) {
+    if (!meta || typeof meta !== 'object') {
+        return null;
+    }
+
+    return {
+        truncated: meta.truncated === true,
+        total_nodes: Number.isFinite(meta.total_nodes) ? meta.total_nodes : 0,
+        total_edges: Number.isFinite(meta.total_edges) ? meta.total_edges : 0,
+        kept_nodes: Number.isFinite(meta.kept_nodes) ? meta.kept_nodes : 0,
+        kept_edges: Number.isFinite(meta.kept_edges) ? meta.kept_edges : 0,
+        budget: Number.isFinite(meta.budget) ? meta.budget : null,
+    };
+}
 
 function getInitialSelectedFile(nodes) {
     const filesSet = new Set();
@@ -29,6 +44,7 @@ function readCachedGraph(cacheKey) {
         edges: [],
         fileDependencies: null,
         selectedFile: null,
+        graphMeta: null,
     };
 
     try {
@@ -43,6 +59,7 @@ function readCachedGraph(cacheKey) {
             nodes,
             edges,
             fileDependencies,
+            graphMeta,
         } = JSON.parse(cached);
 
         if (schemaVersion !== GRAPH_CACHE_SCHEMA_VERSION || source !== GRAPH_CACHE_SOURCE) {
@@ -59,6 +76,7 @@ function readCachedGraph(cacheKey) {
             edges: safeEdges,
             fileDependencies: safeDependencies,
             selectedFile: getInitialSelectedFile(safeNodes),
+            graphMeta: normalizeGraphMeta(graphMeta),
         };
     } catch {
         localStorage.removeItem(cacheKey);
@@ -74,6 +92,7 @@ export function useGraphData(setNodes, setEdges) {
     const [allNodes, setAllNodes] = useState(initialGraph.nodes);
     const [allEdges, setAllEdges] = useState(initialGraph.edges);
     const [fileDependencies, setFileDependencies] = useState(initialGraph.fileDependencies);
+    const [graphMeta, setGraphMeta] = useState(initialGraph.graphMeta);
 
     // O(1) Lookup Map for nodes
     const allNodesMap = useMemo(() => {
@@ -112,12 +131,14 @@ export function useGraphData(setNodes, setEdges) {
         const { nodes: newNodes, edges: newEdges, file_dependencies: newFileDependencies } = result;
         const safeNodes = Array.isArray(newNodes) ? newNodes : [];
         const safeEdges = Array.isArray(newEdges) ? newEdges : [];
+        const safeGraphMeta = normalizeGraphMeta(result.meta);
 
         if (safeNodes.length === 0) {
             setSelectedFile(null);
             setAllNodes([]);
             setAllEdges([]);
             setFileDependencies(null);
+            setGraphMeta(null);
             setNodes([]);
             setEdges([]);
             localStorage.removeItem(cacheKey);
@@ -152,6 +173,7 @@ export function useGraphData(setNodes, setEdges) {
         setAllNodes(customNodes);
         setAllEdges(safeEdges);
         setFileDependencies(Array.isArray(newFileDependencies) ? newFileDependencies : null);
+        setGraphMeta(safeGraphMeta);
 
         try {
             localStorage.setItem(
@@ -162,6 +184,7 @@ export function useGraphData(setNodes, setEdges) {
                     nodes: customNodes,
                     edges: safeEdges,
                     fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
+                    graphMeta: safeGraphMeta,
                 })
             );
         } catch { /* ignore */ }
@@ -327,6 +350,7 @@ export function useGraphData(setNodes, setEdges) {
         files,
         nodeStats,
         fileDependencies,
+        graphMeta,
         handleUploadSuccess,
         currentDegreeMap
     };
