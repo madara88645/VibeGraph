@@ -174,15 +174,19 @@ def build_learning_path(
     ordered_ids: list[str] = []
     visited: set[str] = set()
     queue: list[tuple[tuple[Any, ...], str]] = []
+    enqueued: set[str] = set()
+    heappush = heapq.heappush
+    heappop = heapq.heappop
 
     def push(node_id: str) -> None:
-        if node_id not in visited:
-            heapq.heappush(queue, (scored[node_id]["_sort"], node_id))
+        if node_id not in visited and node_id not in enqueued:
+            enqueued.add(node_id)
+            heappush(queue, (scored[node_id]["_sort"], node_id))
 
     for node_id in start_nodes:
         push(node_id)
     while queue:
-        _, node_id = heapq.heappop(queue)
+        _, node_id = heappop(queue)
         if node_id in visited:
             continue
         visited.add(node_id)
@@ -190,20 +194,18 @@ def build_learning_path(
         for target in outgoing[node_id]:
             push(target)
 
-    remaining_public_hubs = [
-        node_id
-        for node_id in scored
-        if node_id not in visited
-        and (
-            scored[node_id]["signals"]["public_api"]
-            or scored[node_id]["signals"]["hub_score"] > 0
-        )
-    ]
-    remaining_internals = [
-        node_id
-        for node_id in scored
-        if node_id not in visited and node_id not in remaining_public_hubs
-    ]
+    remaining_public_hubs = []
+    remaining_internals = []
+
+    for node_id in scored:
+        if node_id not in visited:
+            if (
+                scored[node_id]["signals"]["public_api"]
+                or scored[node_id]["signals"]["hub_score"] > 0
+            ):
+                remaining_public_hubs.append(node_id)
+            else:
+                remaining_internals.append(node_id)
 
     for node_id in sorted(
         remaining_public_hubs, key=lambda item: scored[item]["_sort"]

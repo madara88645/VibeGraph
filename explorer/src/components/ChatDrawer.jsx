@@ -364,7 +364,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       </div>
 
       <div className="chat-input-area">
+        <label htmlFor="chat-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
+          Chat input
+        </label>
         <textarea
+          id="chat-input"
           ref={inputRef}
           className="chat-input"
           placeholder="Ask a question..."

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
+import { buildGhostTutorialView } from '../ghost/ghostTutorialMachine';
 import { buildAiHeaders } from '../utils/aiClient';
 
 const TRAIL_LENGTH = 4;
@@ -378,6 +379,7 @@ export function useGhostRunner(
     const [mode, setMode] = useState('auto'); // 'auto' | 'explore'
     const [availableNextNodes, setAvailableNextNodes] = useState([]);
     const [narration, setNarration] = useState(null);
+    const [stepSummaries, setStepSummaries] = useState([]);
 
     // Refs for Game Loop
     const nodesRef = useRef([]);
@@ -409,17 +411,12 @@ export function useGhostRunner(
     const degreeMapRef = useRef(currentDegreeMap || new Map());
     useEffect(() => { degreeMapRef.current = currentDegreeMap || new Map(); }, [currentDegreeMap]);
 
-    // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) array/string allocations with an imperative loop
-    // to calculate visitedCount without triggering GC pressure on every simulation tick.
+    // PERFORMANCE OPTIMIZATION (Bolt): Calculate visitedCount in O(1) time instead of an O(N) loop
+    // over all nodes. Since only navigable nodes are added to visitedSetRef, we can simply
+    // use its size, eliminating CPU overhead on every simulation tick.
     const visitedCount = useMemo(() => {
-        let count = 0;
-        for (let i = 0; i < nodes.length; i++) {
-            if (isNavigableNode(nodes[i]) && visitedSetRef.current.has(nodes[i].id)) {
-                count++;
-            }
-        }
-        return count;
-    }, [nodes, stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger to re-read visitedSetRef.current after each step advance
+        return visitedSetRef.current.size;
+    }, [stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger to re-read visitedSetRef.current after each step advance
 
     // PERFORMANCE OPTIMIZATION (Bolt): Replace expensive navigableNodesKey string-building
     // and split/filter combo with a fast, zero-allocation loop over the nodes array.
@@ -432,6 +429,62 @@ export function useGhostRunner(
         }
         return count;
     }, [nodes]);
+
+    const graphFileCount = useMemo(() => {
+        const files = new Set();
+        for (let i = 0; i < nodes.length; i++) {
+            const fp = nodes[i].data?.file;
+            if (fp) {
+                files.add(fp);
+            }
+        }
+        return files.size;
+    }, [nodes]);
+
+    const filesVisitedCount = useMemo(() => {
+        const visited = visitedSetRef.current;
+        const files = new Set();
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (isNavigableNode(n) && visited.has(n.id) && n.data?.file) {
+                files.add(n.data.file);
+            }
+        }
+        return files.size;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- visitedSetRef + stepCount mirrors visited set changes
+    }, [nodes, stepCount]);
+
+    const tutorialSnapshot = useMemo(
+        () => ({
+            isPlaying,
+            stepCount,
+            visitedCount,
+            totalNodes,
+            filesVisitedCount,
+            graphFileCount,
+        }),
+        [isPlaying, stepCount, visitedCount, totalNodes, filesVisitedCount, graphFileCount]
+    );
+
+    const ghostTutorial = useMemo(
+        () => buildGhostTutorialView(tutorialSnapshot),
+        [tutorialSnapshot]
+    );
+
+    useEffect(() => {
+        if (stepCount <= 0) {
+            return;
+        }
+        setStepSummaries(prev => {
+            if (prev[0]?.step === stepCount) {
+                return prev;
+            }
+            const nid = activeNodeIdRef.current;
+            const node = nid ? nodesMapRef.current.get(nid) : null;
+            const label = node?.data?.label || nid || 'Unknown';
+            return [{ step: stepCount, label }, ...prev].slice(0, 8);
+        });
+    }, [stepCount]);
 
     // ── Narration fetcher (non-blocking) ──
     const fetchNarration = useCallback((nodeId, previousNodeId) => {
@@ -718,6 +771,7 @@ export function useGhostRunner(
         setAvailableNextNodes([]);
         setNarration(null);
         narrationRequestIdRef.current = 0;
+        setStepSummaries([]);
     }, []);
 
     // Generate run summary from visited data
@@ -768,9 +822,11 @@ export function useGhostRunner(
             filesVisited: filesVisited.size,
             mostConnected: mostConnected ? { label: mostConnected.data?.label, degree: maxDegree } : null,
             unvisitedEntries: unvisitedEntries,
+            guidedTourComplete: ghostTutorial.isComplete,
+            recentSteps: stepSummaries,
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stepCount forces recalc when visitedSetRef changes
-    }, [nodes, currentDegreeMap, stepCount, isPlaying]);
+    }, [nodes, currentDegreeMap, stepCount, isPlaying, ghostTutorial.isComplete, stepSummaries]);
 
     return {
         isPlaying,
@@ -798,5 +854,7 @@ export function useGhostRunner(
         setNarration,
         runSummary,
         degreeMap: currentDegreeMap,
+        ghostTutorial,
+        stepSummaries,
     };
 }
