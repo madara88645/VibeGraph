@@ -65,6 +65,8 @@ vi.mock('./hooks/useGhostRunner', () => ({
     narration: null,
     setNarration: vi.fn(),
     runSummary: null,
+    ghostTutorial: null,
+    stepSummaries: [],
   }),
 }));
 
@@ -90,6 +92,7 @@ vi.mock('./components/SimulationControls', () => ({ default: () => null }));
 vi.mock('./components/GhostNarration', () => ({ default: () => null }));
 vi.mock('./components/GhostChoices', () => ({ default: () => null }));
 vi.mock('./components/GhostRunSummary', () => ({ default: () => null }));
+vi.mock('./components/GhostTutorialPanel', () => ({ default: () => null }));
 vi.mock('./components/ErrorBoundary', () => ({ default: ({ children }) => <>{children}</> }));
 vi.mock('./components/Toast', () => ({
   ToastProvider: ({ children }) => <>{children}</>,

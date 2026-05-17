@@ -2593,6 +2593,152 @@ body {
   margin-bottom: 2px;
 }
 
+/* ── Ghost tutorial (guided) ── */
+.ghost-tutorial-panel {
+  position: absolute;
+  bottom: 168px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100vw - 32px));
+  background: var(--panel-gradient);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 12px 16px 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  z-index: 98;
+  animation: guideSlideUp 0.28s ease-out;
+}
+
+.ghost-tutorial-panel.ghost-tutorial-complete {
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+.ghost-tutorial-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ghost-tutorial-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--accent-ghost);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+.ghost-tutorial-complete .ghost-tutorial-badge {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+.ghost-tutorial-progress {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.ghost-tutorial-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.ghost-tutorial-lead {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.ghost-tutorial-checklist {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ghost-tutorial-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.ghost-tutorial-check.met {
+  color: var(--text-primary);
+}
+
+.ghost-tutorial-check-icon {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ghost-tutorial-check.met .ghost-tutorial-check-icon {
+  color: #34d399;
+}
+
+.ghost-tutorial-steps {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.ghost-tutorial-steps-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.ghost-tutorial-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.ghost-tutorial-step-list li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.ghost-tutorial-step-num {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent-ghost);
+}
+
+.ghost-tutorial-step-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Run Summary ── */
 .ghost-run-summary {
   position: absolute;
@@ -2616,6 +2762,61 @@ body {
   font-weight: 700;
   color: var(--color-accent-primary);
   margin: 0 0 8px;
+}
+
+.ghost-summary-tour-done {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+.ghost-summary-subhead {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.ghost-summary-steps {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.ghost-summary-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ghost-summary-step-list li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.ghost-summary-step-num {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent-ghost);
+}
+
+.ghost-summary-step-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ghost-summary-stats {
