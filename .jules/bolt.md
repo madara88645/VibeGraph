@@ -103,3 +103,6 @@
 ## 2026-05-14 - O(N) to O(1) Replacement in Simulation Loops
 **Learning:** High-frequency simulation hooks recalculating metrics (like `visitedCount`) by iterating over the entire massive node array (O(N) operation) on every tick, even with an imperative for-loop, introduces unnecessary CPU load when the valid set is already maintained independently.
 **Action:** Replace the O(N) iteration over the full node list with an O(1) property lookup (e.g., `Set.size`) of the accurately maintained set. This eliminates the iteration overhead entirely.
+## 2026-05-18 - Map population overhead in React hooks
+**Learning:** Initializing a Map using `new Map(array.map(...))` creates an unnecessary intermediate array allocation, which can cause significant garbage collection overhead when executed frequently (e.g. inside `useEffect` during fast simulation ticks).
+**Action:** Replace `new Map(array.map(...))` with an imperative `for` loop that populates an empty Map directly.

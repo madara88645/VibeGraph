@@ -395,7 +395,13 @@ export function useGhostRunner(
 
     useEffect(() => {
         nodesRef.current = nodes;
-        nodesMapRef.current = new Map(nodes.map(n => [n.id, n]));
+        // PERFORMANCE OPTIMIZATION (Bolt): Prevent O(N) array allocation overhead
+        // by avoiding nodes.map() and populating the Map directly in an imperative loop.
+        const newMap = new Map();
+        for (let i = 0; i < nodes.length; i++) {
+            newMap.set(nodes[i].id, nodes[i]);
+        }
+        nodesMapRef.current = newMap;
 
         const entryPoints = [];
         for (let i = 0; i < nodes.length; i++) {
