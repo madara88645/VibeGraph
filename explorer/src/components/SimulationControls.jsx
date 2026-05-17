@@ -60,6 +60,7 @@ const SimulationControls = ({
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
                     <ul>
+                        <li><strong>Guided tour</strong> — Follow the checklist above the narration to learn Ghost Runner in four short beats</li>
                         <li><strong>Strategies</strong> — Smart (DFS from entry points), Entry Flow, Hub Tour, By File, or Random</li>
                         <li><strong>Modes</strong> — Auto (ghost walks alone) or Explore (you guide the ghost)</li>
                         <li><strong>Speed</strong> — Control how fast the ghost moves between nodes</li>

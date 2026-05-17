@@ -11,6 +11,7 @@ import FileSidebar from './components/FileSidebar';
 import GhostChoices from './components/GhostChoices';
 import GhostNarration from './components/GhostNarration';
 import GhostRunSummary from './components/GhostRunSummary';
+import GhostTutorialPanel from './components/GhostTutorialPanel';
 import GraphViewer from './components/GraphViewer';
 import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
@@ -209,6 +210,8 @@ function AppInner() {
     onUserChooseNext,
     narration,
     runSummary,
+    ghostTutorial,
+    stepSummaries,
   } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext, currentDegreeMap);
 
   const onUploadSuccess = useCallback(
@@ -380,6 +383,12 @@ function AppInner() {
               onRequestUpload={handleRequestUpload}
             />
           </ErrorBoundary>
+
+          <GhostTutorialPanel
+            ghostTutorial={ghostTutorial}
+            stepSummaries={stepSummaries}
+            totalNodes={totalNodes}
+          />
 
           <GhostNarration narration={narration} isPlaying={isPlaying} />
           <GhostChoices
