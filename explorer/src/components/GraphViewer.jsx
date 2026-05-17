@@ -132,7 +132,9 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, 
               </svg>
               Upload your project
             </button>
-            <span className="empty-shortcut">or drag a folder anywhere on this page</span>
+            <span className="empty-shortcut">
+              Tip: click Upload Project, then drop your folder in the upload window.
+            </span>
           </div>
 
           <div className="empty-features">
