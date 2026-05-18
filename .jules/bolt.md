@@ -99,3 +99,7 @@
 ## 2025-02-21 - Optimize Priority Queue and Remove O(N^2) Lookup
 **Learning:** Checking list membership in comprehensions creates O(N^2) bottlenecks on large datasets, and priority queues with static priorities can bloat without an enqueued set.
 **Action:** Replace O(N^2) list checks with single-pass partition loops, use an enqueued set to prevent redundant heap pushes, and alias `heapq.heappush`/`heapq.heappop` to local variables.
+
+## 2025-02-21 - Optimize O(N) array iteration with Set.size lookup
+**Learning:** In high-frequency React hooks (e.g., computing `visitedCount` during `useGhostRunner.js` simulation ticks), iterating over a large array on every tick to conditionally count items creates severe CPU overhead.
+**Action:** If the valid subset of items is already tracked in a `Set` (e.g., via a Ref like `visitedSetRef`), replace the O(N) array iteration loop with an O(1) property lookup like `visitedSetRef.current.size` inside the `useMemo` block to eliminate the overhead.

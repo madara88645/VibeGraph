@@ -409,17 +409,11 @@ export function useGhostRunner(
     const degreeMapRef = useRef(currentDegreeMap || new Map());
     useEffect(() => { degreeMapRef.current = currentDegreeMap || new Map(); }, [currentDegreeMap]);
 
-    // PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) array/string allocations with an imperative loop
-    // to calculate visitedCount without triggering GC pressure on every simulation tick.
+    // PERFORMANCE OPTIMIZATION (Bolt): Replace the O(N) array iteration with an O(1) Set size lookup
+    // to eliminate CPU overhead during high-frequency simulation ticks.
     const visitedCount = useMemo(() => {
-        let count = 0;
-        for (let i = 0; i < nodes.length; i++) {
-            if (isNavigableNode(nodes[i]) && visitedSetRef.current.has(nodes[i].id)) {
-                count++;
-            }
-        }
-        return count;
-    }, [nodes, stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger to re-read visitedSetRef.current after each step advance
+        return visitedSetRef.current.size;
+    }, [stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger
 
     // PERFORMANCE OPTIMIZATION (Bolt): Replace expensive navigableNodesKey string-building
     // and split/filter combo with a fast, zero-allocation loop over the nodes array.
