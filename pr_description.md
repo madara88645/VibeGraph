@@ -1,7 +1,4 @@
-💡 What: Replaced an `O(N)` array traversal (`allNodes.find()`) in the `LearningPath` component with an `O(1)` Map lookup. Extracted `allNodesMap` into the `useGraphData` hook using `useMemo` and passed it down to `LearningPath`.
-
-🎯 Why: The `LearningPath` component iterates over the `allNodes` array, which can be massive (potentially thousands of nodes in large projects), to find a specific node matching an ID. Using `.find()` creates a repeated O(N) lookup. Pre-computing a Map completely resolves the time complexity bottleneck without sacrificing readability by replacing array methods with micro-optimized loops.
-
-📊 Impact: Reduces the time complexity of looking up path nodes from `O(N)` to `O(1)`.
-
-🔬 Measurement: Ensure the LearningPath feature continues to work as expected, jumping straight to the selected node correctly when triggered.
+💡 What: Added keyboard shortcuts (keys 1-9) to the Ghost Runner choices in the Explore mode, and provided visual `<kbd>` hints for the shortcuts.
+🎯 Why: To significantly improve the interaction speed and efficiency for power users using the 'Explore' mode without requiring mouse clicks.
+📸 Before/After: Users previously had to click Ghost choices with a mouse. Now, numbers [1]-[9] appear next to choices, allowing instant selection via the keyboard.
+♿ Accessibility: Improves keyboard navigation capabilities for a core interactive feature. Safe-guards against modifier keys (Ctrl/Alt/Meta) and input/textarea focus prevent shortcut interference.

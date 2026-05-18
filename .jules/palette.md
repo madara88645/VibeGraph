@@ -45,3 +45,7 @@
 ## 2024-05-13 - [Explicit Visually Hidden Labels Improve Screen Reader Compatibility]
 **Learning:** While `aria-label` provides accessible names to inputs, explicitly adding a visually hidden `<label>` element with an `htmlFor` attribute linking to the input's `id` provides more robust backwards compatibility across a wider array of older screen readers and voice navigation tools, ensuring the accessible name is never missed.
 **Action:** When creating text inputs (`<textarea>`, `<input type="text">`, or even hidden `<input type="file">` triggered via other elements), default to adding an explicitly linked, visually hidden `<label>` rather than relying exclusively on `aria-label`.
+## 2026-05-18 - Add keyboard shortcuts to Ghost Choices
+
+**Learning:** When attaching a global keyboard shortcut event listener (e.g., `window.addEventListener('keydown', ...)`) in React components to improve interaction speed, explicitly ignore interactions where modifier keys are active (`e.ctrlKey || e.metaKey || e.altKey`) and where the active element is an input or textarea (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`) to prevent interfering with default browser behaviors and text entry.
+**Action:** Always wrap `keydown` event listener logic in React components with a guard clause that checks the `e` object for modifiers and the `document.activeElement.tagName` to prevent unintended UI triggering.
