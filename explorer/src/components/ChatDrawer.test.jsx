@@ -112,7 +112,7 @@ describe('ChatDrawer', () => {
 
   it('send button is disabled when input is empty', () => {
     renderDrawer();
-    expect(screen.getByLabelText('Type a message to send')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Type a message to send' })).toBeDisabled();
   });
 
   it('send button is enabled when input has text', async () => {
@@ -120,7 +120,7 @@ describe('ChatDrawer', () => {
     renderDrawer();
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
-    expect(screen.getByLabelText('Send message')).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
   });
 
   it('prompts for AI settings when key is missing', async () => {
@@ -137,7 +137,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(onOpenAiSettings).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -164,7 +164,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(screen.getByText('What is main?')).toBeInTheDocument();
   });
@@ -184,7 +184,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'test question'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText('Fallback answer')).toBeInTheDocument();
@@ -198,7 +198,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'test');
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument();
