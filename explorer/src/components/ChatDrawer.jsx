@@ -401,7 +401,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                   : 'Send message'
             }
           >
-            <span aria-hidden="true">{'^'}</span>
+            {loading ? (
+              <div className="vibe-spinner" style={{ width: '1em', height: '1em', borderWidth: '2px', display: 'inline-block' }} aria-hidden="true" />
+            ) : (
+              <span aria-hidden="true">{'^'}</span>
+            )}
           </button>
         </span>
       </div>

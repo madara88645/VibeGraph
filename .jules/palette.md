@@ -45,3 +45,7 @@
 ## 2024-05-13 - [Explicit Visually Hidden Labels Improve Screen Reader Compatibility]
 **Learning:** While `aria-label` provides accessible names to inputs, explicitly adding a visually hidden `<label>` element with an `htmlFor` attribute linking to the input's `id` provides more robust backwards compatibility across a wider array of older screen readers and voice navigation tools, ensuring the accessible name is never missed.
 **Action:** When creating text inputs (`<textarea>`, `<input type="text">`, or even hidden `<input type="file">` triggered via other elements), default to adding an explicitly linked, visually hidden `<label>` rather than relying exclusively on `aria-label`.
+
+## 2024-05-16 - Add visual loading state feedback for async submission actions
+**Learning:** For interactive submission buttons handling async actions (like the chat send button in `ChatDrawer`), a disabled state alone without visual feedback (like a loading spinner) makes it unclear to the user if their action has been received and is being processed. Using a `vibe-spinner` on loading state effectively communicates async processing.
+**Action:** When creating or modifying interactive submission buttons (e.g., chat input, forms) that depend on async processing state, always include visual feedback like a loading spinner rather than just disabling the button.
