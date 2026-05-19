@@ -48,3 +48,7 @@
 ## 2026-05-15 - Add Loading State and Disable Feedback to GraphViewer Export Buttons
 **Learning:** Exporting a large react flow graph to PNG/SVG with html-to-image can be a slow, async operation. If async buttons lack a loading state (isExporting) and are not disabled during the operation, users lack visual feedback and might trigger multiple concurrent expensive operations. When adding title to a disabled button, wrapping the button in a <span style={{ display: 'inline-flex' }}> allows the title tooltip to show properly on disabled elements.
 **Action:** Always add loading spinners (.vibe-spinner), a disabled state, and matching aria-labels to async action buttons. Update corresponding UI test queries to use getByRole('button') instead of getByTitle() since the title resides on the wrapper span.
+
+## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
+**Learning:** Buttons that act as state toggles (like tab selectors or difficulty level choices) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "beginner"), leaving users without context about what the button controls.
+**Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set difficulty level to beginner"`) to ensure screen reader users receive the same contextual understanding as sighted users.
