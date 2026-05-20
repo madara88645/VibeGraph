@@ -73,11 +73,15 @@ vi.mock('./hooks/useGhostRunner', () => ({
 vi.mock('./hooks/useGraphData', () => ({
   useGraphData: () => ({
     allNodes: [],
+    allNodesMap: new Map(),
+    allEdges: [],
     selectedFile: null,
     setSelectedFile: vi.fn(),
     files: [],
     nodeStats: {},
+    fileDependencies: [],
     handleUploadSuccess: mockHandleUploadSuccess,
+    currentDegreeMap: {},
   }),
 }));
 

@@ -7,6 +7,7 @@ import {
   fetchAiJson,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
+import { buildNodeGroundingContext } from '../utils/graphContext';
 import { consumeSseChunk } from '../utils/sse';
 
 const MISSING_KEY_MESSAGE =
@@ -15,6 +16,7 @@ const MISSING_KEY_MESSAGE =
 const ChatDrawer = ({
   selectedNode,
   allNodes,
+  allEdges,
   isOpen,
   onToggle,
   apiKey,
@@ -140,6 +142,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       question: text,
       history: nextMessages.slice(-10),
       model: selectedModel || null,
+      ...buildNodeGroundingContext({
+        nodeId: selectedNode?.id || null,
+        allNodes,
+        allEdges,
+      }),
     };
 
     try {
@@ -230,6 +237,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   }, [
     aiReady,
     allNodes,
+    allEdges,
     apiKey,
     inputText,
     loading,

@@ -28,6 +28,7 @@ function renderDrawer(props = {}) {
   const defaults = {
     selectedNode: null,
     allNodes: [],
+    allEdges: [],
     isOpen: true,
     onToggle: vi.fn(),
     apiKey: 'test-key',
@@ -158,7 +159,18 @@ describe('ChatDrawer', () => {
     });
     globalThis.fetch.mockResolvedValue({ ok: true, body: stream });
 
-    renderDrawer({ selectedNode: MOCK_NODE });
+    renderDrawer({
+      selectedNode: MOCK_NODE,
+      allNodes: [
+        MOCK_NODE,
+        { id: 'caller_fn', data: { type: 'function', file: 'app.py' } },
+        { id: 'callee_fn', data: { type: 'function', file: 'app.py' } },
+      ],
+      allEdges: [
+        { source: 'caller_fn', target: 'main' },
+        { source: 'main', target: 'callee_fn' },
+      ],
+    });
 
     await user.type(
       screen.getByPlaceholderText('Ask a question...'),
@@ -167,6 +179,12 @@ describe('ChatDrawer', () => {
     await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(screen.getByText('What is main?')).toBeInTheDocument();
+    const [, options] = globalThis.fetch.mock.calls[0];
+    expect(JSON.parse(options.body)).toMatchObject({
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
+    });
   });
 
   it('falls back to /api/chat when streaming fails', async () => {

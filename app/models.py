@@ -28,6 +28,9 @@ class ExplainRequest(BaseModel):
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
     model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
+    callers: list[str] = Field(default_factory=list, max_length=100)
+    callees: list[str] = Field(default_factory=list, max_length=100)
+    neighbors: list[str] = Field(default_factory=list, max_length=200)
 
     model_config = {
         "json_schema_extra": {
@@ -47,6 +50,28 @@ class ExplainRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
+    @field_validator("node_id", "file_path", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
+    @field_validator("callers", "callees", "neighbors")
+    @classmethod
+    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+        for value in values:
+            if not isinstance(value, str):
+                raise ValueError("context values must be strings")
+            cleaned = value.strip()
+            if not cleaned:
+                raise ValueError("context values must not be empty")
+            if len(cleaned) > MAX_NODE_ID_LENGTH:
+                raise ValueError(
+                    f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
+                )
+        return values
+
 
 class SnippetRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
@@ -57,6 +82,13 @@ class SnippetRequest(BaseModel):
             "examples": [{"file_path": "my_project/app.py", "node_id": "main"}]
         }
     }
+
+    @field_validator("node_id", "file_path", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
 
 class ChatMessage(BaseModel):
@@ -88,6 +120,9 @@ class ChatRequest(BaseModel):
         default_factory=list,
         max_length=MAX_HISTORY_LENGTH,
     )
+    callers: list[str] = Field(default_factory=list, max_length=100)
+    callees: list[str] = Field(default_factory=list, max_length=100)
+    neighbors: list[str] = Field(default_factory=list, max_length=200)
 
     model_config = {
         "json_schema_extra": {
@@ -129,6 +164,21 @@ class ChatRequest(BaseModel):
                 )
             return sanitize_llm_input(value, truncate=False)
         return value
+
+    @field_validator("callers", "callees", "neighbors")
+    @classmethod
+    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+        for value in values:
+            if not isinstance(value, str):
+                raise ValueError("context values must be strings")
+            cleaned = value.strip()
+            if not cleaned:
+                raise ValueError("context values must not be empty")
+            if len(cleaned) > MAX_NODE_ID_LENGTH:
+                raise ValueError(
+                    f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
+                )
+        return values
 
 
 class LearningPathRequest(BaseModel):
