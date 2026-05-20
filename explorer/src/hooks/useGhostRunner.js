@@ -395,14 +395,20 @@ export function useGhostRunner(
 
     useEffect(() => {
         nodesRef.current = nodes;
-        nodesMapRef.current = new Map(nodes.map(n => [n.id, n]));
 
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) .map() intermediate array allocation
+        // and subsequent O(N) loop with a single O(N) pass to populate both the Map and entryPoints.
+        const nodesMap = new Map();
         const entryPoints = [];
         for (let i = 0; i < nodes.length; i++) {
-            if (nodes[i].data?.entry_point) {
-                entryPoints.push(nodes[i]);
+            const n = nodes[i];
+            nodesMap.set(n.id, n);
+            if (n.data?.entry_point) {
+                entryPoints.push(n);
             }
         }
+
+        nodesMapRef.current = nodesMap;
         entryPointsRef.current = entryPoints;
     }, [nodes]);
     useEffect(() => { edgesRef.current = edges; }, [edges]);
