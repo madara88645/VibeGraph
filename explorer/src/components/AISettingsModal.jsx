@@ -17,6 +17,8 @@ const AISettingsModal = ({
   onDraftModelChange,
 }) => {
   const [showKey, setShowKey] = useState(false);
+  const isClearDisabled = draftApiKey.length === 0;
+  const clearButtonLabel = isClearDisabled ? 'Key is already clear' : 'Clear Key';
 
   const allowedModels = useMemo(() => {
     if (Array.isArray(apiConfig?.allowedModels) && apiConfig.allowedModels.length > 0) {
@@ -139,13 +141,17 @@ const AISettingsModal = ({
           </div>
 
           <div className="ai-settings-footer">
-            <button
-              type="button"
-              className="ai-settings-secondary-btn"
-              onClick={onClear}
-            >
-              Clear Key
-            </button>
+            <span style={{ display: 'inline-flex' }} title={clearButtonLabel}>
+              <button
+                type="button"
+                className="ai-settings-secondary-btn"
+                onClick={onClear}
+                aria-label={clearButtonLabel}
+                disabled={isClearDisabled}
+              >
+                Clear Key
+              </button>
+            </span>
             <button type="submit" className="ai-settings-primary-btn">
               Save
             </button>

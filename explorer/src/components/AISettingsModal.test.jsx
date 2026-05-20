@@ -41,4 +41,30 @@ describe('AISettingsModal', () => {
     expect(screen.getByRole('option', { name: 'deepseek-chat-v3.1' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'grok-4.1-fast' })).toBeInTheDocument();
   });
+
+  it('disables Clear Key and explains why when the draft key is empty', () => {
+    render(
+      <AISettingsModal
+        isOpen
+        onClose={vi.fn()}
+        apiConfig={{
+          provider: 'openrouter',
+          defaultModel: 'anthropic/claude-haiku-4.5',
+          allowedModels: ['anthropic/claude-haiku-4.5'],
+          requiresUserKey: true,
+        }}
+        draftApiKey=""
+        draftModel="anthropic/claude-haiku-4.5"
+        configError=""
+        onSave={vi.fn()}
+        onClear={vi.fn()}
+        onDraftApiKeyChange={vi.fn()}
+        onDraftModelChange={vi.fn()}
+      />
+    );
+
+    const clearKeyButton = screen.getByRole('button', { name: 'Key is already clear' });
+    expect(clearKeyButton).toBeDisabled();
+    expect(clearKeyButton.closest('span')).toHaveAttribute('title', 'Key is already clear');
+  });
 });
