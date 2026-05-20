@@ -47,6 +47,11 @@
 ## 2024-05-13 - [Explicit Visually Hidden Labels Improve Screen Reader Compatibility]
 **Learning:** While `aria-label` provides accessible names to inputs, explicitly adding a visually hidden `<label>` element with an `htmlFor` attribute linking to the input's `id` provides more robust backwards compatibility across a wider array of older screen readers and voice navigation tools, ensuring the accessible name is never missed.
 **Action:** When creating text inputs (`<textarea>`, `<input type="text">`, or even hidden `<input type="file">` triggered via other elements), default to adding an explicitly linked, visually hidden `<label>` rather than relying exclusively on `aria-label`.
+## 2026-05-18 - Add keyboard shortcuts to Ghost Choices
+
+**Learning:** When attaching a global keyboard shortcut event listener (e.g., `window.addEventListener('keydown', ...)`) in React components to improve interaction speed, explicitly ignore interactions where modifier keys are active (`e.ctrlKey || e.metaKey || e.altKey`) and where the active element is an input or textarea (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`) to prevent interfering with default browser behaviors and text entry.
+**Action:** Always wrap `keydown` event listener logic in React components with a guard clause that checks the `e` object for modifiers and the `document.activeElement.tagName` to prevent unintended UI triggering.
+
 ## 2026-05-15 - Add Loading State and Disable Feedback to GraphViewer Export Buttons
 **Learning:** Exporting a large react flow graph to PNG/SVG with html-to-image can be a slow, async operation. If async buttons lack a loading state (isExporting) and are not disabled during the operation, users lack visual feedback and might trigger multiple concurrent expensive operations. When adding title to a disabled button, wrapping the button in a <span style={{ display: 'inline-flex' }}> allows the title tooltip to show properly on disabled elements.
 **Action:** Always add loading spinners (.vibe-spinner), a disabled state, and matching aria-labels to async action buttons. Update corresponding UI test queries to use getByRole('button') instead of getByTitle() since the title resides on the wrapper span.

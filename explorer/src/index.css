@@ -2602,6 +2602,16 @@ body {
   gap: 4px;
 }
 
+.ghost-choice-kbd {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 4px;
+  display: inline-block;
+}
+
 .ghost-choices-title {
   width: 100%;
   text-align: center;
