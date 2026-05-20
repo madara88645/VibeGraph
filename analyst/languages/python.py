@@ -50,7 +50,11 @@ class PythonAnalyzer:
         return _file_to_module_id(file_path, project_root)
 
     def analyze_file(
-        self, file_path: str, project_root: str | None
+        self,
+        file_path: str,
+        project_root: str | None,
+        local_modules_override: frozenset[str] | None = None,
+        profile_bucket: dict[str, Any] | None = None,
     ) -> FileAnalysis | None:
         from analyst.analyzer import (
             CallGraphVisitor,
@@ -85,7 +89,9 @@ class PythonAnalyzer:
         visitor.visit(tree)
 
         scan_root = project_root or os.path.dirname(os.path.abspath(file_path))
-        local_modules = self.get_local_modules(scan_root)
+        local_modules = local_modules_override
+        if local_modules is None:
+            local_modules = self.get_local_modules(scan_root)
         imports = _extract_imports(tree, local_modules)
 
         # Stamp language=python on every node the visitor created so the
