@@ -15,6 +15,7 @@ class GraphExporter:
         output_path: str | None = None,
         dependencies: list[dict] | None = None,
         _profile: dict | None = None,
+        max_nodes: int | None = None,
     ) -> Dict[str, Any]:
         """
         Converts a NetworkX graph to a JSON format suitable for React Flow.
@@ -24,44 +25,67 @@ class GraphExporter:
         dependencies : list[dict], optional
             Output of ``CodeAnalyzer.extract_dependencies`` for one or more
             files.  Each dict must have ``file`` and ``dependencies`` keys.
+        max_nodes : int, optional
+            Upper bound on emitted nodes. When the graph exceeds this budget,
+            nodes are ranked by combined in/out-degree (descending, with node-id
+            tiebreak for determinism) and only the top ``max_nodes`` are kept.
+            Edges with an endpoint in the elided set are dropped. The result
+            includes a ``meta`` block describing what was kept.
         """
+        total_v = graph.number_of_nodes()
+        total_e = graph.number_of_edges()
+
+        if max_nodes is not None and total_v > max_nodes:
+            ranked = sorted(
+                graph.nodes(),
+                key=lambda n: (-(graph.in_degree(n) + graph.out_degree(n)), str(n)),
+            )
+            kept: set | None = set(ranked[:max_nodes])
+            truncated = True
+            # Compute SCCs on the filtered subgraph so cycle flags only reflect
+            # edges that will actually be emitted.
+            scc_graph = graph.subgraph(kept)
+        else:
+            kept = None
+            truncated = False
+            scc_graph = graph
+
         nodes = []
         edges = []
 
         # Convert nodes
+        _t_nodes = time.perf_counter() if _profile is not None else 0.0
         for node_id, data in graph.nodes(data=True):
-            # Extract metadata
+            if kept is not None and node_id not in kept:
+                continue
             node_type = data.get("type", "default")
-
-            # React Flow node structure
             node_dict = {
                 "id": node_id,
-                "type": "default",  # Use 'input', 'output', or custom types if needed
+                "type": "default",
                 "data": {
                     "label": node_id,
-                    "type": node_type,  # Include type in data as requested
-                    **data,  # Include other metadata like lineno, docstring
+                    "type": node_type,
+                    **data,
                 },
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                },  # Default position, frontend handles layout
+                "position": {"x": 0, "y": 0},
             }
             nodes.append(node_dict)
+        if _profile is not None:
+            _profile["nodes_build_ms"] = round(
+                (time.perf_counter() - _t_nodes) * 1000, 2
+            )
 
-        # Detect cycles
-        # Optimization: Use strongly_connected_components O(V+E) instead of simple_cycles O((V+E)C)
-        # An edge is part of a cycle if both endpoints belong to the same SCC of size > 1.
+        # Detect cycles via SCCs on the (possibly filtered) graph.
         cycle_edges = set()
         _t_scc = time.perf_counter() if _profile is not None else 0.0
         try:
             node_to_component = {}
-            for i, component in enumerate(nx.strongly_connected_components(graph)):
+            for i, component in enumerate(nx.strongly_connected_components(scc_graph)):
                 if len(component) > 1:
                     for node in component:
                         node_to_component[node] = i
 
-            for u, v in graph.edges():
+            for u, v in scc_graph.edges():
                 if (
                     u != v
                     and u in node_to_component
@@ -70,27 +94,44 @@ class GraphExporter:
                 ):
                     cycle_edges.add((u, v))
         except nx.NetworkXError:
-            pass  # Graph may not support cycle detection
+            pass
         if _profile is not None:
             _profile["scc_ms"] = round((time.perf_counter() - _t_scc) * 1000, 2)
 
         # Convert edges
-        _t_build = time.perf_counter() if _profile is not None else 0.0
+        _t_edges = time.perf_counter() if _profile is not None else 0.0
         for u, v, data in graph.edges(data=True):
+            if kept is not None and (u not in kept or v not in kept):
+                continue
             edge_dict = {
                 "id": f"e{u}-{v}",
                 "source": u,
                 "target": v,
-                "animated": True,  # Optional visual polish
+                "animated": True,
                 "data": {"is_cycle_edge": (u, v) in cycle_edges},
             }
             edges.append(edge_dict)
 
-        output_data = {"nodes": nodes, "edges": edges}
+        output_data: Dict[str, Any] = {"nodes": nodes, "edges": edges}
+        output_data["meta"] = {
+            "truncated": truncated,
+            "total_nodes": total_v,
+            "total_edges": total_e,
+            "kept_nodes": len(nodes),
+            "kept_edges": len(edges),
+            "budget": max_nodes,
+        }
         if _profile is not None:
-            _profile["export_build_ms"] = round(
-                (time.perf_counter() - _t_build) * 1000, 2
+            _profile["edges_build_ms"] = round(
+                (time.perf_counter() - _t_edges) * 1000, 2
             )
+            _profile["export_build_ms"] = round(
+                _profile.get("nodes_build_ms", 0.0)
+                + _profile.get("edges_build_ms", 0.0),
+                2,
+            )
+            _profile["export_node_count"] = len(nodes)
+            _profile["export_edge_count"] = len(edges)
 
         # ---- file_dependencies (optional) ----
         if dependencies:
@@ -109,7 +150,6 @@ class GraphExporter:
             output_data["file_dependencies"] = file_deps
 
         if output_path:
-            # Ensure directory exists
             import os
 
             output_dir = os.path.dirname(output_path)

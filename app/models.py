@@ -285,9 +285,19 @@ class LearningPathResponse(BaseModel):
     steps: list[LearningStep]
 
 
+class GraphExportMeta(BaseModel):
+    truncated: bool
+    total_nodes: int
+    total_edges: int
+    kept_nodes: int
+    kept_edges: int
+    budget: int | None = None
+
+
 class UploadResponse(BaseModel):
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
+    meta: GraphExportMeta | None = None
     file_dependencies: list[dict[str, Any]] | None = None
     project_context: str | None = None
     warnings: list[str] | None = None

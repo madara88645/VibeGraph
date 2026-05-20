@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 
+# Cap exported graph size to protect JSON payload, Dagre layout, and ReactFlow
+# render cost. Overridable per-deployment for experimentation.
+GRAPH_NODE_BUDGET = int(os.getenv("VIBEGRAPH_GRAPH_NODE_BUDGET", "1500"))
+
 
 def cleanup_tmp_dir(path: str) -> None:
     """Background task to remove temp directory."""
@@ -108,6 +112,9 @@ def upload_project(
     MAX_ZIP_FILES = 10000
 
     try:
+        profile_mode = request.query_params.get("profile") == "1"
+        profile_data: dict | None = {} if profile_mode else None
+        _t_upload = time.perf_counter() if profile_data is not None else 0.0
         total_upload_size = 0
         total_uncompressed_header_size = 0
         total_extracted_size = 0
@@ -205,6 +212,12 @@ def upload_project(
                                 target.write(chunk)
                 os.remove(file_path)
 
+        if profile_data is not None:
+            profile_data["upload_io_ms"] = round(
+                (time.perf_counter() - _t_upload) * 1000, 2
+            )
+
+        _t_contains = time.perf_counter() if profile_data is not None else 0.0
         if not contains_supported_file(tmp_dir):
             raise HTTPException(
                 status_code=400,
@@ -214,9 +227,10 @@ def upload_project(
                     "or TypeScript (.ts/.tsx) files."
                 ),
             )
-
-        profile_mode = request.query_params.get("profile") == "1"
-        profile_data: dict | None = {} if profile_mode else None
+        if profile_data is not None:
+            profile_data["contains_supported_ms"] = round(
+                (time.perf_counter() - _t_contains) * 1000, 2
+            )
         _t0 = time.perf_counter() if profile_data is not None else 0.0
         result = CodeAnalyzer().analyze_file(tmp_dir, _profile=profile_data)
         if profile_data is not None:
@@ -256,7 +270,9 @@ def upload_project(
             )
 
         _t1 = time.perf_counter() if profile_data is not None else 0.0
-        response_data = deps.exporter.export_to_react_flow(graph, _profile=profile_data)
+        response_data = deps.exporter.export_to_react_flow(
+            graph, _profile=profile_data, max_nodes=GRAPH_NODE_BUDGET
+        )
         if profile_data is not None:
             profile_data["export_total_ms"] = round(
                 (time.perf_counter() - _t1) * 1000, 2

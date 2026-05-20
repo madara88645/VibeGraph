@@ -26,14 +26,20 @@ const defaultEdgeOptions = {
   type: 'default',
   style: { strokeWidth: 2, stroke: 'rgba(148, 163, 184, 0.4)' },
 };
-
-
-
-const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, onRequestUpload }) => {
+const GraphViewer = ({
+  nodes,
+  edges,
+  graphMeta,
+  onNodesChange,
+  onEdgesChange,
+  onNodeClick,
+  onRequestUpload,
+}) => {
   const graphRef = useRef(null);
   const showToast = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const hasGraph = nodes.length > 0 || edges.length > 0;
+  const showSummaryWarning = hasGraph && graphMeta?.truncated;
 
   const handleExportPng = async () => {
     setIsExporting(true);
@@ -61,6 +67,11 @@ const GraphViewer = ({ nodes, edges, onNodesChange, onEdgesChange, onNodeClick, 
 
   return (
     <div className="graph-canvas">
+      {showSummaryWarning ? (
+        <div className="graph-summary-banner" role="status" aria-live="polite">
+          Showing {graphMeta.kept_nodes} of {graphMeta.total_nodes} nodes. This is a summary view for a very large graph.
+        </div>
+      ) : null}
       <div ref={graphRef} style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           nodes={nodes}

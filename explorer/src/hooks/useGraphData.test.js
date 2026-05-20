@@ -5,7 +5,7 @@ import { useGraphData } from './useGraphData';
 
 function createCachedGraph() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     source: 'user_upload',
     nodes: [
       {
@@ -21,6 +21,7 @@ function createCachedGraph() {
       },
     ],
     edges: [],
+    graphMeta: null,
   };
 }
 
@@ -141,5 +142,48 @@ describe('useGraphData', () => {
     expect(result.current.fileDependencies).toBeNull();
     expect(setNodes).toHaveBeenCalledWith([]);
     expect(setEdges).toHaveBeenCalledWith([]);
+  });
+
+  it('stores truncation metadata from uploads so the UI can explain summary graphs', async () => {
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+
+    const { result } = renderHook(() => useGraphData(setNodes, setEdges));
+
+    result.current.handleUploadSuccess({
+      nodes: [
+        {
+          id: 'main',
+          type: 'default',
+          data: {
+            label: 'main',
+            type: 'function',
+            file: 'src/main.py',
+            entry_point: true,
+          },
+          position: { x: 0, y: 0 },
+        },
+      ],
+      edges: [],
+      meta: {
+        truncated: true,
+        kept_nodes: 1500,
+        total_nodes: 2143,
+        total_edges: 2601,
+        kept_edges: 1888,
+        budget: 1500,
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.graphMeta).toEqual({
+        truncated: true,
+        kept_nodes: 1500,
+        total_nodes: 2143,
+        total_edges: 2601,
+        kept_edges: 1888,
+        budget: 1500,
+      });
+    });
   });
 });

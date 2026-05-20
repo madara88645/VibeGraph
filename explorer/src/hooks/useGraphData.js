@@ -1,8 +1,24 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getLayoutedElements } from '../utils/layout';
 
-const GRAPH_CACHE_SCHEMA_VERSION = 2;
+const GRAPH_CACHE_SCHEMA_VERSION = 3;
 const GRAPH_CACHE_SOURCE = 'user_upload';
+const PERF_DEBUG = import.meta.env.DEV;
+
+function normalizeGraphMeta(meta) {
+    if (!meta || typeof meta !== 'object') {
+        return null;
+    }
+
+    return {
+        truncated: meta.truncated === true,
+        total_nodes: Number.isFinite(meta.total_nodes) ? meta.total_nodes : 0,
+        total_edges: Number.isFinite(meta.total_edges) ? meta.total_edges : 0,
+        kept_nodes: Number.isFinite(meta.kept_nodes) ? meta.kept_nodes : 0,
+        kept_edges: Number.isFinite(meta.kept_edges) ? meta.kept_edges : 0,
+        budget: Number.isFinite(meta.budget) ? meta.budget : null,
+    };
+}
 
 function getInitialSelectedFile(nodes) {
     const filesSet = new Set();
@@ -29,6 +45,7 @@ function readCachedGraph(cacheKey) {
         edges: [],
         fileDependencies: null,
         selectedFile: null,
+        graphMeta: null,
     };
 
     try {
@@ -37,13 +54,21 @@ function readCachedGraph(cacheKey) {
             return emptyGraph;
         }
 
+        const parseStart = PERF_DEBUG ? performance.now() : 0;
         const {
             schemaVersion,
             source,
             nodes,
             edges,
             fileDependencies,
+            graphMeta,
         } = JSON.parse(cached);
+        if (PERF_DEBUG) {
+            console.debug('[perf] graph cache parse', {
+                parseMs: Number((performance.now() - parseStart).toFixed(2)),
+                bytes: cached.length,
+            });
+        }
 
         if (schemaVersion !== GRAPH_CACHE_SCHEMA_VERSION || source !== GRAPH_CACHE_SOURCE) {
             localStorage.removeItem(cacheKey);
@@ -59,6 +84,7 @@ function readCachedGraph(cacheKey) {
             edges: safeEdges,
             fileDependencies: safeDependencies,
             selectedFile: getInitialSelectedFile(safeNodes),
+            graphMeta: normalizeGraphMeta(graphMeta),
         };
     } catch {
         localStorage.removeItem(cacheKey);
@@ -74,6 +100,7 @@ export function useGraphData(setNodes, setEdges) {
     const [allNodes, setAllNodes] = useState(initialGraph.nodes);
     const [allEdges, setAllEdges] = useState(initialGraph.edges);
     const [fileDependencies, setFileDependencies] = useState(initialGraph.fileDependencies);
+    const [graphMeta, setGraphMeta] = useState(initialGraph.graphMeta);
 
     // O(1) Lookup Map for nodes
     const allNodesMap = useMemo(() => {
@@ -112,12 +139,14 @@ export function useGraphData(setNodes, setEdges) {
         const { nodes: newNodes, edges: newEdges, file_dependencies: newFileDependencies } = result;
         const safeNodes = Array.isArray(newNodes) ? newNodes : [];
         const safeEdges = Array.isArray(newEdges) ? newEdges : [];
+        const safeGraphMeta = normalizeGraphMeta(result.meta);
 
         if (safeNodes.length === 0) {
             setSelectedFile(null);
             setAllNodes([]);
             setAllEdges([]);
             setFileDependencies(null);
+            setGraphMeta(null);
             setNodes([]);
             setEdges([]);
             localStorage.removeItem(cacheKey);
@@ -152,18 +181,25 @@ export function useGraphData(setNodes, setEdges) {
         setAllNodes(customNodes);
         setAllEdges(safeEdges);
         setFileDependencies(Array.isArray(newFileDependencies) ? newFileDependencies : null);
+        setGraphMeta(safeGraphMeta);
 
         try {
-            localStorage.setItem(
-                cacheKey,
-                JSON.stringify({
-                    schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
-                    source: GRAPH_CACHE_SOURCE,
-                    nodes: customNodes,
-                    edges: safeEdges,
-                    fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
-                })
-            );
+            const stringifyStart = PERF_DEBUG ? performance.now() : 0;
+            const payload = JSON.stringify({
+                schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
+                source: GRAPH_CACHE_SOURCE,
+                nodes: customNodes,
+                edges: safeEdges,
+                fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
+                graphMeta: safeGraphMeta,
+            });
+            localStorage.setItem(cacheKey, payload);
+            if (PERF_DEBUG) {
+                console.debug('[perf] graph cache stringify', {
+                    stringifyMs: Number((performance.now() - stringifyStart).toFixed(2)),
+                    bytes: payload.length,
+                });
+            }
         } catch { /* ignore */ }
 
         // Provide a callback to reset external state (like ghost runner, selections)
@@ -182,10 +218,18 @@ export function useGraphData(setNodes, setEdges) {
 
         // Show all nodes when no file is selected
         if (!selectedFile) {
+            const layoutStart = PERF_DEBUG ? performance.now() : 0;
             const layouted = getLayoutedElements(
                 allNodes.map(n => ({ ...n })),
                 allEdges
             );
+            if (PERF_DEBUG) {
+                console.debug('[perf] graph layout all-files', {
+                    layoutMs: Number((performance.now() - layoutStart).toFixed(2)),
+                    nodeCount: allNodes.length,
+                    edgeCount: allEdges.length,
+                });
+            }
             setNodes(layouted.nodes);
             setEdges(layouted.edges);
             return;
@@ -277,10 +321,19 @@ export function useGraphData(setNodes, setEdges) {
 
         const combinedNodes = [...fileNodes, ...externalNodes];
 
+        const layoutStart = PERF_DEBUG ? performance.now() : 0;
         const layouted = getLayoutedElements(
             combinedNodes.map(n => ({ ...n })),
             styledEdges
         );
+        if (PERF_DEBUG) {
+            console.debug('[perf] graph layout filtered-file', {
+                layoutMs: Number((performance.now() - layoutStart).toFixed(2)),
+                selectedFile,
+                nodeCount: combinedNodes.length,
+                edgeCount: styledEdges.length,
+            });
+        }
 
         setNodes(layouted.nodes);
         setEdges(layouted.edges);
@@ -327,6 +380,7 @@ export function useGraphData(setNodes, setEdges) {
         files,
         nodeStats,
         fileDependencies,
+        graphMeta,
         handleUploadSuccess,
         currentDegreeMap
     };

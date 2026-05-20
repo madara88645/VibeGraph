@@ -79,10 +79,19 @@ class LanguageAnalyzer(Protocol):
     stdlib_modules: frozenset[str]
 
     def analyze_file(
-        self, file_path: str, project_root: str | None
+        self,
+        file_path: str,
+        project_root: str | None,
+        local_modules_override: frozenset[str] | None = None,
+        profile_bucket: dict[str, Any] | None = None,
     ) -> FileAnalysis | None:
         """Parse one file. Return ``None`` (and let the orchestrator log) on
         unrecoverable errors (syntax, decode, OS).
+
+        ``local_modules_override`` lets the orchestrator provide a precomputed
+        module set for this run to avoid rescanning the same directory per
+        source file. ``profile_bucket`` is an optional mutable dict where
+        plugin-specific timing/counter values can be accumulated.
         """
         ...
 
