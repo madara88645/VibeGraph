@@ -1,5 +1,4 @@
-🚨 Severity: HIGH
-💡 Vulnerability: Information Disclosure (Arbitrary File Read) via `cwd` fallback in `is_safe_path`. Attackers could exploit code analysis endpoints (`/api/snippet`, `/api/explain`, `/api/learning-path`) to read the server's own internal source code, dependencies, and configuration files.
-🎯 Impact: Attackers could gain deep insight into the server's environment and application logic, potentially uncovering secondary vulnerabilities or sensitive infrastructure details.
-🔧 Fix: Removed the `cwd` allowance from `is_safe_path` in `app/utils/security.py`, strictly limiting read access to the designated temporary upload boundaries (`UPLOAD_PREFIX` and `vibegraph_test_`). Updated test payloads to dynamically mock files within these boundaries.
-✅ Verification: Ran the full backend test suite (`pytest tests/`) to ensure no regressions. Tests asserting the block of `serve.py` confirm the vulnerability is mitigated.
+💡 What: Added `aria-label` attributes to the "Explanation modes" tab buttons and the "Difficulty level" buttons in the Explanation Panel.
+🎯 Why: These buttons previously relied solely on visual cues (text and active class state) to convey their purpose. Screen readers would only announce the raw text (e.g., "beginner"), leaving users without context on what the button controlled.
+📸 Before/After: N/A (Visual UI is identical, changes are purely structural attributes).
+♿ Accessibility: Dramatically improves screen reader navigation by providing explicit context for state toggle controls (e.g., "Set difficulty level to beginner" and "Switch to Analogy tab").
