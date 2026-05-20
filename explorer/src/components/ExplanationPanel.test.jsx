@@ -79,7 +79,7 @@ describe('ExplanationPanel', () => {
     const fetchExplanation = vi.fn();
     renderPanel({ fetchExplanation });
 
-    await user.click(screen.getByRole('button', { name: 'beginner' }));
+    await user.click(screen.getByRole('button', { name: 'Set difficulty level to beginner' }));
 
     expect(fetchExplanation).toHaveBeenCalledTimes(2);
     expect(fetchExplanation).toHaveBeenLastCalledWith(
