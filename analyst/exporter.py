@@ -54,6 +54,7 @@ class GraphExporter:
         edges = []
 
         # Convert nodes
+        _t_nodes = time.perf_counter() if _profile is not None else 0.0
         for node_id, data in graph.nodes(data=True):
             if kept is not None and node_id not in kept:
                 continue
@@ -69,6 +70,10 @@ class GraphExporter:
                 "position": {"x": 0, "y": 0},
             }
             nodes.append(node_dict)
+        if _profile is not None:
+            _profile["nodes_build_ms"] = round(
+                (time.perf_counter() - _t_nodes) * 1000, 2
+            )
 
         # Detect cycles via SCCs on the (possibly filtered) graph.
         cycle_edges = set()
@@ -94,7 +99,7 @@ class GraphExporter:
             _profile["scc_ms"] = round((time.perf_counter() - _t_scc) * 1000, 2)
 
         # Convert edges
-        _t_build = time.perf_counter() if _profile is not None else 0.0
+        _t_edges = time.perf_counter() if _profile is not None else 0.0
         for u, v, data in graph.edges(data=True):
             if kept is not None and (u not in kept or v not in kept):
                 continue
@@ -117,9 +122,16 @@ class GraphExporter:
             "budget": max_nodes,
         }
         if _profile is not None:
-            _profile["export_build_ms"] = round(
-                (time.perf_counter() - _t_build) * 1000, 2
+            _profile["edges_build_ms"] = round(
+                (time.perf_counter() - _t_edges) * 1000, 2
             )
+            _profile["export_build_ms"] = round(
+                _profile.get("nodes_build_ms", 0.0)
+                + _profile.get("edges_build_ms", 0.0),
+                2,
+            )
+            _profile["export_node_count"] = len(nodes)
+            _profile["export_edge_count"] = len(edges)
 
         # ---- file_dependencies (optional) ----
         if dependencies:

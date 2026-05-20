@@ -1,5 +1,7 @@
-🚨 Severity: HIGH
-💡 Vulnerability: Information Disclosure (Arbitrary File Read) via `cwd` fallback in `is_safe_path`. Attackers could exploit code analysis endpoints (`/api/snippet`, `/api/explain`, `/api/learning-path`) to read the server's own internal source code, dependencies, and configuration files.
-🎯 Impact: Attackers could gain deep insight into the server's environment and application logic, potentially uncovering secondary vulnerabilities or sensitive infrastructure details.
-🔧 Fix: Removed the `cwd` allowance from `is_safe_path` in `app/utils/security.py`, strictly limiting read access to the designated temporary upload boundaries (`UPLOAD_PREFIX` and `vibegraph_test_`). Updated test payloads to dynamically mock files within these boundaries.
-✅ Verification: Ran the full backend test suite (`pytest tests/`) to ensure no regressions. Tests asserting the block of `serve.py` confirm the vulnerability is mitigated.
+💡 What: Added visual loading spinner to the chat drawer's Send button and wrapped the disabled button in a `span` with an inline-flex display. Updated tests to use `getByRole('button', ...)` for proper targeting.
+
+🎯 Why: To improve visual feedback and accessibility. Mouse users hovering over the disabled Send button will now see the informative tooltip explaining why it's disabled. The loading spinner provides immediate feedback that the chat input is processing.
+
+📸 Before/After: Before, hovering the disabled send button showed no tooltip, and clicking send showed no explicit visual loading indicator on the button. After, the button correctly displays its tooltip context when disabled, and shows a clean spinner while awaiting the AI response.
+
+♿ Accessibility: The wrapper ensures the tooltip functions for mouse users on a disabled button while preserving the explicit `aria-label` for screen reader users via the original button structure.

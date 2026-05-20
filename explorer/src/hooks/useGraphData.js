@@ -3,6 +3,7 @@ import { getLayoutedElements } from '../utils/layout';
 
 const GRAPH_CACHE_SCHEMA_VERSION = 3;
 const GRAPH_CACHE_SOURCE = 'user_upload';
+const PERF_DEBUG = import.meta.env.DEV;
 
 function normalizeGraphMeta(meta) {
     if (!meta || typeof meta !== 'object') {
@@ -53,6 +54,7 @@ function readCachedGraph(cacheKey) {
             return emptyGraph;
         }
 
+        const parseStart = PERF_DEBUG ? performance.now() : 0;
         const {
             schemaVersion,
             source,
@@ -61,6 +63,12 @@ function readCachedGraph(cacheKey) {
             fileDependencies,
             graphMeta,
         } = JSON.parse(cached);
+        if (PERF_DEBUG) {
+            console.debug('[perf] graph cache parse', {
+                parseMs: Number((performance.now() - parseStart).toFixed(2)),
+                bytes: cached.length,
+            });
+        }
 
         if (schemaVersion !== GRAPH_CACHE_SCHEMA_VERSION || source !== GRAPH_CACHE_SOURCE) {
             localStorage.removeItem(cacheKey);
@@ -176,17 +184,22 @@ export function useGraphData(setNodes, setEdges) {
         setGraphMeta(safeGraphMeta);
 
         try {
-            localStorage.setItem(
-                cacheKey,
-                JSON.stringify({
-                    schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
-                    source: GRAPH_CACHE_SOURCE,
-                    nodes: customNodes,
-                    edges: safeEdges,
-                    fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
-                    graphMeta: safeGraphMeta,
-                })
-            );
+            const stringifyStart = PERF_DEBUG ? performance.now() : 0;
+            const payload = JSON.stringify({
+                schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
+                source: GRAPH_CACHE_SOURCE,
+                nodes: customNodes,
+                edges: safeEdges,
+                fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
+                graphMeta: safeGraphMeta,
+            });
+            localStorage.setItem(cacheKey, payload);
+            if (PERF_DEBUG) {
+                console.debug('[perf] graph cache stringify', {
+                    stringifyMs: Number((performance.now() - stringifyStart).toFixed(2)),
+                    bytes: payload.length,
+                });
+            }
         } catch { /* ignore */ }
 
         // Provide a callback to reset external state (like ghost runner, selections)
@@ -205,10 +218,18 @@ export function useGraphData(setNodes, setEdges) {
 
         // Show all nodes when no file is selected
         if (!selectedFile) {
+            const layoutStart = PERF_DEBUG ? performance.now() : 0;
             const layouted = getLayoutedElements(
                 allNodes.map(n => ({ ...n })),
                 allEdges
             );
+            if (PERF_DEBUG) {
+                console.debug('[perf] graph layout all-files', {
+                    layoutMs: Number((performance.now() - layoutStart).toFixed(2)),
+                    nodeCount: allNodes.length,
+                    edgeCount: allEdges.length,
+                });
+            }
             setNodes(layouted.nodes);
             setEdges(layouted.edges);
             return;
@@ -300,10 +321,19 @@ export function useGraphData(setNodes, setEdges) {
 
         const combinedNodes = [...fileNodes, ...externalNodes];
 
+        const layoutStart = PERF_DEBUG ? performance.now() : 0;
         const layouted = getLayoutedElements(
             combinedNodes.map(n => ({ ...n })),
             styledEdges
         );
+        if (PERF_DEBUG) {
+            console.debug('[perf] graph layout filtered-file', {
+                layoutMs: Number((performance.now() - layoutStart).toFixed(2)),
+                selectedFile,
+                nodeCount: combinedNodes.length,
+                edgeCount: styledEdges.length,
+            });
+        }
 
         setNodes(layouted.nodes);
         setEdges(layouted.edges);

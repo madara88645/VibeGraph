@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Jules (Google Labs)
+
+Before autonomous tasks, read [.jules/instructions.md](.jules/instructions.md). Files in `.jules/` named `bolt`, `palette`, and `sentinel` are learning journals only—not a refactor backlog.
+
 ## Cursor Cloud specific instructions
 
 ### Overview
