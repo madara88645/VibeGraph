@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
 
+# Cap exported graph size to protect JSON payload, Dagre layout, and ReactFlow
+# render cost. Overridable per-deployment for experimentation.
+GRAPH_NODE_BUDGET = int(os.getenv("VIBEGRAPH_GRAPH_NODE_BUDGET", "1500"))
+
 
 def cleanup_tmp_dir(path: str) -> None:
     """Background task to remove temp directory."""
@@ -266,7 +270,9 @@ def upload_project(
             )
 
         _t1 = time.perf_counter() if profile_data is not None else 0.0
-        response_data = deps.exporter.export_to_react_flow(graph, _profile=profile_data)
+        response_data = deps.exporter.export_to_react_flow(
+            graph, _profile=profile_data, max_nodes=GRAPH_NODE_BUDGET
+        )
         if profile_data is not None:
             profile_data["export_total_ms"] = round(
                 (time.perf_counter() - _t1) * 1000, 2
