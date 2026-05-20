@@ -53,3 +53,7 @@
 ## 2026-05-18 - Chat Drawer Send Button Missing Visual Disabled Feedback
 **Learning:** The chat drawer "send" button lacked clear disabled feedback and lacked visual appeal when loading. Adding a loading spinner (`vibe-spinner`) and standardizing the send icon improves visual feedback. Wrapping a disabled button with a `span` containing `style={{ display: 'inline-flex' }}` ensures the tooltip functions for mouse users, and testing these requires using `getByRole` rather than `getByLabelText` to avoid conflict with the wrapper title.
 **Action:** When creating async buttons like a chat send, add explicit visual loading feedback (like a spinner). Ensure tests use `getByRole('button', ...)` for proper semantic targeting and avoiding wrapper title collisions.
+
+## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
+**Learning:** Buttons that act as state toggles (like tab selectors or difficulty level choices) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "beginner"), leaving users without context about what the button controls.
+**Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set difficulty level to beginner"`) to ensure screen reader users receive the same contextual understanding as sighted users.

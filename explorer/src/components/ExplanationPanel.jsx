@@ -151,6 +151,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             aria-controls={`panel-${t.key}`}
                             onClick={() => setTab(t.key)}
                             className={`ep-tab ${tab === t.key ? 'active' : ''}`}
+                            aria-label={`Switch to ${t.label} tab`}
                         >
                             <span aria-hidden="true">{t.icon}</span> {t.label}
                         </button>
@@ -165,6 +166,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             onClick={() => setLevel(lvl)}
                             aria-pressed={level === lvl}
                             className={`ep-level ${level === lvl ? 'active' : ''}`}
+                            aria-label={`Set difficulty level to ${lvl}`}
                             style={level === lvl ? { borderColor: `${typeConfig.accent}44`, background: `${typeConfig.accent}12`, color: typeConfig.accent } : undefined}
                         >
                             {lvl}
