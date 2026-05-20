@@ -79,6 +79,7 @@ def suggest_learning_path(request: Request, path_request: LearningPathRequest):
         nodes_summary=nodes_summary,
         edges_summary=edges_summary,
         file_path=path_request.file_path,
+        allowed_node_ids=[str(nid) for nid in graph.nodes()],
     )
 
     return {"file_path": path_request.file_path, "steps": steps}

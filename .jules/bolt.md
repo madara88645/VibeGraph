@@ -1,3 +1,5 @@
+> **Read first:** [instructions.md](./instructions.md). Past learnings only — do not apply repo-wide without a task-specific reason.
+
 ## 2024-05-24 - React Flow Unnecessary Re-renders
 **Learning:** In React Flow, state arrays like `nodes` and `edges` trigger O(N) full re-renders on every tick during rapid animations (like Ghost Runner) if object references change, even when visual properties haven't.     
 **Action:** When mapping over `nodes` or `edges` state to update classes/styles, preserve the exact object references for items whose properties haven't changed.
@@ -53,7 +55,7 @@
 ## 2024-05-18 - Optimize array searches by extracting fallback subsets
 **Learning:** When optimizing sequential fallback searches over large arrays in high-frequency React hooks (e.g., searching for a specific node and falling back to another in `useGhostRunner.js`), consolidate multiple `O(N)` `.find()` calls into a single `O(N)` `for` loop, or cache subsets to avoid iterating the whole array.
 **Action:** Created `entryPointsRef` populated on mount/node-change to reduce a large O(N) array scan for `entry_point` nodes down to scanning a pre-filtered list, achieving ~500x speedup in the worst case.
-## 2025-02-21 - Zero-allocation primitives for useMemo
+## $(date +%Y-%m-%d) - Zero-allocation primitives for useMemo
 **Learning:** In high-frequency React hooks (e.g., simulation ticks), creating complex string-based keys (like `array.map().join()`) or using `.split().filter()` to derive primitive counts for memoization is a severe anti-pattern that creates massive garbage collection pressure.
 **Action:** Compute these primitive values directly using a fast, zero-allocation imperative `for` loop inside the `useMemo` block. Because `useMemo` returns a primitive, downstream components still correctly bail out of renders if the value doesn't change, while eliminating the allocation overhead entirely.
 
@@ -96,6 +98,3 @@
 ## 2024-05-18 - Optimize array searches with O(1) Lookup Maps
 **Learning:** Replacing an `Array.prototype.find()` with an imperative `for` loop is an ineffective micro-optimization when the underlying issue is executing an `O(N)` search repeatedly. While a `for` loop removes callback overhead, it does not solve the time complexity bottleneck and actively harms code readability.
 **Action:** When a React component frequently searches a large array by ID, pre-compute an `O(1)` Map at the data source level (e.g., inside a custom hook using `useMemo`) and pass it down as a prop. This provides a genuine performance improvement without sacrificing readability.
-## 2025-02-21 - Optimize Priority Queue and Remove O(N^2) Lookup
-**Learning:** Checking list membership in comprehensions creates O(N^2) bottlenecks on large datasets, and priority queues with static priorities can bloat without an enqueued set.
-**Action:** Replace O(N^2) list checks with single-pass partition loops, use an enqueued set to prevent redundant heap pushes, and alias `heapq.heappush`/`heapq.heappop` to local variables.

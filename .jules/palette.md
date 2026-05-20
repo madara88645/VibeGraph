@@ -1,3 +1,5 @@
+> **Read first:** [instructions.md](./instructions.md). Past learnings only — do not apply repo-wide without a task-specific reason.
+
 ## 2024-05-15 - ARIA Labels on Icon Buttons
 **Learning:** Decorative text elements inside buttons (like `{'<>'}` or `📁`) can confuse screen readers if an `aria-label` is added to the parent button but the child element is not hidden.
 **Action:** Always add `aria-hidden="true"` to decorative symbols or emojis when wrapping them in a button that receives a descriptive `aria-label`.
@@ -49,3 +51,14 @@
 
 **Learning:** When attaching a global keyboard shortcut event listener (e.g., `window.addEventListener('keydown', ...)`) in React components to improve interaction speed, explicitly ignore interactions where modifier keys are active (`e.ctrlKey || e.metaKey || e.altKey`) and where the active element is an input or textarea (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`) to prevent interfering with default browser behaviors and text entry.
 **Action:** Always wrap `keydown` event listener logic in React components with a guard clause that checks the `e` object for modifiers and the `document.activeElement.tagName` to prevent unintended UI triggering.
+
+## 2026-05-15 - Add Loading State and Disable Feedback to GraphViewer Export Buttons
+**Learning:** Exporting a large react flow graph to PNG/SVG with html-to-image can be a slow, async operation. If async buttons lack a loading state (isExporting) and are not disabled during the operation, users lack visual feedback and might trigger multiple concurrent expensive operations. When adding title to a disabled button, wrapping the button in a <span style={{ display: 'inline-flex' }}> allows the title tooltip to show properly on disabled elements.
+**Action:** Always add loading spinners (.vibe-spinner), a disabled state, and matching aria-labels to async action buttons. Update corresponding UI test queries to use getByRole('button') instead of getByTitle() since the title resides on the wrapper span.
+## 2026-05-18 - Chat Drawer Send Button Missing Visual Disabled Feedback
+**Learning:** The chat drawer "send" button lacked clear disabled feedback and lacked visual appeal when loading. Adding a loading spinner (`vibe-spinner`) and standardizing the send icon improves visual feedback. Wrapping a disabled button with a `span` containing `style={{ display: 'inline-flex' }}` ensures the tooltip functions for mouse users, and testing these requires using `getByRole` rather than `getByLabelText` to avoid conflict with the wrapper title.
+**Action:** When creating async buttons like a chat send, add explicit visual loading feedback (like a spinner). Ensure tests use `getByRole('button', ...)` for proper semantic targeting and avoiding wrapper title collisions.
+
+## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
+**Learning:** Buttons that act as state toggles (like tab selectors or difficulty level choices) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "beginner"), leaving users without context about what the button controls.
+**Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set difficulty level to beginner"`) to ensure screen reader users receive the same contextual understanding as sighted users.

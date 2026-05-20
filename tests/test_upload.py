@@ -26,6 +26,7 @@ def test_case_a_single_file():
     )
     data = response.json()
     assert "nodes" in data
+    assert data["meta"]["truncated"] is False
 
 
 def test_case_b_multi_file():

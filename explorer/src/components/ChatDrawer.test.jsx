@@ -28,6 +28,7 @@ function renderDrawer(props = {}) {
   const defaults = {
     selectedNode: null,
     allNodes: [],
+    allEdges: [],
     isOpen: true,
     onToggle: vi.fn(),
     apiKey: 'test-key',
@@ -112,7 +113,7 @@ describe('ChatDrawer', () => {
 
   it('send button is disabled when input is empty', () => {
     renderDrawer();
-    expect(screen.getByLabelText('Type a message to send')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Type a message to send' })).toBeDisabled();
   });
 
   it('send button is enabled when input has text', async () => {
@@ -120,7 +121,7 @@ describe('ChatDrawer', () => {
     renderDrawer();
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
-    expect(screen.getByLabelText('Send message')).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
   });
 
   it('prompts for AI settings when key is missing', async () => {
@@ -137,7 +138,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(onOpenAiSettings).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -158,15 +159,32 @@ describe('ChatDrawer', () => {
     });
     globalThis.fetch.mockResolvedValue({ ok: true, body: stream });
 
-    renderDrawer({ selectedNode: MOCK_NODE });
+    renderDrawer({
+      selectedNode: MOCK_NODE,
+      allNodes: [
+        MOCK_NODE,
+        { id: 'caller_fn', data: { type: 'function', file: 'app.py' } },
+        { id: 'callee_fn', data: { type: 'function', file: 'app.py' } },
+      ],
+      allEdges: [
+        { source: 'caller_fn', target: 'main' },
+        { source: 'main', target: 'callee_fn' },
+      ],
+    });
 
     await user.type(
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(screen.getByText('What is main?')).toBeInTheDocument();
+    const [, options] = globalThis.fetch.mock.calls[0];
+    expect(JSON.parse(options.body)).toMatchObject({
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
+    });
   });
 
   it('falls back to /api/chat when streaming fails', async () => {
@@ -184,7 +202,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'test question'
     );
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText('Fallback answer')).toBeInTheDocument();
@@ -198,7 +216,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'test');
-    await user.click(screen.getByLabelText('Send message'));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument();

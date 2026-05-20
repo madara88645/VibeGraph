@@ -13,6 +13,11 @@ describe('useNodeInteraction - explanation cache', () => {
     id: 'test_func',
     data: { file: 'test.py', label: 'test_func' },
   };
+  const graphNodes = [mockNode, { id: 'caller_fn', data: {} }, { id: 'callee_fn', data: {} }];
+  const graphEdges = [
+    { source: 'caller_fn', target: 'test_func' },
+    { source: 'test_func', target: 'callee_fn' },
+  ];
 
   it('caches explanation and skips fetch on second call with same params', async () => {
     const mockResponse = { explanation: { technical: 'cached result' } };
@@ -27,6 +32,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -35,6 +42,11 @@ describe('useNodeInteraction - explanation cache', () => {
     });
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result.current.explanation).toEqual(mockResponse);
+    expect(JSON.parse(fetchSpy.mock.calls[0][1].body)).toMatchObject({
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
+    });
 
     await act(async () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
@@ -62,6 +74,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -86,6 +100,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: false,
         onRequireAiKey,
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -111,6 +127,8 @@ describe('useNodeInteraction - explanation cache', () => {
         selectedModel: 'anthropic/claude-haiku-4.5',
         aiReady: true,
         onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
       })
     );
 
@@ -127,5 +145,81 @@ describe('useNodeInteraction - explanation cache', () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
     });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('useNodeInteraction - onNodeClick', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const mockNode = {
+    id: 'test_func',
+    data: { file: 'test.py', label: 'test_func' },
+  };
+  const graphNodes = [mockNode, { id: 'caller_fn', data: {} }, { id: 'callee_fn', data: {} }];
+  const graphEdges = [
+    { source: 'caller_fn', target: 'test_func' },
+    { source: 'test_func', target: 'callee_fn' },
+  ];
+
+  it('selects the node, clears explanation, and fetches technical intermediate', async () => {
+    const mockResponse = {
+      explanation: {
+        technical: 'Explains the test function.',
+        key_takeaway: 'Entry point for tests.',
+      },
+    };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    });
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    act(() => {
+      result.current.setExplanation({ explanation: { technical: 'stale' } });
+    });
+    expect(result.current.explanation).not.toBeNull();
+
+    let clickPromise;
+    act(() => {
+      clickPromise = result.current.onNodeClick({}, mockNode);
+    });
+
+    expect(result.current.selectedNode).toEqual(mockNode);
+    expect(result.current.explanation).toBeNull();
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      await clickPromise;
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.explanation).toEqual(mockResponse);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    const [url, options] = fetchSpy.mock.calls[0];
+    expect(url).toBe('/api/explain');
+    const body = JSON.parse(options.body);
+    expect(body).toMatchObject({
+      file_path: 'test.py',
+      node_id: 'test_func',
+      type: 'technical',
+      level: 'intermediate',
+      callers: ['caller_fn'],
+      callees: ['callee_fn'],
+      neighbors: ['caller_fn', 'callee_fn'],
+    });
   });
 });

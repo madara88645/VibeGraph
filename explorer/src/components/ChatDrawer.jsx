@@ -7,6 +7,7 @@ import {
   fetchAiJson,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
+import { buildNodeGroundingContext } from '../utils/graphContext';
 import { consumeSseChunk } from '../utils/sse';
 
 const MISSING_KEY_MESSAGE =
@@ -15,6 +16,7 @@ const MISSING_KEY_MESSAGE =
 const ChatDrawer = ({
   selectedNode,
   allNodes,
+  allEdges,
   isOpen,
   onToggle,
   apiKey,
@@ -140,6 +142,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       question: text,
       history: nextMessages.slice(-10),
       model: selectedModel || null,
+      ...buildNodeGroundingContext({
+        nodeId: selectedNode?.id || null,
+        allNodes,
+        allEdges,
+      }),
     };
 
     try {
@@ -230,6 +237,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
   }, [
     aiReady,
     allNodes,
+    allEdges,
     apiKey,
     inputText,
     loading,
@@ -401,7 +409,15 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                   : 'Send message'
             }
           >
-            <span aria-hidden="true">{'^'}</span>
+            <span aria-hidden="true">
+              {loading ? (
+                <span className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--bg-panel)' }} />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              )}
+            </span>
           </button>
         </span>
       </div>

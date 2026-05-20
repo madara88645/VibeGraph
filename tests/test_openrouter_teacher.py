@@ -118,16 +118,29 @@ class TestWithMockedClient:
         response_json = json.dumps(
             {
                 "analogy": "Like a recipe",
-                "technical": "Defines a function",
                 "key_takeaway": "Functions encapsulate logic",
+                "sections": {
+                    "What it is": "Defines a function",
+                    "Inputs/Outputs": "No input and no output",
+                    "Side effects": "No side effects",
+                    "Why this node exists": "Serves as simple behavior",
+                    "Common bugs": "None here",
+                    "References": "Selected node: foo",
+                    "Unknowns": "Unknown (not in provided code context).",
+                },
+                "unknowns": ["Unknown (not in provided code context)."],
             }
         )
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
-        result = self.teacher.explain_code("def foo(): pass")
+        result = self.teacher.explain_code(
+            "def foo(): pass", node_id="foo", file_path="demo.py"
+        )
         assert result["analogy"] == "Like a recipe"
-        assert result["technical"] == "Defines a function"
+        assert "### What it is" in result["technical"]
+        assert "### References" in result["technical"]
+        assert "Selected node: foo" in result["technical"]
         assert result["key_takeaway"] == "Functions encapsulate logic"
 
     def test_explain_code_caches_results(self):
@@ -170,6 +183,21 @@ class TestWithMockedClient:
         assert result["relationship"] == "calls"
         assert result["importance"] == "high"
 
+    def test_narrate_step_repairs_invalid_importance(self):
+        response_json = json.dumps(
+            {
+                "narration": "This function initializes the app",
+                "relationship": "calls helper",
+                "importance": "critical",
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+        ctx = NarrateStepContext(code_snippet="def init(): pass", node_id="init")
+        result = self.teacher.narrate_step(ctx)
+        assert result["importance"] == "medium"
+
     def test_refine_learning_path_prompt_constrains_allowed_nodes(self):
         response_json = json.dumps(
             {
@@ -194,7 +222,7 @@ class TestWithMockedClient:
         assert [step["node_id"] for step in result] == ["helper", "main"]
         kwargs = self.mock_client.chat.completions.create.call_args.kwargs
         prompt = kwargs["messages"][1]["content"]
-        assert "You may not add, rename, or remove node_ids" in prompt
+        assert "Do not add/remove node_ids" in prompt
         assert "allowed_node_ids" in prompt
         assert "main" in prompt
         assert "helper" in prompt
@@ -244,3 +272,60 @@ class TestWithMockedClient:
         )
 
         assert result == []
+
+    def test_chat_normalizes_sections_and_unknowns(self):
+        response_json = json.dumps(
+            {
+                "sections": {
+                    "What it is": "This node validates payloads.",
+                    "Inputs/Outputs": "Input request -> validated object",
+                    "Side effects": "No external side effects",
+                    "Why this node exists": "Central validation logic",
+                    "Common bugs": "Missing required keys",
+                    "References": "Selected node: validate_request",
+                    "Unknowns": "",
+                },
+                "unknowns": [],
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+        answer = self.teacher.chat(
+            code_snippet="def validate_request(req): return req",
+            question="what does this do?",
+            node_id="validate_request",
+            file_path="api.py",
+        )
+        expected_order = [
+            "### What it is",
+            "### Inputs/Outputs",
+            "### Side effects",
+            "### Why this node exists",
+            "### Common bugs",
+            "### References",
+            "### Unknowns",
+        ]
+        positions = [answer.index(section) for section in expected_order]
+        assert positions == sorted(positions)
+        assert "Selected node: validate_request" in answer
+
+    def test_suggest_learning_path_filters_unknown_node_ids(self):
+        response_json = json.dumps(
+            {
+                "steps": [
+                    {"step": 1, "node_id": "fake", "reason": "invented"},
+                    {"step": 2, "node_id": "main", "reason": "entry point"},
+                ]
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+        result = self.teacher.suggest_learning_path(
+            nodes_summary="main (function), helper (function)",
+            edges_summary="main → helper",
+            file_path="sample.py",
+            allowed_node_ids=["main", "helper"],
+        )
+        assert [step["node_id"] for step in result] == ["main"]

@@ -5,6 +5,7 @@ import {
   fetchAiJson,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
+import { buildNodeGroundingContext } from '../utils/graphContext';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key to unlock explanations.';
@@ -14,6 +15,8 @@ export function useNodeInteraction({
   selectedModel = '',
   aiReady = true,
   onRequireAiKey,
+  allNodes = [],
+  allEdges = [],
 } = {}) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [explanation, setExplanation] = useState(null);
@@ -52,12 +55,20 @@ export function useNodeInteraction({
       setLoading(true);
       try {
         const filePath = node.data.file || node.data.original_data?.file;
+        const { callers, callees, neighbors } = buildNodeGroundingContext({
+          nodeId: node.id,
+          allNodes,
+          allEdges,
+        });
         const payload = {
           file_path: filePath || null,
           node_id: node.id,
           type,
           level,
           model: selectedModel || null,
+          callers,
+          callees,
+          neighbors,
         };
 
         const data = await fetchAiJson('/api/explain', {
@@ -88,7 +99,7 @@ export function useNodeInteraction({
         setLoading(false);
       }
     },
-    [aiApiKey, aiReady, onRequireAiKey, selectedModel]
+    [aiApiKey, aiReady, allEdges, allNodes, onRequireAiKey, selectedModel]
   );
 
   const handleSelectNode = useCallback((node) => {

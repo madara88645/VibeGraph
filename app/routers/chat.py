@@ -36,6 +36,11 @@ def chat_with_node(request: Request, chat_request: ChatRequest):
         project_context=chat_request.project_context or "",
         question=chat_request.question,
         history=history_dicts,
+        node_id=chat_request.node_id or "",
+        file_path=chat_request.file_path,
+        callers=chat_request.callers,
+        callees=chat_request.callees,
+        neighbors=chat_request.neighbors,
     )
 
     return {"answer": answer, "node_id": chat_request.node_id}
@@ -60,6 +65,11 @@ def chat_stream(request: Request, chat_request: ChatRequest):
             project_context=chat_request.project_context or "",
             question=chat_request.question,
             history=history_dicts,
+            node_id=chat_request.node_id or "",
+            file_path=chat_request.file_path,
+            callers=chat_request.callers,
+            callees=chat_request.callees,
+            neighbors=chat_request.neighbors,
         ):
             yield format_sse_event(token)
         yield format_sse_event("[DONE]")

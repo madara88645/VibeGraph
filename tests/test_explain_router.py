@@ -61,21 +61,35 @@ class TestExplainEndpoint:
 
         resp = client.post(
             "/api/explain",
-            json={"file_path": "sample.py", "node_id": "hello", "level": "beginner"},
+            json={
+                "file_path": "sample.py",
+                "node_id": "hello",
+                "level": "beginner",
+                "callers": ["entry.main"],
+                "callees": ["helper.clean"],
+                "neighbors": ["entry.main", "helper.clean"],
+            },
         )
         assert resp.status_code == 200
         data = resp.json()
         assert data["explanation"]["analogy"] == "A greeting card"
         assert data["explanation"]["technical"] == "Defines a no-op function"
         assert data["explanation"]["key_takeaway"] == "Simple function definition"
+        _, kwargs = mock_teacher.explain_code.call_args
+        assert kwargs["node_id"] == "hello"
+        assert kwargs["file_path"] == "sample.py"
+        assert kwargs["callers"] == ["entry.main"]
+        assert kwargs["callees"] == ["helper.clean"]
+        assert kwargs["neighbors"] == ["entry.main", "helper.clean"]
 
     @patch("app.routers.explain.deps.get_teacher_for_request")
     def test_explain_without_api_key_returns_401(self, mock_get_teacher):
         mock_get_teacher.side_effect = HTTPException(
             status_code=401, detail="API key required"
         )
+        test_file_path = _make_temp_py()
         resp = client.post(
             "/api/explain",
-            json={"file_path": "sample.py", "node_id": "hello"},
+            json={"file_path": test_file_path, "node_id": "hello"},
         )
         assert resp.status_code == 401

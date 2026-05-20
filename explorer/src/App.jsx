@@ -11,6 +11,7 @@ import FileSidebar from './components/FileSidebar';
 import GhostChoices from './components/GhostChoices';
 import GhostNarration from './components/GhostNarration';
 import GhostRunSummary from './components/GhostRunSummary';
+import GhostTutorialPanel from './components/GhostTutorialPanel';
 import GraphViewer from './components/GraphViewer';
 import LearningPath from './components/LearningPath';
 import ProjectUpload from './components/ProjectUpload';
@@ -160,6 +161,20 @@ function AppInner() {
   );
 
   const {
+    allNodes,
+    allNodesMap,
+    allEdges,
+    selectedFile,
+    setSelectedFile,
+    files,
+    nodeStats,
+    fileDependencies,
+    graphMeta,
+    handleUploadSuccess,
+    currentDegreeMap,
+  } = useGraphData(setNodes, setEdges);
+
+  const {
     selectedNode,
     setSelectedNode,
     explanation,
@@ -176,20 +191,7 @@ function AppInner() {
     handleSelectNode,
     onNodeClick,
     resetInteractionState,
-  } = useNodeInteraction(aiContext);
-
-  const {
-    allNodes,
-    allNodesMap,
-    allEdges,
-    selectedFile,
-    setSelectedFile,
-    files,
-    nodeStats,
-    fileDependencies,
-    handleUploadSuccess,
-    currentDegreeMap,
-  } = useGraphData(setNodes, setEdges);
+  } = useNodeInteraction({ ...aiContext, allNodes, allEdges });
 
   const {
     isPlaying,
@@ -209,6 +211,8 @@ function AppInner() {
     onUserChooseNext,
     narration,
     runSummary,
+    ghostTutorial,
+    stepSummaries,
   } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext, currentDegreeMap);
 
   const onUploadSuccess = useCallback(
@@ -374,12 +378,19 @@ function AppInner() {
             <GraphViewer
               nodes={nodes}
               edges={edges}
+              graphMeta={graphMeta}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onNodeClick={onNodeClick}
               onRequestUpload={handleRequestUpload}
             />
           </ErrorBoundary>
+
+          <GhostTutorialPanel
+            ghostTutorial={ghostTutorial}
+            stepSummaries={stepSummaries}
+            totalNodes={totalNodes}
+          />
 
           <GhostNarration narration={narration} isPlaying={isPlaying} />
           <GhostChoices
@@ -418,6 +429,7 @@ function AppInner() {
             <ChatDrawer
               selectedNode={selectedNode}
               allNodes={allNodes}
+              allEdges={allEdges}
               isOpen={chatOpen}
               onToggle={handleToggleChat}
               apiKey={apiKey}

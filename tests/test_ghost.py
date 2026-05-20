@@ -74,6 +74,7 @@ class TestGhostNarrate:
         assert resp.status_code == 200
         call_args = mock_teacher.narrate_step.call_args[0][0]
         assert call_args.edge_context == ""
+        assert call_args.neighbors == []
 
     @patch("app.routers.ghost.extract_snippet")
     def test_extract_snippet_raises_exception(self, mock_snippet):

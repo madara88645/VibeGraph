@@ -11,11 +11,21 @@ client = TestClient(app)
 
 MOCK_ANSWER = "This function initializes the application."
 
+import tempfile
+
+tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+test_file_path = os.path.join(tmp_dir, "case_a.py")
+with open(test_file_path, "w", encoding="utf-8") as f:
+    f.write("def main(): pass")
+
 _BASE_PAYLOAD = {
     "node_id": "main",
-    "file_path": "tests/upload_cases/case_a.py",
+    "file_path": test_file_path,
     "question": "What does this function do?",
     "history": [],
+    "callers": ["bootstrap.init"],
+    "callees": ["utils.run"],
+    "neighbors": ["bootstrap.init", "utils.run"],
 }
 
 
@@ -28,6 +38,12 @@ def test_chat_returns_answer(mock_teacher):
     assert "answer" in data
     assert data["answer"] == MOCK_ANSWER
     assert data["node_id"] == "main"
+    _, kwargs = mock_teacher.chat.call_args
+    assert kwargs["node_id"] == "main"
+    assert kwargs["file_path"] == test_file_path
+    assert kwargs["callers"] == ["bootstrap.init"]
+    assert kwargs["callees"] == ["utils.run"]
+    assert kwargs["neighbors"] == ["bootstrap.init", "utils.run"]
 
 
 @patch("app.dependencies.teacher")
@@ -81,6 +97,10 @@ def test_chat_stream_returns_sse(mock_teacher):
     content = response.text
     assert "data: Hello" in content
     assert "data: [DONE]" in content
+    _, kwargs = mock_teacher.stream_chat.call_args
+    assert kwargs["callers"] == ["bootstrap.init"]
+    assert kwargs["callees"] == ["utils.run"]
+    assert kwargs["neighbors"] == ["bootstrap.init", "utils.run"]
 
 
 @patch("app.dependencies.teacher")
