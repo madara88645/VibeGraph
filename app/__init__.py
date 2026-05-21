@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+import urllib.parse
 import uuid
 
 from fastapi import FastAPI, Request
@@ -158,6 +159,14 @@ def create_app() -> FastAPI:
     cors_origins = os.getenv(
         "VIBEGRAPH_CORS_ORIGINS", "http://localhost:5173,http://localhost:8000"
     )
+    # Strict hostname whitelist validation
+    allowed_domains_env = os.getenv(
+        "VIBEGRAPH_ALLOWED_CORS_DOMAINS", "localhost,vibegraph.vercel.app"
+    )
+    allowed_domains = {
+        domain.strip() for domain in allowed_domains_env.split(",") if domain.strip()
+    }
+
     # Sanitize origins: strip whitespace and filter empty strings
     origins_list = [
         origin.strip() for origin in cors_origins.split(",") if origin.strip()
@@ -166,12 +175,16 @@ def create_app() -> FastAPI:
     # Validate origins to prevent insecure wildcard bypasses (e.g. " * ")
     validated_origins = []
     for origin in origins_list:
-        if (
-            origin == "*"
-            or origin.startswith("http://")
-            or origin.startswith("https://")
-        ):
+        if origin == "*":
             validated_origins.append(origin)
+        elif origin.startswith("http://") or origin.startswith("https://"):
+            parsed = urllib.parse.urlparse(origin)
+            if parsed.hostname in allowed_domains:
+                validated_origins.append(origin)
+            else:
+                logger.warning(
+                    f"Invalid CORS origin removed: {origin} (untrusted domain)"
+                )
         else:
             logger.warning(f"Invalid CORS origin removed: {origin}")
 
