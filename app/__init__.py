@@ -165,12 +165,19 @@ def create_app() -> FastAPI:
 
     # Validate origins to prevent insecure wildcard bypasses (e.g. " * ")
     validated_origins = []
+    import urllib.parse
+
     for origin in origins_list:
         if (
             origin == "*"
             or origin.startswith("http://")
             or origin.startswith("https://")
         ):
+            if origin != "*":
+                parsed = urllib.parse.urlparse(origin)
+                if not parsed.hostname:
+                    logger.warning(f"Invalid CORS origin hostname removed: {origin}")
+                    continue
             validated_origins.append(origin)
         else:
             logger.warning(f"Invalid CORS origin removed: {origin}")

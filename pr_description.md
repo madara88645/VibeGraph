@@ -1,7 +1,5 @@
-💡 What: Replaced an `O(N)` array traversal (`allNodes.find()`) in the `LearningPath` component with an `O(1)` Map lookup. Extracted `allNodesMap` into the `useGraphData` hook using `useMemo` and passed it down to `LearningPath`.
-
-🎯 Why: The `LearningPath` component iterates over the `allNodes` array, which can be massive (potentially thousands of nodes in large projects), to find a specific node matching an ID. Using `.find()` creates a repeated O(N) lookup. Pre-computing a Map completely resolves the time complexity bottleneck without sacrificing readability by replacing array methods with micro-optimized loops.
-
-📊 Impact: Reduces the time complexity of looking up path nodes from `O(N)` to `O(1)`.
-
-🔬 Measurement: Ensure the LearningPath feature continues to work as expected, jumping straight to the selected node correctly when triggered.
+🚨 Severity: HIGH
+💡 Vulnerability: The CORS configuration in `app/__init__.py` properly parsed comma-separated strings to determine origins, but incorrectly handled wildcard configurations. It did not properly check for valid hostnames, allowing an origin like `http://* ` or `http://` to be treated as an explicit origin. This allowed an attacker to bypass the credentials logic which only guarded against an exact `*` entry. Browsers would accept `http://* ` as a valid wildcard, potentially bypassing our application's cross-origin restrictions.
+🎯 Impact: Attackers could potentially exploit this to bypass CORS restrictions via credentialed cross-origin requests, accessing sensitive endpoints and user data from unapproved origins.
+🔧 Fix: We added `urllib.parse.urlparse(origin).hostname` logic. Any explicitly non-wildcard origin (not exactly `*`) must now have a valid hostname. Any malformed or bypassed wildcard configurations are rejected and logged.
+✅ Verification: We added an automated python test during review that attempted OPTIONS requests and manually confirmed it results in a successful rejection when executed against the codebase.
