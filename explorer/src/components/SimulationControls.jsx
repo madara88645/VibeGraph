@@ -165,6 +165,7 @@ const SimulationControls = ({
                         onClick={() => onSpeedChange && onSpeedChange(opt.value)}
                         className={`sim-speed ${speed === opt.value ? 'active' : ''}`}
                         aria-pressed={speed === opt.value}
+                        aria-label={`Set simulation speed to ${opt.label}`}
                     >
                         {opt.label}
                     </button>
