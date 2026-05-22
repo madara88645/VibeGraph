@@ -119,9 +119,14 @@ const FileSidebar = ({
                             const shortName = getShortName(file) || file;
                             const dirName = getDirName(file);
 
-                            const typeStr = stats.types
-                                ? Object.entries(stats.types).map(([type, count]) => `${count} ${type}${count === 1 || type.endsWith('s') ? '' : 's'}`).join(', ')
-                                : '';
+                            let typeStr = '';
+                            if (stats.types) {
+                                for (const type in stats.types) {
+                                    const count = stats.types[type];
+                                    if (typeStr) typeStr += ', ';
+                                    typeStr += `${count} ${type}${count === 1 || type.endsWith('s') ? '' : 's'}`;
+                                }
+                            }
                             const ariaLabel = `${file}, ${stats.count || 0} nodes${typeStr ? `. ${typeStr}` : ''}`;
 
                             return (
