@@ -62,3 +62,7 @@
 ## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
 **Learning:** Buttons that act as state toggles (like tab selectors or difficulty level choices) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "beginner"), leaving users without context about what the button controls.
 **Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set difficulty level to beginner"`) to ensure screen reader users receive the same contextual understanding as sighted users.
+
+## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
+**Learning:** Buttons that act as state toggles (like difficulty level choices or speed selectors) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "Fast"), leaving users without context about what the button controls.
+**Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set simulation speed to Fast"`) to ensure screen reader users receive the same contextual understanding as sighted users. Note: This does not apply to elements with `role="tab"`, as screen readers natively announce tab states implicitly.
