@@ -154,15 +154,8 @@ def upload_project(
                                 raise ValueError("Symlink in zip file detected")
 
                             safe_filename = normalize_uploaded_filename(member.filename)
-                            target_path = os.path.join(tmp_dir_real, safe_filename)
-                            extracted_path = os.path.realpath(target_path)
-
-                            if (
-                                not extracted_path.startswith(tmp_dir_real + os.sep)
-                                and extracted_path != tmp_dir_real
-                            ):
-                                raise ValueError("Path traversal detected")
-
+                            # Unified boundary: rely entirely on the normalizer's return value
+                            extracted_path = os.path.join(tmp_dir_real, safe_filename)
                         except (HTTPException, ValueError):
                             # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(

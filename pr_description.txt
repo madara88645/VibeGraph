@@ -1,7 +1,9 @@
-💡 **What**: Replaced an O(N) loop iterating over all nodes with an O(1) `Set.size` lookup in `useGhostRunner.js` to calculate `visitedCount`.
+🚨 **Severity:** HIGH
 
-🎯 **Why**: In `useGhostRunner.js`, `visitedCount` was recalculated via an `useMemo` block that iterated over all nodes (O(N) operation) on every tick of the high-frequency simulation loop (`stepCount`). Since only navigable nodes are added to `visitedSetRef` during the simulation, iterating the full `nodes` array is redundant and adds unnecessary CPU overhead.
+💡 **Vulnerability:** The application was vulnerable to zip extraction security inconsistencies. It implemented custom, inline path traversal and symmetric link checks in `app/routers/upload.py` that differed from the unified standard upload validation (`normalize_uploaded_filename`). Additionally, it failed to use the return value from `normalize_uploaded_filename`, causing any sanitization performed by the normalizer to be bypassed if a bypass was found for the inline checks.
 
-📊 **Impact**: Reduces CPU load and eliminates array traversal during the high-frequency animation loop, significantly dropping execution time from O(N) to O(1) per tick, improving the frame rate and responsiveness of the Ghost Runner simulation on large codebases.
+🎯 **Impact:** If an attacker crafted a zip payload with edge-case paths that bypassed the custom inline checks, the application would extract those paths unsafely because the fully sanitized return value from `normalize_uploaded_filename` was ignored, potentially leading to directory traversal, arbitrary file write, and configuration overwrite via `.env` or `.git/config` within nested directories.
 
-🔬 **Measurement**: Ran `pnpm test` successfully with zero regressions across 172 tests. The optimization maintains exact behavior while removing the O(N) iteration block in `useGhostRunner.js`.
+🔧 **Fix:** Replaced the redundant inline `realpath` and traversal checks with `safe_filename = normalize_uploaded_filename(member.filename)` and strictly enforce constructing `extracted_path = os.path.join(tmp_dir_real, safe_filename)` using the normalizer's return value. The explicit symlink block (`stat.S_ISLNK`) was preserved as `normalize_uploaded_filename` doesn't inspect zip metadata attributes.
+
+✅ **Verification:** Verified that tests pass (including `test_upload_symlink_zip` and `test_normalize_uploaded_filename_traversal`), confirming symlinks are still rejected and path sanitization remains robust while removing redundant boilerplate.
