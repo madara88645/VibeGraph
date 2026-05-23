@@ -98,3 +98,7 @@
 ## 2024-05-18 - Optimize array searches with O(1) Lookup Maps
 **Learning:** Replacing an `Array.prototype.find()` with an imperative `for` loop is an ineffective micro-optimization when the underlying issue is executing an `O(N)` search repeatedly. While a `for` loop removes callback overhead, it does not solve the time complexity bottleneck and actively harms code readability.
 **Action:** When a React component frequently searches a large array by ID, pre-compute an `O(1)` Map at the data source level (e.g., inside a custom hook using `useMemo`) and pass it down as a prop. This provides a genuine performance improvement without sacrificing readability.
+
+## $(date +%Y-%m-%d) - Optimize array lookups with O(1) Maps in React Renders
+**Learning:** In frequently executed React components (e.g., `SimulationControls`), executing `Array.prototype.find()` on static configuration arrays during every render creates unnecessary O(N) functional callback overhead.
+**Action:** Pre-compute an O(1) Map for static configuration arrays outside the component definition, then replace `Array.find()` with a direct `Map.get()` lookup. This eliminates the array scan and callback overhead on every render, providing a genuine performance improvement without sacrificing readability.

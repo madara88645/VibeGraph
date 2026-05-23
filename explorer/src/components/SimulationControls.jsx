@@ -14,6 +14,11 @@ const strategyOptions = [
     { label: 'Random', value: 'random', icon: '🎲', hint: 'Original random walk' },
 ];
 
+const strategyOptionsMap = new Map();
+for (let i = 0; i < strategyOptions.length; i++) {
+    strategyOptionsMap.set(strategyOptions[i].value, strategyOptions[i]);
+}
+
 const modeOptions = [
     { label: 'Auto', value: 'auto', icon: '▶' },
     { label: 'Explore', value: 'explore', icon: '🧭' },
@@ -38,7 +43,10 @@ const SimulationControls = ({
     const [showStrategyPicker, setShowStrategyPicker] = useState(false);
 
     const coveragePercent = totalNodes > 0 ? Math.round((visitedCount / totalNodes) * 100) : 0;
-    const currentStrategy = strategyOptions.find(s => s.value === strategy) || strategyOptions[0];
+
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) array find() with O(1) Map lookup
+    // to eliminate functional callback overhead during frequent renders.
+    const currentStrategy = strategyOptionsMap.get(strategy) || strategyOptions[0];
 
     return (
         <div className="sim-controls">
