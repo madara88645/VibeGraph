@@ -109,6 +109,7 @@ sequenceDiagram
 | `app/routers/chat.py` | `/api/chat` and `/api/chat/stream` — multi-turn Q&A |
 | `app/routers/explain.py` | `/api/explain` (AI) and `/api/snippet` (raw code) |
 | `app/routers/learning.py` | `/api/learning-path` — AI study order suggestion |
+| `app/services/learning_path_quality.py` | Call-order quality checks and repair for learning paths ([rubric](learning_path_quality.md)) |
 | `app/routers/upload.py` | `/api/upload-project` — ZIP/file ingest, graph build |
 | `app/models.py` | Pydantic request + response models; OpenAPI schema |
 | `app/utils/snippet.py` | AST-based code extraction with `lru_cache` |

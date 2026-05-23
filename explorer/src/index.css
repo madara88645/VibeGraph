@@ -1147,6 +1147,23 @@ body {
   color: var(--accent-fn);
 }
 
+.chat-no-node-badge {
+  color: var(--text-muted);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.chat-empty-tips {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.chat-empty-tips li {
+  margin-bottom: 0.35rem;
+}
+
 .chat-drawer-close {
   margin-left: auto;
   background: transparent;
