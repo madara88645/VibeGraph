@@ -1,9 +1,11 @@
-🚨 **Severity:** HIGH
+💡 What:
+Replaced `Object.entries().map().join()` with imperative `for...in` loops in `FileSidebar.jsx` and `ChatDrawer.jsx` when building summary strings.
 
-💡 **Vulnerability:** The application was vulnerable to zip extraction security inconsistencies. It implemented custom, inline path traversal and symmetric link checks in `app/routers/upload.py` that differed from the unified standard upload validation (`normalize_uploaded_filename`). Additionally, it failed to use the return value from `normalize_uploaded_filename`, causing any sanitization performed by the normalizer to be bypassed if a bypass was found for the inline checks.
+🎯 Why:
+To prevent severe garbage collection pressure and CPU overhead caused by the hidden allocation of multiple intermediate arrays during frequent render cycles or large list traversals.
 
-🎯 **Impact:** If an attacker crafted a zip payload with edge-case paths that bypassed the custom inline checks, the application would extract those paths unsafely because the fully sanitized return value from `normalize_uploaded_filename` was ignored, potentially leading to directory traversal, arbitrary file write, and configuration overwrite via `.env` or `.git/config` within nested directories.
+📊 Impact:
+Eliminates O(N) array allocation overhead and multiple iteration passes over object entries entirely, providing a best-case zero-allocation path when deriving string-based properties.
 
-🔧 **Fix:** Replaced the redundant inline `realpath` and traversal checks with `safe_filename = normalize_uploaded_filename(member.filename)` and strictly enforce constructing `extracted_path = os.path.join(tmp_dir_real, safe_filename)` using the normalizer's return value. The explicit symlink block (`stat.S_ISLNK`) was preserved as `normalize_uploaded_filename` doesn't inspect zip metadata attributes.
-
-✅ **Verification:** Verified that tests pass (including `test_upload_symlink_zip` and `test_normalize_uploaded_filename_traversal`), confirming symlinks are still rejected and path sanitization remains robust while removing redundant boilerplate.
+🔬 Measurement:
+Profile a workspace with numerous node files or trigger rapid simulation ticks; memory snapshots will show fewer short-lived array allocations.

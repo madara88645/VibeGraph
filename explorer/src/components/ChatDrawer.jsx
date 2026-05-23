@@ -123,9 +123,11 @@ const ChatDrawer = ({
         }
       }
 
-      const typeStr = Object.entries(types)
-        .map(([key, value]) => `${value} ${key}s`)
-        .join(', ');
+      let typeStr = '';
+      for (const key in types) {
+        if (typeStr) typeStr += ', ';
+        typeStr += `${types[key]} ${key}s`;
+      }
       const fileNames = [...filesSet];
 
       const coreNodes = coreNodeIds.join(', ');
