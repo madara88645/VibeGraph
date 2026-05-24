@@ -1,7 +1,5 @@
 """Deterministic repo-wide learning path generation."""
 
-from __future__ import annotations
-
 import heapq
 import os
 from collections import defaultdict
