@@ -43,7 +43,7 @@ def contains_supported_file(path: str) -> bool:
     """
     from analyst.languages import all_extensions
 
-    supported = all_extensions()
+    supported = tuple(all_extensions())
     stack = [path]
     while stack:
         current_dir = stack.pop()
@@ -54,7 +54,7 @@ def contains_supported_file(path: str) -> bool:
                         stack.append(entry.path)
                     elif entry.is_file(follow_symlinks=False):
                         name_lower = entry.name.lower()
-                        if any(name_lower.endswith(ext) for ext in supported):
+                        if name_lower.endswith(supported):
                             return True
         except OSError:
             continue

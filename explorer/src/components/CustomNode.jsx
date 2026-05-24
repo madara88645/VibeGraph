@@ -111,7 +111,7 @@ const CustomNode = ({ data, selected }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                     {fileName && (
                         <span title={fileName} style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            📄 {fileName}
+                            <span aria-hidden="true">📄</span> {fileName}
                         </span>
                     )}
                     {data.lineno && (
