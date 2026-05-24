@@ -1,4 +1,14 @@
-💡 What: Added keyboard shortcuts (keys 1-9) to the Ghost Runner choices in the Explore mode, and provided visual `<kbd>` hints for the shortcuts.
-🎯 Why: To significantly improve the interaction speed and efficiency for power users using the 'Explore' mode without requiring mouse clicks.
-📸 Before/After: Users previously had to click Ghost choices with a mouse. Now, numbers [1]-[9] appear next to choices, allowing instant selection via the keyboard.
-♿ Accessibility: Improves keyboard navigation capabilities for a core interactive feature. Safe-guards against modifier keys (Ctrl/Alt/Meta) and input/textarea focus prevent shortcut interference.
+## 🚨 Severity
+Low
+
+## 💡 Vulnerability
+Missing input sanitization on Pydantic models for user-provided identifiers (`node_id`, `file_path`, `previous_node_id`, `selected_file`).
+
+## 🎯 Impact
+Without sanitization, these fields are passed to the AI models which could allow malicious users to execute prompt injection or AI string injection attacks via API endpoints (`/api/ghost-narrate` and `/api/learning-path`).
+
+## 🔧 Fix
+Added `@field_validator` with `mode="before"` to `GhostNarrateRequest` and `LearningPathRequest` that applies `sanitize_llm_input(value, truncate=False)` to all relevant string fields to prevent LLM injection.
+
+## ✅ Verification
+Automated test suite (`PYTHONPATH=. python -m pytest tests/`) passes locally with no regressions, and the new models correctly redact malicious strings.
