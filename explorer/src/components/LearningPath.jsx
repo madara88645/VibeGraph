@@ -119,7 +119,15 @@ const LearningPath = ({
             disabled={currentStep === 0 || loading}
             aria-label={loading ? 'Building learning path...' : currentStep === 0 ? 'Already at first step' : 'Previous step'}
           >
-            <span aria-hidden="true">{'<'}</span>
+            {loading ? (
+              <span
+                className="vibe-spinner"
+                style={{ width: '12px', height: '12px', borderWidth: '2px' }}
+                aria-hidden="true"
+              />
+            ) : (
+              <span aria-hidden="true">{'<'}</span>
+            )}
           </button>
         </span>
 
@@ -170,7 +178,15 @@ const LearningPath = ({
                   : 'Next step'
             }
           >
-            <span aria-hidden="true">{'>'}</span>
+            {loading ? (
+              <span
+                className="vibe-spinner"
+                style={{ width: '12px', height: '12px', borderWidth: '2px' }}
+                aria-hidden="true"
+              />
+            ) : (
+              <span aria-hidden="true">{'>'}</span>
+            )}
           </button>
         </span>
       </div>
