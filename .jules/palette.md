@@ -39,6 +39,10 @@
 ## 2024-05-30 - Context-Rich Buttons with Nested Elements
 **Learning:** When rendering buttons that contain multiple text elements (e.g., an icon, a label, and a filename) and utilize complex `title` attributes for rich context, a screen reader may read the internal spans in a disjointed way while missing the combined context of the tooltip.
 **Action:** Assign an explicit, combined `aria-label` to the parent button that mirrors the rich context of the `title` attributes. This creates a natural, consolidated sentence for screen readers and ensures parity with the descriptive context sighted users receive via tooltips.
+## 2024-05-19 - Screen Readers Announcing Inline Text Emojis
+**Learning:** Decorative text emojis placed directly inline within labels or buttons are announced by screen readers (e.g., "document icon filename"), causing a confusing auditory experience that disrupts the natural reading flow of the context.
+**Action:** Always wrap decorative inline emojis in a `<span>` element with `aria-hidden="true"` to hide them from screen readers while preserving visual layout.
+
 ## 2024-05-24 - Dynamic Context Hidden by Static aria-label
 **Learning:** When using static `aria-label`s on buttons (like `aria-label={file}` or `aria-label="Choose traversal strategy"`), any visually nested elements containing dynamic context (such as node counts, types, or current state hints) are overridden and hidden from screen readers. Screen reader users receive less context than sighted users.
 **Action:** Always dynamically build `aria-label` strings to include all the relevant information that is visually nested within the component or implicitly conveyed by its state, ensuring parity between visual and auditory context.
@@ -62,3 +66,11 @@
 ## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
 **Learning:** Buttons that act as state toggles (like tab selectors or difficulty level choices) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "beginner"), leaving users without context about what the button controls.
 **Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set difficulty level to beginner"`) to ensure screen reader users receive the same contextual understanding as sighted users.
+
+## 2024-05-31 - Missing Aria-Labels on State Toggle Buttons
+**Learning:** Buttons that act as state toggles (like difficulty level choices or speed selectors) often rely purely on visual cues (like text and an 'active' class) to convey their purpose. Without an explicit `aria-label`, screen readers might only announce the raw text (e.g., "Fast"), leaving users without context about what the button controls.
+**Action:** Always add descriptive `aria-label` attributes to state toggle buttons (e.g., `aria-label="Set simulation speed to Fast"`) to ensure screen reader users receive the same contextual understanding as sighted users. Note: This does not apply to elements with `role="tab"`, as screen readers natively announce tab states implicitly.
+
+## 2026-05-24 - Accessible Chat Conversations
+**Learning:** When implementing a chat interface, sighted users rely on visual cues (like message alignment, bubble color, and animated typing dots) to understand conversational flow. Screen readers, however, will read these linearly as plain text without context of who is speaking, and might ignore or stutter on CSS-animated typing dots.
+**Action:** Always add `role="log"` to the chat message container so new messages are announced automatically. Within each message, prepend a visually hidden span indicating the speaker (e.g., "You:", "AI:"). Finally, wrap typing indicators with a visually hidden "AI is typing..." and apply `aria-hidden="true"` to any decorative animated elements.

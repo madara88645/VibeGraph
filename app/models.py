@@ -204,6 +204,13 @@ class LearningPathRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
+    @field_validator("file_path", "selected_file", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
 
 class GhostNarrateRequest(BaseModel):
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
@@ -241,6 +248,13 @@ class GhostNarrateRequest(BaseModel):
     @classmethod
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
+
+    @field_validator("node_id", "file_path", "previous_node_id", mode="before")
+    @classmethod
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
 
 class ExplanationDetail(BaseModel):

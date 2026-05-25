@@ -139,9 +139,11 @@ const ChatDrawer = ({
         }
       }
 
-      const typeStr = Object.entries(types)
-        .map(([key, value]) => `${value} ${key}s`)
-        .join(', ');
+      let typeStr = '';
+      for (const key in types) {
+        if (typeStr) typeStr += ', ';
+        typeStr += `${types[key]} ${key}s`;
+      }
       const fileNames = [...filesSet];
 
       const coreNodes = coreNodeIds.join(', ');
@@ -311,7 +313,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         </button>
       </div>
 
-      <div className="chat-messages">
+      <div className="chat-messages" role="log">
         {messages.length === 0 && !loading ? (
           <div className="chat-empty">
             {!aiReady ? (
@@ -366,6 +368,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         {messages.map((msg, idx) => (
           <div key={idx} className={`chat-message chat-message-${msg.role}`}>
             <div className="chat-bubble">
+              <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
+                {msg.role === 'user' ? 'You:' : 'AI:'}
+              </span>
               {msg.role === 'assistant' ? (
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
               ) : (
@@ -378,9 +383,12 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
           <div className="chat-message chat-message-assistant">
             <div className="chat-bubble chat-typing">
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-              <span className="typing-dot" />
+              <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
+                AI is typing...
+              </span>
+              <span className="typing-dot" aria-hidden="true" />
+              <span className="typing-dot" aria-hidden="true" />
+              <span className="typing-dot" aria-hidden="true" />
             </div>
           </div>
         ) : null}
