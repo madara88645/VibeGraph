@@ -7,8 +7,6 @@ under ``analyst/languages/`` automatically extends this response — no
 endpoint edits required.
 """
 
-from __future__ import annotations
-
 from fastapi import APIRouter, Request
 
 from analyst.languages import all_languages
