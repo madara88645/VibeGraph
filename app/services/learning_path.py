@@ -62,9 +62,13 @@ def _reason(signals: dict[str, Any]) -> str:
     if signals["hub_score"] >= 15:
         reasons.append("Acts as a key coordination hub with high fan-out or fan-in.")
     if signals["side_effect_boundary"]:
-        reasons.append("Contains side effects like file, network, or database I/O boundaries.")
+        reasons.append(
+            "Contains side effects like file, network, or database I/O boundaries."
+        )
     if not reasons:
-        reasons.append("Read this internal helper after the high-level flow is understood.")
+        reasons.append(
+            "Read this internal helper after the high-level flow is understood."
+        )
     return " ".join(reasons)
 
 
@@ -171,9 +175,7 @@ def build_learning_path(
     ]
     if not entries:
         # Fall back to root nodes (no incoming edges)
-        entries = [
-            node_id for node_id, count in incoming_count.items() if count == 0
-        ]
+        entries = [node_id for node_id, count in incoming_count.items() if count == 0]
     if not entries:
         # Fall back to all nodes (if cycles exist or isolated nodes)
         entries = list(scored)
@@ -219,8 +221,8 @@ def build_learning_path(
         steps.append(step)
 
     from app.services.learning_path_quality import apply_learning_path_quality
-    return apply_learning_path_quality(steps, nodes, edges)
 
+    return apply_learning_path_quality(steps, nodes, edges)
 
 
 def refine_learning_path_with_ai(
@@ -265,6 +267,6 @@ def refine_learning_path_with_ai(
     merged = [{**step, "step": index} for index, step in enumerate(merged, start=1)]
     if nodes is not None and edges is not None:
         from app.services.learning_path_quality import apply_learning_path_quality
+
         merged = apply_learning_path_quality(merged, nodes, edges)
     return merged
-

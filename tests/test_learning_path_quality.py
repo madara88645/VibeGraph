@@ -6,6 +6,8 @@ from app.services.learning_path_quality import (
     assess_learning_path,
     repair_caller_before_callee,
 )
+
+
 def _sample_nodes():
     return [
         {

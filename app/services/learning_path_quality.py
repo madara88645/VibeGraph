@@ -26,7 +26,9 @@ class QualityReport:
 
 
 def _call_edges(outgoing: dict[str, list[str]]) -> list[tuple[str, str]]:
-    return [(source, target) for source, targets in outgoing.items() for target in targets]
+    return [
+        (source, target) for source, targets in outgoing.items() for target in targets
+    ]
 
 
 def _ordered_node_ids(steps: list[dict[str, Any]]) -> list[str]:
@@ -148,7 +150,9 @@ def apply_learning_path_quality(
         return steps
 
     _, outgoing, _ = normalize_graph(nodes, edges)
-    by_id = {step["node_id"]: step for step in steps if isinstance(step.get("node_id"), str)}
+    by_id = {
+        step["node_id"]: step for step in steps if isinstance(step.get("node_id"), str)
+    }
     repaired_ids = repair_caller_before_callee(_ordered_node_ids(steps), outgoing)
     return [
         {**by_id[node_id], "step": index}

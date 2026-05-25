@@ -1,6 +1,5 @@
 """Unit tests for the improved deterministic Learning Path logic."""
 
-import pytest
 from app.services.learning_path import build_learning_path, refine_learning_path_with_ai
 
 
@@ -53,7 +52,9 @@ def test_stable_output_for_fixed_sample_graph():
     first_run = build_learning_path(nodes, edges)
     for _ in range(5):
         run = build_learning_path(nodes, edges)
-        assert [step["node_id"] for step in run] == [step["node_id"] for step in first_run]
+        assert [step["node_id"] for step in run] == [
+            step["node_id"] for step in first_run
+        ]
         assert [step["score"] for step in run] == [step["score"] for step in first_run]
 
 
@@ -103,10 +104,30 @@ def test_path_starts_from_real_entry_point():
 def test_no_hallucinated_nodes_and_safe_fallback_in_refinement():
     """Verify that refine_learning_path_with_ai filters hallucinated nodes and restores forgotten nodes."""
     baseline_steps = [
-        {"node_id": "main", "node_name": "main", "file_path": "main.py", "reason": "Starts here"},
-        {"node_id": "auth", "node_name": "auth", "file_path": "auth.py", "reason": "Handles auth"},
-        {"node_id": "db", "node_name": "db", "file_path": "db.py", "reason": "Saves state"},
-        {"node_id": "util", "node_name": "util", "file_path": "util.py", "reason": "Helpers"},
+        {
+            "node_id": "main",
+            "node_name": "main",
+            "file_path": "main.py",
+            "reason": "Starts here",
+        },
+        {
+            "node_id": "auth",
+            "node_name": "auth",
+            "file_path": "auth.py",
+            "reason": "Handles auth",
+        },
+        {
+            "node_id": "db",
+            "node_name": "db",
+            "file_path": "db.py",
+            "reason": "Saves state",
+        },
+        {
+            "node_id": "util",
+            "node_name": "util",
+            "file_path": "util.py",
+            "reason": "Helpers",
+        },
     ]
 
     def faulty_ai_refiner(window):
@@ -118,7 +139,9 @@ def test_no_hallucinated_nodes_and_safe_fallback_in_refinement():
             {"node_id": "main", "reason": "Refined Main reason"},
         ]
 
-    refined = refine_learning_path_with_ai(baseline_steps, faulty_ai_refiner, window_size=4)
+    refined = refine_learning_path_with_ai(
+        baseline_steps, faulty_ai_refiner, window_size=4
+    )
     refined_ids = [step["node_id"] for step in refined]
 
     # 1. Hallucinated nodes must be strictly removed
@@ -126,7 +149,9 @@ def test_no_hallucinated_nodes_and_safe_fallback_in_refinement():
 
     # 2. Every single original node must be preserved (none lost, "util" restored to the end of the window)
     assert set(refined_ids) == {"main", "auth", "db", "util"}
-    assert refined_ids[-1] == "util"  # Forgotten nodes fall back gracefully to the end of the window
+    assert (
+        refined_ids[-1] == "util"
+    )  # Forgotten nodes fall back gracefully to the end of the window
 
     # 3. Step numbers are correctly reset to 1-indexed sequential integers
     assert [step["step"] for step in refined] == [1, 2, 3, 4]
