@@ -1,11 +1,4 @@
-💡 What
-Replaced a generator-based string suffix check (`any(name.endswith(ext) for ext in supported)`) with a native tuple-based check (`name.endswith(tuple(supported))`) in `app/routers/upload.py`.
-
-🎯 Why
-Using `any()` with a generator expression inside a hot path (recursive directory traversal) introduces measurable Python-level overhead. The `str.endswith` method natively accepts a tuple of strings and evaluates it at the C-level, bypassing generator allocation and iteration overhead.
-
-📊 Impact
-Measured performance impact isolated locally showed an approximately ~9x speedup (from 1.84s down to 0.19s per 1,000,000 iterations) for checking the extensions, which scales gracefully across massive uploaded file trees.
-
-🔬 Measurement
-Upload a project with thousands of files and measure the directory traversal stage (e.g. `contains_supported_file` in `/api/upload`).
+ğŸ’¡ What: Added keyboard shortcuts (keys 1-9) to the Ghost Runner choices in the Explore mode, and provided visual `<kbd>` hints for the shortcuts.
+ğŸ¯ Why: To significantly improve the interaction speed and efficiency for power users using the 'Explore' mode without requiring mouse clicks.
+ğŸ“¸ Before/After: Users previously had to click Ghost choices with a mouse. Now, numbers [1]-[9] appear next to choices, allowing instant selection via the keyboard.
+â™¿ Accessibility: Improves keyboard navigation capabilities for a core interactive feature. Safe-guards against modifier keys (Ctrl/Alt/Meta) and input/textarea focus prevent shortcut interference.

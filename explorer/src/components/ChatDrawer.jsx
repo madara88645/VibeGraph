@@ -13,6 +13,11 @@ import { consumeSseChunk } from '../utils/sse';
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key before starting a chat.';
 
+const NO_NODE_MESSAGE =
+  'Pick a function or class on the graph first so answers use real code from your project.';
+
+const NO_NODE_PLACEHOLDER = 'Select a node on the graph to ask…';
+
 const ChatDrawer = ({
   selectedNode,
   allNodes,
@@ -86,6 +91,17 @@ const ChatDrawer = ({
       ];
       setMessages(promptMessages);
       persistMessages(promptMessages);
+      setInputText('');
+      return;
+    }
+
+    if (!selectedNode?.id) {
+      const promptMessages = [
+        ...messages,
+        { role: 'user', content: text },
+        { role: 'assistant', content: NO_NODE_MESSAGE },
+      ];
+      setMessages(promptMessages);
       setInputText('');
       return;
     }
@@ -257,6 +273,17 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     }
   };
 
+  const hasSelectedNode = Boolean(selectedNode?.id);
+  const canSend = hasSelectedNode && !loading && Boolean(inputText.trim());
+
+  const sendDisabledReason = loading
+    ? 'Waiting for AI response...'
+    : !hasSelectedNode
+      ? 'Select a graph node to send'
+      : !inputText.trim()
+        ? 'Type a message to send'
+        : 'Send message';
+
   if (!isOpen) {
     return (
       <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
@@ -274,11 +301,13 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           <span aria-hidden="true">{'Chat'}</span>
           <span>Vibe Chat</span>
         </div>
-        {selectedNode ? (
+        {hasSelectedNode ? (
           <span className="chat-context-badge">
             Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
           </span>
-        ) : null}
+        ) : (
+          <span className="chat-context-badge chat-no-node-badge">No node selected</span>
+        )}
         <button className="chat-drawer-close" onClick={onToggle} title="Close Chat" aria-label="Close Chat">
           <span aria-hidden="true">x</span>
         </button>
@@ -323,26 +352,14 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             ) : (
               <>
                 <p className="chat-empty-lead">
-                  Ask a general question about the uploaded project!
+                  Select a function or class on the graph to chat about real code from your
+                  project.
                 </p>
-                <div className="chat-suggestions" aria-label="Suggested questions">
-                  {[
-                    'What does this project do?',
-                    'Where should I start reading the code?',
-                    'What are the main entry points?',
-                    'Where are React components defined?',
-                    'Which functions call fetch()?',
-                  ].map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      className="chat-suggestion"
-                      onClick={() => sendMessage(prompt)}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
+                <ul className="chat-empty-tips" aria-label="How to select a node">
+                  <li>Click any node on the graph</li>
+                  <li>Or press Ctrl+K to search and jump to a node</li>
+                  <li>Use Learn in the header for a guided study order</li>
+                </ul>
               </>
             )}
           </div>
@@ -387,7 +404,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           id="chat-input"
           ref={inputRef}
           className="chat-input"
-          placeholder="Ask a question..."
+          placeholder={hasSelectedNode ? 'Ask a question...' : NO_NODE_PLACEHOLDER}
           aria-label="Chat input"
           value={inputText}
           onChange={(event) => setInputText(event.target.value)}
@@ -397,25 +414,13 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         <span
           style={{ display: 'inline-flex' }}
           className="chat-send-wrapper"
-          title={
-            loading
-              ? 'Waiting for AI response...'
-              : !inputText.trim()
-                ? 'Type a message to send'
-                : 'Send message'
-          }
+          title={sendDisabledReason}
         >
           <button
             className="chat-send"
             onClick={sendMessage}
-            disabled={loading || !inputText.trim()}
-            aria-label={
-              loading
-                ? 'Waiting for AI response...'
-                : !inputText.trim()
-                  ? 'Type a message to send'
-                  : 'Send message'
-            }
+            disabled={!canSend}
+            aria-label={sendDisabledReason}
           >
             <span aria-hidden="true">
               {loading ? (

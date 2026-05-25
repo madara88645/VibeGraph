@@ -41,7 +41,12 @@ def suggest_learning_path(request: Request, path_request: LearningPathRequest):
                     allowed_node_ids=[step["node_id"] for step in window],
                 )
 
-            steps = refine_learning_path_with_ai(steps, refine)
+            steps = refine_learning_path_with_ai(
+                steps,
+                refine,
+                nodes=path_request.nodes,
+                edges=path_request.edges,
+            )
 
         return {
             "file_path": path_request.selected_file,

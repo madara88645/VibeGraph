@@ -162,8 +162,8 @@ const GraphViewer = ({
               </svg>
               Upload your project
             </button>
-            <span className="empty-shortcut">
-              Tip: click Upload Project, then drop your folder in the upload window.
+             <span className="empty-shortcut">
+              Tip: click Upload Project, then drop your folder / .zip file, or try the Demo!
             </span>
           </div>
 

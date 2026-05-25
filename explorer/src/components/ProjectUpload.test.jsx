@@ -289,4 +289,72 @@ describe('ProjectUpload', () => {
         // Modal should still be open (analyzing state prevents close)
         expect(screen.getByText('Analyzing project…')).toBeInTheDocument();
     });
+
+    it('handles dropped ZIP files successfully', async () => {
+        const mockResult = { nodes: [{ id: '1' }], edges: [{ source: '1', target: '2' }] };
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(mockResult),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        const file = new File(['zip content'], 'project.zip', { type: 'application/zip' });
+
+        const mockEntry = {
+            name: 'project.zip',
+            isDirectory: false,
+        };
+
+        await act(async () => {
+            fireEvent.drop(uploadZone, {
+                dataTransfer: {
+                    items: [
+                        {
+                            webkitGetAsEntry: () => mockEntry,
+                        },
+                    ],
+                    files: [file],
+                },
+            });
+        });
+
+        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
+        expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
+    });
+
+    it('loads the demo project successfully when CTA is clicked', async () => {
+        const mockResult = { nodes: [{ id: 'demo-1' }], edges: [] };
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(mockResult),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const demoBtn = screen.getByRole('button', { name: /try with a demo project/i });
+
+        await act(async () => {
+            fireEvent.click(demoBtn);
+        });
+
+        expect(globalThis.fetch).toHaveBeenCalledWith('/graph_data.json');
+        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
+        expect(showToast).toHaveBeenCalledWith('Demo project loaded successfully!', 'success');
+    });
 });

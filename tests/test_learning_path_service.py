@@ -174,11 +174,17 @@ def test_ai_refinement_discards_hallucinated_nodes_and_preserves_missing_baselin
             {"node_id": "made_up", "reason": "This must be ignored."},
         ]
 
-    refined = refine_learning_path_with_ai(baseline, fake_refiner, window_size=3)
+    refined = refine_learning_path_with_ai(
+        baseline,
+        fake_refiner,
+        window_size=3,
+        nodes=_sample_nodes(),
+        edges=_sample_edges(),
+    )
 
     assert [step["node_id"] for step in refined] == [
-        "load_config",
         "main",
+        "load_config",
         "Api.create",
         "_normalize",
     ]

@@ -67,7 +67,7 @@ class TestLearningPath:
             },
             {"id": "helper", "data": {"label": "helper", "file": "helper.py"}},
         ]
-        edges = [{"source": "main", "target": "helper"}]
+        edges = []
         mock_teacher = MagicMock()
         mock_teacher.refine_learning_path.return_value = [
             {"node_id": "fake_node", "reason": "Invented"},
