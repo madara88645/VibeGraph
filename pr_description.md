@@ -1,4 +1,12 @@
-ğŸ’¡ What: Added keyboard shortcuts (keys 1-9) to the Ghost Runner choices in the Explore mode, and provided visual `<kbd>` hints for the shortcuts.
-ğŸ¯ Why: To significantly improve the interaction speed and efficiency for power users using the 'Explore' mode without requiring mouse clicks.
-ğŸ“¸ Before/After: Users previously had to click Ghost choices with a mouse. Now, numbers [1]-[9] appear next to choices, allowing instant selection via the keyboard.
-â™¿ Accessibility: Improves keyboard navigation capabilities for a core interactive feature. Safe-guards against modifier keys (Ctrl/Alt/Meta) and input/textarea focus prevent shortcut interference.
+## 🚨 Severity: MEDIUM
+## 💡 Vulnerability: Missing Prompt Injection Validation
+In `app/models.py`, while identifiers like `node_id` and `file_path` were properly sanitized against prompt injection, other user-provided identifiers like `previous_node_id` and `selected_file` were missing from the `@field_validator` targeting prompt injection in endpoints like `GhostNarrateRequest` and `LearningPathRequest`.
+
+## 🎯 Impact:
+Attackers could craft payloads in contextual inputs (`previous_node_id` or `selected_file`) that would bypass the LLM input filter, potentially allowing prompt injections to alter the AI narration or learning path responses.
+
+## 🔧 Fix:
+Updated the `@field_validator` in `app/models.py` to explicitly target `node_id`, `file_path`, `previous_node_id`, and `selected_file` using `check_fields=False` to safely share the validator across multiple models. Added robust test coverage in `tests/test_models.py` to guarantee behavior.
+
+## ✅ Verification:
+Run `pytest tests/test_models.py` to verify that `[filtered]` tags are correctly applied to `previous_node_id` and `selected_file`.
