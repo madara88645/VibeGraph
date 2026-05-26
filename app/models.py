@@ -50,7 +50,14 @@ class ExplainRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", "previous_node_id", "selected_file", mode="before", check_fields=False)
+    @field_validator(
+        "node_id",
+        "file_path",
+        "previous_node_id",
+        "selected_file",
+        mode="before",
+        check_fields=False,
+    )
     @classmethod
     def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
@@ -204,7 +211,14 @@ class LearningPathRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", "previous_node_id", "selected_file", mode="before", check_fields=False)
+    @field_validator(
+        "node_id",
+        "file_path",
+        "previous_node_id",
+        "selected_file",
+        mode="before",
+        check_fields=False,
+    )
     @classmethod
     def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
@@ -249,7 +263,14 @@ class GhostNarrateRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", "previous_node_id", "selected_file", mode="before", check_fields=False)
+    @field_validator(
+        "node_id",
+        "file_path",
+        "previous_node_id",
+        "selected_file",
+        mode="before",
+        check_fields=False,
+    )
     @classmethod
     def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
