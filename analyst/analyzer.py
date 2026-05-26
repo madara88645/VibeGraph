@@ -208,7 +208,7 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
     # PERFORMANCE OPTIMIZATION (Bolt): Replace ast.walk() with a fast BFS
     # using ast.iter_child_nodes to safely avoid recursive evaluation of
     # every leaf string/constant while preserving correct AST coverage.
-    queue = deque([tree])
+    queue: deque[ast.AST] = deque([tree])
     while queue:
         node = queue.popleft()
         if isinstance(node, ast.Import):
@@ -273,7 +273,7 @@ class CallGraphVisitor(ast.NodeVisitor):
         # PERFORMANCE OPTIMIZATION (Bolt): Replace ast.walk() with a fast BFS
         # using ast.iter_child_nodes to skip leaf nodes and prevent significant
         # CPU overhead in large files without missing expressions like conditions.
-        queue = deque([node])
+        queue: deque[ast.AST] = deque([node])
         while queue:
             child = queue.popleft()
             if isinstance(child, ast.Call):
