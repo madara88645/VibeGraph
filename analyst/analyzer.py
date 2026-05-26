@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import threading
-from collections import OrderedDict
+from collections import OrderedDict, deque
 import networkx as nx
 from typing import Any
 
@@ -204,7 +204,13 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
     ``asnames=["Z"]``.
     """
     out: list[dict] = []
-    for node in ast.walk(tree):
+
+    # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk (which visits all leaves)
+    # with a targeted BFS using deque to massively speed up parsing large ASTs,
+    # safely skipping non-structural nodes.
+    queue: deque[ast.AST] = deque([tree])
+    while queue:
+        node = queue.popleft()
         if isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name
@@ -233,6 +239,13 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
                     "level": node.level,
                 }
             )
+
+        for attr in ("body", "orelse", "handlers", "finalbody", "cases"):
+            child_list = getattr(node, attr, None)
+            if isinstance(child_list, list):
+                for child in child_list:
+                    if isinstance(child, ast.AST):
+                        queue.append(child)
     return out
 
 
@@ -260,7 +273,13 @@ class CallGraphVisitor(ast.NodeVisitor):
 
         calls: set[str] = set()
         imports_side_effect_module = False
-        for child in ast.walk(node):
+
+        # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk (which visits all leaves)
+        # with a targeted BFS using deque to massively speed up parsing large ASTs,
+        # skipping safe leaf nodes like Load/Store/Del to minimize iteration overhead.
+        queue: deque[ast.AST] = deque([node])
+        while queue:
+            child = queue.popleft()
             if isinstance(child, ast.Call):
                 callee = self._raw_callee_name(child)
                 if callee:
@@ -272,6 +291,10 @@ class CallGraphVisitor(ast.NodeVisitor):
                     for alias in child.names
                 ):
                     imports_side_effect_module = True
+
+            for child_node in ast.iter_child_nodes(child):
+                if not isinstance(child_node, (ast.Load, ast.Store, ast.Del)):
+                    queue.append(child_node)
 
         api_boundary = any(
             (decorator_name := self._decorator_name(decorator))
