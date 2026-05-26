@@ -45,6 +45,13 @@ class ExplainRequest(BaseModel):
         }
     }
 
+    @field_validator("file_path", "selected_file", mode="before", check_fields=False)
+    @classmethod
+    def sanitize_identifiers_learning(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
     @field_validator("model", mode="before")
     @classmethod
     def normalize_model(cls, value: str | None) -> str | None:
@@ -138,6 +145,13 @@ class ChatRequest(BaseModel):
         }
     }
 
+    @field_validator("file_path", "selected_file", mode="before", check_fields=False)
+    @classmethod
+    def sanitize_identifiers_learning(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
     @field_validator("model", mode="before")
     @classmethod
     def normalize_model(cls, value: str | None) -> str | None:
@@ -199,6 +213,13 @@ class LearningPathRequest(BaseModel):
         }
     }
 
+    @field_validator("file_path", "selected_file", mode="before", check_fields=False)
+    @classmethod
+    def sanitize_identifiers_learning_request(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
+
     @field_validator("model", mode="before")
     @classmethod
     def normalize_model(cls, value: str | None) -> str | None:
@@ -215,6 +236,15 @@ class GhostNarrateRequest(BaseModel):
     strategy: str = Field(default="smart", max_length=50)
     model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
     context_nodes: list[str] = Field(default_factory=list, max_length=10)
+
+    @field_validator(
+        "node_id", "file_path", "previous_node_id", mode="before", check_fields=False
+    )
+    @classmethod
+    def sanitize_identifiers_ghost(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
     @field_validator("context_nodes")
     @classmethod
