@@ -1,5 +1,0 @@
-🚨 Severity: MEDIUM
-💡 Vulnerability: The `file_path`, `selected_file`, `node_id`, and `previous_node_id` fields in `LearningPathRequest` and `GhostNarrateRequest` were missing LLM prompt injection sanitization. While `ChatRequest` and `ExplainRequest` safely filtered strings like "ignore previous instructions", these endpoints left the LLM vulnerable to prompt injection via crafted identifiers.
-🎯 Impact: Attackers could inject arbitrary instructions into the system prompts for the learning path refinement and ghost narration AI tools, potentially causing the model to leak context or deviate from its intended persona/function.
-🔧 Fix: Added Pydantic `@field_validator(..., mode="before", check_fields=False)` to apply `sanitize_llm_input(..., truncate=False)` to the vulnerable fields in `app/models.py`. Ensure unique method names were used for the decorators to satisfy Ruff.
-✅ Verification: New unit tests in `tests/test_models.py` verify that malicious strings mapped to these fields are successfully replaced with `[filtered]`.
