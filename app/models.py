@@ -256,7 +256,9 @@ class GhostNarrateRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", "previous_node_id", mode="before", check_fields=False)
+    @field_validator(
+        "node_id", "file_path", "previous_node_id", mode="before", check_fields=False
+    )
     @classmethod
     def sanitize_ghost_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
