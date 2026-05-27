@@ -50,9 +50,9 @@ class ExplainRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", mode="before")
+    @field_validator("node_id", "file_path", mode="before", check_fields=False)
     @classmethod
-    def sanitize_identifiers(cls, value: str | None) -> str | None:
+    def sanitize_explain_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -83,9 +83,9 @@ class SnippetRequest(BaseModel):
         }
     }
 
-    @field_validator("node_id", "file_path", mode="before")
+    @field_validator("node_id", "file_path", mode="before", check_fields=False)
     @classmethod
-    def sanitize_identifiers(cls, value: str | None) -> str | None:
+    def sanitize_snippet_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -142,6 +142,13 @@ class ChatRequest(BaseModel):
     @classmethod
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
+
+    @field_validator("node_id", "file_path", mode="before", check_fields=False)
+    @classmethod
+    def sanitize_chat_identifiers(cls, value: str | None) -> str | None:
+        if isinstance(value, str):
+            return sanitize_llm_input(value, truncate=False)
+        return value
 
     @field_validator("question", mode="before")
     @classmethod
@@ -204,9 +211,9 @@ class LearningPathRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("file_path", "selected_file", mode="before")
+    @field_validator("file_path", "selected_file", mode="before", check_fields=False)
     @classmethod
-    def sanitize_identifiers(cls, value: str | None) -> str | None:
+    def sanitize_learning_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -249,9 +256,9 @@ class GhostNarrateRequest(BaseModel):
     def normalize_model(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
-    @field_validator("node_id", "file_path", "previous_node_id", mode="before")
+    @field_validator("node_id", "file_path", "previous_node_id", mode="before", check_fields=False)
     @classmethod
-    def sanitize_identifiers(cls, value: str | None) -> str | None:
+    def sanitize_ghost_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
