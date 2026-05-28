@@ -246,6 +246,7 @@ def test_upload_project_size_limit():
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
 
+
 @patch("app.routers.upload.os.scandir")
 def test_cleanup_expired_upload_dirs_error_handling(mock_scandir):
     """Test that one failing entry doesn't crash the entire cleanup process."""
@@ -262,7 +263,7 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir):
     stat1 = MagicMock()
     stat1.st_mtime = time.time() - 86400
     mock_entry1.stat.return_value = stat1
-    mock_entry1.path = "/tmp/failed_dir"
+    mock_entry1.path = "/mocked/failed_dir"
 
     mock_entry2 = MagicMock()
     mock_entry2.name = f"{UPLOAD_PREFIX}success"
@@ -272,15 +273,16 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir):
     stat2 = MagicMock()
     stat2.st_mtime = time.time() - 86400
     mock_entry2.stat.return_value = stat2
-    mock_entry2.path = "/tmp/success_dir"
+    mock_entry2.path = "/mocked/success_dir"
 
     # Return both entries when scandir is called
     mock_scandir.return_value.__enter__.return_value = [mock_entry1, mock_entry2]
 
     # We mock shutil.rmtree to fail on the first and succeed on the second
     with patch("app.routers.upload.shutil.rmtree") as mock_rmtree:
+
         def side_effect(path, *args, **kwargs):
-            if path == "/tmp/failed_dir":
+            if path == "/mocked/failed_dir":
                 raise OSError("Simulated permission error")
             return None
 
@@ -290,5 +292,5 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir):
 
         # Verify rmtree was called for BOTH directories, proving the loop continued
         assert mock_rmtree.call_count == 2
-        mock_rmtree.assert_any_call("/tmp/failed_dir", ignore_errors=True)
-        mock_rmtree.assert_any_call("/tmp/success_dir", ignore_errors=True)
+        mock_rmtree.assert_any_call("/mocked/failed_dir", ignore_errors=True)
+        mock_rmtree.assert_any_call("/mocked/success_dir", ignore_errors=True)
