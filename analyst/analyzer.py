@@ -281,21 +281,24 @@ class CallGraphVisitor(ast.NodeVisitor):
                 if callee:
                     calls.add(callee)
             elif isinstance(child, (ast.Import, ast.ImportFrom)):
-                if any(
-                    (alias.name.split(".")[0] if alias.name else "")
-                    in _SIDE_EFFECT_MODULES
-                    for alias in child.names
-                ):
-                    imports_side_effect_module = True
+                # PERFORMANCE OPTIMIZATION (Bolt): Replaced any() generator expression with a standard for-loop
+                # to eliminate generator allocation overhead during frequent AST traversal iterations.
+                for alias in child.names:
+                    val = alias.name.split(".")[0] if alias.name else ""
+                    if val in _SIDE_EFFECT_MODULES:
+                        imports_side_effect_module = True
+                        break
 
             queue.extend(ast.iter_child_nodes(child))
 
-        api_boundary = any(
-            (decorator_name := self._decorator_name(decorator))
-            in _ROUTE_DECORATOR_NAMES
-            or decorator_name.endswith(_ROUTE_DECORATOR_SUFFIXES)
-            for decorator in getattr(node, "decorator_list", [])
-        )
+        api_boundary = False
+        # PERFORMANCE OPTIMIZATION (Bolt): Replaced any() generator expression with a standard for-loop
+        # to eliminate generator allocation overhead during frequent AST traversal iterations.
+        for decorator in getattr(node, "decorator_list", []):
+            decorator_name = self._decorator_name(decorator)
+            if decorator_name in _ROUTE_DECORATOR_NAMES or decorator_name.endswith(_ROUTE_DECORATOR_SUFFIXES):
+                api_boundary = True
+                break
 
         side_effect_boundary = (
             api_boundary
