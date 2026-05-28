@@ -193,6 +193,7 @@ def test_ai_refinement_discards_hallucinated_nodes_and_preserves_missing_baselin
     )
     assert [step["step"] for step in refined] == [1, 2, 3, 4]
 
+
 def test_ai_refinement_handles_refiner_exception():
     baseline = build_learning_path(_sample_nodes(), _sample_edges())
 
@@ -209,4 +210,6 @@ def test_ai_refinement_handles_refiner_exception():
 
     # When refiner crashes, it falls back to [] and the final output
     # should be identical to the baseline.
-    assert [step["node_id"] for step in refined] == [step["node_id"] for step in baseline]
+    assert [step["node_id"] for step in refined] == [
+        step["node_id"] for step in baseline
+    ]
