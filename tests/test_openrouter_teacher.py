@@ -5,6 +5,7 @@ import json
 import pytest
 from unittest.mock import MagicMock, patch
 
+from openai import APITimeoutError
 from teacher.openrouter_teacher import (
     OpenRouterTeacher,
     _try_parse_json,
@@ -197,6 +198,23 @@ class TestWithMockedClient:
         ctx = NarrateStepContext(code_snippet="def init(): pass", node_id="init")
         result = self.teacher.narrate_step(ctx)
         assert result["importance"] == "medium"
+
+    def test_narrate_step_handles_api_timeout_error(self):
+        request = MagicMock()
+        self.mock_client.chat.completions.create.side_effect = APITimeoutError(request)
+        ctx = NarrateStepContext(code_snippet="def init(): pass", node_id="init")
+        result = self.teacher.narrate_step(ctx)
+        assert result["narration"] == "Narration timed out."
+        assert result["relationship"] == ""
+        assert result["importance"] == "low"
+
+    def test_narrate_step_handles_generic_exception(self):
+        self.mock_client.chat.completions.create.side_effect = Exception("Unexpected error")
+        ctx = NarrateStepContext(code_snippet="def init(): pass", node_id="init")
+        result = self.teacher.narrate_step(ctx)
+        assert result["narration"] == ""
+        assert result["relationship"] == ""
+        assert result["importance"] == "low"
 
     def test_refine_learning_path_prompt_constrains_allowed_nodes(self):
         response_json = json.dumps(
