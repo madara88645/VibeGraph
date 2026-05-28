@@ -44,7 +44,7 @@ def get_allowed_models() -> list[str]:
     return models
 
 
-def _get_bearer_token(request: Request) -> str | None:
+def get_bearer_token(request: Request) -> str | None:
     authorization = request.headers.get("Authorization", "")
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer":
@@ -80,7 +80,7 @@ def resolve_model_name(requested_model: str | None) -> str:
 
 
 def resolve_openrouter_api_key(request: Request) -> str:
-    bearer_token = _get_bearer_token(request)
+    bearer_token = get_bearer_token(request)
     if bearer_token:
         return bearer_token
 

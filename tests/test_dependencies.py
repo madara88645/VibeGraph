@@ -11,7 +11,7 @@ from app.dependencies import (
     _env_flag,
     get_default_model,
     get_allowed_models,
-    _get_bearer_token,
+    get_bearer_token,
     is_server_fallback_enabled,
     get_public_ai_config,
     resolve_model_name,
@@ -73,16 +73,16 @@ def test_get_allowed_models():
 def test_get_bearer_token():
     request = MagicMock(spec=Request)
     request.headers = {"Authorization": "Bearer my-token"}
-    assert _get_bearer_token(request) == "my-token"
+    assert get_bearer_token(request) == "my-token"
 
     request.headers = {"Authorization": "bearer lower-token"}
-    assert _get_bearer_token(request) == "lower-token"
+    assert get_bearer_token(request) == "lower-token"
 
     request.headers = {"Authorization": "Basic something"}
-    assert _get_bearer_token(request) is None
+    assert get_bearer_token(request) is None
 
     request.headers = {}
-    assert _get_bearer_token(request) is None
+    assert get_bearer_token(request) is None
 
 
 def test_is_server_fallback_enabled():

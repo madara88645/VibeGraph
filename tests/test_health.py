@@ -33,3 +33,24 @@ def test_health_response_schema():
     # It must raise an error if required fields are missing
     with pytest.raises(pydantic.ValidationError):
         HealthResponse(status="ok")
+
+
+def test_health_with_auth_key_missing():
+    os.environ["HEALTH_API_KEY"] = "secret123"
+    try:
+        response = client.get("/api/health")
+        assert response.status_code == 401
+    finally:
+        del os.environ["HEALTH_API_KEY"]
+
+
+def test_health_with_auth_key_valid():
+    os.environ["HEALTH_API_KEY"] = "secret123"
+    try:
+        response = client.get(
+            "/api/health", headers={"Authorization": "Bearer secret123"}
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok", "vibe": "checked"}
+    finally:
+        del os.environ["HEALTH_API_KEY"]
