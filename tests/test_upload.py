@@ -266,7 +266,7 @@ def test_cleanup_expired_upload_dirs_error_handling():
     mock_stat = MagicMock()
     mock_stat.st_mtime = now - 100000
     mock_entry_2.stat.return_value = mock_stat
-    mock_entry_2.path = "/tmp/vibegraph_test_good"
+    mock_entry_2.path = "/tmp/vibegraph_test_good"  # nosec B108
 
     with (
         patch("app.routers.upload.os.scandir") as mock_scandir,
@@ -277,5 +277,5 @@ def test_cleanup_expired_upload_dirs_error_handling():
         cleanup_expired_upload_dirs()
 
         mock_rmtree.assert_called_once_with(
-            "/tmp/vibegraph_test_good", ignore_errors=True
+            "/tmp/vibegraph_test_good", ignore_errors=True  # nosec B108
         )
