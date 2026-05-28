@@ -209,7 +209,9 @@ class TestWithMockedClient:
         assert result["importance"] == "low"
 
     def test_narrate_step_handles_generic_exception(self):
-        self.mock_client.chat.completions.create.side_effect = Exception("Unexpected error")
+        self.mock_client.chat.completions.create.side_effect = Exception(
+            "Unexpected error"
+        )
         ctx = NarrateStepContext(code_snippet="def init(): pass", node_id="init")
         result = self.teacher.narrate_step(ctx)
         assert result["narration"] == ""
