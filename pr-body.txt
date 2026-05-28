@@ -1,7 +1,3 @@
-💡 **What:** Added `role="log"` to the chat message container and injected visually hidden speaker indicators ("You:" and "AI:") to each chat bubble. The typing dots were marked hidden to screen readers and a visually hidden "AI is typing..." indicator was added instead.
-
-🎯 **Why:** Sighted users rely on visual cues (bubble alignment, colors, animated dots) to follow a conversation, while screen readers traditionally read the UI linearly as plain text. This provides equivalent context and smooth live announcements for screen reader users.
-
-📸 **Before/After:** The UI remains visually identical; the changes are purely semantic.
-
-♿ **Accessibility:** Solves the problem of disjointed, context-less chat streams for screen reader users and correctly announces live message additions using standard `role="log"`.
+🎯 **What:** Added a new test file `tests/test_verify_backend.py` to cover `verify_backend.py`, specifically targeting the missing exception handling paths for `test_health` and `test_explain`.
+📊 **Coverage:** Added coverage for both the success paths and the error paths (e.g. non-200 status codes, missing JSON keys) as well as the exception block paths by mocking `requests.exceptions.RequestException`.
+✨ **Result:** The `except Exception as e:` blocks in `verify_backend.py` are now actively verified.
