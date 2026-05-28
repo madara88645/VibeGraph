@@ -50,14 +50,14 @@ def assess_learning_path(
     ordered_ids = _ordered_node_ids(steps)
     positions = {node_id: index for index, node_id in enumerate(ordered_ids)}
 
-    violating_edges: list[tuple[str, str]] = []
-    for caller, callee in _call_edges(outgoing):
-        caller_pos = positions.get(caller)
-        callee_pos = positions.get(callee)
-        if caller_pos is None or callee_pos is None:
-            continue
-        if caller_pos >= callee_pos:
-            violating_edges.append((caller, callee))
+    pos_get = positions.get
+    violating_edges = [
+        (caller, callee)
+        for caller, callee in _call_edges(outgoing)
+        if (caller_pos := pos_get(caller)) is not None
+        and (callee_pos := pos_get(callee)) is not None
+        and caller_pos >= callee_pos
+    ]
 
     caller_before_callee = not violating_edges
 

@@ -106,3 +106,7 @@
 ## 2026-05-23 - Optimize string suffix checks with tuple endswith
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
+
+## $(date +%Y-%m-%d) - Optimize inefficient loop allocations with list comprehensions and walrus operator
+**Learning:** In Python, using a standard `for` loop that repeatedly calls `.append()` to populate a list adds significant method-call overhead. When filtering logic requires checking dictionary lookups against `None`, executing these checks sequentially in a loop is slower than a compiled comprehension.
+**Action:** Replace `for` loops that use `.append()` with list comprehensions. If intermediate dictionary lookups (like `dict.get()`) are required and need `None` checks, utilize the walrus operator (`:=`) inside the comprehension's `if` condition to assign and check the value simultaneously, which reduces evaluation overhead and speeds up the entire operation. Furthermore, extracting the dictionary lookup method (e.g., `pos_get = positions.get`) to a local variable prior to the comprehension provides an additional speed boost.
