@@ -296,7 +296,9 @@ class CallGraphVisitor(ast.NodeVisitor):
         # to eliminate generator allocation overhead during frequent AST traversal iterations.
         for decorator in getattr(node, "decorator_list", []):
             decorator_name = self._decorator_name(decorator)
-            if decorator_name in _ROUTE_DECORATOR_NAMES or decorator_name.endswith(_ROUTE_DECORATOR_SUFFIXES):
+            if decorator_name in _ROUTE_DECORATOR_NAMES or decorator_name.endswith(
+                _ROUTE_DECORATOR_SUFFIXES
+            ):
                 api_boundary = True
                 break
 
