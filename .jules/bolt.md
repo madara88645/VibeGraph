@@ -106,3 +106,7 @@
 ## 2026-05-23 - Optimize string suffix checks with tuple endswith
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
+
+## 2024-05-27 - Lazy String Caching for Search Fields
+**Learning:** In high-frequency UI search filters iterating over large datasets, allocating strings repeatedly via `.toLowerCase()` on every keystroke causes massive garbage collection overhead and execution latency.
+**Action:** Lazily precompute and cache the normalized, concatenated search string directly on the underlying object (e.g., `node._searchStr`) during the first iteration to significantly drop execution time on subsequent keystrokes. Use a unique null byte separator (`\0`) when concatenating multiple fields to prevent cross-field matching bugs.

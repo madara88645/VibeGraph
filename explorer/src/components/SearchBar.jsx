@@ -47,12 +47,24 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         const matches = [];
         // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 8)
         // This avoids O(N) string processing across potentially thousands of nodes once we have our 8 results.
+        // Cache the search string directly on the node to avoid O(N) string allocations (.toLowerCase()) on every keystroke.
+        // Use a unique separator to prevent cross-field matching bugs like a space query matching everything.
         for (let i = 0; i < allNodes.length; i++) {
             if (matches.length >= 8) break;
             const n = allNodes[i];
-            const label = (n.data?.label || '').toLowerCase();
-            const file = (n.data?.file || '').toLowerCase();
-            if (label.includes(q) || file.includes(q)) {
+
+            let searchStr = n._searchStr;
+            if (searchStr === undefined) {
+                searchStr = (n.data?.label || '').toLowerCase() + '\0' + (n.data?.file || '').toLowerCase();
+                try {
+                    // Try to attach cache, but silently ignore if props are frozen by strict state managers
+                    n._searchStr = searchStr;
+                } catch (e) {
+                    // Ignore
+                }
+            }
+
+            if (searchStr.includes(q)) {
                 matches.push(n);
             }
         }
