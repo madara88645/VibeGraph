@@ -154,7 +154,9 @@ class TestMainStart(unittest.TestCase):
         mock_which.return_value = "/usr/bin/npm"
 
         # Mock subprocess to raise CalledProcessError
-        mock_subprocess.side_effect = subprocess.CalledProcessError(1, ["npm", "install"])
+        mock_subprocess.side_effect = subprocess.CalledProcessError(
+            1, ["npm", "install"]
+        )
 
         # We also need to patch out os functions temporarily inside test
         with (
