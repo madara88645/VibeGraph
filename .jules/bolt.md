@@ -106,3 +106,7 @@
 ## 2026-05-23 - Optimize string suffix checks with tuple endswith
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
+
+## 2024-05-24 - Python AST Traversal Optimization Correction
+**Learning:** When replacing Python's `ast.walk()` with a Breadth-First Search (BFS) queue for performance optimization, restricting child traversal to a hardcoded list of block attributes (like `body`, `orelse`, `handlers`) breaks static analysis by missing expressions (e.g., `ast.Call` inside `value` or `args` of a function call or list).
+**Action:** Instead, use `queue.extend(ast.iter_child_nodes(node))` to safely iterate and enqueue all valid child nodes while still avoiding the generator overhead of `ast.walk()`.
