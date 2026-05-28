@@ -1,0 +1,3 @@
+🎯 **What:** Added a missing error path test in `tests/test_upload_security.py` to cover the `zipfile.BadZipFile` exception which occurs when uploading a corrupt zip file.
+📊 **Coverage:** The new test `test_upload_corrupt_zip` creates a malformed `.zip` and ensures the `/api/upload-project` endpoint correctly returns an HTTP 400 response with the detail `"Invalid zip archive detected."`.
+✨ **Result:** Increased test coverage and confidence in the backend endpoint's error handling for corrupted zip file uploads.
