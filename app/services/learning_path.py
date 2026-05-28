@@ -180,6 +180,9 @@ def build_learning_path(
 
     ordered_ids: list[str] = []
     visited: set[str] = set()
+    # PERFORMANCE OPTIMIZATION (Bolt): Track unvisited nodes with a Set to eliminate
+    # O(N^2) list membership checks and redundant array allocations during fallback selection.
+    unvisited_set: set[str] = set(scored.keys())
     queue: list[tuple[tuple[Any, ...], str]] = []
     enqueued: set[str] = set()
     heappush = heapq.heappush
@@ -199,17 +202,17 @@ def build_learning_path(
             if node_id in visited:
                 continue
             visited.add(node_id)
+            unvisited_set.discard(node_id)
             ordered_ids.append(node_id)
             for target in outgoing[node_id]:
                 push(target)
 
         # Handle any unvisited subgraphs or isolated nodes
-        unvisited = [nid for nid in scored if nid not in visited]
-        if not unvisited:
+        if not unvisited_set:
             break
 
         # Seed next phase of traversal with the highest priority unvisited node
-        best_remaining = min(unvisited, key=lambda nid: scored[nid]["_sort"])
+        best_remaining = min(unvisited_set, key=lambda nid: scored[nid]["_sort"])
         push(best_remaining)
 
     steps = []
