@@ -106,3 +106,7 @@
 ## 2026-05-23 - Optimize string suffix checks with tuple endswith
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
+
+## 2024-05-28 - Loop Set Allocation Overhead
+**Learning:** In Python performance optimization, replacing a list comprehension containing an O(1) set membership check (e.g., `[k for k in dict if k not in visited_set]`) with a set difference (e.g., `set(dict) - visited_set`) inside a loop typically degrades performance. The repeated `set()` allocation and hashing overhead on each iteration outweighs the benefits of the C-optimized set difference.
+**Action:** When calculating remaining unvisited elements in a loop, prefer maintaining an external mutable set (and using `.discard()`) or using dictionary view set operations (`dict.keys() - visited_set`) rather than re-allocating `set(dict)` on every iteration.

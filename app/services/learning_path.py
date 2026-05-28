@@ -204,7 +204,7 @@ def build_learning_path(
                 push(target)
 
         # Handle any unvisited subgraphs or isolated nodes
-        unvisited = [nid for nid in scored if nid not in visited]
+        unvisited = set(scored) - visited
         if not unvisited:
             break
 
