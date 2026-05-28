@@ -170,3 +170,28 @@ def test_upload_symlink_zip():
 
     assert response.status_code == 400
     assert "Unsafe zip file detected" in response.json()["detail"]
+
+
+def test_upload_extraction_error():
+    """Ensure that an exception during zip extraction is caught and handled."""
+    import io
+    from unittest.mock import patch
+
+    # Use io.BytesIO to avoid disk I/O
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("normal.py", "print('hello')")
+
+    buf.seek(0)
+
+    # Mock zipfile.ZipFile.open to raise BadZipFile during extraction
+    with patch("zipfile.ZipFile.open") as mock_open:
+        mock_open.side_effect = zipfile.BadZipFile("Corrupted file in zip")
+
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("valid_test.zip", buf, "application/zip")},
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid zip archive detected."
