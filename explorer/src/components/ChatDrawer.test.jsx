@@ -3,7 +3,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('react-markdown', () => ({
-  default: ({ children }) => <div data-testid="markdown">{children}</div>,
+  default: ({ children, rehypePlugins }) => (
+    <div data-testid="markdown" data-plugins={rehypePlugins ? 'has-plugins' : 'no-plugins'}>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('../utils/sse', () => ({
@@ -273,6 +277,31 @@ describe('ChatDrawer', () => {
     await user.type(input, 'Enter key test{Enter}');
 
     expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('passes rehypePlugins to ReactMarkdown to prevent XSS', async () => {
+    const user = userEvent.setup();
+    const encoder = new TextEncoder();
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('data: <script>alert(1)</script>\n\n'));
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      }),
+    });
+
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+
+    await waitFor(() => {
+      const md = screen.getByTestId('markdown');
+      expect(md).toHaveAttribute('data-plugins', 'has-plugins');
+    });
   });
 
   it('resets messages when selected node changes', async () => {

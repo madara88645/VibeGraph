@@ -1,0 +1,8 @@
+🎯 **What:** The vulnerability fixed
+Resolved a Cross-Site Scripting (XSS) vulnerability in `ChatDrawer.jsx` by sanitizing the `ReactMarkdown` output.
+
+⚠️ **Risk:** The potential impact if left unfixed
+Without sanitization, malicious actors or unexpected outputs could inject and execute arbitrary JavaScript (e.g. `<script>`) within the user's browser via the chat rendering layer.
+
+🛡️ **Solution:** How the fix addresses the vulnerability
+Installed `rehype-sanitize` and configured it as a plugin (`rehypePlugins={[rehypeSanitize]}`) for `ReactMarkdown`. This safely strips malicious HTML tags before they are rendered to the DOM, and a new test was added to verify the integration.
