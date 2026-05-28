@@ -56,11 +56,10 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
             let searchStr = n._searchStr;
             if (searchStr === undefined) {
                 searchStr = (n.data?.label || '').toLowerCase() + '\0' + (n.data?.file || '').toLowerCase();
-                try {
-                    // Try to attach cache, but silently ignore if props are frozen by strict state managers
+                // Cache the search string directly on the node if possible
+                if (Object.isExtensible(n)) {
+                    // eslint-disable-next-line react-hooks/immutability
                     n._searchStr = searchStr;
-                } catch (e) {
-                    // Ignore
                 }
             }
 
