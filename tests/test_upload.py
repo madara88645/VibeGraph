@@ -245,3 +245,37 @@ def test_upload_project_size_limit():
 
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
+
+
+def test_cleanup_expired_upload_dirs_error_handling():
+    """Test that one failing entry does not crash the entire cleanup process."""
+    from unittest.mock import MagicMock, patch
+    import time
+    from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+
+    now = time.time()
+
+    mock_entry_1 = MagicMock()
+    mock_entry_1.name = f"{UPLOAD_PREFIX}bad"
+    mock_entry_1.is_dir.return_value = True
+    mock_entry_1.stat.side_effect = OSError("Permission denied")
+
+    mock_entry_2 = MagicMock()
+    mock_entry_2.name = f"{UPLOAD_PREFIX}good"
+    mock_entry_2.is_dir.return_value = True
+    mock_stat = MagicMock()
+    mock_stat.st_mtime = now - 100000
+    mock_entry_2.stat.return_value = mock_stat
+    mock_entry_2.path = "/tmp/vibegraph_test_good"
+
+    with (
+        patch("app.routers.upload.os.scandir") as mock_scandir,
+        patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+    ):
+        mock_scandir.return_value.__enter__.return_value = [mock_entry_1, mock_entry_2]
+
+        cleanup_expired_upload_dirs()
+
+        mock_rmtree.assert_called_once_with(
+            "/tmp/vibegraph_test_good", ignore_errors=True
+        )
