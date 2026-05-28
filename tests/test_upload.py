@@ -246,6 +246,7 @@ def test_upload_project_size_limit():
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
 
+
 def test_cleanup_expired_upload_dirs_error_path():
     """Test that cleanup handles exceptions on individual entries without crashing."""
     import time
@@ -264,9 +265,10 @@ def test_cleanup_expired_upload_dirs_error_path():
         os.utime(dir1, (old_time, old_time))
         os.utime(dir2, (old_time, old_time))
 
-        with patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root), \
-             patch("app.routers.upload.shutil.rmtree") as mock_rmtree:
-
+        with (
+            patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root),
+            patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+        ):
             # Make the first call to shutil.rmtree raise an exception
             # We want to make sure the loop continues and calls rmtree on the second one
             mock_rmtree.side_effect = [OSError("Fake Error"), None]
