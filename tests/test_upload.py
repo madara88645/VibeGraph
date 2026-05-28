@@ -277,5 +277,6 @@ def test_cleanup_expired_upload_dirs_error_handling():
         cleanup_expired_upload_dirs()
 
         mock_rmtree.assert_called_once_with(
-            "/tmp/vibegraph_test_good", ignore_errors=True  # nosec B108
+            "/tmp/vibegraph_test_good",
+            ignore_errors=True,  # nosec B108
         )
