@@ -86,6 +86,21 @@ class TestExternalBuiltin:
         assert start is None
 
 
+class TestFileReadError:
+    def test_oserror_on_read_returns_error(self):
+        from unittest.mock import patch
+
+        path = _write_temp("def hello():\n    pass\n")
+
+        with patch("builtins.open", side_effect=OSError("Mocked OSError")):
+            code, start, end, full_source = extract_snippet(path, "hello")
+
+        assert "# Error reading file" in code
+        assert start is None
+        assert end is None
+        assert full_source is None
+
+
 class TestSyntaxError:
     def test_syntax_error_returns_error_with_line_info(self):
         path = _write_temp("def broken(\n")
