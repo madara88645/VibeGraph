@@ -54,7 +54,7 @@ class ExplainRequest(BaseModel):
     @classmethod
     def sanitize_explain_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_FILE_PATH_LENGTH, truncate=True)
         return value
 
     @field_validator("callers", "callees", "neighbors")
@@ -87,7 +87,7 @@ class SnippetRequest(BaseModel):
     @classmethod
     def sanitize_snippet_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_FILE_PATH_LENGTH, truncate=True)
         return value
 
 
@@ -103,7 +103,7 @@ class ChatMessage(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_CONTENT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_CONTENT_LENGTH, truncate=True)
         return value
 
 
@@ -147,7 +147,7 @@ class ChatRequest(BaseModel):
     @classmethod
     def sanitize_chat_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_FILE_PATH_LENGTH, truncate=True)
         return value
 
     @field_validator("question", mode="before")
@@ -158,7 +158,7 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_QUESTION_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_QUESTION_LENGTH, truncate=True)
         return value
 
     @field_validator("project_context", mode="before")
@@ -169,7 +169,7 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_PROJECT_CONTEXT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=True)
         return value
 
     @field_validator("callers", "callees", "neighbors")
@@ -215,7 +215,7 @@ class LearningPathRequest(BaseModel):
     @classmethod
     def sanitize_learning_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_FILE_PATH_LENGTH, truncate=True)
         return value
 
 
@@ -248,7 +248,7 @@ class GhostNarrateRequest(BaseModel):
         if isinstance(value, str):
             if len(value) > 50:
                 raise ValueError("String should have at most 50 characters")
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=50, truncate=True)
         return value
 
     @field_validator("model", mode="before")
@@ -262,7 +262,7 @@ class GhostNarrateRequest(BaseModel):
     @classmethod
     def sanitize_ghost_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=MAX_FILE_PATH_LENGTH, truncate=True)
         return value
 
 
