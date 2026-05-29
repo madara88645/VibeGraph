@@ -1,4 +1,11 @@
-💡 What: Replaced an O(N) list comprehension inside a priority queue loop with a dynamically updated `unvisited_set` in `app/services/learning_path.py`.
-🎯 Why: Previously, finding the next fallback node evaluated `[nid for nid in scored if nid not in visited]` on every fallback evaluation, causing multiple O(N) evaluations and intermediate array allocations per graph disconnected component. This resulted in O(N^2) time complexity.
-📊 Impact: Completely eliminates the O(N^2) list comprehensions, reducing traversal overhead to finding the minimum score within the remaining O(1) tracking set. Avoids repetitive allocations.
-🔬 Measurement: Verify correctness and performance by running `python -m pytest tests/test_learning_path_service.py` to ensure fallback nodes are still properly processed.
+💡 What:
+Replaced `Object.entries().map().join()` with imperative `for...in` loops in `FileSidebar.jsx` and `ChatDrawer.jsx` when building summary strings.
+
+🎯 Why:
+To prevent severe garbage collection pressure and CPU overhead caused by the hidden allocation of multiple intermediate arrays during frequent render cycles or large list traversals.
+
+📊 Impact:
+Eliminates O(N) array allocation overhead and multiple iteration passes over object entries entirely, providing a best-case zero-allocation path when deriving string-based properties.
+
+🔬 Measurement:
+Profile a workspace with numerous node files or trigger rapid simulation ticks; memory snapshots will show fewer short-lived array allocations.

@@ -106,6 +106,14 @@
 ## 2026-05-23 - Optimize string suffix checks with tuple endswith
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
-## 2026-05-28 - Optimize O(N^2) list membership check with O(1) set tracking
+
+## 2024-05-24 - Python AST Traversal Optimization Correction
+**Learning:** When replacing Python's `ast.walk()` with a Breadth-First Search (BFS) queue for performance optimization, restricting child traversal to a hardcoded list of block attributes (like `body`, `orelse`, `handlers`) breaks static analysis by missing expressions (e.g., `ast.Call` inside `value` or `args` of a function call or list).
+**Action:** Instead, use `queue.extend(ast.iter_child_nodes(node))` to safely iterate and enqueue all valid child nodes while still avoiding the generator overhead of `ast.walk()`.
+## 2026-05-25 - Avoid `any()` generator expression overhead in hot paths
+**Learning:** In performance-critical Python paths (e.g., frequent AST traversal loops in `analyst/analyzer.py`), using `any()` combined with a generator expression (e.g., `any(... for x in ...)` incurs significant overhead due to generator allocation.
+**Action:** Replace `any()` with generator expressions with explicit, unrolled `for` loops containing an early `break`. This eliminates the generator allocation and reduces execution time.
+
+## 2026-05-29 - Optimize O(N^2) list membership check with O(1) set tracking
 **Learning:** In Python performance optimization, replacing a list comprehension containing an O(1) set membership check (e.g., `[k for k in dict if k not in visited_set]`) with a dynamically updated `unvisited_set` eliminates the O(N) array allocation overhead from executing repeatedly within a fallback selection loop (resulting in O(N^2) complexity).
 **Action:** To eliminate O(N^2) time complexity when repeatedly filtering unvisited items inside a loop (e.g., during graph traversal fallbacks), initialize an `unvisited_set` before the loop and use `.discard(item)` as items are visited, rather than evaluating an O(N) list comprehension like `[n for n in items if n not in visited]` on every iteration.

@@ -46,3 +46,13 @@ def test_valid_json_array(capsys):
 
     captured = capsys.readouterr()
     assert "Error" not in captured.out
+
+
+def test_generic_exception(capsys):
+    with patch("builtins.open", side_effect=Exception("Simulated error")):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: Simulated error" in captured.out
