@@ -12,14 +12,33 @@ from app.routers.health import HealthResponse
 client = TestClient(app)
 
 
-def test_health_get():
-    response = client.get("/api/health")
+def test_health_get_authenticated(monkeypatch):
+    monkeypatch.setenv("HEALTH_CHECK_TOKEN", "test-token")
+    response = client.get("/api/health", headers={"Authorization": "Bearer test-token"})
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "vibe": "checked"}
 
 
-def test_health_post_405():
-    response = client.post("/api/health")
+def test_health_get_unauthenticated(monkeypatch):
+    monkeypatch.setenv("HEALTH_CHECK_TOKEN", "test-token")
+    response = client.get("/api/health")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid or missing authentication token"
+
+
+def test_health_get_invalid_token(monkeypatch):
+    monkeypatch.setenv("HEALTH_CHECK_TOKEN", "test-token")
+    response = client.get(
+        "/api/health", headers={"Authorization": "Bearer wrong-token"}
+    )
+    assert response.status_code == 401
+
+
+def test_health_post_405(monkeypatch):
+    monkeypatch.setenv("HEALTH_CHECK_TOKEN", "test-token")
+    response = client.post(
+        "/api/health", headers={"Authorization": "Bearer test-token"}
+    )
     assert response.status_code == 405
 
 
