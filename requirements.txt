@@ -17,3 +17,4 @@ tenacity>=8.2.0
 tree-sitter>=0.23
 tree-sitter-javascript>=0.23
 tree-sitter-typescript>=0.23
+requests
