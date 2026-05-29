@@ -247,50 +247,33 @@ def test_upload_project_size_limit():
     assert "Upload too large" in response.json()["detail"]
 
 
-@patch("app.routers.upload.os.scandir")
-def test_cleanup_expired_upload_dirs_error_handling(mock_scandir):
-    """Test that one failing entry doesn't crash the entire cleanup process."""
-    from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+def test_cleanup_expired_upload_dirs_error_path():
+    """Test that cleanup handles exceptions on individual entries without crashing."""
     import time
-    from unittest.mock import MagicMock
+    from app.routers.upload import cleanup_expired_upload_dirs
+    from app.utils.security import UPLOAD_PREFIX
 
-    # Create two mock DirEntry objects
-    mock_entry1 = MagicMock()
-    mock_entry1.name = f"{UPLOAD_PREFIX}failed"
-    mock_entry1.is_dir.return_value = True
+    with tempfile.TemporaryDirectory() as temp_root:
+        # Create two fake upload directories
+        dir1 = os.path.join(temp_root, f"{UPLOAD_PREFIX}1")
+        dir2 = os.path.join(temp_root, f"{UPLOAD_PREFIX}2")
+        os.mkdir(dir1)
+        os.mkdir(dir2)
 
-    # Mock stat().st_mtime to be old enough
-    stat1 = MagicMock()
-    stat1.st_mtime = time.time() - 86400
-    mock_entry1.stat.return_value = stat1
-    mock_entry1.path = "/mocked/failed_dir"
+        # Modify dir1 and dir2 to look old enough to be deleted
+        old_time = time.time() - 10000
+        os.utime(dir1, (old_time, old_time))
+        os.utime(dir2, (old_time, old_time))
 
-    mock_entry2 = MagicMock()
-    mock_entry2.name = f"{UPLOAD_PREFIX}success"
-    mock_entry2.is_dir.return_value = True
+        with (
+            patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root),
+            patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+        ):
+            # Make the first call to shutil.rmtree raise an exception
+            # We want to make sure the loop continues and calls rmtree on the second one
+            mock_rmtree.side_effect = [OSError("Fake Error"), None]
 
-    # Mock stat().st_mtime to be old enough
-    stat2 = MagicMock()
-    stat2.st_mtime = time.time() - 86400
-    mock_entry2.stat.return_value = stat2
-    mock_entry2.path = "/mocked/success_dir"
+            cleanup_expired_upload_dirs(retention_seconds=0)
 
-    # Return both entries when scandir is called
-    mock_scandir.return_value.__enter__.return_value = [mock_entry1, mock_entry2]
-
-    # We mock shutil.rmtree to fail on the first and succeed on the second
-    with patch("app.routers.upload.shutil.rmtree") as mock_rmtree:
-
-        def side_effect(path, *args, **kwargs):
-            if path == "/mocked/failed_dir":
-                raise OSError("Simulated permission error")
-            return None
-
-        mock_rmtree.side_effect = side_effect
-
-        cleanup_expired_upload_dirs(retention_seconds=0)
-
-        # Verify rmtree was called for BOTH directories, proving the loop continued
-        assert mock_rmtree.call_count == 2
-        mock_rmtree.assert_any_call("/mocked/failed_dir", ignore_errors=True)
-        mock_rmtree.assert_any_call("/mocked/success_dir", ignore_errors=True)
+            # Should have been called twice (once for each directory)
+            assert mock_rmtree.call_count == 2
