@@ -1,0 +1,9 @@
+💡 What: Appended the keyboard shortcut string (e.g., `(Press 1)`) to the `titleText` variable for the first 9 choices in the `GhostChoices` component.
+
+🎯 Why: Previously, keyboard shortcuts were only indicated visually via `<kbd aria-hidden="true">` child elements. Screen reader users and users who rely on mouse tooltips were completely unaware that these shortcuts existed.
+
+📸 Before/After:
+*   **Before:** Tooltip/aria-label was simply `'Explore user_auth.py'`.
+*   **After:** Tooltip/aria-label is `'Explore user_auth.py (Press 1)'`.
+
+♿ Accessibility: Ensures full parity for non-sighted users and pointer-only users by exposing the shortcut directly in the accessible name and native browser tooltip.

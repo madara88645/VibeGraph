@@ -28,6 +28,27 @@ def test_upload_zip_slip():
     assert "Unsafe zip file detected" in response.json()["detail"]
 
 
+def test_upload_corrupt_zip():
+    """Ensure that corrupt zip files are handled gracefully."""
+    zip_path = "corrupt.zip"
+
+    # Write invalid zip data
+    with open(zip_path, "wb") as f:
+        f.write(b"Not a valid zip file content")
+
+    with open(zip_path, "rb") as f:
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("corrupt.zip", f, "application/zip")},
+        )
+
+    # Clean up
+    os.remove(zip_path)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid zip archive detected."
+
+
 def test_upload_safe_zip():
     # Create a safe zip file with no Python source
     zip_path = "safe.zip"
@@ -170,3 +191,28 @@ def test_upload_symlink_zip():
 
     assert response.status_code == 400
     assert "Unsafe zip file detected" in response.json()["detail"]
+
+
+def test_upload_extraction_error():
+    """Ensure that an exception during zip extraction is caught and handled."""
+    import io
+    from unittest.mock import patch
+
+    # Use io.BytesIO to avoid disk I/O
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("normal.py", "print('hello')")
+
+    buf.seek(0)
+
+    # Mock zipfile.ZipFile.open to raise BadZipFile during extraction
+    with patch("zipfile.ZipFile.open") as mock_open:
+        mock_open.side_effect = zipfile.BadZipFile("Corrupted file in zip")
+
+        response = client.post(
+            "/api/upload-project",
+            files={"files": ("valid_test.zip", buf, "application/zip")},
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid zip archive detected."
