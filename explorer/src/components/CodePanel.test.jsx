@@ -150,7 +150,10 @@ describe('CodePanel', () => {
         });
 
         await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-        await user.click(screen.getByRole('button', { name: 'Copy code' }));
+
+        // Wait for state to update after fetch resolves
+        const copyButton = await screen.findByRole('button', { name: 'Copy code' });
+        await user.click(copyButton);
 
         // Verify toast was shown (clipboard behavior confirmed via toast)
         await waitFor(() => {
@@ -179,7 +182,10 @@ describe('CodePanel', () => {
         });
 
         await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-        expect(screen.getAllByRole('button', { name: 'Copy code' })).toHaveLength(1);
+
+        await waitFor(() => {
+             expect(screen.getAllByRole('button', { name: 'Copy code' })).toHaveLength(1);
+        });
     });
 
     it('shows fullscreen toggle button', async () => {
