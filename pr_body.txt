@@ -1,5 +1,0 @@
-🚨 Severity: HIGH
-💡 Vulnerability: The `ChatRequest` Pydantic model in `app/models.py` lacked prompt injection sanitization (`sanitize_llm_input`) on user-controlled identifier fields (`node_id`, `file_path`). Furthermore, a Pydantic `UserWarning` was unintentionally silencing missing validations due to identical function names used across multiple classes.
-🎯 Impact: Attackers could inject malicious prompt bypass directives directly into the LLM context through unsanitized node and file paths in the chat endpoint.
-🔧 Fix: Added explicit `@field_validator("node_id", "file_path", mode="before")` logic to `ChatRequest`. Also renamed `sanitize_identifiers` across all classes (e.g., `sanitize_identifiers_explain`, `sanitize_identifiers_chat`) to ensure uniqueness, resolving the Pydantic override masking issue.
-✅ Verification: `pytest tests/` and `ruff check app/` both pass with no lint errors or regressions.

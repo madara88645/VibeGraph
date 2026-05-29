@@ -52,7 +52,7 @@ class ExplainRequest(BaseModel):
 
     @field_validator("node_id", "file_path", mode="before")
     @classmethod
-    def sanitize_identifiers_explain(cls, value: str | None) -> str | None:
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -85,7 +85,7 @@ class SnippetRequest(BaseModel):
 
     @field_validator("node_id", "file_path", mode="before")
     @classmethod
-    def sanitize_identifiers_snippet(cls, value: str | None) -> str | None:
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -137,13 +137,6 @@ class ChatRequest(BaseModel):
             ]
         }
     }
-
-    @field_validator("node_id", "file_path", mode="before")
-    @classmethod
-    def sanitize_identifiers_chat(cls, value: str | None) -> str | None:
-        if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
-        return value
 
     @field_validator("model", mode="before")
     @classmethod
@@ -213,7 +206,7 @@ class LearningPathRequest(BaseModel):
 
     @field_validator("file_path", "selected_file", mode="before")
     @classmethod
-    def sanitize_identifiers_learning(cls, value: str | None) -> str | None:
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
@@ -258,7 +251,7 @@ class GhostNarrateRequest(BaseModel):
 
     @field_validator("node_id", "file_path", "previous_node_id", mode="before")
     @classmethod
-    def sanitize_identifiers_ghost(cls, value: str | None) -> str | None:
+    def sanitize_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             return sanitize_llm_input(value, truncate=False)
         return value
