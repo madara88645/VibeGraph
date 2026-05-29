@@ -247,36 +247,68 @@ def test_upload_project_size_limit():
     assert "Upload too large" in response.json()["detail"]
 
 
-def test_cleanup_expired_upload_dirs_error_handling():
-    """Test that one failing entry does not crash the entire cleanup process."""
-    from unittest.mock import MagicMock, patch
+def test_cleanup_expired_upload_dirs_error_path():
+    """Test that cleanup handles exceptions on individual entries without crashing."""
     import time
-    from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+    from app.routers.upload import cleanup_expired_upload_dirs
+    from app.utils.security import UPLOAD_PREFIX
 
-    now = time.time()
+    with tempfile.TemporaryDirectory() as temp_root:
+        # Create two fake upload directories
+        dir1 = os.path.join(temp_root, f"{UPLOAD_PREFIX}1")
+        dir2 = os.path.join(temp_root, f"{UPLOAD_PREFIX}2")
+        os.mkdir(dir1)
+        os.mkdir(dir2)
 
-    mock_entry_1 = MagicMock()
-    mock_entry_1.name = f"{UPLOAD_PREFIX}bad"
-    mock_entry_1.is_dir.return_value = True
-    mock_entry_1.stat.side_effect = OSError("Permission denied")
+        # Modify dir1 and dir2 to look old enough to be deleted
+        old_time = time.time() - 10000
+        os.utime(dir1, (old_time, old_time))
+        os.utime(dir2, (old_time, old_time))
 
-    mock_entry_2 = MagicMock()
-    mock_entry_2.name = f"{UPLOAD_PREFIX}good"
-    mock_entry_2.is_dir.return_value = True
-    mock_stat = MagicMock()
-    mock_stat.st_mtime = now - 100000
-    mock_entry_2.stat.return_value = mock_stat
-    mock_entry_2.path = "/tmp/vibegraph_test_good"  # nosec B108
+        with (
+            patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root),
+            patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+        ):
+            # Make the first call to shutil.rmtree raise an exception
+            # We want to make sure the loop continues and calls rmtree on the second one
+            mock_rmtree.side_effect = [OSError("Fake Error"), None]
 
-    with (
-        patch("app.routers.upload.os.scandir") as mock_scandir,
-        patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
-    ):
-        mock_scandir.return_value.__enter__.return_value = [mock_entry_1, mock_entry_2]
+            cleanup_expired_upload_dirs(retention_seconds=0)
 
-        cleanup_expired_upload_dirs()
+            # Should have been called twice (once for each directory)
+            assert mock_rmtree.call_count == 2
 
-        mock_rmtree.assert_called_once_with(
-            "/tmp/vibegraph_test_good",
-            ignore_errors=True,  # nosec B108
-        )
+
+def test_cleanup_expired_upload_dirs_error_path():
+    """Test that cleanup handles exceptions on individual entries without crashing."""
+    import time
+    from unittest.mock import patch
+    import tempfile
+    import os
+    from app.routers.upload import cleanup_expired_upload_dirs
+    from app.utils.security import UPLOAD_PREFIX
+
+    with tempfile.TemporaryDirectory() as temp_root:
+        # Create two fake upload directories
+        dir1 = os.path.join(temp_root, f"{UPLOAD_PREFIX}1")
+        dir2 = os.path.join(temp_root, f"{UPLOAD_PREFIX}2")
+        os.mkdir(dir1)
+        os.mkdir(dir2)
+
+        # Modify dir1 and dir2 to look old enough to be deleted
+        old_time = time.time() - 10000
+        os.utime(dir1, (old_time, old_time))
+        os.utime(dir2, (old_time, old_time))
+
+        with (
+            patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root),
+            patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+        ):
+            # Make the first call to shutil.rmtree raise an exception
+            # We want to make sure the loop continues and calls rmtree on the second one
+            mock_rmtree.side_effect = [OSError("Fake Error"), None]
+
+            cleanup_expired_upload_dirs(retention_seconds=0)
+
+            # Should have been called twice (once for each directory)
+            assert mock_rmtree.call_count == 2
