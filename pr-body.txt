@@ -1,3 +1,0 @@
-🎯 **What:** Added a new test file `tests/test_verify_backend.py` to cover `verify_backend.py`, specifically targeting the missing exception handling paths for `test_health` and `test_explain`.
-📊 **Coverage:** Added coverage for both the success paths and the error paths (e.g. non-200 status codes, missing JSON keys) as well as the exception block paths by mocking `requests.exceptions.RequestException`.
-✨ **Result:** The `except Exception as e:` blocks in `verify_backend.py` are now actively verified.

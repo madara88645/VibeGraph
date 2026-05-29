@@ -245,3 +245,35 @@ def test_upload_project_size_limit():
 
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
+
+
+def test_cleanup_expired_upload_dirs_error_path():
+    """Test that cleanup handles exceptions on individual entries without crashing."""
+    import time
+    from app.routers.upload import cleanup_expired_upload_dirs
+    from app.utils.security import UPLOAD_PREFIX
+
+    with tempfile.TemporaryDirectory() as temp_root:
+        # Create two fake upload directories
+        dir1 = os.path.join(temp_root, f"{UPLOAD_PREFIX}1")
+        dir2 = os.path.join(temp_root, f"{UPLOAD_PREFIX}2")
+        os.mkdir(dir1)
+        os.mkdir(dir2)
+
+        # Modify dir1 and dir2 to look old enough to be deleted
+        old_time = time.time() - 10000
+        os.utime(dir1, (old_time, old_time))
+        os.utime(dir2, (old_time, old_time))
+
+        with (
+            patch("app.routers.upload.tempfile.gettempdir", return_value=temp_root),
+            patch("app.routers.upload.shutil.rmtree") as mock_rmtree,
+        ):
+            # Make the first call to shutil.rmtree raise an exception
+            # We want to make sure the loop continues and calls rmtree on the second one
+            mock_rmtree.side_effect = [OSError("Fake Error"), None]
+
+            cleanup_expired_upload_dirs(retention_seconds=0)
+
+            # Should have been called twice (once for each directory)
+            assert mock_rmtree.call_count == 2
