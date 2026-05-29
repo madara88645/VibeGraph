@@ -1,7 +1,9 @@
-import pytest
 import sys
 import os
 from unittest.mock import patch, MagicMock
+
+# Mock requests before importing verify_backend to prevent ModuleNotFoundError in CI
+sys.modules['requests'] = MagicMock()
 
 # Add the parent directory to sys.path so we can import verify_backend
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
