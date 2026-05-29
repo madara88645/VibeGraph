@@ -27,7 +27,8 @@ const GhostChoices = ({ availableNextNodes, onChoose, isPlaying, mode }) => {
         <div className="ghost-choices" role="navigation" aria-label="Ghost runner next node choices">
             <div className="ghost-choices-title">Where should the ghost go next?</div>
             {availableNextNodes.map((node, index) => {
-                const titleText = `Go to ${node.data?.label || node.id}${node.data?.file ? ` (${getShortName(node.data.file)})` : ''}`;
+                const baseTitleText = `Go to ${node.data?.label || node.id}${node.data?.file ? ` (${getShortName(node.data.file)})` : ''}`;
+                const titleText = index < 9 ? `${baseTitleText} (Press ${index + 1})` : baseTitleText;
                 return (
                 <button
                     key={node.id}
