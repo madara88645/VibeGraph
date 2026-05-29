@@ -165,7 +165,13 @@ const strategies = {
         }
 
         const targets = getOutgoingTargets(ctx);
-        const unvisited = targets.filter(n => !visitedSet.has(n.id));
+        // PERFORMANCE OPTIMIZATION (Bolt): Replace array filter() with a fast for loop
+        const unvisited = [];
+        for (let i = 0; i < targets.length; i++) {
+            if (!visitedSet.has(targets[i].id)) {
+                unvisited.push(targets[i]);
+            }
+        }
 
         if (unvisited.length > 0) {
             if (dfsStackRef && unvisited.length > 1) {
@@ -276,13 +282,15 @@ const strategies = {
         // Build file queue on first call or when empty
         if (!fileQueueRef || !fileQueueRef.current || fileQueueRef.current.length === 0) {
             const fileGroups = new Map();
-            nodes.forEach(n => {
+            // PERFORMANCE OPTIMIZATION (Bolt): Replaced array forEach() with a fast for loop
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
                 const file = n.data?.file;
                 if (file) {
                     if (!fileGroups.has(file)) fileGroups.set(file, []);
                     fileGroups.get(file).push(n.id);
                 }
-            });
+            }
             if (fileQueueRef) {
                 fileQueueRef.current = Array.from(fileGroups.values()).flat();
             }
