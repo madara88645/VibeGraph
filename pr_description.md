@@ -1,0 +1,5 @@
+🚨 Severity: HIGH
+💡 Vulnerability: The `ChatRequest` model was missing input validation on its `node_id` and `file_path` fields, making those parameters potentially vulnerable to prompt injection attacks when passed to the LLM backend. In addition, multiple identically-named validator functions across the same file triggered linting conflicts.
+🎯 Impact: An attacker could potentially embed harmful injection prompts via the `node_id` parameters passed into the chat interface, overriding LLM instructions or causing system prompt leakage.
+🔧 Fix: Add the missing `@field_validator("node_id", "file_path", mode="before", check_fields=False)` to the `ChatRequest` model and implement prompt injection sanitization. Also, assign unique names to all related validation classmethods (`sanitize_explain_identifiers`, `sanitize_snippet_identifiers`, `sanitize_chat_identifiers`, etc.) to prevent `F811 Redefinition of unused name` linting errors and ensure proper validation execution.
+✅ Verification: Ran `pytest tests/` test suite and `ruff check app/models.py`. Both pass locally without warnings or validation regressions.
