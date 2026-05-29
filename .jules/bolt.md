@@ -107,6 +107,12 @@
 **Learning:** When checking if a string ends with one of multiple extensions, using `any(name.endswith(ext) for ext in supported)` creates unnecessary generator evaluation overhead. In Python, `str.endswith` (and `str.startswith`) inherently accept a tuple of strings and execute the check at the C level, making it significantly faster.
 **Action:** Replace `any(string.endswith(ext) for ext in tuple_of_exts)` with `string.endswith(tuple_of_exts)` to eliminate generator allocation and loop overhead, especially in hot paths like file traversal.
 
-## $(date +%Y-%m-%d) - Optimize inefficient loop allocations with list comprehensions and walrus operator
+## 2024-05-24 - Python AST Traversal Optimization Correction
+**Learning:** When replacing Python's `ast.walk()` with a Breadth-First Search (BFS) queue for performance optimization, restricting child traversal to a hardcoded list of block attributes (like `body`, `orelse`, `handlers`) breaks static analysis by missing expressions (e.g., `ast.Call` inside `value` or `args` of a function call or list).
+**Action:** Instead, use `queue.extend(ast.iter_child_nodes(node))` to safely iterate and enqueue all valid child nodes while still avoiding the generator overhead of `ast.walk()`.
+## 2026-05-25 - Avoid `any()` generator expression overhead in hot paths
+**Learning:** In performance-critical Python paths (e.g., frequent AST traversal loops in `analyst/analyzer.py`), using `any()` combined with a generator expression (e.g., `any(... for x in ...)` incurs significant overhead due to generator allocation.
+**Action:** Replace `any()` with generator expressions with explicit, unrolled `for` loops containing an early `break`. This eliminates the generator allocation and reduces execution time.
+## 2026-05-28 - Optimize inefficient loop allocations with list comprehensions and walrus operator
 **Learning:** In Python, using a standard `for` loop that repeatedly calls `.append()` to populate a list adds significant method-call overhead. When filtering logic requires checking dictionary lookups against `None`, executing these checks sequentially in a loop is slower than a compiled comprehension.
 **Action:** Replace `for` loops that use `.append()` with list comprehensions. If intermediate dictionary lookups (like `dict.get()`) are required and need `None` checks, utilize the walrus operator (`:=`) inside the comprehension's `if` condition to assign and check the value simultaneously, which reduces evaluation overhead and speeds up the entire operation. Furthermore, extracting the dictionary lookup method (e.g., `pos_get = positions.get`) to a local variable prior to the comprehension provides an additional speed boost.
