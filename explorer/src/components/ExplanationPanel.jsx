@@ -72,7 +72,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                             }}>
-                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                         </div>
                     )}
@@ -90,7 +90,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
                             }}>
-                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
                                 <div style={{ marginTop: '12px' }}>
@@ -118,7 +118,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             <div className="ep-header">
                 {/* Type badge */}
                 <span className="ep-type" style={{ color: typeConfig.accent, background: `${typeConfig.accent}18`, borderColor: `${typeConfig.accent}40` }}>
-                    {typeConfig.icon} {typeConfig.label}
+                    <span aria-hidden="true">{typeConfig.icon}</span> {typeConfig.label}
                 </span>
 
                 <span className="ep-title" title={node.data.label}>

@@ -176,7 +176,14 @@ const SimulationControls = ({
 
             {/* Progress + Step Counter */}
             <div className="sim-progress" aria-live="polite">
-                <div className="sim-progress-bar">
+                <div
+                    className="sim-progress-bar"
+                    role="progressbar"
+                    aria-valuenow={coveragePercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Simulation coverage progress"
+                >
                     <div
                         className="sim-progress-fill"
                         style={{ width: `${coveragePercent}%` }}
