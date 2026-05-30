@@ -329,17 +329,24 @@ class CallGraphVisitor(ast.NodeVisitor):
         return ""
 
     def _max_nesting_depth(self, node) -> int:
+        # PERFORMANCE OPTIMIZATION (Bolt): Replace max() with generator expression
+        # using an explicit for-loop to eliminate generator allocation overhead
+        # during recursive AST traversal.
         def walk(child, depth: int) -> int:
             next_depth = depth + 1 if isinstance(child, _NESTING_NODE_TYPES) else depth
-            return max(
-                (walk(g, next_depth) for g in ast.iter_child_nodes(child)),
-                default=next_depth,
-            )
+            max_d = next_depth
+            for g in ast.iter_child_nodes(child):
+                d = walk(g, next_depth)
+                if d > max_d:
+                    max_d = d
+            return max_d
 
-        return max(
-            (walk(child, 0) for child in ast.iter_child_nodes(node)),
-            default=0,
-        )
+        max_d = 0
+        for child in ast.iter_child_nodes(node):
+            d = walk(child, 0)
+            if d > max_d:
+                max_d = d
+        return max_d
 
     def visit_FunctionDef(self, node):
         previous_scope = self.current_scope
