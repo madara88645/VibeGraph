@@ -2,6 +2,7 @@ from unittest.mock import patch, MagicMock
 import requests
 import verify_backend
 
+
 def test_health_success():
     with patch("verify_backend.requests.get") as mock_get:
         mock_resp = MagicMock()
@@ -11,6 +12,7 @@ def test_health_success():
 
         result = verify_backend.test_health()
         assert result is True
+
 
 def test_health_failure_status():
     with patch("verify_backend.requests.get") as mock_get:
@@ -22,12 +24,14 @@ def test_health_failure_status():
         result = verify_backend.test_health()
         assert result is False
 
+
 def test_health_exception():
     with patch("verify_backend.requests.get") as mock_get:
         mock_get.side_effect = requests.exceptions.RequestException("Connection error")
 
         result = verify_backend.test_health()
         assert result is False
+
 
 def test_explain_success():
     with patch("verify_backend.requests.post") as mock_post:
@@ -39,15 +43,17 @@ def test_explain_success():
         result = verify_backend.test_explain()
         assert result is True
 
+
 def test_explain_failure_keys():
     with patch("verify_backend.requests.post") as mock_post:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {"explanation": "..."} # missing snippet
+        mock_resp.json.return_value = {"explanation": "..."}  # missing snippet
         mock_post.return_value = mock_resp
 
         result = verify_backend.test_explain()
         assert result is False
+
 
 def test_explain_failure_status():
     with patch("verify_backend.requests.post") as mock_post:
@@ -58,6 +64,7 @@ def test_explain_failure_status():
 
         result = verify_backend.test_explain()
         assert result is False
+
 
 def test_explain_exception():
     with patch("verify_backend.requests.post") as mock_post:
