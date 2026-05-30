@@ -113,6 +113,7 @@
 ## 2026-05-25 - Avoid `any()` generator expression overhead in hot paths
 **Learning:** In performance-critical Python paths (e.g., frequent AST traversal loops in `analyst/analyzer.py`), using `any()` combined with a generator expression (e.g., `any(... for x in ...)` incurs significant overhead due to generator allocation.
 **Action:** Replace `any()` with generator expressions with explicit, unrolled `for` loops containing an early `break`. This eliminates the generator allocation and reduces execution time.
+
 ## 2024-05-27 - Lazy String Caching for Search Fields
 **Learning:** In high-frequency UI search filters iterating over large datasets, allocating strings repeatedly via `.toLowerCase()` on every keystroke causes massive garbage collection overhead and execution latency.
 **Action:** Lazily precompute and cache the normalized, concatenated search string directly on the underlying object (e.g., `node._searchStr`) during the first iteration to significantly drop execution time on subsequent keystrokes. Use a unique null byte separator (`\0`) when concatenating multiple fields to prevent cross-field matching bugs.
