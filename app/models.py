@@ -54,7 +54,9 @@ class ExplainRequest(BaseModel):
     @classmethod
     def sanitize_explain_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_FILE_PATH_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("callers", "callees", "neighbors")
@@ -87,7 +89,9 @@ class SnippetRequest(BaseModel):
     @classmethod
     def sanitize_snippet_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_FILE_PATH_LENGTH, truncate=True
+            )
         return value
 
 
@@ -147,7 +151,9 @@ class ChatRequest(BaseModel):
     @classmethod
     def sanitize_chat_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_FILE_PATH_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("question", mode="before")
@@ -215,7 +221,9 @@ class LearningPathRequest(BaseModel):
     @classmethod
     def sanitize_learning_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_FILE_PATH_LENGTH, truncate=True
+            )
         return value
 
 
@@ -262,7 +270,9 @@ class GhostNarrateRequest(BaseModel):
     @classmethod
     def sanitize_ghost_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_FILE_PATH_LENGTH, truncate=True
+            )
         return value
 
 

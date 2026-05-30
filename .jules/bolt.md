@@ -113,6 +113,9 @@
 ## 2026-05-25 - Avoid `any()` generator expression overhead in hot paths
 **Learning:** In performance-critical Python paths (e.g., frequent AST traversal loops in `analyst/analyzer.py`), using `any()` combined with a generator expression (e.g., `any(... for x in ...)` incurs significant overhead due to generator allocation.
 **Action:** Replace `any()` with generator expressions with explicit, unrolled `for` loops containing an early `break`. This eliminates the generator allocation and reduces execution time.
+## 2024-05-26 - Max function generator expression overhead
+**Learning:** In performance-critical recursive functions (e.g., AST traversal in `analyst/analyzer.py`), passing a generator expression to `max()` (like `max((walk(g) for g in ast.iter_child_nodes()), default=0)`) causes severe performance degradation due to the overhead of allocating a new generator object on every single recursive call.
+**Action:** Replace `max()` with generator expressions in recursive or high-frequency loops with explicit `for` loops tracking the maximum value. This eliminates the generator allocation overhead entirely.
 
 ## 2024-05-28 - Loop Set Allocation Overhead
 **Learning:** In Python performance optimization, replacing a list comprehension containing an O(1) set membership check (e.g., `[k for k in dict if k not in visited_set]`) with a set difference (e.g., `set(dict) - visited_set`) inside a loop typically degrades performance. The repeated `set()` allocation and hashing overhead on each iteration outweighs the benefits of the C-optimized set difference.

@@ -94,7 +94,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         <div className="search-bar" ref={containerRef}>
             <div className="search-input-wrapper">
                 <label htmlFor="search-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
-                    Search nodes
+                    Search nodes (Ctrl+K)
                 </label>
                 <span className="search-icon" aria-hidden="true">🔍</span>
                 <input
@@ -108,7 +108,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     aria-activedescendant={isOpen && results[highlightIdx] ? `search-result-${results[highlightIdx].id}` : undefined}
                     className="search-input"
                     placeholder="Search nodes... (Ctrl+K)"
-                    aria-label="Search nodes"
+                    aria-label="Search nodes (Ctrl+K)"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}
