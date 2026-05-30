@@ -201,7 +201,14 @@ const LearningPath = ({
       </button>
 
       {steps.length > 0 ? (
-        <div className="lp-bar-progress">
+        <div
+          className="lp-bar-progress"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Learning path progress"
+        >
           <div className="lp-bar-progress-fill" style={{ width: `${progress}%` }} />
         </div>
       ) : null}

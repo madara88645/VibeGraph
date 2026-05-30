@@ -1,6 +1,6 @@
 # VibeGraph Architecture
 
-VibeGraph turns Python codebases into interactive call graphs and layers AI-powered explanations, chat, and learning paths on top.
+VibeGraph turns Python, JavaScript, and TypeScript codebases into interactive call graphs and layers AI-powered explanations, chat, and learning paths on top.
 
 ---
 
@@ -33,13 +33,13 @@ graph TB
         subgraph Services
             Analyzer[analyst/analyzer.py]
             Exporter[analyst/exporter.py]
-            Teacher[teacher/groq_agent.py]
+            Teacher[teacher/openrouter_teacher.py]
             Snippet[app/utils/snippet.py]
         end
     end
 
     subgraph External
-        Groq[Groq API\nLlama 3.3-70b]
+        OpenRouter[OpenRouter API\nclaude-haiku-4.5]
         FS[File System\ntemp uploads]
     end
 
@@ -56,7 +56,7 @@ graph TB
     R_Snippet --> Snippet
     R_Learning --> Analyzer --> Teacher
 
-    Teacher -->|HTTPS| Groq
+    Teacher -->|HTTPS| OpenRouter
     R_Upload --> FS
     Snippet --> FS
 ```
@@ -71,7 +71,7 @@ sequenceDiagram
     participant UI as React App
     participant API as FastAPI
     participant AST as CodeAnalyzer (AST)
-    participant Groq as Groq API
+    participant OR as OpenRouter API
 
     User->>UI: Drop ZIP / .py files
     UI->>API: POST /api/upload-project (multipart)
@@ -84,15 +84,15 @@ sequenceDiagram
     UI->>API: POST /api/explain {node_id, file_path, level}
     API->>AST: extract_snippet(file, node_id)
     AST-->>API: code snippet
-    API->>Groq: explain_code(snippet, level)
-    Groq-->>API: {analogy, technical, key_takeaway}
+    API->>OR: explain_code(snippet, level)
+    OR-->>API: {analogy, technical, key_takeaway}
     API-->>UI: ExplainResponse
     UI->>UI: Show ExplanationPanel
 
     User->>UI: Ask a question in ChatDrawer
     UI->>API: POST /api/chat/stream (SSE)
-    API->>Groq: stream_chat(snippet, question, history)
-    Groq-->>API: token stream
+    API->>OR: stream_chat(snippet, question, history)
+    OR-->>API: token stream
     API-->>UI: SSE data: token…\ndata: [DONE]
     UI->>UI: Stream tokens into chat bubble
 ```
@@ -114,7 +114,7 @@ sequenceDiagram
 | `app/models.py` | Pydantic request + response models; OpenAPI schema |
 | `app/utils/snippet.py` | AST-based code extraction with `lru_cache` |
 | `app/utils/security.py` | `is_safe_path()` — path traversal prevention |
-| `app/dependencies.py` | Singleton `teacher` (GroqTeacher) dependency |
+| `app/dependencies.py` | Singleton `teacher` (OpenRouterTeacher) dependency |
 
 ### Analysis (`analyst/`)
 
@@ -127,7 +127,8 @@ sequenceDiagram
 
 | Module | Role |
 |--------|------|
-| `teacher/groq_agent.py` | GroqTeacher — `explain_code`, `chat`, `stream_chat`, `suggest_learning_path`; LRU explain cache |
+| `teacher/openrouter_teacher.py` | OpenRouterTeacher — `explain_code`, `chat`, `stream_chat`, `narrate_step`, `suggest_learning_path`; LRU explain cache; tenacity retries |
+| `teacher/groq_agent.py` | Back-compat shim — re-exports `GroqTeacher = OpenRouterTeacher` for the old import path |
 
 ### Frontend (`explorer/src/`)
 
@@ -163,7 +164,9 @@ sequenceDiagram
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GROQ_API_KEY` | — | Required: Groq API key |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | LLM model name |
-| `GROQ_TIMEOUT_SECONDS` | `30` | Request timeout for Groq calls |
-| `VIBEGRAPH_CORS_ORIGINS` | `http://localhost:5173,...` | Comma-separated allowed origins |
+| `OPENROUTER_API_KEY` | — | Required: OpenRouter API key for all AI features |
+| `OPENROUTER_DEFAULT_MODEL` | `anthropic/claude-haiku-4.5` | LLM model name |
+| `OPENROUTER_TIMEOUT_SECONDS` | `30` | Request timeout for OpenRouter calls |
+| `OPENROUTER_ALLOWED_MODELS` | — | Optional comma-separated allow-list of selectable models |
+| `ALLOW_SERVER_FALLBACK_KEY` | `false` | If `true`, lets the server's own key serve requests with no client key |
+| `VIBEGRAPH_CORS_ORIGINS` | `http://localhost:5173,http://localhost:8000` | Comma-separated allowed origins |

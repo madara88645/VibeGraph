@@ -1,4 +1,11 @@
-💡 **What:** Replaced the `for` loop and `.append()` pattern in `assess_learning_path` with a highly optimized list comprehension utilizing the walrus operator (`:=`) and a localized dictionary lookup (`pos_get`).
-🎯 **Why:** To reduce method-call overhead and speed up the filtering logic when processing learning path edges, addressing an inefficient loop allocation bottleneck.
-📊 **Impact:** The code is more idiomatic Python, eliminates multiple `append` calls, and prevents redundant `.get` lookups on each iteration.
-🔬 **Measurement:** Micro-benchmarking with 100,000 simulated edges showed an execution time drop from ~9.60 seconds (baseline) to ~9.05 seconds (optimized with walrus and local vars) over 1000 iterations, yielding an approximate 5-6% performance improvement for this specific logic block.
+💡 What:
+Replaced `Object.entries().map().join()` with imperative `for...in` loops in `FileSidebar.jsx` and `ChatDrawer.jsx` when building summary strings.
+
+🎯 Why:
+To prevent severe garbage collection pressure and CPU overhead caused by the hidden allocation of multiple intermediate arrays during frequent render cycles or large list traversals.
+
+📊 Impact:
+Eliminates O(N) array allocation overhead and multiple iteration passes over object entries entirely, providing a best-case zero-allocation path when deriving string-based properties.
+
+🔬 Measurement:
+Profile a workspace with numerous node files or trigger rapid simulation ticks; memory snapshots will show fewer short-lived array allocations.
