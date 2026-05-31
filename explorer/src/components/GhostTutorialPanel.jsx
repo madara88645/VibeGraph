@@ -1,10 +1,11 @@
 import React, { memo, useState, useEffect } from 'react';
 
-const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes }) => {
-    const [isDismissed, setIsDismissed] = useState(false);
-    const [isRendered, setIsRendered] = useState(false);
+const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, showTutorial = true, onClose }) => {
+    const shouldShow = showTutorial && ghostTutorial && totalNodes > 0;
 
-    const shouldShow = ghostTutorial && totalNodes > 0;
+    const [isDismissed, setIsDismissed] = useState(!shouldShow);
+    const [isRendered, setIsRendered] = useState(shouldShow);
+
 
     useEffect(() => {
         let activeTimer;
@@ -36,10 +37,15 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes }) =
 
     const handleClose = () => {
         setIsDismissed(true);
-        setTimeout(() => {
-            setIsRendered(false);
-        }, 250);
+        if (onClose) {
+            onClose();
+        } else {
+            setTimeout(() => {
+                setIsRendered(false);
+            }, 250);
+        }
     };
+
 
     return (
         <section

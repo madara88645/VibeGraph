@@ -18,9 +18,26 @@ const AISettingsModal = ({
 }) => {
   const [showKey, setShowKey] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isDismissed, setIsDismissed] = useState(!isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      const timer = setTimeout(() => setIsDismissed(false), 20);
+      return () => clearTimeout(timer);
+    } else {
+      setIsDismissed(true);
+      const timer = setTimeout(() => setIsRendered(false), 300); // match transition
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const dropdownRef = useRef(null);
   const isClearDisabled = draftApiKey.length === 0;
   const clearButtonLabel = isClearDisabled ? 'Key is already clear' : 'Clear Key';
+
 
   const allowedModels = useMemo(() => {
     if (Array.isArray(apiConfig?.allowedModels) && apiConfig.allowedModels.length > 0) {
@@ -52,23 +69,20 @@ const AISettingsModal = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isDropdownOpen]);
 
-  if (!isOpen) {
+  if (!isRendered) {
     return null;
   }
 
   const handleSave = (event) => {
     if (event) event.preventDefault();
-    onSave({
-      apiKey: draftApiKey,
-      model: draftModel || apiConfig?.defaultModel || allowedModels[0] || '',
-    });
+    onSave({ apiKey: draftApiKey, model: draftModel });
     onClose();
   };
 
   return (
-    <div className="ai-settings-overlay" onClick={onClose}>
+    <div className={`ai-settings-overlay ${isDismissed ? 'dismissed' : ''}`} onClick={onClose}>
       <div
-        className="ai-settings-modal"
+        className={`ai-settings-modal ${isDismissed ? 'dismissed' : ''}`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"

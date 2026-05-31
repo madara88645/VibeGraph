@@ -17,16 +17,42 @@ const typeColors = {
 const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation }) => {
     const [tab, setTab] = useState('technical');
     const [level, setLevel] = useState('intermediate');
+    const [lastNode, setLastNode] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        if (node && fetchExplanation) {
-            fetchExplanation(node, tab, level);
+        if (node) {
+            setLastNode(node);
+            setIsOpen(true);
+            if (fetchExplanation) {
+                fetchExplanation(node, tab, level);
+            }
+        } else {
+            setIsOpen(false);
         }
     }, [fetchExplanation, level, node, tab]);
 
-    if (!node) return null;
+    // Use a secondary state to completely unmount/hide pointer events when animation is finished
+    const [isRendered, setIsRendered] = useState(false);
 
-    const nodeType = node.data.entry_point ? 'entry_point' : (node.data.type || 'default');
+    useEffect(() => {
+        if (isOpen) {
+            setIsRendered(true);
+        } else {
+            const timer = setTimeout(() => {
+                setIsRendered(false);
+            }, 300); // match transition duration
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    if (!isRendered && !node) return null;
+
+    // Use lastNode if node is null (during animate-out) so content doesn't instantly disappear!
+    const activeNode = node || lastNode;
+    if (!activeNode) return null;
+
+    const nodeType = activeNode.data.entry_point ? 'entry_point' : (activeNode.data.type || 'default');
     const typeConfig = typeColors[nodeType] || typeColors['default'];
 
     const renderContent = () => {
@@ -51,7 +77,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         }
 
         const aiResponse = explanation.explanation || explanation;
-        const codeSnippet = explanation.snippet || node.data.snippet;
+        const codeSnippet = explanation.snippet || activeNode.data.snippet;
 
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (
@@ -89,7 +115,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
-                            }}>
+                             }}>
                                 <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
@@ -113,7 +139,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
     };
 
     return (
-        <div className="slide-in-right explanation-panel">
+        <div className={`explanation-panel ${isOpen ? 'open' : ''}`}>
             {/* Header */}
             <div className="ep-header">
                 {/* Type badge */}
@@ -121,8 +147,8 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     {typeConfig.icon} {typeConfig.label}
                 </span>
 
-                <span className="ep-title" title={node.data.label}>
-                    {node.data.label}
+                <span className="ep-title" title={activeNode.data.label}>
+                    {activeNode.data.label}
                 </span>
 
                 <button
@@ -178,11 +204,11 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             </div>
 
             {/* Footer */}
-            {(node.data.file || node.data.original_data?.file) && (
+            {(activeNode.data.file || activeNode.data.original_data?.file) && (
                 <div className="ep-footer">
-                    <span title={node.data.file || node.data.original_data?.file}><span aria-hidden="true">📄</span> {node.data.file || node.data.original_data?.file}</span>
-                    {(node.data.lineno || node.data.original_data?.lineno) && (
-                        <span>L{node.data.lineno || node.data.original_data?.lineno}</span>
+                    <span title={activeNode.data.file || activeNode.data.original_data?.file}><span aria-hidden="true">📄</span> {activeNode.data.file || activeNode.data.original_data?.file}</span>
+                    {(activeNode.data.lineno || activeNode.data.original_data?.lineno) && (
+                        <span>L{activeNode.data.lineno || activeNode.data.original_data?.lineno}</span>
                     )}
                 </div>
             )}
