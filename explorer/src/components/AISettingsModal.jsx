@@ -24,11 +24,15 @@ const AISettingsModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setIsRendered(true);
+      Promise.resolve().then(() => {
+        setIsRendered(true);
+      });
       const timer = setTimeout(() => setIsDismissed(false), 20);
       return () => clearTimeout(timer);
     } else {
-      setIsDismissed(true);
+      Promise.resolve().then(() => {
+        setIsDismissed(true);
+      });
       const timer = setTimeout(() => setIsRendered(false), 300); // match transition
       return () => clearTimeout(timer);
     }

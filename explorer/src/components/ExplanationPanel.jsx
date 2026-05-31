@@ -22,13 +22,17 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
     useEffect(() => {
         if (node) {
-            setLastNode(node);
-            setIsOpen(true);
+            Promise.resolve().then(() => {
+                setLastNode(node);
+                setIsOpen(true);
+            });
             if (fetchExplanation) {
                 fetchExplanation(node, tab, level);
             }
         } else {
-            setIsOpen(false);
+            Promise.resolve().then(() => {
+                setIsOpen(false);
+            });
         }
     }, [fetchExplanation, level, node, tab]);
 
@@ -37,7 +41,9 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
     useEffect(() => {
         if (isOpen) {
-            setIsRendered(true);
+            Promise.resolve().then(() => {
+                setIsRendered(true);
+            });
         } else {
             const timer = setTimeout(() => {
                 setIsRendered(false);
