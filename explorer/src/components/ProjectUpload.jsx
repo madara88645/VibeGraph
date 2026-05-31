@@ -250,7 +250,13 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                                             e.stopPropagation();
                                             setIsAnalyzing(true);
                                             try {
-                                                const res = await fetch('/graph_data.json');
+                                                let res = await fetch('/demo_graph_data.json');
+                                                if (!res.ok) {
+                                                    res = await fetch('/graph_data.json');
+                                                }
+                                                if (!res.ok) {
+                                                    throw new Error(`Demo file not found on the server (HTTP ${res.status})`);
+                                                }
                                                 const data = await res.json();
                                                 if (onUploadSuccess) onUploadSuccess(data);
                                                 setIsModalOpen(false);

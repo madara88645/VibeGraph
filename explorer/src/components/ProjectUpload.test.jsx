@@ -353,7 +353,7 @@ describe('ProjectUpload', () => {
             fireEvent.click(demoBtn);
         });
 
-        expect(globalThis.fetch).toHaveBeenCalledWith('/graph_data.json');
+        expect(globalThis.fetch).toHaveBeenCalledWith('/demo_graph_data.json');
         expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
         expect(showToast).toHaveBeenCalledWith('Demo project loaded successfully!', 'success');
     });
