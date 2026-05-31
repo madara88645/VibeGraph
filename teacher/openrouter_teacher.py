@@ -64,13 +64,60 @@ _FALLBACK = {
 _MAX_CACHE_SIZE = 256
 
 
+def _repair_truncated_json(text: str) -> dict | None:
+    """Best-effort recovery of a JSON object that was truncated before it was
+    closed (e.g. the model hit its token limit mid-response). Returns the parsed
+    dict if it can be safely closed, otherwise ``None``."""
+    start = text.find("{")
+    if start == -1:
+        return None
+    in_string = False
+    escaped = False
+    stack: list[str] = []
+    for ch in text[start:]:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            stack.append("}")
+        elif ch == "[":
+            stack.append("]")
+        elif ch in "}]" and stack:
+            stack.pop()
+    candidate = text[start:]
+    if in_string:
+        candidate += '"'
+    # Drop a dangling colon/comma that would otherwise be invalid before close.
+    candidate = re.sub(r"[:,]\s*$", "", candidate.rstrip())
+    candidate += "".join(reversed(stack))
+    try:
+        result = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    return result if isinstance(result, dict) else None
+
+
 def _try_parse_json(text: str) -> dict:
-    """Attempt to parse JSON from *text*, stripping markdown fences if present."""
+    """Attempt to parse JSON from *text*, stripping markdown fences if present.
+
+    Falls back to a best-effort repair of responses truncated mid-object, a
+    common cause of the "AI Formatting Error" when the model hits its token
+    limit before closing the JSON."""
     cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip())
     cleaned = re.sub(r"\s*```$", "", cleaned)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as exc:
+        repaired = _repair_truncated_json(cleaned)
+        if repaired is not None:
+            return repaired
         raise ValueError(text) from exc
 
 
@@ -194,7 +241,12 @@ class OpenRouterTeacher:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.4,
-                max_tokens=600,
+                # The explain contract asks for analogy + key_takeaway + 7
+                # grounded sections in a single JSON object. 600 tokens was too
+                # small and the model's reply was frequently truncated mid-JSON,
+                # which failed json.loads and surfaced as an "AI Formatting
+                # Error". Give the structured payload enough room to complete.
+                max_tokens=2000,
                 top_p=1,
                 stream=False,
                 response_format={"type": "json_object"},
