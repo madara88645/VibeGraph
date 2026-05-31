@@ -14,7 +14,7 @@ const typeColors = {
     'default': { accent: '#64748b', label: 'Reference', icon: '○' },
 };
 
-const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation }) => {
+const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation, onOpenAiSettings }) => {
     const [tab, setTab] = useState('technical');
     const [level, setLevel] = useState('intermediate');
     const [lastNode, setLastNode] = useState(null);
@@ -78,6 +78,142 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
 
         const aiResponse = explanation.explanation || explanation;
         const codeSnippet = explanation.snippet || activeNode.data.snippet;
+
+        // Check for error state!
+        const isClientMissingKey = typeof explanation === 'string' && explanation.includes('Open AI Settings');
+        const isBackendError = typeof aiResponse === 'object' && aiResponse !== null && (aiResponse.is_error || aiResponse.technical === 'An unexpected error occurred.' || aiResponse.technical === 'OpenRouter API key is required.');
+
+        if (isClientMissingKey || isBackendError) {
+            let errorTitle = "Bağlantı Hatası";
+            let errorMsg = "Beklenmeyen bir hata oluştu. Lütfen bağlantınızı veya OpenRouter durumunu kontrol edin.";
+            let errorTakeaway = "OpenRouter durumunu veya API anahtarınızı kontrol edin.";
+            let errorIcon = "⚠️";
+            let showSettingsBtn = false;
+            let showRetryBtn = false;
+
+            if (isClientMissingKey) {
+                errorTitle = "API Anahtarı Eksik";
+                errorMsg = "AI açıklamalarını etkinleştirmek için geçerli bir OpenRouter API anahtarı eklemeniz gerekiyor.";
+                errorTakeaway = "AI Ayarları panelinden geçerli bir API anahtarı ekleyin.";
+                errorIcon = "🔑";
+                showSettingsBtn = true;
+            } else {
+                const analogy = aiResponse.analogy || "";
+                const technical = aiResponse.technical || "";
+                const takeaway = aiResponse.key_takeaway || "";
+
+                if (analogy.includes("Key") || analogy.includes("Anahtar") || technical.toLowerCase().includes("key") || technical.toLowerCase().includes("auth")) {
+                    errorTitle = "API Anahtarı Geçersiz";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🔑";
+                    showSettingsBtn = true;
+                } else if (analogy.includes("Limit") || analogy.includes("Sınır")) {
+                    errorTitle = "İstek Sınırı Aşıldı";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "⌛";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Timeout") || analogy.includes("Zaman Aşımı")) {
+                    errorTitle = "Bağlantı Zaman Aşımı";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🔌";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Connection") || analogy.includes("Bağlantı")) {
+                    errorTitle = "Bağlantı Başarısız";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🌐";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Request") || analogy.includes("İstek")) {
+                    errorTitle = "Geçersiz İstek";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "⚙️";
+                } else {
+                    errorTitle = analogy || "Bağlantı Hatası";
+                    errorMsg = technical || "Beklenmeyen bir hata oluştu.";
+                    errorTakeaway = takeaway || "Lütfen internet bağlantınızı veya OpenRouter durumunu kontrol edin.";
+                    errorIcon = "⚠️";
+                    showRetryBtn = true;
+                }
+            }
+
+            return (
+                <div className="fade-in" style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderLeft: '4px solid var(--error-rose, #ef4444)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    backdropFilter: 'blur(8px)',
+                    margin: '10px 0'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{errorIcon}</span>
+                        <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
+                    </div>
+                    <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        {errorMsg}
+                    </p>
+                    <div style={{
+                        background: 'rgba(252, 165, 165, 0.05)',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        color: 'var(--text-muted)',
+                        borderLeft: '2px solid rgba(252, 165, 165, 0.3)',
+                        marginBottom: '14px'
+                    }}>
+                        <strong>💡 Öneri:</strong> {errorTakeaway}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {showSettingsBtn && onOpenAiSettings && (
+                            <button
+                                onClick={() => onOpenAiSettings()}
+                                style={{
+                                    background: 'var(--accent-primary, #ef4444)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.target.style.filter = 'brightness(1.1)'}
+                                onMouseLeave={(e) => e.target.style.filter = 'none'}
+                            >
+                                ⚙️ AI Ayarlarını Aç
+                            </button>
+                        )}
+                        {showRetryBtn && (
+                            <button
+                                onClick={() => fetchExplanation && fetchExplanation(activeNode, tab, level)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.08)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.12)'}
+                                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.08)'}
+                            >
+                                🔄 Yeniden Dene
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
 
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (

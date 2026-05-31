@@ -454,6 +454,7 @@ function AppInner() {
             loading={loading}
             onClose={handleCloseExplanation}
             fetchExplanation={fetchExplanation}
+            onOpenAiSettings={openAiSettings}
           />
 
           <ErrorBoundary>

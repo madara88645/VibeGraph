@@ -90,6 +90,18 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const endLine = codeData?.end_line;
     const hasCopyText = Boolean(codeData?.full_source || codeData?.snippet);
 
+    const isExternalOrBuiltin = codeData?.snippet && (
+        codeData.snippet.includes('External or Built-in') || 
+        codeData.snippet.includes('External:') || 
+        codeData.snippet.includes('(External/Built-in)')
+    );
+
+    const isMissingOrInaccessible = codeData?.snippet && (
+        codeData.snippet.includes('not found in') || 
+        codeData.snippet.includes('Error reading file') ||
+        codeData.snippet.includes('Access denied')
+    );
+
     return (
         <>
             <button 
@@ -263,19 +275,67 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         </div>
                     ) : (
                         // Snippet-only view
-                        <SyntaxHighlighter
-                            language="python"
-                            style={oneDark}
-                            showLineNumbers
-                            customStyle={{
-                                margin: 0,
-                                borderRadius: 0,
-                                background: 'transparent',
-                                fontSize: '0.8rem',
-                            }}
-                        >
-                            {codeData.snippet || '// No code available'}
-                        </SyntaxHighlighter>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px 20px' }}>
+                            {isExternalOrBuiltin && (
+                                <div className="fade-in" style={{
+                                    padding: '14px 16px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(59, 130, 246, 0.06)',
+                                    border: '1px solid rgba(59, 130, 246, 0.15)',
+                                    borderLeft: '4px solid #3b82f6',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>📦</span>
+                                        <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>Harici veya Yerleşik Modül</h4>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                                        Bu kod düğümü projenizin sınırları dışındaki harici bir kütüphaneye veya Python'un yerleşik bir modülüne ait olduğu için yerel kaynak kodu bulunmuyor. AI açıklaması, fonksiyon ismi ve kullanım bağlamına göre yapılacaktır.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isMissingOrInaccessible && (
+                                <div className="fade-in" style={{
+                                    padding: '14px 16px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(234, 179, 8, 0.06)',
+                                    border: '1px solid rgba(234, 179, 8, 0.15)',
+                                    borderLeft: '4px solid #eab308',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                                        <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Kaynak Dosyası Bulunamadı</h4>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                                        Bu fonksiyona ait yerel dosya sistemde bulunamadı veya erişilemez durumda (demo projesindeki geçici dizinler veya silinmiş bir dosya olabilir). AI açıklaması mevcut bağlama göre yapılacaktır.
+                                    </p>
+                                </div>
+                            )}
+
+                            <SyntaxHighlighter
+                                language="python"
+                                style={oneDark}
+                                showLineNumbers
+                                customStyle={{
+                                    margin: 0,
+                                    borderRadius: '8px',
+                                    background: 'rgba(0, 0, 0, 0.25)',
+                                    fontSize: '0.8rem',
+                                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                                    padding: '12px',
+                                }}
+                            >
+                                {codeData.snippet || '// No code available'}
+                            </SyntaxHighlighter>
+                        </div>
                     )
                 )}
 

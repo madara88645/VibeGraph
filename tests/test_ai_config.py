@@ -105,7 +105,9 @@ def test_chat_uses_bearer_key_and_selected_model(monkeypatch):
     assert response.json()["answer"] == "Configured answer"
     mock_teacher_cls.assert_called_once()
     assert mock_teacher_cls.call_args.kwargs["api_key"] == "user-openrouter-key"
-    assert mock_teacher_cls.call_args.kwargs["model_name"] == "anthropic/claude-sonnet-4.6"
+    assert (
+        mock_teacher_cls.call_args.kwargs["model_name"] == "anthropic/claude-sonnet-4.6"
+    )
 
 
 def test_chat_can_use_server_fallback_key(monkeypatch):

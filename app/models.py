@@ -286,6 +286,7 @@ class ExplanationDetail(BaseModel):
     analogy: str
     technical: str
     key_takeaway: str
+    is_error: bool | None = None
 
 
 class ExplainResponse(BaseModel):
