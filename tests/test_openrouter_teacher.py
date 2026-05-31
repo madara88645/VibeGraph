@@ -188,8 +188,9 @@ class TestWithMockedClient:
         assert isinstance(result["technical"], str)
         # Structured technical metadata is preserved, not dropped.
         assert "Technical Details" in result["technical"]
-        assert "External (likely defined in dependency package 'analyst')" in (
-            result["technical"]
+        assert (
+            "External (likely defined in dependency package 'analyst')"
+            in (result["technical"])
         )
         # List-valued sections render readably, not as Python list repr.
         assert "['" not in result["technical"]
