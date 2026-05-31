@@ -43,6 +43,17 @@ class TestTryParseJson:
         with pytest.raises(ValueError):
             _try_parse_json("not json at all")
 
+    def test_recovers_object_truncated_mid_value(self):
+        # Model hit its token limit mid-string; we should still recover fields.
+        truncated = '{"analogy": "a", "sections": {"What it is": "partial value cut o'
+        result = _try_parse_json(truncated)
+        assert result["analogy"] == "a"
+        assert "partial value cut o" in result["sections"]["What it is"]
+
+    def test_unrecoverable_garbage_still_raises(self):
+        with pytest.raises(ValueError):
+            _try_parse_json("totally not json {[}")
+
 
 # ---------------------------------------------------------------------------
 # OpenRouterTeacher construction
@@ -198,6 +209,24 @@ class TestWithMockedClient:
         # The Pydantic model accepts the result without raising.
         detail = ExplanationDetail(**result)
         assert isinstance(detail.technical, str)
+
+    def test_explain_code_recovers_from_truncated_json(self):
+        """A response truncated at the token limit must degrade to usable
+        content instead of surfacing an 'AI Formatting Error'."""
+        truncated = (
+            '{"analogy": "like a conductor", '
+            '"key_takeaway": "entry point", '
+            '"sections": {"What it is": "Coordinates the analysis pipeline'
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            truncated
+        )
+        result = self.teacher.explain_code(
+            "def handle_start(): pass", node_id="handle_start", file_path="main.py"
+        )
+        assert not result.get("is_error")
+        assert result["analogy"] == "like a conductor"
+        assert "Coordinates the analysis pipeline" in result["technical"]
 
     def test_explain_code_caches_results(self):
         response_json = json.dumps(

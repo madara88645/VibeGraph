@@ -108,12 +108,22 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 const technical = aiResponse.technical || "";
                 const takeaway = aiResponse.key_takeaway || "";
 
-                if (analogy.includes("Key") || analogy.includes("Anahtar") || technical.toLowerCase().includes("key") || technical.toLowerCase().includes("auth")) {
+                // Classify by the backend-provided title (analogy) only. The
+                // raw AI response can contain words like "key" or "auth"
+                // (e.g. "key_takeaway"), so scanning `technical` here would
+                // misreport formatting/parse errors as an invalid API key.
+                if (analogy.includes("Key") || analogy.includes("Anahtar")) {
                     errorTitle = "Invalid API Key";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "🔑";
                     showSettingsBtn = true;
+                } else if (analogy.includes("Formatting") || analogy.includes("Biçim")) {
+                    errorTitle = "AI Formatting Error";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "📝";
+                    showRetryBtn = true;
                 } else if (analogy.includes("Limit") || analogy.includes("Sınır")) {
                     errorTitle = "Rate Limit Exceeded";
                     errorMsg = technical;
