@@ -1,6 +1,7 @@
 """Tests for app/utils/snippet.py — AST-based code snippet extraction."""
 
 import os
+from unittest import mock
 import tempfile
 
 import pytest
@@ -86,6 +87,21 @@ class TestExternalBuiltin:
         assert start is None
 
 
+class TestFileReadError:
+    def test_oserror_on_read_returns_error(self):
+        from unittest.mock import patch
+
+        path = _write_temp("def hello():\n    pass\n")
+
+        with patch("builtins.open", side_effect=OSError("Mocked OSError")):
+            code, start, end, full_source = extract_snippet(path, "hello")
+
+        assert "# Error reading file" in code
+        assert start is None
+        assert end is None
+        assert full_source is None
+
+
 class TestSyntaxError:
     def test_syntax_error_returns_error_with_line_info(self):
         path = _write_temp("def broken(\n")
@@ -113,3 +129,14 @@ class TestUnsafePath:
         with pytest.raises(HTTPException) as exc_info:
             extract_snippet("../../etc/passwd", "func")
         assert exc_info.value.status_code == 403
+
+
+class TestOSError:
+    def test_oserror_returns_read_error(self):
+        path = _write_temp("def hello():\n    pass\n")
+        with mock.patch("builtins.open", side_effect=OSError("Mocked OSError")):
+            code, start, end, full_source = extract_snippet(path, "hello")
+        assert "Error reading file" in code
+        assert start is None
+        assert end is None
+        assert full_source is None

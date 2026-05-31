@@ -3,6 +3,9 @@ import { useReactFlow } from 'reactflow';
 
 import { getShortName } from '../utils/stringUtils';
 
+// WeakMap to cache computed search strings without mutating the original node objects
+const searchCache = new WeakMap();
+
 const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -50,9 +53,20 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         for (let i = 0; i < allNodes.length; i++) {
             if (matches.length >= 8) break;
             const n = allNodes[i];
-            const label = (n.data?.label || '').toLowerCase();
-            const file = (n.data?.file || '').toLowerCase();
-            if (label.includes(q) || file.includes(q)) {
+
+            // PERFORMANCE OPTIMIZATION (Bolt): Lazily precompute and cache the normalized
+            // search string in a WeakMap to drastically reduce garbage collection
+            // overhead and execution time during high-frequency UI search filters
+            // without mutating the immutable node props.
+            let searchStr = searchCache.get(n);
+            if (searchStr === undefined) {
+                const label = (n.data?.label || '').toLowerCase();
+                const file = (n.data?.file || '').toLowerCase();
+                searchStr = label + '|' + file;
+                searchCache.set(n, searchStr);
+            }
+
+            if (searchStr.includes(q)) {
                 matches.push(n);
             }
         }
@@ -94,7 +108,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         <div className="search-bar" ref={containerRef}>
             <div className="search-input-wrapper">
                 <label htmlFor="search-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
-                    Search nodes
+                    Search nodes (Ctrl+K)
                 </label>
                 <span className="search-icon" aria-hidden="true">🔍</span>
                 <input
@@ -108,7 +122,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     aria-activedescendant={isOpen && results[highlightIdx] ? `search-result-${results[highlightIdx].id}` : undefined}
                     className="search-input"
                     placeholder="Search nodes... (Ctrl+K)"
-                    aria-label="Search nodes"
+                    aria-label="Search nodes (Ctrl+K)"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}
