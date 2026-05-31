@@ -3,13 +3,13 @@ const MODEL_STORAGE_KEY = 'vg_v1_ai_model';
 
 export const DEFAULT_AI_CONFIG = {
   provider: 'openrouter',
-  defaultModel: 'anthropic/claude-haiku-4.5',
+  defaultModel: 'deepseek/deepseek-v4-flash',
   allowedModels: [
-    'anthropic/claude-haiku-4.5',
-    'google/gemini-2.5-flash-lite',
-    'openai/gpt-5-mini',
-    'deepseek/deepseek-chat-v3.1',
-    'x-ai/grok-4.1-fast',
+    'deepseek/deepseek-v4-flash',
+    'qwen/qwen3-coder-30b-a3b-instruct',
+    'google/gemini-3.1-flash-lite',
+    'anthropic/claude-sonnet-4.6',
+    'meta-llama/llama-3.3-70b-instruct:free',
   ],
   requiresUserKey: true,
 };

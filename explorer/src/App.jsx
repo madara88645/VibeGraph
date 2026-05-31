@@ -53,6 +53,8 @@ function AppInner() {
   const [aiConfig, setAiConfig] = useState(DEFAULT_AI_CONFIG);
   const [aiConfigError, setAiConfigError] = useState('');
   const [showFirstSteps, setShowFirstSteps] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(true);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -414,6 +416,8 @@ function AppInner() {
             ghostTutorial={ghostTutorial}
             stepSummaries={stepSummaries}
             totalNodes={totalNodes}
+            showTutorial={showTutorial}
+            onClose={() => setShowTutorial(false)}
           />
 
           <GhostNarration narration={narration} isPlaying={isPlaying} />
@@ -439,7 +443,10 @@ function AppInner() {
             onModeChange={setMode}
             visitedCount={visitedCount}
             totalNodes={totalNodes}
+            showTutorial={showTutorial}
+            onToggleTutorial={() => setShowTutorial((prev) => !prev)}
           />
+
 
           <ExplanationPanel
             node={selectedNode}

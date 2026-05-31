@@ -33,6 +33,8 @@ const SimulationControls = ({
     onModeChange,
     visitedCount = 0,
     totalNodes = 0,
+    showTutorial = true,
+    onToggleTutorial,
 }) => {
     const [showGuide, setShowGuide] = useState(false);
     const [showStrategyPicker, setShowStrategyPicker] = useState(false);
@@ -52,6 +54,20 @@ const SimulationControls = ({
             >
                 <span aria-hidden="true">?</span>
             </button>
+
+            {/* Guided Tour Toggle */}
+            {totalNodes > 0 && (
+                <button
+                    onClick={() => onToggleTutorial && onToggleTutorial()}
+                    className={`sim-btn sim-btn-tour ${showTutorial ? 'active' : ''}`}
+                    title="Toggle Guided Tour Checklist"
+                    aria-label="Toggle Guided Tour Checklist"
+                    aria-expanded={showTutorial}
+                >
+                    <span aria-hidden="true">👻</span>
+                </button>
+            )}
+
 
             {/* Guide Popover */}
             {showGuide && (

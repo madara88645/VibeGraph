@@ -9,13 +9,13 @@ from teacher.openrouter_teacher import OpenRouterTeacher
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_OPENROUTER_MODEL = "anthropic/claude-haiku-4.5"
+DEFAULT_OPENROUTER_MODEL = "deepseek/deepseek-v4-flash"
 CURATED_MODELS = [
-    "anthropic/claude-haiku-4.5",
-    "google/gemini-2.5-flash-lite",
-    "openai/gpt-5-mini",
-    "deepseek/deepseek-chat-v3.1",
-    "x-ai/grok-4.1-fast",
+    "deepseek/deepseek-v4-flash",
+    "qwen/qwen3-coder-30b-a3b-instruct",
+    "google/gemini-3.1-flash-lite",
+    "anthropic/claude-sonnet-4.6",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
 
 teacher = None
