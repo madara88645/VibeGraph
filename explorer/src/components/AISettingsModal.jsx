@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 
 function shortenModelName(modelName) {
   return modelName.split('/').pop() || modelName;
@@ -17,6 +17,8 @@ const AISettingsModal = ({
   onDraftModelChange,
 }) => {
   const [showKey, setShowKey] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const isClearDisabled = draftApiKey.length === 0;
   const clearButtonLabel = isClearDisabled ? 'Key is already clear' : 'Clear Key';
 
@@ -37,6 +39,18 @@ const AISettingsModal = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isDropdownOpen]);
 
   if (!isOpen) {
     return null;
@@ -122,18 +136,40 @@ const AISettingsModal = ({
           </div>
 
           <div className="ai-settings-field">
-            <label htmlFor="ai-settings-model">Model</label>
-            <select
-              id="ai-settings-model"
-              value={draftModel}
-              onChange={(event) => onDraftModelChange(event.target.value)}
-            >
-              {allowedModels.map((modelName) => (
-                <option key={modelName} value={modelName}>
-                  {shortenModelName(modelName)}
-                </option>
-              ))}
-            </select>
+            <label id="ai-settings-model-label">Model</label>
+            <div className="custom-dropdown-container" ref={dropdownRef}>
+              <button
+                type="button"
+                className="custom-dropdown-trigger"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+                aria-labelledby="ai-settings-model-label"
+              >
+                <span>{shortenModelName(draftModel)}</span>
+                <span className="custom-dropdown-arrow">▼</span>
+              </button>
+              
+              <ul
+                className={`custom-dropdown-menu ${isDropdownOpen ? 'open' : ''}`}
+                role="listbox"
+              >
+                {allowedModels.map((modelName) => (
+                  <li
+                    key={modelName}
+                    role="option"
+                    aria-selected={modelName === draftModel}
+                    className={`custom-dropdown-item ${modelName === draftModel ? 'active' : ''}`}
+                    onClick={() => {
+                      onDraftModelChange(modelName);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    {shortenModelName(modelName)}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <p className="ai-settings-help">
               Lean model list: fast defaults plus lower-cost backup options.
             </p>
