@@ -241,7 +241,6 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
             )
 
         queue.extend(ast.iter_child_nodes(node))
-
     return out
 
 

@@ -116,3 +116,4 @@
 ## 2024-05-26 - Max function generator expression overhead
 **Learning:** In performance-critical recursive functions (e.g., AST traversal in `analyst/analyzer.py`), passing a generator expression to `max()` (like `max((walk(g) for g in ast.iter_child_nodes()), default=0)`) causes severe performance degradation due to the overhead of allocating a new generator object on every single recursive call.
 **Action:** Replace `max()` with generator expressions in recursive or high-frequency loops with explicit `for` loops tracking the maximum value. This eliminates the generator allocation overhead entirely.
+
