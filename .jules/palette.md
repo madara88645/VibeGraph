@@ -74,3 +74,7 @@
 ## 2026-05-24 - Accessible Chat Conversations
 **Learning:** When implementing a chat interface, sighted users rely on visual cues (like message alignment, bubble color, and animated typing dots) to understand conversational flow. Screen readers, however, will read these linearly as plain text without context of who is speaking, and might ignore or stutter on CSS-animated typing dots.
 **Action:** Always add `role="log"` to the chat message container so new messages are announced automatically. Within each message, prepend a visually hidden span indicating the speaker (e.g., "You:", "AI:"). Finally, wrap typing indicators with a visually hidden "AI is typing..." and apply `aria-hidden="true"` to any decorative animated elements.
+
+## 2024-05-25 - Appending keyboard shortcuts to Title and Aria-Label
+**Learning:** When indicating keyboard shortcuts via visually hidden `<kbd>` tags inside interactive elements, screen readers may not announce the hidden text natively, leaving non-sighted users unaware of the keyboard shortcut options.
+**Action:** When defining interactive options that have explicit keyboard shortcuts, dynamically build both the `title` and `aria-label` strings to append the shortcut hint (e.g. `(Press 1)`), ensuring screen reader users and mouse users have parity on keyboard affordances.

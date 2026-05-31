@@ -1,6 +1,23 @@
 import pytest
 from fastapi import HTTPException
-from app.utils.security import normalize_uploaded_filename
+from unittest.mock import patch
+from app.utils.security import normalize_uploaded_filename, is_safe_path
+
+
+def test_is_safe_path_realpath_value_error():
+    """Test is_safe_path returns False when os.path.realpath raises ValueError."""
+    with patch("os.path.realpath") as mock_realpath:
+        mock_realpath.side_effect = ValueError("Invalid path")
+        assert is_safe_path("some/path") is False
+
+
+def test_is_safe_path_commonpath_value_error():
+    """Test is_safe_path returns False when os.path.commonpath raises ValueError."""
+    # We need realpath to pass, but commonpath to fail.
+    # We can patch just commonpath to raise ValueError.
+    with patch("os.path.commonpath") as mock_commonpath:
+        mock_commonpath.side_effect = ValueError("Paths are on different drives")
+        assert is_safe_path("vibegraph_upload_123/file.txt") is False
 
 
 def test_normalize_uploaded_filename_valid():
