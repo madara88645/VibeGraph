@@ -1,8 +1,37 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 
 const GhostRunSummary = ({ runSummary, isPlaying }) => {
+    const [isDismissed, setIsDismissed] = useState(false);
+    const [isRendered, setIsRendered] = useState(false);
+
     // Show summary only when paused and there's data
-    if (isPlaying || !runSummary || runSummary.visitedCount === 0) return null;
+    const shouldShow = !isPlaying && runSummary && runSummary.visitedCount > 0;
+
+    useEffect(() => {
+        let activeTimer;
+        let activeTransitionTimer;
+
+        if (shouldShow) {
+            activeTimer = setTimeout(() => {
+                setIsDismissed(false);
+                setIsRendered(true);
+            }, 0);
+        } else {
+            activeTimer = setTimeout(() => {
+                setIsDismissed(true);
+                activeTransitionTimer = setTimeout(() => {
+                    setIsRendered(false);
+                }, 250);
+            }, 0);
+        }
+
+        return () => {
+            clearTimeout(activeTimer);
+            clearTimeout(activeTransitionTimer);
+        };
+    }, [shouldShow]);
+
+    if (!isRendered) return null;
 
     const {
         visitedCount,
@@ -12,11 +41,34 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
         unvisitedEntries,
         guidedTourComplete,
         recentSteps = [],
-    } = runSummary;
+    } = runSummary || {};
     const coveragePercent = totalNodes > 0 ? Math.round((visitedCount / totalNodes) * 100) : 0;
 
+    const handleClose = () => {
+        setIsDismissed(true);
+        setTimeout(() => {
+            setIsRendered(false);
+        }, 250);
+    };
+
     return (
-        <div className="ghost-run-summary" role="status" aria-label="Ghost runner summary">
+        <div 
+            className={`ghost-run-summary ${isDismissed ? 'dismissed' : ''}`} 
+            role="status" 
+            aria-label="Ghost runner summary"
+        >
+            <button 
+                className="ghost-summary-close-btn" 
+                onClick={handleClose}
+                aria-label="Close summary"
+                title="Close summary"
+            >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
             <h4 className="ghost-summary-title">Run summary</h4>
             {guidedTourComplete ? (
                 <p className="ghost-summary-tour-done" role="status">

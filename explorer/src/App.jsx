@@ -44,6 +44,7 @@ function AppInner() {
   const { theme, toggleTheme } = useTheme();
   const uploadRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [apiKey, setApiKeyState] = useState(() => getStoredApiKey());
   const [selectedModel, setSelectedModelState] = useState(() => getStoredModel());
@@ -278,9 +279,31 @@ function AppInner() {
         totalNodeCount={allNodes.length}
         mobileOpen={sidebarOpen}
         fileDependencies={fileDependencies}
+        collapsed={isSidebarCollapsed}
       />
 
       <div className="main-area">
+        <button
+          className={`sidebar-desktop-toggle-btn ${isSidebarCollapsed ? 'collapsed' : ''}`}
+          onClick={() => setIsSidebarCollapsed(prev => !prev)}
+          aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease' }}
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
         <div className="vibe-header">
           <button
             className="hamburger-btn"

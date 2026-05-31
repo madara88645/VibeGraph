@@ -553,6 +553,54 @@ body {
   flex-direction: column;
   overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-right-width 0.3s ease;
+}
+
+@media (min-width: 769px) {
+  .file-sidebar.collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    border-right-width: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+.sidebar-desktop-toggle-btn {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 18px;
+  height: 42px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border-subtle);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-desktop-toggle-btn:hover {
+  background: var(--surface-softer);
+  color: var(--text-primary);
+  width: 22px;
+}
+
+.sidebar-desktop-toggle-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .sidebar-desktop-toggle-btn {
+    display: none !important;
+  }
 }
 
 .sidebar-header {
@@ -2813,7 +2861,40 @@ body {
   min-width: 280px;
   max-width: 400px;
   z-index: 99;
-  animation: guideSlideUp 0.3s ease-out;
+  animation: guideSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ghost-run-summary.dismissed {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(12px) scale(0.95) !important;
+  pointer-events: none !important;
+}
+
+.ghost-summary-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ghost-summary-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.ghost-summary-close-btn:active {
+  transform: scale(0.9);
 }
 
 .ghost-summary-title {
