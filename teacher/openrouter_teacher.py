@@ -215,49 +215,49 @@ class OpenRouterTeacher:
         except AuthenticationError as exc:
             logging.error("OpenRouter Authentication Error", exc_info=True)
             return {
-                "analogy": "Geçersiz API Anahtarı (Invalid API Key)",
-                "technical": f"OpenRouter API anahtarınız geçersiz veya süresi dolmuş. Detay: {exc.message}",
-                "key_takeaway": "Lütfen AI Ayarları panelinden API anahtarınızı kontrol edip güncelleyin.",
+                "analogy": "Invalid API Key",
+                "technical": f"Your OpenRouter API key is invalid or expired. Details: {exc.message}",
+                "key_takeaway": "Please verify and update your API key in AI Settings.",
                 "is_error": True,
             }
         except RateLimitError as exc:
             logging.error("OpenRouter Rate Limit Error", exc_info=True)
             return {
-                "analogy": "Limit Aşımı (Rate Limit)",
-                "technical": f"OpenRouter istek sınırı aşıldı veya hesabınızda yeterli bakiye bulunmuyor. Detay: {exc.message}",
-                "key_takeaway": "Lütfen OpenRouter hesap bakiyenizi veya kullanım limitlerinizi kontrol edin.",
+                "analogy": "Rate Limit Exceeded",
+                "technical": f"OpenRouter rate limit reached or insufficient credits. Details: {exc.message}",
+                "key_takeaway": "Please check your OpenRouter account balance or rate limits.",
                 "is_error": True,
             }
         except BadRequestError as exc:
             logging.error("OpenRouter Bad Request Error", exc_info=True)
             return {
-                "analogy": "Geçersiz İstek (Bad Request)",
-                "technical": f"OpenRouter hatalı istek döndürdü. Detay: {exc.message}",
-                "key_takeaway": f"Lütfen '{self.model_name}' modelinin OpenRouter tarafından desteklendiğinden emin olun.",
+                "analogy": "Bad Request",
+                "technical": f"OpenRouter returned a Bad Request. Details: {exc.message}",
+                "key_takeaway": f"Please verify that the model '{self.model_name}' is supported on OpenRouter.",
                 "is_error": True,
             }
         except APIStatusError as exc:
             logging.error("OpenRouter API Status Error", exc_info=True)
             return {
-                "analogy": f"API Hatası (HTTP {exc.status_code})",
-                "technical": f"OpenRouter API sunucusu hata döndürdü. Detay: {exc.message}",
-                "key_takeaway": "Lütfen OpenRouter sunucularının durumunu kontrol edin veya başka bir model deneyin.",
+                "analogy": f"API Error (HTTP {exc.status_code})",
+                "technical": f"OpenRouter API returned an error status. Details: {exc.message}",
+                "key_takeaway": "Please check the OpenRouter status page or try a different model.",
                 "is_error": True,
             }
         except APIConnectionError as exc:
             logging.error("OpenRouter Connection Error", exc_info=True)
             return {
-                "analogy": "Bağlantı Başarısız (Connection Failed)",
-                "technical": f"OpenRouter sunucularıyla iletişim kurulamadı. İnternet veya proxy ayarlarınızı kontrol edin. Detay: {exc.message}",
-                "key_takeaway": "Lütfen internet bağlantınızın çalıştığından emin olun.",
+                "analogy": "Connection Failed",
+                "technical": f"Could not connect to OpenRouter. Details: {exc.message}",
+                "key_takeaway": "Please check your internet connection or proxy settings.",
                 "is_error": True,
             }
         except APITimeoutError:
             logging.error("OpenRouter API timeout", exc_info=True)
             return {
-                "analogy": "Bağlantı Zaman Aşımı (Timeout)",
-                "technical": "OpenRouter API isteği zaman aşımına uğradı.",
-                "key_takeaway": "Lütfen bir süre sonra tekrar deneyin.",
+                "analogy": "Connection Timeout",
+                "technical": "The request to OpenRouter timed out.",
+                "key_takeaway": "Please try again later.",
                 "is_error": True,
             }
         except ValueError as exc:
@@ -319,19 +319,19 @@ class OpenRouterTeacher:
             return normalize_chat_text(completion.choices[0].message.content, refs)
         except AuthenticationError:
             logging.error("OpenRouter Authentication Error during chat", exc_info=True)
-            return "OpenRouter API hatası: API anahtarınız geçersiz veya süresi dolmuş. Lütfen AI Ayarlarından anahtarınızı güncelleyin."
+            return "OpenRouter API error: Your API key is invalid or expired. Please check your key in AI Settings."
         except RateLimitError:
             logging.error("OpenRouter Rate Limit Error during chat", exc_info=True)
-            return "OpenRouter API hatası: İstek limiti aşıldı veya hesabınızda yeterli bakiye bulunmuyor. Lütfen bakiye/limit durumunuzu kontrol edin."
+            return "OpenRouter API error: Rate limit reached or insufficient balance. Please check your account limits and balance."
         except BadRequestError:
             logging.error("OpenRouter Bad Request Error during chat", exc_info=True)
-            return f"OpenRouter API hatası: Geçersiz istek. Lütfen '{self.model_name}' modelinin OpenRouter tarafından desteklendiğinden emin olun."
+            return f"OpenRouter API error: Bad request. Please verify that the model '{self.model_name}' is supported on OpenRouter."
         except APIStatusError as exc:
             logging.error("OpenRouter API Status Error during chat", exc_info=True)
-            return f"OpenRouter API hatası (HTTP {exc.status_code}): {exc.message}"
+            return f"OpenRouter API error (HTTP {exc.status_code}): {exc.message}"
         except APIConnectionError:
             logging.error("OpenRouter Connection Error during chat", exc_info=True)
-            return "OpenRouter API hatası: Sunucuyla bağlantı kurulamadı. İnternet bağlantınızı veya ağ/proxy ayarlarınızı kontrol edin."
+            return "OpenRouter API error: Could not connect to server. Please check your internet connection or proxy settings."
         except APITimeoutError:
             logging.error("OpenRouter API timeout", exc_info=True)
             return "OpenRouter API timeout. Please try again."
@@ -557,7 +557,7 @@ class OpenRouterTeacher:
                 {
                     "step": 1,
                     "node_id": "auth_error",
-                    "reason": "OpenRouter API anahtarınız geçersiz veya süresi dolmuş. Lütfen AI Ayarlarından kontrol edin.",
+                    "reason": "OpenRouter API key is invalid or expired. Please check your key in AI Settings.",
                 }
             ]
         except RateLimitError:
@@ -568,7 +568,7 @@ class OpenRouterTeacher:
                 {
                     "step": 1,
                     "node_id": "rate_limit_error",
-                    "reason": "OpenRouter istek sınırı aşıldı veya hesabınızda yeterli bakiye yok. Lütfen limit/bakiye durumunuzu kontrol edin.",
+                    "reason": "OpenRouter rate limit reached or insufficient balance. Please check your account limits and balance.",
                 }
             ]
         except BadRequestError:
@@ -579,7 +579,7 @@ class OpenRouterTeacher:
                 {
                     "step": 1,
                     "node_id": "bad_request_error",
-                    "reason": f"OpenRouter geçersiz istek döndürdü. Lütfen '{self.model_name}' modelinin desteklendiğinden emin olun.",
+                    "reason": f"OpenRouter returned a Bad Request. Please verify that the model '{self.model_name}' is supported.",
                 }
             ]
         except APIStatusError as exc:
@@ -590,7 +590,7 @@ class OpenRouterTeacher:
                 {
                     "step": 1,
                     "node_id": f"api_status_{exc.status_code}",
-                    "reason": f"OpenRouter API hatası (HTTP {exc.status_code}): {exc.message}",
+                    "reason": f"OpenRouter API error (HTTP {exc.status_code}): {exc.message}",
                 }
             ]
         except APIConnectionError:
@@ -601,7 +601,7 @@ class OpenRouterTeacher:
                 {
                     "step": 1,
                     "node_id": "connection_error",
-                    "reason": "OpenRouter sunucularına bağlantı kurulamadı. İnternet/proxy bağlantınızı kontrol edin.",
+                    "reason": "Could not connect to OpenRouter. Please check your internet connection or proxy settings.",
                 }
             ]
         except APITimeoutError:

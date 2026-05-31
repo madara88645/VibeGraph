@@ -90,17 +90,17 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         const isBackendError = typeof aiResponse === 'object' && aiResponse !== null && (aiResponse.is_error || aiResponse.technical === 'An unexpected error occurred.' || aiResponse.technical === 'OpenRouter API key is required.');
 
         if (isClientMissingKey || isBackendError) {
-            let errorTitle = "Bağlantı Hatası";
-            let errorMsg = "Beklenmeyen bir hata oluştu. Lütfen bağlantınızı veya OpenRouter durumunu kontrol edin.";
-            let errorTakeaway = "OpenRouter durumunu veya API anahtarınızı kontrol edin.";
+            let errorTitle = "Connection Error";
+            let errorMsg = "An unexpected error occurred. Please check your connection or OpenRouter status.";
+            let errorTakeaway = "Check your OpenRouter status or API key.";
             let errorIcon = "⚠️";
             let showSettingsBtn = false;
             let showRetryBtn = false;
 
             if (isClientMissingKey) {
-                errorTitle = "API Anahtarı Eksik";
-                errorMsg = "AI açıklamalarını etkinleştirmek için geçerli bir OpenRouter API anahtarı eklemeniz gerekiyor.";
-                errorTakeaway = "AI Ayarları panelinden geçerli bir API anahtarı ekleyin.";
+                errorTitle = "API Key Missing";
+                errorMsg = "You need to add a valid OpenRouter API key to enable AI explanations.";
+                errorTakeaway = "Add a valid API key in the AI Settings panel.";
                 errorIcon = "🔑";
                 showSettingsBtn = true;
             } else {
@@ -109,38 +109,38 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 const takeaway = aiResponse.key_takeaway || "";
 
                 if (analogy.includes("Key") || analogy.includes("Anahtar") || technical.toLowerCase().includes("key") || technical.toLowerCase().includes("auth")) {
-                    errorTitle = "API Anahtarı Geçersiz";
+                    errorTitle = "Invalid API Key";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "🔑";
                     showSettingsBtn = true;
                 } else if (analogy.includes("Limit") || analogy.includes("Sınır")) {
-                    errorTitle = "İstek Sınırı Aşıldı";
+                    errorTitle = "Rate Limit Exceeded";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "⌛";
                     showRetryBtn = true;
                 } else if (analogy.includes("Timeout") || analogy.includes("Zaman Aşımı")) {
-                    errorTitle = "Bağlantı Zaman Aşımı";
+                    errorTitle = "Connection Timeout";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "🔌";
                     showRetryBtn = true;
                 } else if (analogy.includes("Connection") || analogy.includes("Bağlantı")) {
-                    errorTitle = "Bağlantı Başarısız";
+                    errorTitle = "Connection Failed";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "🌐";
                     showRetryBtn = true;
                 } else if (analogy.includes("Request") || analogy.includes("İstek")) {
-                    errorTitle = "Geçersiz İstek";
+                    errorTitle = "Bad Request";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
                     errorIcon = "⚙️";
                 } else {
-                    errorTitle = analogy || "Bağlantı Hatası";
-                    errorMsg = technical || "Beklenmeyen bir hata oluştu.";
-                    errorTakeaway = takeaway || "Lütfen internet bağlantınızı veya OpenRouter durumunu kontrol edin.";
+                    errorTitle = analogy || "Connection Error";
+                    errorMsg = technical || "An unexpected error occurred.";
+                    errorTakeaway = takeaway || "Please check your internet connection or OpenRouter status.";
                     errorIcon = "⚠️";
                     showRetryBtn = true;
                 }
@@ -173,7 +173,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         borderLeft: '2px solid rgba(252, 165, 165, 0.3)',
                         marginBottom: '14px'
                     }}>
-                        <strong>💡 Öneri:</strong> {errorTakeaway}
+                        <strong>💡 Suggestion:</strong> {errorTakeaway}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {showSettingsBtn && onOpenAiSettings && (
@@ -193,7 +193,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.filter = 'brightness(1.1)'}
                                 onMouseLeave={(e) => e.target.style.filter = 'none'}
                             >
-                                ⚙️ AI Ayarlarını Aç
+                                ⚙️ Open AI Settings
                             </button>
                         )}
                         {showRetryBtn && (
@@ -213,7 +213,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.12)'}
                                 onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.08)'}
                             >
-                                🔄 Yeniden Dene
+                                🔄 Retry
                             </button>
                         )}
                     </div>

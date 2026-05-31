@@ -290,10 +290,10 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ fontSize: '1.2rem' }}>📦</span>
-                                        <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>Harici veya Yerleşik Modül</h4>
+                                        <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>External or Built-in Module</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
-                                        Bu kod düğümü projenizin sınırları dışındaki harici bir kütüphaneye veya Python'un yerleşik bir modülüne ait olduğu için yerel kaynak kodu bulunmuyor. AI açıklaması, fonksiyon ismi ve kullanım bağlamına göre yapılacaktır.
+                                        This code node belongs to an external library or a built-in Python module outside your project, so local source code is not available. AI explanation will be provided based on name and context.
                                     </p>
                                 </div>
                             )}
@@ -312,10 +312,10 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ fontSize: '1.2rem' }}>🔍</span>
-                                        <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Kaynak Dosyası Bulunamadı</h4>
+                                        <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Source File Not Found</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
-                                        Bu fonksiyona ait yerel dosya sistemde bulunamadı veya erişilemez durumda (demo projesindeki geçici dizinler veya silinmiş bir dosya olabilir). AI açıklaması mevcut bağlama göre yapılacaktır.
+                                        The local source file for this function could not be found or is inaccessible (possibly a temporary path from a demo or a deleted file). AI explanation will be provided based on the available context.
                                     </p>
                                 </div>
                             )}
