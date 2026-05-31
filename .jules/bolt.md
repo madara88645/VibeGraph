@@ -110,3 +110,9 @@
 ## 2024-05-24 - Python AST Traversal Optimization Correction
 **Learning:** When replacing Python's `ast.walk()` with a Breadth-First Search (BFS) queue for performance optimization, restricting child traversal to a hardcoded list of block attributes (like `body`, `orelse`, `handlers`) breaks static analysis by missing expressions (e.g., `ast.Call` inside `value` or `args` of a function call or list).
 **Action:** Instead, use `queue.extend(ast.iter_child_nodes(node))` to safely iterate and enqueue all valid child nodes while still avoiding the generator overhead of `ast.walk()`.
+## 2026-05-25 - Avoid `any()` generator expression overhead in hot paths
+**Learning:** In performance-critical Python paths (e.g., frequent AST traversal loops in `analyst/analyzer.py`), using `any()` combined with a generator expression (e.g., `any(... for x in ...)` incurs significant overhead due to generator allocation.
+**Action:** Replace `any()` with generator expressions with explicit, unrolled `for` loops containing an early `break`. This eliminates the generator allocation and reduces execution time.
+## 2024-05-26 - Max function generator expression overhead
+**Learning:** In performance-critical recursive functions (e.g., AST traversal in `analyst/analyzer.py`), passing a generator expression to `max()` (like `max((walk(g) for g in ast.iter_child_nodes()), default=0)`) causes severe performance degradation due to the overhead of allocating a new generator object on every single recursive call.
+**Action:** Replace `max()` with generator expressions in recursive or high-frequency loops with explicit `for` loops tracking the maximum value. This eliminates the generator allocation overhead entirely.
