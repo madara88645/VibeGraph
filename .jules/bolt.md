@@ -117,3 +117,7 @@
 **Learning:** In performance-critical recursive functions (e.g., AST traversal in `analyst/analyzer.py`), passing a generator expression to `max()` (like `max((walk(g) for g in ast.iter_child_nodes()), default=0)`) causes severe performance degradation due to the overhead of allocating a new generator object on every single recursive call.
 **Action:** Replace `max()` with generator expressions in recursive or high-frequency loops with explicit `for` loops tracking the maximum value. This eliminates the generator allocation overhead entirely.
 
+## 2024-05-27 - Caching Data on Immutable React Props
+**Learning:** In high-frequency UI components (like `SearchBar`), iterating over large datasets and modifying objects directly (e.g. `node._searchStr = ...`) to cache computed strings is a dangerous anti-pattern in React because it violates immutability rules. It triggers linting errors (`react-hooks/immutability`) and can cause subtle bugs or runtime errors if the objects are frozen.
+**Action:** Instead of modifying the node objects directly, use a module-level `WeakMap` (`searchCache.set(node, searchStr)`) to associate the precomputed strings with the node references. This provides the performance benefit of caching while keeping the node props strictly immutable and avoiding memory leaks.
+

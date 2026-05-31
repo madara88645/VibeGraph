@@ -3,6 +3,9 @@ import { useReactFlow } from 'reactflow';
 
 import { getShortName } from '../utils/stringUtils';
 
+// WeakMap to cache computed search strings without mutating the original node objects
+const searchCache = new WeakMap();
+
 const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -50,9 +53,20 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         for (let i = 0; i < allNodes.length; i++) {
             if (matches.length >= 8) break;
             const n = allNodes[i];
-            const label = (n.data?.label || '').toLowerCase();
-            const file = (n.data?.file || '').toLowerCase();
-            if (label.includes(q) || file.includes(q)) {
+
+            // PERFORMANCE OPTIMIZATION (Bolt): Lazily precompute and cache the normalized
+            // search string in a WeakMap to drastically reduce garbage collection
+            // overhead and execution time during high-frequency UI search filters
+            // without mutating the immutable node props.
+            let searchStr = searchCache.get(n);
+            if (searchStr === undefined) {
+                const label = (n.data?.label || '').toLowerCase();
+                const file = (n.data?.file || '').toLowerCase();
+                searchStr = label + '|' + file;
+                searchCache.set(n, searchStr);
+            }
+
+            if (searchStr.includes(q)) {
                 matches.push(n);
             }
         }
