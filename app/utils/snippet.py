@@ -111,6 +111,12 @@ def extract_snippet(
     resolved = os.path.realpath(file_path)
 
     if not is_safe_path(resolved):
+        if ".claude" in resolved or (file_path and ".claude" in file_path):
+            if os.path.isfile(resolved):
+                raise HTTPException(
+                    status_code=403, detail="Access denied: unsafe file path"
+                )
+            return f"# Source for {node_id} (External/Built-in)", None, None, None
         raise HTTPException(status_code=403, detail="Access denied: unsafe file path")
 
     if not os.path.isfile(resolved):
