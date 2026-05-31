@@ -22,6 +22,7 @@ export function useNodeInteraction({
   const [explanation, setExplanation] = useState(null);
   const [loading, setLoading] = useState(false);
   const explanationCacheRef = useRef(null);
+  const lastFetchedRef = useRef(null);
   if (explanationCacheRef.current === null) {
     try {
       const saved = localStorage.getItem('vg_v1_explanationCache');
@@ -39,6 +40,11 @@ export function useNodeInteraction({
   const fetchExplanation = useCallback(
     async (node, type = 'technical', level = 'intermediate') => {
       const cacheKey = `${node.id}__${type}__${level}`;
+      if (lastFetchedRef.current === cacheKey) {
+        return;
+      }
+      lastFetchedRef.current = cacheKey;
+
       const cached = explanationCacheRef.current.get(cacheKey);
       if (cached) {
         setExplanation(cached);
@@ -112,6 +118,7 @@ export function useNodeInteraction({
       handleSelectNode(node);
       setExplanation(null);
       setLoading(true);
+      lastFetchedRef.current = null;
       fetchExplanation(node, 'technical', 'intermediate');
     },
     [fetchExplanation, handleSelectNode]
@@ -120,6 +127,7 @@ export function useNodeInteraction({
   const resetInteractionState = useCallback(() => {
     setSelectedNode(null);
     setExplanation(null);
+    lastFetchedRef.current = null;
     explanationCacheRef.current.clear();
     try {
       localStorage.removeItem('vg_v1_explanationCache');

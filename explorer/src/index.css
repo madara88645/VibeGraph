@@ -3600,8 +3600,7 @@ body {
   font-weight: 600;
 }
 
-.ai-settings-field input,
-.ai-settings-field select {
+.ai-settings-field input {
   width: 100%;
   min-height: 42px;
   border-radius: 10px;
@@ -3612,9 +3611,45 @@ body {
   font-size: 0.88rem;
 }
 
-[data-theme="light"] .ai-settings-field input,
+.ai-settings-field select {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(9, 14, 22, 0.9);
+  color: var(--text-primary);
+  padding: 0 36px 0 12px;
+  font-size: 0.88rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+[data-theme="light"] .ai-settings-field input {
+  background: rgba(255, 255, 255, 0.88);
+}
+
 [data-theme="light"] .ai-settings-field select {
   background: rgba(255, 255, 255, 0.88);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+.ai-settings-field select option {
+  background: #090e16;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .ai-settings-field select option {
+  background: #ffffff;
+  color: #1e293b;
 }
 
 .ai-settings-key-row {
