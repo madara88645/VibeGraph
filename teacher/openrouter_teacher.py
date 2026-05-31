@@ -262,7 +262,18 @@ class OpenRouterTeacher:
             }
         except ValueError as exc:
             logging.error("Error parsing explain_code JSON: %s", exc, exc_info=True)
-            return {**_FALLBACK, "technical": "Could not parse the AI response."}
+            raw_text = str(exc)
+            return {
+                "analogy": "AI Formatting Error",
+                "technical": (
+                    "The AI did not return a valid JSON object. "
+                    "This usually happens when the model is overloaded, rate-limited, "
+                    "or returned an error message in plain text.\n\n"
+                    f"**Raw AI Response:**\n```\n{raw_text}\n```"
+                ),
+                "key_takeaway": "AI output format mismatch. Check raw response below.",
+                "is_error": True,
+            }
         except Exception as exc:
             logging.error("Error during explain_code: %s", exc, exc_info=True)
             return {

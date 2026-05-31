@@ -161,9 +161,9 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         <span style={{ fontSize: '1.5rem' }}>{errorIcon}</span>
                         <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
                     </div>
-                    <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        {errorMsg}
-                    </p>
+                    <div className="markdown-content" style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        <ReactMarkdown>{errorMsg}</ReactMarkdown>
+                    </div>
                     <div style={{
                         background: 'rgba(252, 165, 165, 0.05)',
                         padding: '10px 12px',
