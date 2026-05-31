@@ -31,6 +31,7 @@ def test_ghost_narrate_request_context_nodes_validation():
 # Additional model tests
 # ---------------------------------------------------------------------------
 
+
 def test_chat_request_sanitization():
     """Prompt injection phrases should be replaced with [filtered]."""
     req = ChatRequest(

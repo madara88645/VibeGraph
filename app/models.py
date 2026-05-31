@@ -107,7 +107,9 @@ class ChatMessage(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_CONTENT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, max_length=MAX_CONTENT_LENGTH, truncate=True)
+            return sanitize_llm_input(
+                value, max_length=MAX_CONTENT_LENGTH, truncate=True
+            )
         return value
 
 
@@ -164,7 +166,9 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_QUESTION_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, max_length=MAX_QUESTION_LENGTH, truncate=True)
+            return sanitize_llm_input(
+                value, max_length=MAX_QUESTION_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("project_context", mode="before")
@@ -175,7 +179,9 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_PROJECT_CONTEXT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=True)
+            return sanitize_llm_input(
+                value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("callers", "callees", "neighbors")
