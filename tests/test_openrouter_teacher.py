@@ -144,6 +144,60 @@ class TestWithMockedClient:
         assert "Selected node: foo" in result["technical"]
         assert result["key_takeaway"] == "Functions encapsulate logic"
 
+    def test_explain_code_external_node_dict_technical(self):
+        """Issue #405: external/built-in node payloads carry a dict `technical`
+        and list-valued sections. The result must be a valid string-typed
+        ExplanationDetail that preserves the structured details."""
+        from app.models import ExplanationDetail
+
+        response_json = json.dumps(
+            {
+                "analogy": "handle_export is like a gatekeeper that bridges results.",
+                "technical": {
+                    "origin": "External (likely defined in dependency package 'analyst')",
+                    "signature": "Callable[[...], Any] (exact signature unknown)",
+                    "callers": ["main", "module:main"],
+                    "callees": ["external:rich.panel.Panel", "unresolved:print"],
+                },
+                "key_takeaway": "Orchestrates exporting analysis results to React Flow.",
+                "sections": {
+                    "What it is": "A function that coordinates exporting analysis data.",
+                    "Inputs/Outputs": "Inputs: Unknown. Outputs: Unknown.",
+                    "Side effects": "Likely prints to stdout and displays a Panel.",
+                    "Why this node exists": "To decouple analysis from export.",
+                    "Common bugs": [
+                        "Unresolved callees may cause runtime ImportError",
+                        "No explicit error handling could lead to unhandled exceptions",
+                    ],
+                    "References": [
+                        "Callers: main, module:main",
+                        "Neighbors: print, Panel, CodeAnalyzer",
+                    ],
+                },
+                "unknowns": ["Exact signature of handle_export."],
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+        result = self.teacher.explain_code(
+            "", context="External Library / Built-in", node_id="handle_export"
+        )
+
+        # The technical field must always be a string (Pydantic contract).
+        assert isinstance(result["technical"], str)
+        # Structured technical metadata is preserved, not dropped.
+        assert "Technical Details" in result["technical"]
+        assert "External (likely defined in dependency package 'analyst')" in (
+            result["technical"]
+        )
+        # List-valued sections render readably, not as Python list repr.
+        assert "['" not in result["technical"]
+        assert "Unresolved callees may cause runtime ImportError" in result["technical"]
+        # The Pydantic model accepts the result without raising.
+        detail = ExplanationDetail(**result)
+        assert isinstance(detail.technical, str)
+
     def test_explain_code_caches_results(self):
         response_json = json.dumps(
             {
