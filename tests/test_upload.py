@@ -246,6 +246,50 @@ def test_upload_project_size_limit():
     assert response.status_code == 413
     assert "Upload too large" in response.json()["detail"]
 
+@patch("app.routers.upload.shutil.rmtree")
+@patch("os.scandir")
+def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_rmtree):
+    """Test that cleanup_expired_upload_dirs continues when one entry raises an exception."""
+    from unittest.mock import MagicMock
+    from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
+
+    mock_entry1 = MagicMock()
+    mock_entry1.name = f"{UPLOAD_PREFIX}1"
+    mock_entry1.is_dir.return_value = True
+    stat1 = MagicMock()
+    stat1.st_mtime = 0
+    mock_entry1.stat.return_value = stat1
+    mock_entry1.path = "/tmp/1"
+
+    mock_entry2 = MagicMock()
+    mock_entry2.name = f"{UPLOAD_PREFIX}2"
+    # This one will raise OSError on is_dir()
+    mock_entry2.is_dir.side_effect = OSError("Access denied")
+    mock_entry2.path = "/tmp/2"
+
+    mock_entry3 = MagicMock()
+    mock_entry3.name = f"{UPLOAD_PREFIX}3"
+    mock_entry3.is_dir.return_value = True
+    stat3 = MagicMock()
+    stat3.st_mtime = 0
+    mock_entry3.stat.return_value = stat3
+    mock_entry3.path = "/tmp/3"
+
+    mock_scandir_cm = MagicMock()
+    mock_scandir_cm.__enter__.return_value = [mock_entry1, mock_entry2, mock_entry3]
+    mock_scandir_cm.__exit__.return_value = None
+    mock_scandir.return_value = mock_scandir_cm
+
+    cleanup_expired_upload_dirs(retention_seconds=0)
+
+    # Rmtree should be called for entry 1 and 3, bypassing the error on entry 2
+    from unittest.mock import call
+    mock_rmtree.assert_has_calls([
+        call("/tmp/1", ignore_errors=True),
+        call("/tmp/3", ignore_errors=True)
+    ])
+    assert mock_rmtree.call_count == 2
+
 
 def test_cleanup_expired_upload_dirs_error_path():
     """Test that cleanup handles exceptions on individual entries without crashing."""
@@ -277,3 +321,4 @@ def test_cleanup_expired_upload_dirs_error_path():
 
             # Should have been called twice (once for each directory)
             assert mock_rmtree.call_count == 2
+
