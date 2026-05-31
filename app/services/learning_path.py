@@ -1,7 +1,5 @@
 """Deterministic repo-wide learning path generation."""
 
-from __future__ import annotations
-
 import heapq
 import os
 from collections import defaultdict
@@ -48,23 +46,27 @@ def _complexity_penalty(data: dict[str, Any]) -> float:
     loc = max(int(data.get("loc") or 0), 0)
     nesting = max(int(data.get("nesting_depth") or 0), 0)
     deps = max(int(data.get("dependency_count") or 0), 0)
-    return min(30.0, loc / 8.0 + nesting * 3.0 + deps * 1.5)
+    return min(40.0, loc * 0.1 + nesting * 4.0 + deps * 2.0)
 
 
 def _reason(signals: dict[str, Any]) -> str:
     reasons: list[str] = []
     if signals["entry_point"]:
-        reasons.append("Start here because it is a real entry point.")
+        reasons.append("Start here because it is a primary entry point to the system.")
     if signals["api_boundary"]:
-        reasons.append("It exposes a public API boundary.")
+        reasons.append("Exposes an external API boundary.")
     elif signals["public_api"]:
-        reasons.append("It is public-facing code rather than an internal helper.")
-    if signals["hub_score"] >= 20:
-        reasons.append("It is a call-graph hub.")
+        reasons.append("Provides a public-facing API for this component.")
+    if signals["hub_score"] >= 15:
+        reasons.append("Acts as a key coordination hub with high fan-out or fan-in.")
     if signals["side_effect_boundary"]:
-        reasons.append("It touches side effects like I/O, network, or framework edges.")
+        reasons.append(
+            "Contains side effects like file, network, or database I/O boundaries."
+        )
     if not reasons:
-        reasons.append("Read this after the higher-level flow is clear.")
+        reasons.append(
+            "Read this internal helper after the high-level flow is understood."
+        )
     return " ".join(reasons)
 
 
@@ -105,6 +107,9 @@ def _normalize_graph(
     return normalized_nodes, outgoing, incoming_count
 
 
+normalize_graph = _normalize_graph
+
+
 def build_learning_path(
     nodes: list[dict[str, Any]],
     edges: list[dict[str, Any]],
@@ -122,8 +127,8 @@ def build_learning_path(
     for node_id, data in normalized_nodes.items():
         fan_out = len(outgoing[node_id])
         fan_in = incoming_count[node_id]
-        fan_out_score = (fan_out / max_fan_out * 25.0) if max_fan_out else 0.0
-        fan_in_score = (fan_in / max_fan_in * 25.0) if max_fan_in else 0.0
+        fan_out_score = (fan_out / max_fan_out * 30.0) if max_fan_out else 0.0
+        fan_in_score = (fan_in / max_fan_in * 15.0) if max_fan_in else 0.0
         hub_score = fan_out_score + fan_in_score
         entry_point = _is_entry_point(node_id, data)
         public_api = _is_public_api(node_id, data)
@@ -162,14 +167,16 @@ def build_learning_path(
             ),
         }
 
+    # Detect initial starting entries
     entries = [
         node_id for node_id, step in scored.items() if step["signals"]["entry_point"]
     ]
-    # Seed the heap with every entry point (or every node, if there are none) so
-    # disjoint subgraphs — e.g. a CLI and a server in the same repo — each get
-    # walked from their own root rather than collapsing into the "remaining"
-    # bucket below.
-    start_nodes = entries or list(scored)
+    if not entries:
+        # Fall back to root nodes (no incoming edges)
+        entries = [node_id for node_id, count in incoming_count.items() if count == 0]
+    if not entries:
+        # Fall back to all nodes (if cycles exist or isolated nodes)
+        entries = list(scored)
 
     ordered_ids: list[str] = []
     visited: set[str] = set()
@@ -178,55 +185,51 @@ def build_learning_path(
     heappush = heapq.heappush
     heappop = heapq.heappop
 
-    def push(node_id: str) -> None:
-        if node_id not in visited and node_id not in enqueued:
-            enqueued.add(node_id)
-            heappush(queue, (scored[node_id]["_sort"], node_id))
+    def push(n_id: str) -> None:
+        if n_id not in visited and n_id not in enqueued:
+            enqueued.add(n_id)
+            heappush(queue, (scored[n_id]["_sort"], n_id))
 
-    for node_id in start_nodes:
+    for node_id in entries:
         push(node_id)
-    while queue:
-        _, node_id = heappop(queue)
-        if node_id in visited:
-            continue
-        visited.add(node_id)
-        ordered_ids.append(node_id)
-        for target in outgoing[node_id]:
-            push(target)
 
-    remaining_public_hubs = []
-    remaining_internals = []
+    while True:
+        while queue:
+            _, node_id = heappop(queue)
+            if node_id in visited:
+                continue
+            visited.add(node_id)
+            ordered_ids.append(node_id)
+            for target in outgoing[node_id]:
+                push(target)
 
-    for node_id in scored:
-        if node_id not in visited:
-            if (
-                scored[node_id]["signals"]["public_api"]
-                or scored[node_id]["signals"]["hub_score"] > 0
-            ):
-                remaining_public_hubs.append(node_id)
-            else:
-                remaining_internals.append(node_id)
+        # Handle any unvisited subgraphs or isolated nodes
+        unvisited = [nid for nid in scored if nid not in visited]
+        if not unvisited:
+            break
 
-    for node_id in sorted(
-        remaining_public_hubs, key=lambda item: scored[item]["_sort"]
-    ):
-        visited.add(node_id)
-        ordered_ids.append(node_id)
-    for node_id in sorted(remaining_internals, key=lambda item: scored[item]["_sort"]):
-        ordered_ids.append(node_id)
+        # Seed next phase of traversal with the highest priority unvisited node
+        best_remaining = min(unvisited, key=lambda nid: scored[nid]["_sort"])
+        push(best_remaining)
 
     steps = []
     for index, node_id in enumerate(ordered_ids, start=1):
         step = {key: value for key, value in scored[node_id].items() if key != "_sort"}
         step["step"] = index
         steps.append(step)
-    return steps
+
+    from app.services.learning_path_quality import apply_learning_path_quality
+
+    return apply_learning_path_quality(steps, nodes, edges)
 
 
 def refine_learning_path_with_ai(
     baseline_steps: list[dict[str, Any]],
     refiner: Callable[[list[dict[str, Any]]], list[dict[str, Any]]],
     window_size: int = AI_REFINEMENT_WINDOW,
+    *,
+    nodes: list[dict[str, Any]] | None = None,
+    edges: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     if not baseline_steps:
         return []
@@ -259,4 +262,9 @@ def refine_learning_path_with_ai(
             merged_window.append(step)
 
     merged = merged_window + baseline_steps[window_size:]
-    return [{**step, "step": index} for index, step in enumerate(merged, start=1)]
+    merged = [{**step, "step": index} for index, step in enumerate(merged, start=1)]
+    if nodes is not None and edges is not None:
+        from app.services.learning_path_quality import apply_learning_path_quality
+
+        merged = apply_learning_path_quality(merged, nodes, edges)
+    return merged

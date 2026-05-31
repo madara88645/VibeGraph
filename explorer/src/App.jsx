@@ -302,6 +302,7 @@ function AppInner() {
             <span aria-hidden="true">Menu</span>
           </button>
 
+          <img src="/vibegraph-logo.png" alt="VibeGraph" className="header-logo" />
           <h1>VibeGraph Explorer</h1>
           <span className={`status-badge ${aiReady ? '' : 'status-badge-warning'}`}>
             {aiReady ? 'AI Ready' : 'Key Needed'}
@@ -363,7 +364,7 @@ function AppInner() {
               aria-label="Getting started"
             >
               <div role="status" aria-live="polite">
-                <strong>Graph loaded!</strong> Click any node to view its AI explanation, or use the Ghost Runner to trace execution.
+                <strong>Graph loaded!</strong> Click any node for an AI explanation, open Chat for follow-up questions, or use Ghost Runner to trace execution.
               </div>
               <button
                 className="first-steps-dismiss"

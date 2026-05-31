@@ -92,9 +92,11 @@ describe('ChatDrawer', () => {
     expect(screen.getByText('main')).toBeInTheDocument();
   });
 
-  it('shows general project prompt when no node selected', () => {
+  it('shows node selection prompt when no node selected', () => {
     renderDrawer({ selectedNode: null });
-    expect(screen.getByText(/Ask a general question/)).toBeInTheDocument();
+    expect(screen.getByText(/Select a function or class on the graph/)).toBeInTheDocument();
+    expect(screen.getByText('No node selected')).toBeInTheDocument();
+    expect(screen.getByText(/Ctrl\+K/)).toBeInTheDocument();
   });
 
   it('shows node-specific prompt when node is selected', () => {
@@ -112,16 +114,47 @@ describe('ChatDrawer', () => {
   });
 
   it('send button is disabled when input is empty', () => {
-    renderDrawer();
+    renderDrawer({ selectedNode: MOCK_NODE });
     expect(screen.getByRole('button', { name: 'Type a message to send' })).toBeDisabled();
   });
 
-  it('send button is enabled when input has text', async () => {
+  it('send button is disabled when no node is selected', () => {
+    renderDrawer({ selectedNode: null });
+    expect(screen.getByRole('button', { name: 'Select a graph node to send' })).toBeDisabled();
+  });
+
+  it('send button stays disabled without a selected node even when input has text', async () => {
     const user = userEvent.setup();
-    renderDrawer();
+    renderDrawer({ selectedNode: null });
+
+    await user.type(
+      screen.getByPlaceholderText('Select a node on the graph to ask…'),
+      'hello'
+    );
+    expect(screen.getByRole('button', { name: 'Select a graph node to send' })).toBeDisabled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('send button is enabled when input has text and a node is selected', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
     expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
+  });
+
+  it('blocks API send without selected node and shows guidance', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: null, allNodes: [MOCK_NODE] });
+
+    const input = screen.getByPlaceholderText('Select a node on the graph to ask…');
+    await user.type(input, 'What does this project do?{Enter}');
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(screen.getByText('What does this project do?')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Pick a function or class on the graph first/)
+    ).toBeInTheDocument();
   });
 
   it('prompts for AI settings when key is missing', async () => {

@@ -130,14 +130,17 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
         if (items && items.length > 0) {
             const entry = items[0].webkitGetAsEntry();
             if (entry && !entry.isDirectory) {
-                showToast('Please drop a project folder, not individual files.', 'error');
-                return;
+                const isZip = entry.name && entry.name.toLowerCase().endsWith('.zip');
+                if (!isZip) {
+                    showToast('Please drop a project folder or a .zip file, not individual files.', 'error');
+                    return;
+                }
             }
         }
 
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) {
-            showToast('Please drop a project folder containing files.', 'error');
+            showToast('Please drop a project folder or a .zip file.', 'error');
             return;
         }
 
@@ -223,7 +226,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                                     </svg>
                                     <div className="upload-text-container">
                                         <h2>Upload your project</h2>
-                                        <p className="upload-hint">Drop your Python project folder here, or browse</p>
+                                        <p className="upload-hint">Drop your Python, JS, or TS folder / .zip here, or browse</p>
                                     </div>
                                     <label htmlFor="project-upload-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
                                         Select a project folder
@@ -239,6 +242,29 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                                         multiple
                                     />
                                     <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Browse files</button>
+                                    <div className="demo-cta-divider" style={{ margin: '12px 0 6px 0', fontSize: '11px', color: 'var(--text-secondary)' }}>or</div>
+                                    <button
+                                        type="button"
+                                        className="upload-select-btn demo-load-btn"
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            setIsAnalyzing(true);
+                                            try {
+                                                const res = await fetch('/graph_data.json');
+                                                const data = await res.json();
+                                                if (onUploadSuccess) onUploadSuccess(data);
+                                                setIsModalOpen(false);
+                                                showToast('Demo project loaded successfully!', 'success');
+                                            } catch (err) {
+                                                showToast('Failed to load demo project: ' + err.message, 'error');
+                                            } finally {
+                                                setIsAnalyzing(false);
+                                            }
+                                        }}
+                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none' }}
+                                    >
+                                        Try with a Demo Project
+                                    </button>
                                 </div>
                             </div>
                         )}

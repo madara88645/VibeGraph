@@ -10,8 +10,6 @@ Inherits the JavaScript analyser and:
     a small NestJS / Angular-style boost over the JS plugin.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from analyst.languages.base import FileAnalysis

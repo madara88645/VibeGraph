@@ -318,14 +318,16 @@ def build_refine_learning_user_prompt(
     allowed_node_ids: list[str],
 ) -> str:
     return (
-        "Rules:\n"
-        "- Reorder only the provided node_ids.\n"
-        "- Do not add/remove node_ids.\n"
-        "- Reasons must be grounded in provided steps/metadata.\n"
-        "- If evidence is missing, use Unknown (not in provided code context).\n\n"
+        "You are tasked with refining a learning path (a sequence of code nodes/files to study).\n"
+        "CRITICAL RULES:\n"
+        "1. You must ONLY reorder the provided list of node_ids inside the allowed_node_ids array. Do not add/remove node_ids.\n"
+        "2. Do NOT add any new node_ids. Do NOT omit any node_ids. Every node in allowed_node_ids must appear exactly once.\n"
+        "3. Provide a clear, educational, and concise 'reason' (1-2 sentences in plain language) for each node's position in the sequence, explaining how it relates to the previous steps or overall repository flow.\n"
+        "4. Your explanation must be strictly grounded in facts. Do not invent any facts about the code or metadata.\n\n"
         f"allowed_node_ids:\n{json.dumps(allowed_node_ids)}\n\n"
         f"baseline_steps:\n{json.dumps(slim_steps)}\n\n"
-        'Return JSON: {"steps": [{"node_id": "...", "reason": "..."}]}'
+        "Expected JSON Output format:\n"
+        '{"steps": [{"node_id": "...", "reason": "..."}]}'
     )
 
 
