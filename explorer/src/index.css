@@ -192,13 +192,13 @@ body {
 /* ===== HEADER ===== */
 .vibe-header {
   position: absolute;
-  top: 1.25rem;
-  left: 1.25rem;
+  top: 1rem;
+  left: 1rem;
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.6rem;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
   border-radius: 12px;
   background: var(--header-bg);
   backdrop-filter: blur(16px);
@@ -214,8 +214,8 @@ body {
 }
 
 .header-logo {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   object-fit: cover;
   box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
@@ -229,8 +229,8 @@ body {
 }
 
 .vibe-header h1 {
-  margin: 0 0.25rem 0 0.5rem;
-  font-size: 1.05rem;
+  margin: 0 0.2rem 0 0.4rem;
+  font-size: 0.95rem;
   font-weight: 650;
   letter-spacing: -0.015em;
   background: linear-gradient(135deg, var(--title-gradient-start), var(--title-gradient-end));
@@ -2199,14 +2199,14 @@ body {
 
 .sim-controls {
   position: absolute;
-  bottom: 20px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--color-surface-2);
-  padding: 8px 14px;
+  padding: 5px 12px;
   border-radius: 999px;
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
@@ -2215,8 +2215,8 @@ body {
 }
 
 .sim-btn {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid var(--border-subtle);
   background: transparent;
@@ -2904,7 +2904,7 @@ body {
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 374px;
+  width: 330px;
   max-height: calc(100vh - 32px);
   background: var(--panel-gradient);
   backdrop-filter: blur(14px);
@@ -3650,6 +3650,26 @@ body {
 [data-theme="light"] .ai-settings-field select option {
   background: #ffffff;
   color: #1e293b;
+}
+
+@keyframes select-pulse-glow {
+  0% {
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.15), 0 0 1px rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.5), 0 0 2px rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+  }
+}
+
+.ai-settings-field select:focus,
+.ai-settings-field input:focus {
+  outline: none !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+  border-color: #10b981 !important;
+  animation: select-pulse-glow 1.6s infinite alternate ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .ai-settings-key-row {
