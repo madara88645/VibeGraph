@@ -302,6 +302,7 @@ function AppInner() {
             <span aria-hidden="true">Menu</span>
           </button>
 
+          <img src="/vibegraph-logo.png" alt="VibeGraph" className="header-logo" />
           <h1>VibeGraph Explorer</h1>
           <span className={`status-badge ${aiReady ? '' : 'status-badge-warning'}`}>
             {aiReady ? 'AI Ready' : 'Key Needed'}
