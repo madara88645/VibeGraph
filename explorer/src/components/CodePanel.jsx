@@ -84,14 +84,6 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         }
     }, [codeData]);
 
-    if (!isOpen) {
-        return (
-            <button className="code-panel-toggle" onClick={onToggle} title="Open Code Panel" aria-label="Open Code Panel">
-                <span aria-hidden="true">{'<>'}</span> Code
-            </button>
-        );
-    }
-
     const fileName = getShortName(codeData?.file_path) || '';
     const hasFullSource = codeData?.full_source;
     const startLine = codeData?.start_line;
@@ -99,7 +91,17 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const hasCopyText = Boolean(codeData?.full_source || codeData?.snippet);
 
     return (
-        <div className={`code-panel ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
+        <>
+            <button 
+                className={`code-panel-toggle ${isOpen ? 'hidden' : ''}`} 
+                onClick={onToggle} 
+                title="Open Code Panel" 
+                aria-label="Open Code Panel"
+            >
+                <span aria-hidden="true">{'<>'}</span> Code
+            </button>
+
+            <div className={`code-panel ${isOpen ? 'open' : ''} ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
             {/* Backdrop for fullscreen */}
             {isFullscreen && <div className="code-panel-backdrop" onClick={() => setIsFullscreen(false)} />}
 
@@ -286,6 +288,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

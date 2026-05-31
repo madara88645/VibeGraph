@@ -33,8 +33,8 @@ def test_ai_config_reports_openrouter_defaults():
     with patch.dict(
         os.environ,
         {
-            "OPENROUTER_DEFAULT_MODEL": "anthropic/claude-haiku-4.5",
-            "OPENROUTER_ALLOWED_MODELS": "google/gemini-2.5-flash-lite,openai/gpt-5-mini",
+            "OPENROUTER_DEFAULT_MODEL": "deepseek/deepseek-v4-flash",
+            "OPENROUTER_ALLOWED_MODELS": "google/gemini-3.1-flash-lite,anthropic/claude-sonnet-4.6",
             "ALLOW_SERVER_FALLBACK_KEY": "false",
         },
         clear=False,
@@ -44,12 +44,12 @@ def test_ai_config_reports_openrouter_defaults():
     assert response.status_code == 200
     data = response.json()
     assert data["provider"] == "openrouter"
-    assert data["defaultModel"] == "anthropic/claude-haiku-4.5"
-    assert "anthropic/claude-haiku-4.5" in data["allowedModels"]
-    assert "google/gemini-2.5-flash-lite" in data["allowedModels"]
-    assert "openai/gpt-5-mini" in data["allowedModels"]
-    assert "deepseek/deepseek-chat-v3.1" in data["allowedModels"]
-    assert "x-ai/grok-4.1-fast" in data["allowedModels"]
+    assert data["defaultModel"] == "deepseek/deepseek-v4-flash"
+    assert "deepseek/deepseek-v4-flash" in data["allowedModels"]
+    assert "google/gemini-3.1-flash-lite" in data["allowedModels"]
+    assert "anthropic/claude-sonnet-4.6" in data["allowedModels"]
+    assert "qwen/qwen3-coder-30b-a3b-instruct" in data["allowedModels"]
+    assert "meta-llama/llama-3.3-70b-instruct:free" in data["allowedModels"]
     assert data["requiresUserKey"] is True
 
 
@@ -68,8 +68,8 @@ def test_chat_rejects_unsupported_model(monkeypatch):
     monkeypatch.setattr(deps, "teacher", None)
     monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "false")
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "anthropic/claude-haiku-4.5")
-    monkeypatch.setenv("OPENROUTER_ALLOWED_MODELS", "openai/gpt-5-mini")
+    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "deepseek/deepseek-v4-flash")
+    monkeypatch.setenv("OPENROUTER_ALLOWED_MODELS", "anthropic/claude-sonnet-4.6")
 
     response = client.post(
         "/api/chat",
@@ -84,10 +84,10 @@ def test_chat_rejects_unsupported_model(monkeypatch):
 def test_chat_uses_bearer_key_and_selected_model(monkeypatch):
     monkeypatch.setattr(deps, "teacher", None)
     monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "false")
-    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "anthropic/claude-haiku-4.5")
+    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "deepseek/deepseek-v4-flash")
     monkeypatch.setenv(
         "OPENROUTER_ALLOWED_MODELS",
-        "google/gemini-2.5-flash-lite,openai/gpt-5-mini",
+        "google/gemini-3.1-flash-lite,anthropic/claude-sonnet-4.6",
     )
 
     with patch("app.dependencies.OpenRouterTeacher") as mock_teacher_cls:
@@ -97,7 +97,7 @@ def test_chat_uses_bearer_key_and_selected_model(monkeypatch):
 
         response = client.post(
             "/api/chat",
-            json={**CHAT_PAYLOAD, "model": "openai/gpt-5-mini"},
+            json={**CHAT_PAYLOAD, "model": "anthropic/claude-sonnet-4.6"},
             headers={"Authorization": "Bearer user-openrouter-key"},
         )
 
@@ -105,14 +105,14 @@ def test_chat_uses_bearer_key_and_selected_model(monkeypatch):
     assert response.json()["answer"] == "Configured answer"
     mock_teacher_cls.assert_called_once()
     assert mock_teacher_cls.call_args.kwargs["api_key"] == "user-openrouter-key"
-    assert mock_teacher_cls.call_args.kwargs["model_name"] == "openai/gpt-5-mini"
+    assert mock_teacher_cls.call_args.kwargs["model_name"] == "anthropic/claude-sonnet-4.6"
 
 
 def test_chat_can_use_server_fallback_key(monkeypatch):
     monkeypatch.setattr(deps, "teacher", None)
     monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
     monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
-    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "anthropic/claude-haiku-4.5")
+    monkeypatch.setenv("OPENROUTER_DEFAULT_MODEL", "deepseek/deepseek-v4-flash")
     monkeypatch.delenv("OPENROUTER_ALLOWED_MODELS", raising=False)
 
     with patch("app.dependencies.OpenRouterTeacher") as mock_teacher_cls:
