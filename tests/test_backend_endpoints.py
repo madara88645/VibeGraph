@@ -724,7 +724,7 @@ class TestRegression(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertIn("snippet", data)
-        self.assertIn("# Source for main (External/Built-in)", data["snippet"])
+        self.assertIn("# Source unavailable for main", data["snippet"])
 
 
 class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
@@ -759,6 +759,31 @@ class TestUploadFlowKeepsSourceAvailable(unittest.TestCase):
         self.assertEqual(snippet_resp.status_code, 200, snippet_resp.text)
         snippet_payload = snippet_resp.json()
         self.assertIn("def telegram_agent", snippet_payload.get("snippet", ""))
+
+    def test_upload_then_snippet_works_with_javascript_source(self):
+        source = b"export function greet(name) {\n  return `hi ${name}`;\n}\n"
+        files = {"files": ("js-app/src/greet.js", source, "text/javascript")}
+
+        upload_resp = self.client.post("/api/upload-project", files=files)
+        self.assertEqual(upload_resp.status_code, 200, upload_resp.text)
+        payload = upload_resp.json()
+
+        node = next((n for n in payload["nodes"] if n.get("id") == "greet"), None)
+        self.assertIsNotNone(node, "uploaded JS function node not found in graph")
+
+        snippet_resp = self.client.post(
+            "/api/snippet",
+            json={
+                "file_path": node["data"].get("file"),
+                "node_id": "greet",
+                "language": node["data"].get("language"),
+                "start_line": node["data"].get("lineno"),
+                "end_line": node["data"].get("end_lineno"),
+            },
+        )
+        self.assertEqual(snippet_resp.status_code, 200, snippet_resp.text)
+        snippet_payload = snippet_resp.json()
+        self.assertIn("export function greet", snippet_payload.get("snippet", ""))
 
 
 # ---------------------------------------------------------------------------
@@ -859,7 +884,7 @@ class TestExtractSnippetUnit(unittest.TestCase):
         """Should return default fallback for a safe path that doesn't exist."""
         nonexistent = os.path.join(self.proj.tmpdir, "nonexistent.py")
         snippet, _, _, _ = _extract_snippet(nonexistent, "my_node")
-        self.assertIn("# Source for my_node (External/Built-in)", snippet)
+        self.assertIn("# Source unavailable for my_node", snippet)
 
     def test_extract_snippet_oserror(self):
         """Should handle OSError when trying to read the file."""

@@ -28,6 +28,16 @@ def _write_temp(content: str, suffix: str = ".py") -> str:
     return path
 
 
+def _write_temp_path(relative_path: str, content: str) -> str:
+    """Write *content* under a vibegraph_test_ directory using relative_path."""
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    path = os.path.join(tmp_dir, *relative_path.split("/"))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return path
+
+
 class TestExtractFunction:
     def test_extract_function_from_valid_file(self):
         path = _write_temp("def hello():\n    pass\n")
@@ -52,6 +62,70 @@ class TestExtractFunction:
         )
         code, start, end, _ = extract_snippet(path, "Greeter.greet")
         assert "def greet(self):" in code
+
+    def test_extract_javascript_with_line_metadata(self):
+        path = _write_temp_path(
+            "src/sample.js",
+            "// setup\nexport function greet(name) {\n  return `hi ${name}`;\n}\n",
+        )
+        code, start, end, full_source = extract_snippet(
+            path,
+            "greet",
+            language="javascript",
+            start_line=2,
+            end_line=4,
+        )
+        assert "export function greet" in code
+        assert "return `hi ${name}`" in code
+        assert start == 2
+        assert end == 4
+        assert full_source is not None
+
+    def test_extract_typescript_with_line_metadata(self):
+        path = _write_temp_path(
+            "src/widget.tsx",
+            "import React from 'react';\nexport function Widget() {\n  return <section />;\n}\n",
+        )
+        code, start, end, full_source = extract_snippet(
+            path,
+            "Widget",
+            language="typescript",
+            start_line=2,
+            end_line=4,
+        )
+        assert "export function Widget" in code
+        assert "return <section />" in code
+        assert start == 2
+        assert end == 4
+        assert full_source is not None
+
+    def test_extract_javascript_without_metadata_uses_analyzer_fallback(self):
+        path = _write_temp_path(
+            "src/sample.js",
+            "export function greet(name) {\n  return `hi ${name}`;\n}\n",
+        )
+        code, start, end, full_source = extract_snippet(
+            path,
+            "greet",
+            language="javascript",
+        )
+        assert "export function greet" in code
+        assert start == 1
+        assert end == 3
+        assert full_source is not None
+
+    def test_module_node_returns_full_source(self):
+        source = "export function greet() {\n  return 'hi';\n}\n"
+        path = _write_temp_path("src/sample.js", source)
+        code, start, end, full_source = extract_snippet(
+            path,
+            "module:sample",
+            language="javascript",
+        )
+        assert code == source
+        assert start == 1
+        assert end == 3
+        assert full_source == source
 
 
 class TestNodeNotFound:
@@ -83,7 +157,8 @@ class TestExternalBuiltin:
         tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
         fake = os.path.join(tmp_dir, "does_not_exist.py")
         code, start, end, full_source = extract_snippet(fake, "func")
-        assert "External/Built-in" in code
+        assert "Source unavailable" in code
+        assert "re-upload" in code
         assert start is None
 
 

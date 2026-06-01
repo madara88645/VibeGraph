@@ -19,7 +19,13 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
     Returns a short explanation of what the current node does and how
     it relates to the previous node.
     """
-    snippet, _, _, _ = extract_snippet(body.file_path, body.node_id)
+    snippet, _, _, _ = extract_snippet(
+        body.file_path,
+        body.node_id,
+        language=body.language,
+        start_line=body.start_line,
+        end_line=body.end_line,
+    )
 
     # Build edge context from context_nodes trail
     edge_context = ""

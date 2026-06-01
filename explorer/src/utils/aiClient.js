@@ -97,12 +97,26 @@ export function ensureAiReady(aiReady, onRequireAiKey, message) {
   return false;
 }
 
-export async function fetchAiJson(path, { apiKey, method = 'POST', body }) {
-  const response = await fetch(path, {
+export async function fetchWithTimeout(path, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(path, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+export async function fetchAiJson(path, { apiKey, method = 'POST', body, timeoutMs } = {}) {
+  const response = await fetchWithTimeout(path, {
     method,
     headers: buildAiHeaders(apiKey),
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, timeoutMs);
 
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
@@ -122,6 +136,7 @@ export function getFriendlyAiErrorMessage(error, fallbackMessage) {
   if (error instanceof Error && error.message) {
     const loweredMessage = error.message.toLowerCase();
     if (
+      error.name === 'AbortError' ||
       loweredMessage === 'network error' ||
       loweredMessage.includes('failed to fetch') ||
       loweredMessage.includes('load failed')

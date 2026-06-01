@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 
 import app.dependencies as deps
 from app.models import ExplainRequest, ExplainResponse, SnippetRequest, SnippetResponse
-from app.rate_limit import EXPLAIN_LIMIT, limiter
+from app.rate_limit import EXPLAIN_LIMIT, SNIPPET_LIMIT, limiter
 from app.utils.snippet import extract_snippet
 
 router = APIRouter(prefix="/api", tags=["explain"])
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api", tags=["explain"])
     response_model=SnippetResponse,
     summary="Get raw code snippet for a node",
 )
-@limiter.limit(EXPLAIN_LIMIT)
+@limiter.limit(SNIPPET_LIMIT)
 def get_snippet(request: Request, snippet_request: SnippetRequest):
     """
     Returns just the code snippet for a given node, without AI explanation.
@@ -24,12 +24,16 @@ def get_snippet(request: Request, snippet_request: SnippetRequest):
     snippet, start_line, end_line, full_source = extract_snippet(
         snippet_request.file_path,
         snippet_request.node_id,
+        language=snippet_request.language,
+        start_line=snippet_request.start_line,
+        end_line=snippet_request.end_line,
     )
 
     return {
         "node_id": snippet_request.node_id,
         "snippet": snippet,
         "file_path": snippet_request.file_path,
+        "language": snippet_request.language,
         "start_line": start_line,
         "end_line": end_line,
         "full_source": full_source,
@@ -48,7 +52,11 @@ def explain_node(request: Request, explain_request: ExplainRequest):
     OpenRouter teacher to explain it at the requested difficulty level.
     """
     snippet, _, _, _ = extract_snippet(
-        explain_request.file_path, explain_request.node_id
+        explain_request.file_path,
+        explain_request.node_id,
+        language=explain_request.language,
+        start_line=explain_request.start_line,
+        end_line=explain_request.end_line,
     )
 
     teacher = deps.get_teacher_for_request(request, explain_request.model)

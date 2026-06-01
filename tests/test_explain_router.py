@@ -22,6 +22,14 @@ def _make_temp_py(content: str = "def hello():\n    pass\n") -> str:
     return path
 
 
+def _make_temp_js(content: str) -> str:
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    path = os.path.join(tmp_dir, "sample.js")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return path
+
+
 class TestSnippetEndpoint:
     def test_snippet_valid_file(self):
         path = _make_temp_py()
@@ -43,6 +51,27 @@ class TestSnippetEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         assert "External or Built-in" in data["snippet"]
+
+    def test_snippet_javascript_uses_metadata_range(self):
+        path = _make_temp_js(
+            "// prelude\nexport function greet(name) {\n  return `hi ${name}`;\n}\n"
+        )
+        resp = client.post(
+            "/api/snippet",
+            json={
+                "file_path": path,
+                "node_id": "greet",
+                "language": "javascript",
+                "start_line": 2,
+                "end_line": 4,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "export function greet" in data["snippet"]
+        assert data["start_line"] == 2
+        assert data["end_line"] == 4
+        assert data["language"] == "javascript"
 
 
 class TestExplainEndpoint:
@@ -68,6 +97,9 @@ class TestExplainEndpoint:
                 "callers": ["entry.main"],
                 "callees": ["helper.clean"],
                 "neighbors": ["entry.main", "helper.clean"],
+                "language": "javascript",
+                "start_line": 2,
+                "end_line": 4,
             },
         )
         assert resp.status_code == 200
@@ -81,6 +113,39 @@ class TestExplainEndpoint:
         assert kwargs["callers"] == ["entry.main"]
         assert kwargs["callees"] == ["helper.clean"]
         assert kwargs["neighbors"] == ["entry.main", "helper.clean"]
+        mock_snippet.assert_called_once_with(
+            "sample.py",
+            "hello",
+            language="javascript",
+            start_line=2,
+            end_line=4,
+        )
+
+    @patch("app.routers.explain.deps.get_teacher_for_request")
+    def test_explain_javascript_sends_real_snippet_to_teacher(self, mock_get_teacher):
+        path = _make_temp_js("export function greet() {\n  return 'hi';\n}\n")
+        mock_teacher = MagicMock()
+        mock_teacher.explain_code.return_value = {
+            "analogy": "Greeting",
+            "technical": "Returns a string",
+            "key_takeaway": "JS source is available",
+        }
+        mock_get_teacher.return_value = mock_teacher
+
+        resp = client.post(
+            "/api/explain",
+            json={
+                "file_path": path,
+                "node_id": "greet",
+                "level": "beginner",
+                "language": "javascript",
+            },
+        )
+
+        assert resp.status_code == 200
+        snippet = mock_teacher.explain_code.call_args.args[0]
+        assert "export function greet" in snippet
+        assert "Syntax error" not in snippet
 
     @patch("app.routers.explain.deps.get_teacher_for_request")
     def test_explain_without_api_key_returns_401(self, mock_get_teacher):

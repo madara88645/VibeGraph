@@ -5,9 +5,11 @@ import {
   buildAiHeaders,
   ensureAiReady,
   fetchAiJson,
+  fetchWithTimeout,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
 import { buildNodeGroundingContext } from '../utils/graphContext';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { consumeSseChunk } from '../utils/sse';
 
 const MISSING_KEY_MESSAGE =
@@ -17,6 +19,7 @@ const NO_NODE_MESSAGE =
   'Pick a function or class on the graph first so answers use real code from your project.';
 
 const NO_NODE_PLACEHOLDER = 'Select a node on the graph to ask…';
+const CHAT_STREAM_TIMEOUT_MS = 45000;
 
 const ChatDrawer = ({
   selectedNode,
@@ -153,9 +156,11 @@ Files included: ${fileNames.join(', ')}
 Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     }
 
+    const nodeContext = buildNodeCodeContext(selectedNode);
     const requestBody = {
       node_id: selectedNode?.id || null,
-      file_path: selectedNode?.data?.file || null,
+      ...nodeContext,
+      file_path: nodeContext.file_path || null,
       project_context: projectContext,
       question: text,
       history: nextMessages.slice(-10),
@@ -168,11 +173,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     };
 
     try {
-      const response = await fetch('/api/chat/stream', {
+      const response = await fetchWithTimeout('/api/chat/stream', {
         method: 'POST',
         headers: buildAiHeaders(apiKey),
         body: JSON.stringify(requestBody),
-      });
+      }, CHAT_STREAM_TIMEOUT_MS);
 
       if (!response.ok || !response.body) {
         const fallbackData = await fetchAiJson('/api/chat', {
