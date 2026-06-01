@@ -10,6 +10,9 @@ import { buildNodeCodeContext } from '../utils/nodeMetadata';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key to unlock explanations.';
+const EXPLAIN_TIMEOUT_MS = 75000;
+const EXPLAIN_TIMEOUT_MESSAGE =
+  'Vibe Teacher is taking longer than usual. Try again in a moment.';
 
 export function useNodeInteraction({
   aiApiKey = '',
@@ -83,6 +86,7 @@ export function useNodeInteraction({
         const data = await fetchAiJson('/api/explain', {
           apiKey: aiApiKey,
           body: payload,
+          timeoutMs: EXPLAIN_TIMEOUT_MS,
         });
         const result = data.explanation ? data : 'No explanation returned.';
         explanationCacheRef.current.set(cacheKey, result);
@@ -98,7 +102,7 @@ export function useNodeInteraction({
       } catch (error) {
         const message = getFriendlyAiErrorMessage(
           error,
-          'Failed to reach Vibe Teacher.'
+          EXPLAIN_TIMEOUT_MESSAGE
         );
         if (message.toLowerCase().includes('api key')) {
           onRequireAiKey?.(message);

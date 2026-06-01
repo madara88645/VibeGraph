@@ -222,4 +222,56 @@ describe('useNodeInteraction - onNodeClick', () => {
       neighbors: ['caller_fn', 'callee_fn'],
     });
   });
+
+  it('allows slower Vibe Teacher responses before timing out', async () => {
+    const mockResponse = { explanation: { technical: 'slow but successful' } };
+    const timeoutSpy = vi.spyOn(window, 'setTimeout');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    });
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'deepseek/deepseek-v4-flash',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'intermediate');
+    });
+
+    const [, options] = fetchSpy.mock.calls[0];
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 75000);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a slow-teacher message when the explanation request times out', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new DOMException('The operation was aborted.', 'AbortError')
+    );
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'deepseek/deepseek-v4-flash',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'intermediate');
+    });
+
+    expect(result.current.explanation).toMatch(/taking longer than usual/i);
+  });
 });
