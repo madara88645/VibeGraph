@@ -2,7 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
+import { fetchWithTimeout, getFriendlyAiErrorMessage } from '../utils/aiClient';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { getShortName } from '../utils/stringUtils';
+
+const CODE_FETCH_TIMEOUT_MS = 15000;
+
+async function readSnippetError(response) {
+    if (response.status === 429) {
+        return 'Too many code requests. Slow down and try again.';
+    }
+
+    let detail = `Code request failed (${response.status})`;
+    try {
+        const payload = await response.json();
+        detail = payload.detail || payload.message || payload.error || detail;
+    } catch {
+        // Keep HTTP fallback when the backend response is not JSON.
+    }
+    return detail;
+}
 
 /**
  * CodePanel — Bottom panel that shows code for the active node.
@@ -28,7 +47,8 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         if (lastFetchedId.current === activeNode.id) return;
 
         const fetchCode = async () => {
-            const filePath = activeNode.data?.file || activeNode.data?.original_data?.file;
+            const nodeContext = buildNodeCodeContext(activeNode);
+            const filePath = nodeContext.file_path;
             if (!filePath) {
                 setCodeData({
                     snippet: `// External: ${activeNode.data?.label || activeNode.id}\n// No source code available`,
@@ -44,21 +64,22 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             setError(null);
 
             try {
-                const response = await fetch('/api/snippet', {
+                const response = await fetchWithTimeout('/api/snippet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        ...nodeContext,
                         file_path: filePath,
                         node_id: activeNode.id,
                     }),
-                });
+                }, CODE_FETCH_TIMEOUT_MS);
 
-                if (!response.ok) throw new Error('Failed to fetch');
+                if (!response.ok) throw new Error(await readSnippetError(response));
                 const data = await response.json();
                 setCodeData(data);
                 lastFetchedId.current = activeNode.id;
             } catch (err) {
-                setError('Could not connect to backend');
+                setError(getFriendlyAiErrorMessage(err, 'Could not connect to backend'));
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -321,7 +342,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                             )}
 
                             <SyntaxHighlighter
-                                language="python"
+                                language={codeData.language || 'python'}
                                 style={oneDark}
                                 showLineNumbers
                                 customStyle={{

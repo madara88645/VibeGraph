@@ -1,4 +1,6 @@
 import pytest
+import os
+import tempfile
 from fastapi import HTTPException
 from unittest.mock import patch
 from app.utils.security import normalize_uploaded_filename, is_safe_path
@@ -18,6 +20,33 @@ def test_is_safe_path_commonpath_value_error():
     with patch("os.path.commonpath") as mock_commonpath:
         mock_commonpath.side_effect = ValueError("Paths are on different drives")
         assert is_safe_path("vibegraph_upload_123/file.txt") is False
+
+
+def test_is_safe_path_allows_legitimate_hidden_project_dirs_in_uploads():
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    path = os.path.join(tmp_dir, ".storybook", "main.js")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("export function configure() {}\n")
+
+    assert is_safe_path(path) is True
+
+
+def test_is_safe_path_blocks_sensitive_hidden_files_in_uploads():
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    sensitive_paths = [
+        os.path.join(tmp_dir, ".env"),
+        os.path.join(tmp_dir, ".git", "config"),
+        os.path.join(tmp_dir, ".ssh", "id_rsa"),
+        os.path.join(tmp_dir, ".aws", "credentials"),
+        os.path.join(tmp_dir, ".npmrc"),
+    ]
+
+    for path in sensitive_paths:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("secret\n")
+        assert is_safe_path(path) is False
 
 
 def test_normalize_uploaded_filename_valid():

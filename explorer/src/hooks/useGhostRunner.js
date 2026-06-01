@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import { buildGhostTutorialView } from '../ghost/ghostTutorialMachine';
-import { buildAiHeaders } from '../utils/aiClient';
+import { buildAiHeaders, fetchWithTimeout } from '../utils/aiClient';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 
 const TRAIL_LENGTH = 4;
 const DEFAULT_EDGE_STYLE = { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 };
 const GHOST_ACTIVE_EDGE_STYLE = { stroke: '#f43f5e', strokeWidth: 7 };
 const GHOST_TRAIL_EDGE_STYLE = { stroke: 'rgba(244, 63, 94, 0.5)', strokeWidth: 4 };
+const GHOST_NARRATION_TIMEOUT_MS = 20000;
 
 function isNavigableNode(node) {
     return Boolean(node?.data?.file);
@@ -506,20 +508,22 @@ export function useGhostRunner(
 
         const requestId = ++narrationRequestIdRef.current;
         const node = nodesMapRef.current.get(nodeId);
-        if (!node?.data?.file) return;
+        const nodeContext = buildNodeCodeContext(node);
+        if (!nodeContext.file_path) return;
 
-        fetch('/api/ghost-narrate', {
+        fetchWithTimeout('/api/ghost-narrate', {
             method: 'POST',
             headers: buildAiHeaders(aiApiKey),
             body: JSON.stringify({
                 node_id: nodeId,
-                file_path: node.data.file,
+                ...nodeContext,
+                file_path: nodeContext.file_path,
                 previous_node_id: previousNodeId,
                 strategy,
                 context_nodes: trailRef.current.slice(0, 3),
                 model: selectedModel || null,
             }),
-        })
+        }, GHOST_NARRATION_TIMEOUT_MS)
             .then(r => r.ok ? r.json() : null)
             .then(data => {
                 // Only apply if ghost hasn't moved past this node

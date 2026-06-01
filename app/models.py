@@ -26,6 +26,9 @@ def _normalize_model_name(value: str | None) -> str | None:
 class ExplainRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
     model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
     callers: list[str] = Field(default_factory=list, max_length=100)
@@ -78,6 +81,9 @@ class ExplainRequest(BaseModel):
 class SnippetRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
 
     model_config = {
         "json_schema_extra": {
@@ -116,6 +122,9 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     node_id: str | None = Field(default=None, max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     project_context: str | None = Field(
         default=None,
         max_length=MAX_PROJECT_CONTEXT_LENGTH,
@@ -236,6 +245,9 @@ class LearningPathRequest(BaseModel):
 class GhostNarrateRequest(BaseModel):
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     previous_node_id: str | None = Field(
         default=None,
         max_length=MAX_NODE_ID_LENGTH,
@@ -299,6 +311,7 @@ class SnippetResponse(BaseModel):
     node_id: str
     snippet: str
     file_path: str | None
+    language: str | None = None
     start_line: int | None
     end_line: int | None
     full_source: str | None

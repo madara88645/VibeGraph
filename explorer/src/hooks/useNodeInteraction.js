@@ -6,6 +6,7 @@ import {
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
 import { buildNodeGroundingContext } from '../utils/graphContext';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key to unlock explanations.';
@@ -60,13 +61,15 @@ export function useNodeInteraction({
 
       setLoading(true);
       try {
-        const filePath = node.data.file || node.data.original_data?.file;
+        const nodeContext = buildNodeCodeContext(node);
+        const filePath = nodeContext.file_path;
         const { callers, callees, neighbors } = buildNodeGroundingContext({
           nodeId: node.id,
           allNodes,
           allEdges,
         });
         const payload = {
+          ...nodeContext,
           file_path: filePath || null,
           node_id: node.id,
           type,

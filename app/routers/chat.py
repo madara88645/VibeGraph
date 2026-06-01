@@ -24,7 +24,13 @@ def chat_with_node(request: Request, chat_request: ChatRequest):
     Free-form conversation about the code behind *node_id*.
     Supports multi-turn via *history*.
     """
-    snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
+    snippet, _, _, _ = extract_snippet(
+        chat_request.file_path,
+        chat_request.node_id,
+        language=chat_request.language,
+        start_line=chat_request.start_line,
+        end_line=chat_request.end_line,
+    )
 
     history_dicts = [
         {"role": m.role, "content": m.content} for m in chat_request.history
@@ -53,7 +59,13 @@ def chat_stream(request: Request, chat_request: ChatRequest):
     Streaming version of /api/chat. Returns Server-Sent Events
     with token-by-token output for real-time UI updates.
     """
-    snippet, _, _, _ = extract_snippet(chat_request.file_path, chat_request.node_id)
+    snippet, _, _, _ = extract_snippet(
+        chat_request.file_path,
+        chat_request.node_id,
+        language=chat_request.language,
+        start_line=chat_request.start_line,
+        end_line=chat_request.end_line,
+    )
     history_dicts = [
         {"role": m.role, "content": m.content} for m in chat_request.history
     ]

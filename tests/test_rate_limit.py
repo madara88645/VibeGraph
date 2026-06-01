@@ -7,6 +7,7 @@ from app.rate_limit import (
     EXPLAIN_LIMIT,
     GHOST_NARRATION_LIMIT,
     LEARNING_LIMIT,
+    SNIPPET_LIMIT,
     UPLOAD_LIMIT,
     limiter,
     _running_under_pytest,
@@ -35,6 +36,9 @@ class TestLimitConstants:
     def test_explain_limit(self):
         assert EXPLAIN_LIMIT == "20/minute"
 
+    def test_snippet_limit(self):
+        assert SNIPPET_LIMIT == "120/minute"
+
     def test_learning_limit(self):
         assert LEARNING_LIMIT == "10/minute"
 
@@ -46,6 +50,7 @@ class TestLimitConstants:
             ("CHAT_LIMIT", CHAT_LIMIT),
             ("UPLOAD_LIMIT", UPLOAD_LIMIT),
             ("EXPLAIN_LIMIT", EXPLAIN_LIMIT),
+            ("SNIPPET_LIMIT", SNIPPET_LIMIT),
             ("LEARNING_LIMIT", LEARNING_LIMIT),
             ("GHOST_NARRATION_LIMIT", GHOST_NARRATION_LIMIT),
         ]:
