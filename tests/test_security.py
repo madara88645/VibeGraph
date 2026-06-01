@@ -104,6 +104,22 @@ def test_normalize_uploaded_filename_traversal():
     assert "Unsafe upload path" in exc_info.value.detail
 
 
+def test_normalize_uploaded_filename_blocks_sensitive_hidden_names_case_insensitively():
+    for raw_name in [
+        ".ENV",
+        ".Git/config",
+        ".SSH/id_rsa",
+        ".AWS/credentials",
+        ".NPMRC",
+        ".PyPiRc",
+        ".NETRC",
+    ]:
+        with pytest.raises(HTTPException) as exc_info:
+            normalize_uploaded_filename(raw_name)
+        assert exc_info.value.status_code == 400
+        assert "Sensitive hidden file or directory not allowed" in exc_info.value.detail
+
+
 def test_normalize_uploaded_filename_absolute():
     """Test absolute paths are converted or blocked.
     Because empty strings are filtered out by split('/'),

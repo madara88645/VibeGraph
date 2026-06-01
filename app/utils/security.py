@@ -75,7 +75,7 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
 
     sensitive_names = {".env", ".git", ".ssh", ".aws", ".npmrc", ".pypirc", ".netrc"}
     for part in parts:
-        if part in sensitive_names:
+        if part.lower() in sensitive_names:
             raise HTTPException(
                 status_code=400,
                 detail=f"Sensitive hidden file or directory not allowed: {part}",
