@@ -49,6 +49,18 @@ def test_is_safe_path_blocks_sensitive_hidden_files_in_uploads():
         assert is_safe_path(path) is False
 
 
+def test_is_safe_path_allows_bundled_demo_project_sources():
+    path = os.path.join("app", "demo_project", "api.py")
+
+    assert is_safe_path(path) is True
+
+
+def test_is_safe_path_blocks_sensitive_files_inside_demo_project():
+    path = os.path.join("app", "demo_project", ".env")
+
+    assert is_safe_path(path) is False
+
+
 def test_normalize_uploaded_filename_valid():
     """Test valid uploaded filenames are correctly normalized."""
     assert normalize_uploaded_filename("foo/bar.py") == "foo/bar.py"

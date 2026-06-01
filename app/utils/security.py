@@ -7,6 +7,8 @@ from fastapi import HTTPException
 
 
 UPLOAD_PREFIX = "vibegraph_upload_"
+PROJECT_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DEMO_PROJECT_DIR = os.path.join(PROJECT_ROOT, "app", "demo_project")
 
 SENSITIVE_HIDDEN_SEGMENTS = frozenset(
     {
@@ -34,28 +36,36 @@ def _contains_sensitive_segment(rel_path: str) -> bool:
     return False
 
 
+def _is_within_path(path: str, root: str) -> bool:
+    try:
+        return os.path.commonpath([path, root]) == root
+    except ValueError:
+        return False
+
+
 def is_safe_path(path: str) -> bool:
-    """Ensure the path is within a valid upload temp directory."""
+    """Ensure the path is within a valid upload temp directory or bundled demo."""
     try:
         resolved = os.path.realpath(path)
     except ValueError:
         return False
 
-    tmp_dir = os.path.realpath(tempfile.gettempdir())
-    try:
-        if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
-            rel_path = os.path.relpath(resolved, tmp_dir)
-            if _contains_sensitive_segment(rel_path):
-                return False
+    if _is_within_path(resolved, DEMO_PROJECT_DIR):
+        rel_path = os.path.relpath(resolved, DEMO_PROJECT_DIR)
+        return not _contains_sensitive_segment(rel_path)
 
-            first_part = rel_path.partition(os.sep)[0]
-            if first_part and (
-                first_part.startswith(UPLOAD_PREFIX)
-                or first_part.startswith("vibegraph_test_")
-            ):
-                return True
-    except ValueError:
-        pass
+    tmp_dir = os.path.realpath(tempfile.gettempdir())
+    if _is_within_path(resolved, tmp_dir):
+        rel_path = os.path.relpath(resolved, tmp_dir)
+        if _contains_sensitive_segment(rel_path):
+            return False
+
+        first_part = rel_path.partition(os.sep)[0]
+        if first_part and (
+            first_part.startswith(UPLOAD_PREFIX)
+            or first_part.startswith("vibegraph_test_")
+        ):
+            return True
 
     return False
 
