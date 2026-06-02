@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import CodeViewer from './CodeViewer';
 
 const typeColors = {
@@ -172,7 +173,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
                     </div>
                     <div className="markdown-content" style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        <ReactMarkdown>{errorMsg}</ReactMarkdown>
+                        <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{errorMsg}</ReactMarkdown>
                     </div>
                     <div style={{
                         background: 'rgba(252, 165, 165, 0.05)',
@@ -258,7 +259,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     {tab === 'technical' && (
                         <div>
                             <div className="markdown-content">
-                                <ReactMarkdown>{aiResponse.technical}</ReactMarkdown>
+                                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{aiResponse.technical}</ReactMarkdown>
                             </div>
                             <div style={{
                                 background: `${typeConfig.accent}12`,
@@ -284,7 +285,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         // Fallback for string
         return (
             <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                <ReactMarkdown>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
                 {codeSnippet && <CodeViewer code={codeSnippet} />}
             </div>
         );
