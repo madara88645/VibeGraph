@@ -291,4 +291,23 @@ describe('useNodeInteraction - onNodeClick', () => {
 
     expect(result.current.explanation).toMatch(/taking longer than usual/i);
   });
+  it('shows a connectivity message when the explanation request fails to reach the backend', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'deepseek/deepseek-v4-flash',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'intermediate');
+    });
+    expect(result.current.explanation).toMatch(/could not connect to vibe teacher/i);
+  });
 });

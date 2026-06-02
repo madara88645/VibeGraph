@@ -13,6 +13,8 @@ const MISSING_KEY_MESSAGE =
 const EXPLAIN_TIMEOUT_MS = 75000;
 const EXPLAIN_TIMEOUT_MESSAGE =
   'Vibe Teacher is taking longer than usual. Try again in a moment.';
+const EXPLAIN_CONNECTIVITY_MESSAGE =
+  'Could not connect to Vibe Teacher. Check your connection and try again.';
 
 export function useNodeInteraction({
   aiApiKey = '',
@@ -100,10 +102,10 @@ export function useNodeInteraction({
         }
         setExplanation(result);
       } catch (error) {
-        const message = getFriendlyAiErrorMessage(
-          error,
-          EXPLAIN_TIMEOUT_MESSAGE
-        );
+        const message =
+          error instanceof DOMException && error.name === 'AbortError'
+            ? EXPLAIN_TIMEOUT_MESSAGE
+            : getFriendlyAiErrorMessage(error, EXPLAIN_CONNECTIVITY_MESSAGE);
         if (message.toLowerCase().includes('api key')) {
           onRequireAiKey?.(message);
         }
