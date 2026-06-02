@@ -146,6 +146,23 @@ describe('useNodeInteraction - explanation cache', () => {
     });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('starts with the code panel closed by default', () => {
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'deepseek/deepseek-v4-flash',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    expect(result.current.codePanelOpen).toBe(false);
+    expect(result.current.chatOpen).toBe(false);
+    expect(result.current.learningPathOpen).toBe(false);
+  });
 });
 
 describe('useNodeInteraction - onNodeClick', () => {

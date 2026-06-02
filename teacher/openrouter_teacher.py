@@ -23,6 +23,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from app.ai_models import DEFAULT_OPENROUTER_MODEL
 from teacher.contract import (
     TeacherReferences,
     build_chat_user_prompt,
@@ -148,7 +149,7 @@ class OpenRouterTeacher:
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         self.model_name = (
             model_name or os.getenv("OPENROUTER_DEFAULT_MODEL") or ""
-        ).strip() or "anthropic/claude-haiku-4.5"
+        ).strip() or DEFAULT_OPENROUTER_MODEL
         self.timeout_seconds = timeout_seconds or int(
             os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30")
         )

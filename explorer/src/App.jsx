@@ -44,7 +44,7 @@ function AppInner() {
   const { theme, toggleTheme } = useTheme();
   const uploadRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [apiKey, setApiKeyState] = useState(() => getStoredApiKey());
   const [selectedModel, setSelectedModelState] = useState(() => getStoredModel());
@@ -177,6 +177,8 @@ function AppInner() {
     currentDegreeMap,
   } = useGraphData(setNodes, setEdges);
 
+  const hasGraph = allNodes.length > 0 || allEdges.length > 0;
+
   const {
     selectedNode,
     setSelectedNode,
@@ -306,7 +308,7 @@ function AppInner() {
           </svg>
         </button>
 
-        <div className="vibe-header">
+        <div className={`vibe-header ${hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact'}`}>
           <button
             className="hamburger-btn"
             onClick={handleToggleSidebar}
@@ -352,17 +354,19 @@ function AppInner() {
             AI Settings
           </button>
 
-          <button
-            className="header-action-btn"
-            onClick={() => setLearningPathOpen((prev) => !prev)}
-            title="Learning Path"
-            aria-label="Learning Path"
-            aria-controls="learning-path-panel"
-            aria-expanded={learningPathOpen}
-          >
-            Learn
-          </button>
-
+          {hasGraph ? (
+            <button
+              className="header-action-btn"
+              onClick={() => setLearningPathOpen((prev) => !prev)}
+              title="Learning Path"
+              aria-label="Learning Path"
+              aria-controls="learning-path-panel"
+              aria-expanded={learningPathOpen}
+            >
+              Learn
+            </button>
+          ) : null}
+          
           <button
             className="header-action-btn"
             onClick={toggleTheme}
@@ -374,15 +378,17 @@ function AppInner() {
 
           <ProjectUpload ref={uploadRef} onUploadSuccess={onUploadSuccess} />
 
-          <SearchBar
-            allNodes={allNodes}
-            onSelectNode={handleSelectNode}
-            onSelectFile={setSelectedFile}
-          />
+          {hasGraph ? (
+            <SearchBar
+              allNodes={allNodes}
+              onSelectNode={handleSelectNode}
+              onSelectFile={setSelectedFile}
+            />
+          ) : null}
         </div>
 
         <div className="graph-shell">
-          {allNodes.length > 0 && showFirstSteps ? (
+          {hasGraph && showFirstSteps ? (
             <div
               className="first-steps-banner"
               role="region"
@@ -412,40 +418,44 @@ function AppInner() {
             />
           </ErrorBoundary>
 
-          <GhostTutorialPanel
-            ghostTutorial={ghostTutorial}
-            stepSummaries={stepSummaries}
-            totalNodes={totalNodes}
-            showTutorial={showTutorial}
-            onClose={() => setShowTutorial(false)}
-          />
+          {hasGraph ? (
+            <>
+              <GhostTutorialPanel
+                ghostTutorial={ghostTutorial}
+                stepSummaries={stepSummaries}
+                totalNodes={totalNodes}
+                showTutorial={showTutorial}
+                onClose={() => setShowTutorial(false)}
+              />
 
-          <GhostNarration narration={narration} isPlaying={isPlaying} />
-          <GhostChoices
-            availableNextNodes={availableNextNodes}
-            onChoose={onUserChooseNext}
-            isPlaying={isPlaying}
-            mode={mode}
-          />
-          <GhostRunSummary runSummary={runSummary} isPlaying={isPlaying} />
+              <GhostNarration narration={narration} isPlaying={isPlaying} />
+              <GhostChoices
+                availableNextNodes={availableNextNodes}
+                onChoose={onUserChooseNext}
+                isPlaying={isPlaying}
+                mode={mode}
+              />
+              <GhostRunSummary runSummary={runSummary} isPlaying={isPlaying} />
 
-          <SimulationControls
-            isPlaying={isPlaying}
-            onToggle={handleToggleSimulation}
-            onReset={onResetSimulation}
-            stepCount={stepCount}
-            speed={speed}
-            onSpeedChange={setSpeed}
-            currentLabel={currentLabel}
-            strategy={strategy}
-            onStrategyChange={setStrategy}
-            mode={mode}
-            onModeChange={setMode}
-            visitedCount={visitedCount}
-            totalNodes={totalNodes}
-            showTutorial={showTutorial}
-            onToggleTutorial={() => setShowTutorial((prev) => !prev)}
-          />
+              <SimulationControls
+                isPlaying={isPlaying}
+                onToggle={handleToggleSimulation}
+                onReset={onResetSimulation}
+                stepCount={stepCount}
+                speed={speed}
+                onSpeedChange={setSpeed}
+                currentLabel={currentLabel}
+                strategy={strategy}
+                onStrategyChange={setStrategy}
+                mode={mode}
+                onModeChange={setMode}
+                visitedCount={visitedCount}
+                totalNodes={totalNodes}
+                showTutorial={showTutorial}
+                onToggleTutorial={() => setShowTutorial((prev) => !prev)}
+              />
+            </>
+          ) : null}
 
 
           <ExplanationPanel
@@ -457,43 +467,49 @@ function AppInner() {
             onOpenAiSettings={openAiSettings}
           />
 
-          <ErrorBoundary>
-            <ChatDrawer
-              selectedNode={selectedNode}
-              allNodes={allNodes}
-              allEdges={allEdges}
-              isOpen={chatOpen}
-              onToggle={handleToggleChat}
-              apiKey={apiKey}
-              selectedModel={effectiveModel}
-              aiReady={aiReady}
-              onOpenAiSettings={openAiSettings}
-            />
-          </ErrorBoundary>
+          {hasGraph ? (
+            <ErrorBoundary>
+              <ChatDrawer
+                selectedNode={selectedNode}
+                allNodes={allNodes}
+                allEdges={allEdges}
+                isOpen={chatOpen}
+                onToggle={handleToggleChat}
+                apiKey={apiKey}
+                selectedModel={effectiveModel}
+                aiReady={aiReady}
+                onOpenAiSettings={openAiSettings}
+              />
+            </ErrorBoundary>
+          ) : null}
         </div>
 
-        <CodePanel
-          activeNode={codePanelNode}
-          isGhostRunning={isPlaying}
-          isOpen={codePanelOpen}
-          onToggle={handleToggleCodePanel}
-        />
+        {hasGraph ? (
+          <CodePanel
+            activeNode={codePanelNode}
+            isGhostRunning={isPlaying}
+            isOpen={codePanelOpen}
+            onToggle={handleToggleCodePanel}
+          />
+        ) : null}
       </div>
 
-      <LearningPath
-        selectedFile={selectedFile}
-        allNodes={allNodes}
-        allNodesMap={allNodesMap}
-        allEdges={allEdges}
-        onSelectNode={handleSelectNode}
-        onSelectFile={setSelectedFile}
-        isOpen={learningPathOpen}
-        onToggle={handleCloseLearningPath}
-        apiKey={apiKey}
-        selectedModel={effectiveModel}
-        aiReady={aiReady}
-        onOpenAiSettings={openAiSettings}
-      />
+      {hasGraph ? (
+        <LearningPath
+          selectedFile={selectedFile}
+          allNodes={allNodes}
+          allNodesMap={allNodesMap}
+          allEdges={allEdges}
+          onSelectNode={handleSelectNode}
+          onSelectFile={setSelectedFile}
+          isOpen={learningPathOpen}
+          onToggle={handleCloseLearningPath}
+          apiKey={apiKey}
+          selectedModel={effectiveModel}
+          aiReady={aiReady}
+          onOpenAiSettings={openAiSettings}
+        />
+      ) : null}
 
       <AISettingsModal
         isOpen={aiSettingsOpen}

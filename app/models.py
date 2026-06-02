@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.ai_models import DEFAULT_OPENROUTER_MODEL
 from app.utils.sanitize import sanitize_llm_input
 
 
@@ -14,6 +15,7 @@ MAX_QUESTION_LENGTH = 2000
 MAX_CONTENT_LENGTH = 4000
 MAX_HISTORY_LENGTH = 100
 MAX_MODEL_NAME_LENGTH = 120
+MODEL_EXAMPLE = DEFAULT_OPENROUTER_MODEL
 
 
 def _normalize_model_name(value: str | None) -> str | None:
@@ -42,7 +44,7 @@ class ExplainRequest(BaseModel):
                     "file_path": "my_project/app.py",
                     "node_id": "main",
                     "level": "beginner",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                 }
             ]
         }
@@ -146,7 +148,7 @@ class ChatRequest(BaseModel):
                     "node_id": "main",
                     "file_path": "my_project/app.py",
                     "question": "What does this function do?",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                     "history": [],
                 }
             ]
@@ -221,7 +223,7 @@ class LearningPathRequest(BaseModel):
             "examples": [
                 {
                     "file_path": "my_project/app.py",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                 }
             ]
         }

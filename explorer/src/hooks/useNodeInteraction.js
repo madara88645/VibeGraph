@@ -36,7 +36,7 @@ export function useNodeInteraction({
     }
   }
 
-  const [codePanelOpen, setCodePanelOpen] = useState(true);
+  const [codePanelOpen, setCodePanelOpen] = useState(false);
   const [codePanelNode, setCodePanelNode] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);

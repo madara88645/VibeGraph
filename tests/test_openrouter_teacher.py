@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from openai import APITimeoutError
+from app.dependencies import DEFAULT_OPENROUTER_MODEL
 from teacher.openrouter_teacher import (
     OpenRouterTeacher,
     _try_parse_json,
@@ -63,6 +64,11 @@ class TestTeacherConstruction:
     def test_no_api_key_sets_client_none(self):
         teacher = OpenRouterTeacher(api_key=None)
         assert teacher.client is None
+
+    @patch.dict("os.environ", {}, clear=True)
+    def test_default_model_matches_api_config_default(self):
+        teacher = OpenRouterTeacher(api_key="sk-test-key")
+        assert teacher.model_name == DEFAULT_OPENROUTER_MODEL
 
 
 # ---------------------------------------------------------------------------
