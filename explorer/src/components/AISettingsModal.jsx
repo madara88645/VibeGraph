@@ -50,6 +50,13 @@ const AISettingsModal = ({
     return [];
   }, [apiConfig]);
 
+  const supportedModelsLabel = useMemo(() => {
+    if (!allowedModels.length) {
+      return '';
+    }
+    return allowedModels.map(shortenModelName).join(', ');
+  }, [allowedModels]);
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape' && isOpen) {
@@ -189,8 +196,13 @@ const AISettingsModal = ({
               </ul>
             </div>
             <p className="ai-settings-help">
-              Lean model list: fast defaults plus lower-cost backup options.
+              Supported fast defaults only. Deprecated models like Grok fast are intentionally excluded.
             </p>
+            {supportedModelsLabel ? (
+              <p className="ai-settings-help">
+                Supported now: {supportedModelsLabel}
+              </p>
+            ) : null}
           </div>
           </div>
 

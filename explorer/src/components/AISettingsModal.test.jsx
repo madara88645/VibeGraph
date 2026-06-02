@@ -36,10 +36,16 @@ describe('AISettingsModal', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Production requires your own key.')).toBeInTheDocument();
     expect(
-      screen.getByText('Lean model list: fast defaults plus lower-cost backup options.')
+      screen.getByText('Supported fast defaults only. Deprecated models like Grok fast are intentionally excluded.')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Supported now: deepseek-v4-flash, qwen3-coder-30b-a3b-instruct, gemini-3.1-flash-lite, claude-sonnet-4.6, llama-3.3-70b-instruct:free'
+      )
     ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'qwen3-coder-30b-a3b-instruct' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'deepseek-v4-flash' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /grok-4\.1-fast/i })).not.toBeInTheDocument();
   });
 
   it('disables Clear Key and explains why when the draft key is empty', () => {

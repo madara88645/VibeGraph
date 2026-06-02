@@ -146,6 +146,23 @@ describe('useNodeInteraction - explanation cache', () => {
     });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('starts with the code panel closed by default', () => {
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'deepseek/deepseek-v4-flash',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: graphNodes,
+        allEdges: graphEdges,
+      })
+    );
+
+    expect(result.current.codePanelOpen).toBe(false);
+    expect(result.current.chatOpen).toBe(false);
+    expect(result.current.learningPathOpen).toBe(false);
+  });
 });
 
 describe('useNodeInteraction - onNodeClick', () => {
@@ -274,7 +291,6 @@ describe('useNodeInteraction - onNodeClick', () => {
 
     expect(result.current.explanation).toMatch(/taking longer than usual/i);
   });
-
   it('shows a connectivity message when the explanation request fails to reach the backend', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
 
@@ -292,7 +308,6 @@ describe('useNodeInteraction - onNodeClick', () => {
     await act(async () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'intermediate');
     });
-
     expect(result.current.explanation).toMatch(/could not connect to vibe teacher/i);
   });
 });

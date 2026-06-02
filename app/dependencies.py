@@ -5,18 +5,11 @@ import os
 from fastapi import HTTPException, Request
 
 from analyst.exporter import GraphExporter
+from app.ai_models import CURATED_MODELS, DEFAULT_OPENROUTER_MODEL
 from teacher.openrouter_teacher import OpenRouterTeacher
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_OPENROUTER_MODEL = "deepseek/deepseek-v4-flash"
-CURATED_MODELS = [
-    "deepseek/deepseek-v4-flash",
-    "qwen/qwen3-coder-30b-a3b-instruct",
-    "google/gemini-3.1-flash-lite",
-    "anthropic/claude-sonnet-4.6",
-    "meta-llama/llama-3.3-70b-instruct:free",
-]
 
 teacher = None
 exporter = GraphExporter()
