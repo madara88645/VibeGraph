@@ -376,7 +376,11 @@ function AppInner() {
             <span aria-hidden="true">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
 
-          <ProjectUpload ref={uploadRef} onUploadSuccess={onUploadSuccess} />
+          <ProjectUpload
+            ref={uploadRef}
+            onUploadSuccess={onUploadSuccess}
+            uploadLimits={aiConfig.uploadLimits}
+          />
 
           {hasGraph ? (
             <SearchBar

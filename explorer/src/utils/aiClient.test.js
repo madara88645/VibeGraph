@@ -187,6 +187,10 @@ describe('fetchAiConfig', () => {
           defaultModel: 'google/gemini-2.5-flash-lite',
           allowedModels: ['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini'],
           requiresUserKey: false,
+          uploadLimits: {
+            maxTotalBytes: 25 * 1024 * 1024,
+            maxPerFileBytes: 1024 * 1024,
+          },
         }),
     });
 
@@ -195,6 +199,10 @@ describe('fetchAiConfig', () => {
     expect(config.defaultModel).toBe('google/gemini-2.5-flash-lite');
     expect(config.allowedModels).toEqual(['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini']);
     expect(config.requiresUserKey).toBe(false);
+    expect(config.uploadLimits).toEqual({
+      maxTotalBytes: 25 * 1024 * 1024,
+      maxPerFileBytes: 1024 * 1024,
+    });
   });
 
   it('falls back to DEFAULT_AI_CONFIG.allowedModels when server returns empty array', async () => {
@@ -205,6 +213,7 @@ describe('fetchAiConfig', () => {
 
     const config = await fetchAiConfig();
     expect(config.allowedModels).toEqual(DEFAULT_AI_CONFIG.allowedModels);
+    expect(config.uploadLimits).toEqual(DEFAULT_AI_CONFIG.uploadLimits);
   });
 
   it('throws when response is not ok', async () => {
