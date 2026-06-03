@@ -121,3 +121,7 @@
 **Learning:** In high-frequency UI components (like `SearchBar`), iterating over large datasets and modifying objects directly (e.g. `node._searchStr = ...`) to cache computed strings is a dangerous anti-pattern in React because it violates immutability rules. It triggers linting errors (`react-hooks/immutability`) and can cause subtle bugs or runtime errors if the objects are frozen.
 **Action:** Instead of modifying the node objects directly, use a module-level `WeakMap` (`searchCache.set(node, searchStr)`) to associate the precomputed strings with the node references. This provides the performance benefit of caching while keeping the node props strictly immutable and avoiding memory leaks.
 
+
+## 2024-05-28 - Optimize Graph Traversal Fallback with O(1) Sets
+**Learning:** In graph traversal algorithms (like `build_learning_path`), repeatedly finding unvisited nodes inside a loop using an O(N) list comprehension like `[nid for nid in scored if nid not in visited]` creates a severe O(N²) time complexity bottleneck when the graph contains many isolated nodes or disconnected components.
+**Action:** Replace the O(N) list comprehension with an O(1) tracking set. Initialize an `unvisited_set = set(all_nodes)` before the loop, and use `.discard(node_id)` whenever a node is visited. This reduces the fallback search to O(1) set operations, drastically improving performance on sparse or disconnected graphs.

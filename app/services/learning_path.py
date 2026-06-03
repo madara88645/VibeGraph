@@ -191,6 +191,10 @@ def build_learning_path(
     heappush = heapq.heappush
     heappop = heapq.heappop
 
+    # PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) list comprehension inside the loop
+    # with an O(1) unvisited set to eliminate O(N^2) overhead during fallback traversal.
+    unvisited_set = set(scored)
+
     def push(n_id: str) -> None:
         if n_id not in visited and n_id not in enqueued:
             enqueued.add(n_id)
