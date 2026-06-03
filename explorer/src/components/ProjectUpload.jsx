@@ -41,6 +41,11 @@ function buildWarningToastMessage(warnings) {
         return `Project analyzed with warnings: ${firstWarning}`;
     }
 
+    const lastWarning = remainingWarnings[remainingWarnings.length - 1];
+    if (typeof lastWarning === 'string' && /^\(\d+ more skipped files\)$/.test(lastWarning.trim())) {
+        return `Project analyzed with warnings: ${firstWarning} ${lastWarning}`;
+    }
+
     return `Project analyzed with warnings: ${firstWarning} (+${remainingWarnings.length} more skipped files)`;
 }
 
