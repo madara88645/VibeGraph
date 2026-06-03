@@ -170,7 +170,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
 
             {isModalOpen && createPortal(
                 <div className="upload-modal-overlay" onClick={() => !isAnalyzing && setIsModalOpen(false)}>
-                    <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="upload-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Upload Project">
                         <span
                             className="modal-close-wrapper"
                             style={{ display: 'inline-flex' }}
