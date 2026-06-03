@@ -152,7 +152,7 @@ const AISettingsModal = ({
                 Clear Key
               </button>
             </span>
-            <button type="submit" className="ai-settings-primary-btn">
+            <button type="submit" className="ai-settings-primary-btn" aria-label="Save AI Settings">
               Save
             </button>
           </div>
