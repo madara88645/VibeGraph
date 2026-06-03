@@ -234,17 +234,15 @@ def test_same_basename_files_distinguished_in_warnings():
 
 def test_upload_project_size_limit():
     """Test that an overly large set of files raises a 413 error."""
-    # We will mock the file so we don't have to generate a 50MB file
-    from io import BytesIO
-
-    # 50MB + 1 byte
-    large_content = b"x" * (50 * 1024 * 1024 + 1)
+    large_content = b"x" * (25 * 1024 * 1024 + 1)
 
     files = {"files": ("large.py", BytesIO(large_content), "text/x-python")}
     response = client.post("/api/upload-project", files=files, timeout=30.0)
 
     assert response.status_code == 413
-    assert "Upload too large" in response.json()["detail"]
+    assert (
+        response.json()["detail"] == "Upload too large. Max total upload size is 25 MB."
+    )
 
 
 @patch("app.routers.upload.shutil.rmtree")

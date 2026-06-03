@@ -29,6 +29,13 @@ UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "
 GRAPH_NODE_BUDGET = int(os.getenv("VIBEGRAPH_GRAPH_NODE_BUDGET", "1500"))
 
 
+def _format_upload_limit(byte_count: int) -> str:
+    megabytes = byte_count / (1024 * 1024)
+    if megabytes.is_integer():
+        return f"{int(megabytes)} MB"
+    return f"{megabytes:.1f} MB"
+
+
 def cleanup_tmp_dir(path: str) -> None:
     """Background task to remove temp directory."""
     if os.path.exists(path):
@@ -108,7 +115,7 @@ def upload_project(
     tmp_dir = tempfile.mkdtemp(prefix=UPLOAD_PREFIX)
 
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
-    MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB total upload limit
+    max_upload_size = deps.get_max_upload_bytes()
     MAX_ZIP_FILES = 10000
 
     try:
@@ -130,10 +137,13 @@ def upload_project(
                     if not chunk:
                         break
                     total_upload_size += len(chunk)
-                    if total_upload_size > MAX_UPLOAD_SIZE:
+                    if total_upload_size > max_upload_size:
                         raise HTTPException(
                             status_code=413,
-                            detail=f"Upload too large (max {MAX_UPLOAD_SIZE} bytes)",
+                            detail=(
+                                "Upload too large. Max total upload size is "
+                                f"{_format_upload_limit(max_upload_size)}."
+                            ),
                         )
                     buffer.write(chunk)
 

@@ -1,9 +1,53 @@
 import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
+import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable Python code found.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
+const DEFAULT_UPLOAD_LIMITS = DEFAULT_AI_CONFIG.uploadLimits;
+
+function formatUploadLimit(byteCount) {
+    const megabytes = byteCount / (1024 * 1024);
+    return Number.isInteger(megabytes) ? `${megabytes} MB` : `${megabytes.toFixed(1)} MB`;
+}
+
+function normalizeUploadLimits(uploadLimits) {
+    return {
+        maxTotalBytes: Number.isFinite(uploadLimits?.maxTotalBytes) && uploadLimits.maxTotalBytes > 0
+            ? uploadLimits.maxTotalBytes
+            : DEFAULT_UPLOAD_LIMITS.maxTotalBytes,
+        maxPerFileBytes: Number.isFinite(uploadLimits?.maxPerFileBytes) && uploadLimits.maxPerFileBytes > 0
+            ? uploadLimits.maxPerFileBytes
+            : DEFAULT_UPLOAD_LIMITS.maxPerFileBytes,
+    };
+}
+
+function getTotalUploadSize(files) {
+    let total = 0;
+    for (let i = 0; i < files.length; i++) {
+        total += Number(files[i]?.size) || 0;
+    }
+    return total;
+}
+
+function buildWarningToastMessage(warnings) {
+    if (!Array.isArray(warnings) || warnings.length === 0) {
+        return '';
+    }
+
+    const [firstWarning, ...remainingWarnings] = warnings;
+    if (remainingWarnings.length === 0) {
+        return `Project analyzed with warnings: ${firstWarning}`;
+    }
+
+    const lastWarning = remainingWarnings[remainingWarnings.length - 1];
+    if (typeof lastWarning === 'string' && /^\(\d+ more skipped files\)$/.test(lastWarning.trim())) {
+        return `Project analyzed with warnings: ${firstWarning} ${lastWarning}`;
+    }
+
+    return `Project analyzed with warnings: ${firstWarning} (+${remainingWarnings.length} more skipped files)`;
+}
 
 async function readUploadError(response) {
     try {
@@ -37,7 +81,7 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,6 +116,16 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
     const uploadFiles = useCallback(async (files, getPath) => {
         if (!files || files.length === 0) return;
 
+        const effectiveUploadLimits = normalizeUploadLimits(uploadLimits);
+        if (getTotalUploadSize(files) > effectiveUploadLimits.maxTotalBytes) {
+            showToast(
+                `Upload failed: Upload too large. Max total upload size is ${formatUploadLimit(effectiveUploadLimits.maxTotalBytes)}.`,
+                'error',
+            );
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
         setIsAnalyzing(true);
         const formData = new FormData();
 
@@ -104,6 +158,10 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
             const result = validateGraphResult(parsedPayload);
             if (onUploadSuccess) onUploadSuccess(result);
             setIsModalOpen(false);
+            const warningToastMessage = buildWarningToastMessage(result.warnings);
+            if (warningToastMessage) {
+                showToast(warningToastMessage, 'info');
+            }
             showToast('Project analyzed successfully!', 'success');
         } catch (error) {
             console.error("Project upload failed:", error);
@@ -113,7 +171,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
             // Reset input so the same folder can be uploaded again if needed.
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
-    }, [onUploadSuccess, showToast]);
+    }, [onUploadSuccess, showToast, uploadLimits]);
 
     const handleDragLeave = useCallback((e) => {
         e.preventDefault();
@@ -224,10 +282,13 @@ const ProjectUpload = forwardRef(({ onUploadSuccess }, ref) => {
                                         <polyline points="17 8 12 3 7 8" />
                                         <line x1="12" y1="3" x2="12" y2="15" />
                                     </svg>
-                                    <div className="upload-text-container">
-                                        <h2>Upload your project</h2>
-                                        <p className="upload-hint">Drop your Python, JS, or TS folder / .zip here, or browse</p>
-                                    </div>
+                                <div className="upload-text-container">
+                                    <h2>Upload your project</h2>
+                                    <p className="upload-hint">Drop your Python, JS, or TS folder / .zip here, or browse</p>
+                                    <p className="upload-hint">
+                                        Max total upload: {formatUploadLimit(normalizeUploadLimits(uploadLimits).maxTotalBytes)}. Files over {formatUploadLimit(normalizeUploadLimits(uploadLimits).maxPerFileBytes)} may be skipped during analysis.
+                                    </p>
+                                </div>
                                     <label htmlFor="project-upload-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
                                         Select a project folder
                                     </label>

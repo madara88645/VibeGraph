@@ -36,6 +36,7 @@ def test_ai_config_reports_openrouter_defaults():
             "OPENROUTER_DEFAULT_MODEL": "deepseek/deepseek-v4-flash",
             "OPENROUTER_ALLOWED_MODELS": "google/gemini-3.1-flash-lite,anthropic/claude-sonnet-4.6",
             "ALLOW_SERVER_FALLBACK_KEY": "false",
+            "VIBEGRAPH_MAX_UPLOAD_BYTES": str(25 * 1024 * 1024),
         },
         clear=False,
     ):
@@ -51,6 +52,8 @@ def test_ai_config_reports_openrouter_defaults():
     assert "qwen/qwen3-coder-30b-a3b-instruct" in data["allowedModels"]
     assert "meta-llama/llama-3.3-70b-instruct:free" in data["allowedModels"]
     assert data["requiresUserKey"] is True
+    assert data["uploadLimits"]["maxTotalBytes"] == 25 * 1024 * 1024
+    assert data["uploadLimits"]["maxPerFileBytes"] == 1024 * 1024
 
 
 def test_chat_requires_user_key_without_fallback(monkeypatch):
