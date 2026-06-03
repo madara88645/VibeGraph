@@ -54,8 +54,8 @@ const CodeViewer = ({ code }) => {
                             <button
                                 className="code-viewer-expand"
                                 onClick={() => setIsFullscreen(false)}
-                                title="Exit fullscreen"
-                                aria-label="Exit fullscreen"
+                                title="Exit fullscreen (Press Esc)"
+                                aria-label="Exit fullscreen (Press Esc)"
                             >
                                 <span aria-hidden="true">✕</span>
                             </button>

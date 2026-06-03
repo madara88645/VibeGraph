@@ -271,7 +271,7 @@ describe('CodePanel', () => {
         expect(expandBtn).toBeInTheDocument();
 
         await user.click(expandBtn);
-        expect(screen.getByLabelText('Exit fullscreen')).toBeInTheDocument();
+        expect(screen.getByLabelText('Exit fullscreen (Press Esc)')).toBeInTheDocument();
     });
 
     it('close button calls onToggle', async () => {
