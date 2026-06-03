@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import CodeViewer from './CodeViewer';
 
 const typeColors = {
@@ -14,19 +15,51 @@ const typeColors = {
     'default': { accent: '#64748b', label: 'Reference', icon: '○' },
 };
 
-const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation }) => {
+const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation, onOpenAiSettings }) => {
     const [tab, setTab] = useState('technical');
     const [level, setLevel] = useState('intermediate');
+    const [lastNode, setLastNode] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        if (node && fetchExplanation) {
-            fetchExplanation(node, tab, level);
+        if (node) {
+            Promise.resolve().then(() => {
+                setLastNode(node);
+                setIsOpen(true);
+            });
+            if (fetchExplanation) {
+                fetchExplanation(node, tab, level);
+            }
+        } else {
+            Promise.resolve().then(() => {
+                setIsOpen(false);
+            });
         }
     }, [fetchExplanation, level, node, tab]);
 
-    if (!node) return null;
+    // Use a secondary state to completely unmount/hide pointer events when animation is finished
+    const [isRendered, setIsRendered] = useState(false);
 
-    const nodeType = node.data.entry_point ? 'entry_point' : (node.data.type || 'default');
+    useEffect(() => {
+        if (isOpen) {
+            Promise.resolve().then(() => {
+                setIsRendered(true);
+            });
+        } else {
+            const timer = setTimeout(() => {
+                setIsRendered(false);
+            }, 300); // match transition duration
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    if (!isRendered && !node) return null;
+
+    // Use lastNode if node is null (during animate-out) so content doesn't instantly disappear!
+    const activeNode = node || lastNode;
+    if (!activeNode) return null;
+
+    const nodeType = activeNode.data.entry_point ? 'entry_point' : (activeNode.data.type || 'default');
     const typeConfig = typeColors[nodeType] || typeColors['default'];
 
     const renderContent = () => {
@@ -51,7 +84,153 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         }
 
         const aiResponse = explanation.explanation || explanation;
-        const codeSnippet = explanation.snippet || node.data.snippet;
+        const codeSnippet = explanation.snippet || activeNode.data.snippet;
+
+        // Check for error state!
+        const isClientMissingKey = typeof explanation === 'string' && explanation.includes('Open AI Settings');
+        const isBackendError = typeof aiResponse === 'object' && aiResponse !== null && (aiResponse.is_error || aiResponse.technical === 'An unexpected error occurred.' || aiResponse.technical === 'OpenRouter API key is required.');
+
+        if (isClientMissingKey || isBackendError) {
+            let errorTitle = "Connection Error";
+            let errorMsg = "An unexpected error occurred. Please check your connection or OpenRouter status.";
+            let errorTakeaway = "Check your OpenRouter status or API key.";
+            let errorIcon = "⚠️";
+            let showSettingsBtn = false;
+            let showRetryBtn = false;
+
+            if (isClientMissingKey) {
+                errorTitle = "API Key Missing";
+                errorMsg = "You need to add a valid OpenRouter API key to enable AI explanations.";
+                errorTakeaway = "Add a valid API key in the AI Settings panel.";
+                errorIcon = "🔑";
+                showSettingsBtn = true;
+            } else {
+                const analogy = aiResponse.analogy || "";
+                const technical = aiResponse.technical || "";
+                const takeaway = aiResponse.key_takeaway || "";
+
+                // Classify by the backend-provided title (analogy) only. The
+                // raw AI response can contain words like "key" or "auth"
+                // (e.g. "key_takeaway"), so scanning `technical` here would
+                // misreport formatting/parse errors as an invalid API key.
+                if (analogy.includes("Key") || analogy.includes("Anahtar")) {
+                    errorTitle = "Invalid API Key";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🔑";
+                    showSettingsBtn = true;
+                } else if (analogy.includes("Formatting") || analogy.includes("Biçim")) {
+                    errorTitle = "AI Formatting Error";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "📝";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Limit") || analogy.includes("Sınır")) {
+                    errorTitle = "Rate Limit Exceeded";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "⌛";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Timeout") || analogy.includes("Zaman Aşımı")) {
+                    errorTitle = "Connection Timeout";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🔌";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Connection") || analogy.includes("Bağlantı")) {
+                    errorTitle = "Connection Failed";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "🌐";
+                    showRetryBtn = true;
+                } else if (analogy.includes("Request") || analogy.includes("İstek")) {
+                    errorTitle = "Bad Request";
+                    errorMsg = technical;
+                    errorTakeaway = takeaway;
+                    errorIcon = "⚙️";
+                } else {
+                    errorTitle = analogy || "Connection Error";
+                    errorMsg = technical || "An unexpected error occurred.";
+                    errorTakeaway = takeaway || "Please check your internet connection or OpenRouter status.";
+                    errorIcon = "⚠️";
+                    showRetryBtn = true;
+                }
+            }
+
+            return (
+                <div className="fade-in" style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderLeft: '4px solid var(--error-rose, #ef4444)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    backdropFilter: 'blur(8px)',
+                    margin: '10px 0'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{errorIcon}</span>
+                        <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
+                    </div>
+                    <div className="markdown-content" style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{errorMsg}</ReactMarkdown>
+                    </div>
+                    <div style={{
+                        background: 'rgba(252, 165, 165, 0.05)',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        color: 'var(--text-muted)',
+                        borderLeft: '2px solid rgba(252, 165, 165, 0.3)',
+                        marginBottom: '14px'
+                    }}>
+                        <strong>💡 Suggestion:</strong> {errorTakeaway}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {showSettingsBtn && onOpenAiSettings && (
+                            <button
+                                onClick={() => onOpenAiSettings()}
+                                style={{
+                                    background: 'var(--accent-primary, #ef4444)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.target.style.filter = 'brightness(1.1)'}
+                                onMouseLeave={(e) => e.target.style.filter = 'none'}
+                            >
+                                ⚙️ Open AI Settings
+                            </button>
+                        )}
+                        {showRetryBtn && (
+                            <button
+                                onClick={() => fetchExplanation && fetchExplanation(activeNode, tab, level)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.08)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.12)'}
+                                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.08)'}
+                            >
+                                🔄 Retry
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
 
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (
@@ -80,7 +259,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     {tab === 'technical' && (
                         <div>
                             <div className="markdown-content">
-                                <ReactMarkdown>{aiResponse.technical}</ReactMarkdown>
+                                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{aiResponse.technical}</ReactMarkdown>
                             </div>
                             <div style={{
                                 background: `${typeConfig.accent}12`,
@@ -89,7 +268,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
-                            }}>
+                             }}>
                                 <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
@@ -106,14 +285,14 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         // Fallback for string
         return (
             <div className="fade-in" style={{ fontSize: '0.88rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                <ReactMarkdown>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse)}</ReactMarkdown>
                 {codeSnippet && <CodeViewer code={codeSnippet} />}
             </div>
         );
     };
 
     return (
-        <div className="slide-in-right explanation-panel">
+        <div className={`explanation-panel ${isOpen ? 'open' : ''}`}>
             {/* Header */}
             <div className="ep-header">
                 {/* Type badge */}
@@ -121,8 +300,8 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     {typeConfig.icon} {typeConfig.label}
                 </span>
 
-                <span className="ep-title" title={node.data.label}>
-                    {node.data.label}
+                <span className="ep-title" title={activeNode.data.label}>
+                    {activeNode.data.label}
                 </span>
 
                 <button
@@ -178,11 +357,11 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             </div>
 
             {/* Footer */}
-            {(node.data.file || node.data.original_data?.file) && (
+            {(activeNode.data.file || activeNode.data.original_data?.file) && (
                 <div className="ep-footer">
-                    <span title={node.data.file || node.data.original_data?.file}><span aria-hidden="true">📄</span> {node.data.file || node.data.original_data?.file}</span>
-                    {(node.data.lineno || node.data.original_data?.lineno) && (
-                        <span>L{node.data.lineno || node.data.original_data?.lineno}</span>
+                    <span title={activeNode.data.file || activeNode.data.original_data?.file}><span aria-hidden="true">📄</span> {activeNode.data.file || activeNode.data.original_data?.file}</span>
+                    {(activeNode.data.lineno || activeNode.data.original_data?.lineno) && (
+                        <span>L{activeNode.data.lineno || activeNode.data.original_data?.lineno}</span>
                     )}
                 </div>
             )}

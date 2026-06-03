@@ -8,13 +8,22 @@ from dataclasses import dataclass, field
 from threading import RLock
 
 from dotenv import load_dotenv
-from openai import APIConnectionError, APITimeoutError, OpenAI, RateLimitError
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    OpenAI,
+    RateLimitError,
+    AuthenticationError,
+    BadRequestError,
+    APIStatusError,
+)
 from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
+from app.ai_models import DEFAULT_OPENROUTER_MODEL
 from teacher.contract import (
     TeacherReferences,
     build_chat_user_prompt,
@@ -56,13 +65,60 @@ _FALLBACK = {
 _MAX_CACHE_SIZE = 256
 
 
+def _repair_truncated_json(text: str) -> dict | None:
+    """Best-effort recovery of a JSON object that was truncated before it was
+    closed (e.g. the model hit its token limit mid-response). Returns the parsed
+    dict if it can be safely closed, otherwise ``None``."""
+    start = text.find("{")
+    if start == -1:
+        return None
+    in_string = False
+    escaped = False
+    stack: list[str] = []
+    for ch in text[start:]:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            stack.append("}")
+        elif ch == "[":
+            stack.append("]")
+        elif ch in "}]" and stack:
+            stack.pop()
+    candidate = text[start:]
+    if in_string:
+        candidate += '"'
+    # Drop a dangling colon/comma that would otherwise be invalid before close.
+    candidate = re.sub(r"[:,]\s*$", "", candidate.rstrip())
+    candidate += "".join(reversed(stack))
+    try:
+        result = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    return result if isinstance(result, dict) else None
+
+
 def _try_parse_json(text: str) -> dict:
-    """Attempt to parse JSON from *text*, stripping markdown fences if present."""
+    """Attempt to parse JSON from *text*, stripping markdown fences if present.
+
+    Falls back to a best-effort repair of responses truncated mid-object, a
+    common cause of the "AI Formatting Error" when the model hits its token
+    limit before closing the JSON."""
     cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip())
     cleaned = re.sub(r"\s*```$", "", cleaned)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as exc:
+        repaired = _repair_truncated_json(cleaned)
+        if repaired is not None:
+            return repaired
         raise ValueError(text) from exc
 
 
@@ -93,7 +149,7 @@ class OpenRouterTeacher:
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         self.model_name = (
             model_name or os.getenv("OPENROUTER_DEFAULT_MODEL") or ""
-        ).strip() or "anthropic/claude-haiku-4.5"
+        ).strip() or DEFAULT_OPENROUTER_MODEL
         self.timeout_seconds = timeout_seconds or int(
             os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30")
         )
@@ -186,7 +242,12 @@ class OpenRouterTeacher:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.4,
-                max_tokens=600,
+                # The explain contract asks for analogy + key_takeaway + 7
+                # grounded sections in a single JSON object. 600 tokens was too
+                # small and the model's reply was frequently truncated mid-JSON,
+                # which failed json.loads and surfaced as an "AI Formatting
+                # Error". Give the structured payload enough room to complete.
+                max_tokens=2000,
                 top_p=1,
                 stream=False,
                 response_format={"type": "json_object"},
@@ -204,16 +265,68 @@ class OpenRouterTeacher:
                 if len(self._explain_cache) > _MAX_CACHE_SIZE:
                     self._explain_cache.popitem(last=False)
             return result
+        except AuthenticationError as exc:
+            logging.error("OpenRouter Authentication Error", exc_info=True)
+            return {
+                "analogy": "Invalid API Key",
+                "technical": f"Your OpenRouter API key is invalid or expired. Details: {exc.message}",
+                "key_takeaway": "Please verify and update your API key in AI Settings.",
+                "is_error": True,
+            }
+        except RateLimitError as exc:
+            logging.error("OpenRouter Rate Limit Error", exc_info=True)
+            return {
+                "analogy": "Rate Limit Exceeded",
+                "technical": f"OpenRouter rate limit reached or insufficient credits. Details: {exc.message}",
+                "key_takeaway": "Please check your OpenRouter account balance or rate limits.",
+                "is_error": True,
+            }
+        except BadRequestError as exc:
+            logging.error("OpenRouter Bad Request Error", exc_info=True)
+            return {
+                "analogy": "Bad Request",
+                "technical": f"OpenRouter returned a Bad Request. Details: {exc.message}",
+                "key_takeaway": f"Please verify that the model '{self.model_name}' is supported on OpenRouter.",
+                "is_error": True,
+            }
+        except APIStatusError as exc:
+            logging.error("OpenRouter API Status Error", exc_info=True)
+            return {
+                "analogy": f"API Error (HTTP {exc.status_code})",
+                "technical": f"OpenRouter API returned an error status. Details: {exc.message}",
+                "key_takeaway": "Please check the OpenRouter status page or try a different model.",
+                "is_error": True,
+            }
+        except APIConnectionError as exc:
+            logging.error("OpenRouter Connection Error", exc_info=True)
+            return {
+                "analogy": "Connection Failed",
+                "technical": f"Could not connect to OpenRouter. Details: {exc.message}",
+                "key_takeaway": "Please check your internet connection or proxy settings.",
+                "is_error": True,
+            }
         except APITimeoutError:
             logging.error("OpenRouter API timeout", exc_info=True)
             return {
                 "analogy": "Connection Timeout",
                 "technical": "The request to OpenRouter timed out.",
                 "key_takeaway": "Please try again later.",
+                "is_error": True,
             }
         except ValueError as exc:
             logging.error("Error parsing explain_code JSON: %s", exc, exc_info=True)
-            return {**_FALLBACK, "technical": "Could not parse the AI response."}
+            raw_text = str(exc)
+            return {
+                "analogy": "AI Formatting Error",
+                "technical": (
+                    "The AI did not return a valid JSON object. "
+                    "This usually happens when the model is overloaded, rate-limited, "
+                    "or returned an error message in plain text.\n\n"
+                    f"**Raw AI Response:**\n```\n{raw_text}\n```"
+                ),
+                "key_takeaway": "AI output format mismatch. Check raw response below.",
+                "is_error": True,
+            }
         except Exception as exc:
             logging.error("Error during explain_code: %s", exc, exc_info=True)
             return {
@@ -268,6 +381,21 @@ class OpenRouterTeacher:
                 response_format={"type": "json_object"},
             )
             return normalize_chat_text(completion.choices[0].message.content, refs)
+        except AuthenticationError:
+            logging.error("OpenRouter Authentication Error during chat", exc_info=True)
+            return "OpenRouter API error: Your API key is invalid or expired. Please check your key in AI Settings."
+        except RateLimitError:
+            logging.error("OpenRouter Rate Limit Error during chat", exc_info=True)
+            return "OpenRouter API error: Rate limit reached or insufficient balance. Please check your account limits and balance."
+        except BadRequestError:
+            logging.error("OpenRouter Bad Request Error during chat", exc_info=True)
+            return f"OpenRouter API error: Bad request. Please verify that the model '{self.model_name}' is supported on OpenRouter."
+        except APIStatusError as exc:
+            logging.error("OpenRouter API Status Error during chat", exc_info=True)
+            return f"OpenRouter API error (HTTP {exc.status_code}): {exc.message}"
+        except APIConnectionError:
+            logging.error("OpenRouter Connection Error during chat", exc_info=True)
+            return "OpenRouter API error: Could not connect to server. Please check your internet connection or proxy settings."
         except APITimeoutError:
             logging.error("OpenRouter API timeout", exc_info=True)
             return "OpenRouter API timeout. Please try again."
@@ -484,6 +612,62 @@ class OpenRouterTeacher:
             if normalized:
                 return normalized
             raise ValueError(raw)
+        except AuthenticationError:
+            logging.error(
+                "OpenRouter Authentication Error in suggest_learning_path",
+                exc_info=True,
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": "auth_error",
+                    "reason": "OpenRouter API key is invalid or expired. Please check your key in AI Settings.",
+                }
+            ]
+        except RateLimitError:
+            logging.error(
+                "OpenRouter Rate Limit Error in suggest_learning_path", exc_info=True
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": "rate_limit_error",
+                    "reason": "OpenRouter rate limit reached or insufficient balance. Please check your account limits and balance.",
+                }
+            ]
+        except BadRequestError:
+            logging.error(
+                "OpenRouter Bad Request Error in suggest_learning_path", exc_info=True
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": "bad_request_error",
+                    "reason": f"OpenRouter returned a Bad Request. Please verify that the model '{self.model_name}' is supported.",
+                }
+            ]
+        except APIStatusError as exc:
+            logging.error(
+                "OpenRouter API Status Error in suggest_learning_path", exc_info=True
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": f"api_status_{exc.status_code}",
+                    "reason": f"OpenRouter API error (HTTP {exc.status_code}): {exc.message}",
+                }
+            ]
+        except APIConnectionError:
+            logging.error(
+                "OpenRouter Connection Error in suggest_learning_path", exc_info=True
+            )
+            return [
+                {
+                    "step": 1,
+                    "node_id": "connection_error",
+                    "reason": "Could not connect to OpenRouter. Please check your internet connection or proxy settings.",
+                }
+            ]
         except APITimeoutError:
             logging.error("OpenRouter API timeout", exc_info=True)
             return [

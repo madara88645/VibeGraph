@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 import {
   buildAiHeaders,
   ensureAiReady,
   fetchAiJson,
+  fetchWithTimeout,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
 import { buildNodeGroundingContext } from '../utils/graphContext';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { consumeSseChunk } from '../utils/sse';
 
 const MISSING_KEY_MESSAGE =
@@ -17,6 +20,7 @@ const NO_NODE_MESSAGE =
   'Pick a function or class on the graph first so answers use real code from your project.';
 
 const NO_NODE_PLACEHOLDER = 'Select a node on the graph to ask…';
+const CHAT_STREAM_TIMEOUT_MS = 45000;
 
 const ChatDrawer = ({
   selectedNode,
@@ -153,9 +157,11 @@ Files included: ${fileNames.join(', ')}
 Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     }
 
+    const nodeContext = buildNodeCodeContext(selectedNode);
     const requestBody = {
       node_id: selectedNode?.id || null,
-      file_path: selectedNode?.data?.file || null,
+      ...nodeContext,
+      file_path: nodeContext.file_path || null,
       project_context: projectContext,
       question: text,
       history: nextMessages.slice(-10),
@@ -168,11 +174,11 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     };
 
     try {
-      const response = await fetch('/api/chat/stream', {
+      const response = await fetchWithTimeout('/api/chat/stream', {
         method: 'POST',
         headers: buildAiHeaders(apiKey),
         body: JSON.stringify(requestBody),
-      });
+      }, CHAT_STREAM_TIMEOUT_MS);
 
       if (!response.ok || !response.body) {
         const fallbackData = await fetchAiJson('/api/chat', {
@@ -284,157 +290,160 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         ? 'Type a message to send'
         : 'Send message';
 
-  if (!isOpen) {
-    return (
-      <button className="chat-fab" onClick={onToggle} title="Open Chat" aria-label="Open Chat">
+  return (
+    <>
+      <button
+        className={`chat-fab ${isOpen ? 'hidden' : ''}`}
+        onClick={onToggle}
+        title="Open Chat"
+        aria-label="Open Chat"
+      >
         <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'white' }}>
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
       </button>
-    );
-  }
 
-  return (
-    <div className="chat-drawer">
-      <div className="chat-drawer-header">
-        <div className="chat-drawer-title">
-          <span aria-hidden="true">{'Chat'}</span>
-          <span>Vibe Chat</span>
-        </div>
-        {hasSelectedNode ? (
-          <span className="chat-context-badge">
-            Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
-          </span>
-        ) : (
-          <span className="chat-context-badge chat-no-node-badge">No node selected</span>
-        )}
-        <button className="chat-drawer-close" onClick={onToggle} title="Close Chat" aria-label="Close Chat">
-          <span aria-hidden="true">x</span>
-        </button>
-      </div>
-
-      <div className="chat-messages" role="log">
-        {messages.length === 0 && !loading ? (
-          <div className="chat-empty">
-            {!aiReady ? (
-              <>
-                <p>Open AI Settings and add your OpenRouter key to start chatting.</p>
-                <button
-                  type="button"
-                  className="header-action-btn"
-                  onClick={() => onOpenAiSettings?.(MISSING_KEY_MESSAGE)}
-                >
-                  Open AI Settings
-                </button>
-              </>
-            ) : selectedNode ? (
-              <>
-                <p className="chat-empty-lead">
-                  Ask anything about "{selectedNode.data?.label || selectedNode.id}"...
-                </p>
-                <div className="chat-suggestions" aria-label="Suggested questions">
-                  {[
-                    'Explain what this does in plain English',
-                    'How is this used elsewhere in the project?',
-                    'What could go wrong here?',
-                  ].map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      className="chat-suggestion"
-                      onClick={() => sendMessage(prompt)}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="chat-empty-lead">
-                  Select a function or class on the graph to chat about real code from your
-                  project.
-                </p>
-                <ul className="chat-empty-tips" aria-label="How to select a node">
-                  <li>Click any node on the graph</li>
-                  <li>Or press Ctrl+K to search and jump to a node</li>
-                  <li>Use Learn in the header for a guided study order</li>
-                </ul>
-              </>
-            )}
+      <div className={`chat-drawer ${isOpen ? 'open' : ''}`}>
+        <div className="chat-drawer-header">
+          <div className="chat-drawer-title">
+            <span aria-hidden="true">{'Chat'}</span>
+            <span>Vibe Chat</span>
           </div>
-        ) : null}
-
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`chat-message chat-message-${msg.role}`}>
-            <div className="chat-bubble">
-              <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
-                {msg.role === 'user' ? 'You:' : 'AI:'}
-              </span>
-              {msg.role === 'assistant' ? (
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
-              ) : (
-                <span>{msg.content}</span>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
-          <div className="chat-message chat-message-assistant">
-            <div className="chat-bubble chat-typing">
-              <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
-                AI is typing...
-              </span>
-              <span className="typing-dot" aria-hidden="true" />
-              <span className="typing-dot" aria-hidden="true" />
-              <span className="typing-dot" aria-hidden="true" />
-            </div>
-          </div>
-        ) : null}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="chat-input-area">
-        <label htmlFor="chat-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
-          Chat input
-        </label>
-        <textarea
-          id="chat-input"
-          ref={inputRef}
-          className="chat-input"
-          placeholder={hasSelectedNode ? 'Ask a question...' : NO_NODE_PLACEHOLDER}
-          aria-label="Chat input"
-          value={inputText}
-          onChange={(event) => setInputText(event.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-        />
-        <span
-          style={{ display: 'inline-flex' }}
-          className="chat-send-wrapper"
-          title={sendDisabledReason}
-        >
-          <button
-            className="chat-send"
-            onClick={sendMessage}
-            disabled={!canSend}
-            aria-label={sendDisabledReason}
-          >
-            <span aria-hidden="true">
-              {loading ? (
-                <span className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--bg-panel)' }} />
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              )}
+          {hasSelectedNode ? (
+            <span className="chat-context-badge">
+              Asking about: <strong>{selectedNode.data?.label || selectedNode.id}</strong>
             </span>
+          ) : (
+            <span className="chat-context-badge chat-no-node-badge">No node selected</span>
+          )}
+          <button className="chat-drawer-close" onClick={onToggle} title="Close Chat" aria-label="Close Chat">
+            <span aria-hidden="true">x</span>
           </button>
-        </span>
+        </div>
+
+        <div className="chat-messages" role="log">
+          {messages.length === 0 && !loading ? (
+            <div className="chat-empty">
+              {!aiReady ? (
+                <>
+                  <p>Open AI Settings and add your OpenRouter key to start chatting.</p>
+                  <button
+                    type="button"
+                    className="header-action-btn"
+                    onClick={() => onOpenAiSettings?.(MISSING_KEY_MESSAGE)}
+                  >
+                    Open AI Settings
+                  </button>
+                </>
+              ) : selectedNode ? (
+                <>
+                  <p className="chat-empty-lead">
+                    Ask anything about "{selectedNode.data?.label || selectedNode.id}"...
+                  </p>
+                  <div className="chat-suggestions" aria-label="Suggested questions">
+                    {[
+                      'Explain what this does in plain English',
+                      'How is this used elsewhere in the project?',
+                      'What could go wrong here?',
+                    ].map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        className="chat-suggestion"
+                        onClick={() => sendMessage(prompt)}
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="chat-empty-lead">
+                    Select a function or class on the graph to chat about real code from your
+                    project.
+                  </p>
+                  <ul className="chat-empty-tips" aria-label="How to select a node">
+                    <li>Click any node on the graph</li>
+                    <li>Or press Ctrl+K to search and jump to a node</li>
+                    <li>Use Learn in the header for a guided study order</li>
+                  </ul>
+                </>
+              )}
+            </div>
+          ) : null}
+
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`chat-message chat-message-${msg.role}`}>
+              <div className="chat-bubble">
+                <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
+                  {msg.role === 'user' ? 'You:' : 'AI:'}
+                </span>
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{msg.content}</ReactMarkdown>
+                ) : (
+                  <span>{msg.content}</span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
+            <div className="chat-message chat-message-assistant">
+              <div className="chat-bubble chat-typing">
+                <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
+                  AI is typing...
+                </span>
+                <span className="typing-dot" aria-hidden="true" />
+                <span className="typing-dot" aria-hidden="true" />
+                <span className="typing-dot" aria-hidden="true" />
+              </div>
+            </div>
+          ) : null}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="chat-input-area">
+          <label htmlFor="chat-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
+            Chat input
+          </label>
+          <textarea
+            id="chat-input"
+            ref={inputRef}
+            className="chat-input"
+            placeholder={hasSelectedNode ? 'Ask a question...' : NO_NODE_PLACEHOLDER}
+            aria-label="Chat input"
+            value={inputText}
+            onChange={(event) => setInputText(event.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+          />
+          <span
+            style={{ display: 'inline-flex' }}
+            className="chat-send-wrapper"
+            title={sendDisabledReason}
+          >
+            <button
+              className="chat-send"
+              onClick={sendMessage}
+              disabled={!canSend}
+              aria-label={sendDisabledReason}
+            >
+              <span aria-hidden="true">
+                {loading ? (
+                  <span className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--bg-panel)' }} />
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                )}
+              </span>
+            </button>
+          </span>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

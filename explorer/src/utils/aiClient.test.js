@@ -6,6 +6,7 @@ import {
   ensureAiReady,
   fetchAiConfig,
   fetchAiJson,
+  fetchWithTimeout,
   getFriendlyAiErrorMessage,
   getStoredApiKey,
   getStoredModel,
@@ -134,9 +135,40 @@ describe('getFriendlyAiErrorMessage', () => {
     expect(getFriendlyAiErrorMessage(err, 'Offline')).toBe('Invalid API key');
   });
 
+  it('returns the fallback for timeout abort errors', () => {
+    const err = new DOMException('The operation was aborted.', 'AbortError');
+    expect(getFriendlyAiErrorMessage(err, 'Timed out')).toBe('Timed out');
+  });
+
   it('returns fallback for non-Error values', () => {
     expect(getFriendlyAiErrorMessage('string-err', 'Fallback')).toBe('Fallback');
     expect(getFriendlyAiErrorMessage(null, 'Fallback')).toBe('Fallback');
+  });
+});
+
+describe('fetchWithTimeout', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('aborts a request after the timeout elapses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_path, options) => (
+      new Promise((_resolve, reject) => {
+        options.signal.addEventListener('abort', () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+      })
+    ));
+
+    const request = expect(fetchWithTimeout('/api/explain', {}, 50)).rejects.toThrow(/aborted/i);
+    await vi.advanceTimersByTimeAsync(50);
+
+    await request;
   });
 });
 
@@ -155,6 +187,10 @@ describe('fetchAiConfig', () => {
           defaultModel: 'google/gemini-2.5-flash-lite',
           allowedModels: ['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini'],
           requiresUserKey: false,
+          uploadLimits: {
+            maxTotalBytes: 25 * 1024 * 1024,
+            maxPerFileBytes: 1024 * 1024,
+          },
         }),
     });
 
@@ -163,6 +199,10 @@ describe('fetchAiConfig', () => {
     expect(config.defaultModel).toBe('google/gemini-2.5-flash-lite');
     expect(config.allowedModels).toEqual(['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini']);
     expect(config.requiresUserKey).toBe(false);
+    expect(config.uploadLimits).toEqual({
+      maxTotalBytes: 25 * 1024 * 1024,
+      maxPerFileBytes: 1024 * 1024,
+    });
   });
 
   it('falls back to DEFAULT_AI_CONFIG.allowedModels when server returns empty array', async () => {
@@ -173,6 +213,7 @@ describe('fetchAiConfig', () => {
 
     const config = await fetchAiConfig();
     expect(config.allowedModels).toEqual(DEFAULT_AI_CONFIG.allowedModels);
+    expect(config.uploadLimits).toEqual(DEFAULT_AI_CONFIG.uploadLimits);
   });
 
   it('throws when response is not ok', async () => {

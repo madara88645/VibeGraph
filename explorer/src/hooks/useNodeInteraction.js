@@ -6,9 +6,15 @@ import {
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
 import { buildNodeGroundingContext } from '../utils/graphContext';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key to unlock explanations.';
+const EXPLAIN_TIMEOUT_MS = 75000;
+const EXPLAIN_TIMEOUT_MESSAGE =
+  'Vibe Teacher is taking longer than usual. Try again in a moment.';
+const EXPLAIN_CONNECTIVITY_MESSAGE =
+  'Could not connect to Vibe Teacher. Check your connection and try again.';
 
 export function useNodeInteraction({
   aiApiKey = '',
@@ -22,6 +28,7 @@ export function useNodeInteraction({
   const [explanation, setExplanation] = useState(null);
   const [loading, setLoading] = useState(false);
   const explanationCacheRef = useRef(null);
+  const lastFetchedRef = useRef(null);
   if (explanationCacheRef.current === null) {
     try {
       const saved = localStorage.getItem('vg_v1_explanationCache');
@@ -31,7 +38,7 @@ export function useNodeInteraction({
     }
   }
 
-  const [codePanelOpen, setCodePanelOpen] = useState(true);
+  const [codePanelOpen, setCodePanelOpen] = useState(false);
   const [codePanelNode, setCodePanelNode] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
@@ -39,6 +46,11 @@ export function useNodeInteraction({
   const fetchExplanation = useCallback(
     async (node, type = 'technical', level = 'intermediate') => {
       const cacheKey = `${node.id}__${type}__${level}`;
+      if (lastFetchedRef.current === cacheKey) {
+        return;
+      }
+      lastFetchedRef.current = cacheKey;
+
       const cached = explanationCacheRef.current.get(cacheKey);
       if (cached) {
         setExplanation(cached);
@@ -54,13 +66,15 @@ export function useNodeInteraction({
 
       setLoading(true);
       try {
-        const filePath = node.data.file || node.data.original_data?.file;
+        const nodeContext = buildNodeCodeContext(node);
+        const filePath = nodeContext.file_path;
         const { callers, callees, neighbors } = buildNodeGroundingContext({
           nodeId: node.id,
           allNodes,
           allEdges,
         });
         const payload = {
+          ...nodeContext,
           file_path: filePath || null,
           node_id: node.id,
           type,
@@ -74,6 +88,7 @@ export function useNodeInteraction({
         const data = await fetchAiJson('/api/explain', {
           apiKey: aiApiKey,
           body: payload,
+          timeoutMs: EXPLAIN_TIMEOUT_MS,
         });
         const result = data.explanation ? data : 'No explanation returned.';
         explanationCacheRef.current.set(cacheKey, result);
@@ -87,10 +102,10 @@ export function useNodeInteraction({
         }
         setExplanation(result);
       } catch (error) {
-        const message = getFriendlyAiErrorMessage(
-          error,
-          'Failed to reach Vibe Teacher.'
-        );
+        const message =
+          error instanceof DOMException && error.name === 'AbortError'
+            ? EXPLAIN_TIMEOUT_MESSAGE
+            : getFriendlyAiErrorMessage(error, EXPLAIN_CONNECTIVITY_MESSAGE);
         if (message.toLowerCase().includes('api key')) {
           onRequireAiKey?.(message);
         }
@@ -112,6 +127,7 @@ export function useNodeInteraction({
       handleSelectNode(node);
       setExplanation(null);
       setLoading(true);
+      lastFetchedRef.current = null;
       fetchExplanation(node, 'technical', 'intermediate');
     },
     [fetchExplanation, handleSelectNode]
@@ -120,6 +136,7 @@ export function useNodeInteraction({
   const resetInteractionState = useCallback(() => {
     setSelectedNode(null);
     setExplanation(null);
+    lastFetchedRef.current = null;
     explanationCacheRef.current.clear();
     try {
       localStorage.removeItem('vg_v1_explanationCache');

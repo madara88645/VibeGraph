@@ -35,6 +35,7 @@ const FileSidebar = ({
     totalNodeCount,
     mobileOpen,
     fileDependencies,
+    collapsed,
 }) => {
     const [activeTab, setActiveTab] = useState('files');
     const deps = useMemo(() => {
@@ -65,7 +66,7 @@ const FileSidebar = ({
     return (
         <div
             id="file-sidebar-panel"
-            className={`file-sidebar${mobileOpen ? ' sidebar-open' : ''}`}
+            className={`file-sidebar${mobileOpen ? ' sidebar-open' : ''}${collapsed ? ' collapsed' : ''}`}
         >
             {/* Tabs */}
             <div className="sidebar-tabs" role="tablist" aria-label="Sidebar views">

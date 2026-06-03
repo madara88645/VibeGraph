@@ -100,6 +100,43 @@ describe('CodePanel', () => {
         });
     });
 
+    it('sends node language and line metadata when fetching code', async () => {
+        globalThis.fetch.mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({
+                snippet: 'export function greet() {}',
+                file_path: 'src/greet.js',
+                language: 'javascript',
+                start_line: 3,
+                end_line: 5,
+                full_source: null,
+            }),
+        });
+
+        renderPanel({
+            activeNode: {
+                id: 'greet',
+                data: {
+                    label: 'greet',
+                    file: 'src/greet.js',
+                    language: 'javascript',
+                    lineno: 3,
+                    end_lineno: 5,
+                },
+            },
+        });
+
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+        const [, options] = globalThis.fetch.mock.calls[0];
+        expect(JSON.parse(options.body)).toEqual({
+            file_path: 'src/greet.js',
+            node_id: 'greet',
+            language: 'javascript',
+            start_line: 3,
+            end_line: 5,
+        });
+    });
+
     it('shows error when fetch fails', async () => {
         globalThis.fetch.mockRejectedValue(new Error('Network error'));
 
@@ -112,6 +149,44 @@ describe('CodePanel', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/Could not connect to backend/)).toBeInTheDocument();
+        });
+    });
+
+    it('shows backend detail when snippet request is denied', async () => {
+        globalThis.fetch.mockResolvedValue({
+            ok: false,
+            status: 403,
+            json: () => Promise.resolve({ detail: 'Access denied: unsafe file path' }),
+        });
+
+        renderPanel({
+            activeNode: {
+                id: 'hidden',
+                data: { label: 'hidden', file: 'some/path.py' },
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/Access denied: unsafe file path/)).toBeInTheDocument();
+        });
+    });
+
+    it('shows a rate limit message instead of a backend connection error', async () => {
+        globalThis.fetch.mockResolvedValue({
+            ok: false,
+            status: 429,
+            json: () => Promise.resolve({ detail: 'Rate limit exceeded' }),
+        });
+
+        renderPanel({
+            activeNode: {
+                id: 'busy',
+                data: { label: 'busy', file: 'some/path.py' },
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/Too many code requests/)).toBeInTheDocument();
         });
     });
 
@@ -196,7 +271,7 @@ describe('CodePanel', () => {
         expect(expandBtn).toBeInTheDocument();
 
         await user.click(expandBtn);
-        expect(screen.getByLabelText('Exit fullscreen')).toBeInTheDocument();
+        expect(screen.getByLabelText('Exit fullscreen (Press Esc)')).toBeInTheDocument();
     });
 
     it('close button calls onToggle', async () => {

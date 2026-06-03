@@ -39,7 +39,7 @@ graph TB
     end
 
     subgraph External
-        OpenRouter[OpenRouter API\nclaude-haiku-4.5]
+        OpenRouter[OpenRouter API\ndeepseek-v4-flash]
         FS[File System\ntemp uploads]
     end
 
@@ -165,7 +165,7 @@ sequenceDiagram
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENROUTER_API_KEY` | — | Required: OpenRouter API key for all AI features |
-| `OPENROUTER_DEFAULT_MODEL` | `anthropic/claude-haiku-4.5` | LLM model name |
+| `OPENROUTER_DEFAULT_MODEL` | `deepseek/deepseek-v4-flash` | LLM model name |
 | `OPENROUTER_TIMEOUT_SECONDS` | `30` | Request timeout for OpenRouter calls |
 | `OPENROUTER_ALLOWED_MODELS` | — | Optional comma-separated allow-list of selectable models |
 | `ALLOW_SERVER_FALLBACK_KEY` | `false` | If `true`, lets the server's own key serve requests with no client key |

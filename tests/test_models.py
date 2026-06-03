@@ -1,7 +1,16 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models import GhostNarrateRequest, MAX_NODE_ID_LENGTH
+from app.models import (
+    GhostNarrateRequest,
+    MAX_NODE_ID_LENGTH,
+    ChatRequest,
+    ChatMessage,
+    ExplainRequest,
+    LearningPathRequest,
+    MAX_QUESTION_LENGTH,
+    MAX_CONTENT_LENGTH,
+)
 
 
 def test_ghost_narrate_request_context_nodes_validation():
@@ -21,14 +30,6 @@ def test_ghost_narrate_request_context_nodes_validation():
 # ---------------------------------------------------------------------------
 # Additional model tests
 # ---------------------------------------------------------------------------
-from app.models import (
-    ChatRequest,
-    ChatMessage,
-    ExplainRequest,
-    LearningPathRequest,
-    MAX_QUESTION_LENGTH,
-    MAX_CONTENT_LENGTH,
-)
 
 
 def test_chat_request_sanitization():

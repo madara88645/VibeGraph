@@ -94,6 +94,27 @@ describe('ExplanationPanel', () => {
     expect(screen.getByText('AI is thinking...')).toBeInTheDocument();
   });
 
+  it('shows a formatting error as such, not as an invalid API key', () => {
+    // The raw AI response contains the word "key" (e.g. "key_takeaway"), which
+    // previously misclassified parse failures as an invalid API key.
+    renderPanel({
+      explanation: {
+        explanation: {
+          is_error: true,
+          analogy: 'AI Formatting Error',
+          technical:
+            'The AI did not return a valid JSON object. Raw AI Response: "key_takeaway": ...',
+          key_takeaway: 'AI output format mismatch.',
+        },
+        snippet: 'def foo():\n    pass',
+      },
+      fetchExplanation: vi.fn(),
+    });
+
+    expect(screen.getByText('AI Formatting Error')).toBeInTheDocument();
+    expect(screen.queryByText('Invalid API Key')).not.toBeInTheDocument();
+  });
+
   it('renders analogy content on the Analogy tab, not technical copy', async () => {
     const user = userEvent.setup();
     renderPanel({

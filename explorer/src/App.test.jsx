@@ -85,14 +85,25 @@ vi.mock('./hooks/useGraphData', () => ({
   }),
 }));
 
-vi.mock('./components/GraphViewer', () => ({ default: () => <div>GraphViewer</div> }));
+vi.mock('./components/GraphViewer', () => ({
+  default: ({ nodes = [] }) =>
+    nodes.length === 0 ? <div>Visualize your codebase</div> : <div>GraphViewer</div>,
+}));
 vi.mock('./components/ExplanationPanel', () => ({ default: () => null }));
-vi.mock('./components/FileSidebar', () => ({ default: () => null }));
-vi.mock('./components/CodePanel', () => ({ default: () => null }));
-vi.mock('./components/SearchBar', () => ({ default: () => null }));
-vi.mock('./components/ChatDrawer', () => ({ default: () => null }));
-vi.mock('./components/LearningPath', () => ({ default: () => null }));
-vi.mock('./components/SimulationControls', () => ({ default: () => null }));
+vi.mock('./components/FileSidebar', () => ({
+  default: ({ collapsed }) => <div>FileSidebar:{collapsed ? 'collapsed' : 'expanded'}</div>,
+}));
+vi.mock('./components/CodePanel', () => ({
+  default: ({ isOpen }) => <div>CodePanel:{isOpen ? 'open' : 'closed'}</div>,
+}));
+vi.mock('./components/SearchBar', () => ({ default: () => <div>SearchBar</div> }));
+vi.mock('./components/ChatDrawer', () => ({
+  default: ({ isOpen }) => <div>ChatDrawer:{isOpen ? 'open' : 'closed'}</div>,
+}));
+vi.mock('./components/LearningPath', () => ({
+  default: ({ isOpen }) => <div>LearningPath:{isOpen ? 'open' : 'closed'}</div>,
+}));
+vi.mock('./components/SimulationControls', () => ({ default: () => <div>SimulationControls</div> }));
 vi.mock('./components/GhostNarration', () => ({ default: () => null }));
 vi.mock('./components/GhostChoices', () => ({ default: () => null }));
 vi.mock('./components/GhostRunSummary', () => ({ default: () => null }));
@@ -127,8 +138,11 @@ describe('App upload flow', () => {
       json: () =>
         Promise.resolve({
           provider: 'openrouter',
-          defaultModel: 'anthropic/claude-haiku-4.5',
-          allowedModels: ['anthropic/claude-haiku-4.5', 'openai/gpt-5-mini'],
+          defaultModel: 'google/gemini-3.1-flash-lite',
+          allowedModels: [
+            'deepseek/deepseek-v4-flash',
+            'google/gemini-3.1-flash-lite',
+          ],
           requiresUserKey: true,
         }),
     });
@@ -161,5 +175,28 @@ describe('App upload flow', () => {
     await user.click(screen.getByRole('button', { name: /AI Settings/i }));
 
     expect(screen.getByText('Close AI Settings')).toBeInTheDocument();
+  });
+
+  it('starts in an upload-first layout with non-essential graph controls hidden', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config');
+    });
+
+    expect(screen.getByText('FileSidebar:collapsed')).toBeInTheDocument();
+    expect(screen.queryByText('CodePanel:closed')).not.toBeInTheDocument();
+    expect(screen.queryByText('ChatDrawer:closed')).not.toBeInTheDocument();
+    expect(screen.queryByText('LearningPath:closed')).not.toBeInTheDocument();
+    expect(screen.getByText('Visualize your codebase')).toBeInTheDocument();
+    expect(screen.queryByText('SearchBar')).not.toBeInTheDocument();
+    expect(screen.queryByText('SimulationControls')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Learning Path' })).not.toBeInTheDocument();
+  });
+
+  it('shows the active model from backend config in the header', async () => {
+    render(<App />);
+
+    expect(await screen.findByText('Model: gemini-3.1-flash-lite')).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from openai import APITimeoutError
+from app.dependencies import DEFAULT_OPENROUTER_MODEL
 from teacher.openrouter_teacher import (
     OpenRouterTeacher,
     _try_parse_json,
@@ -43,6 +44,17 @@ class TestTryParseJson:
         with pytest.raises(ValueError):
             _try_parse_json("not json at all")
 
+    def test_recovers_object_truncated_mid_value(self):
+        # Model hit its token limit mid-string; we should still recover fields.
+        truncated = '{"analogy": "a", "sections": {"What it is": "partial value cut o'
+        result = _try_parse_json(truncated)
+        assert result["analogy"] == "a"
+        assert "partial value cut o" in result["sections"]["What it is"]
+
+    def test_unrecoverable_garbage_still_raises(self):
+        with pytest.raises(ValueError):
+            _try_parse_json("totally not json {[}")
+
 
 # ---------------------------------------------------------------------------
 # OpenRouterTeacher construction
@@ -52,6 +64,11 @@ class TestTeacherConstruction:
     def test_no_api_key_sets_client_none(self):
         teacher = OpenRouterTeacher(api_key=None)
         assert teacher.client is None
+
+    @patch.dict("os.environ", {}, clear=True)
+    def test_default_model_matches_api_config_default(self):
+        teacher = OpenRouterTeacher(api_key="sk-test-key")
+        assert teacher.model_name == DEFAULT_OPENROUTER_MODEL
 
 
 # ---------------------------------------------------------------------------
@@ -143,6 +160,79 @@ class TestWithMockedClient:
         assert "### References" in result["technical"]
         assert "Selected node: foo" in result["technical"]
         assert result["key_takeaway"] == "Functions encapsulate logic"
+
+    def test_explain_code_external_node_dict_technical(self):
+        """Issue #405: external/built-in node payloads carry a dict `technical`
+        and list-valued sections. The result must be a valid string-typed
+        ExplanationDetail that preserves the structured details."""
+        from app.models import ExplanationDetail
+
+        response_json = json.dumps(
+            {
+                "analogy": "handle_export is like a gatekeeper that bridges results.",
+                "technical": {
+                    "origin": "External (likely defined in dependency package 'analyst')",
+                    "signature": "Callable[[...], Any] (exact signature unknown)",
+                    "callers": ["main", "module:main"],
+                    "callees": ["external:rich.panel.Panel", "unresolved:print"],
+                },
+                "key_takeaway": "Orchestrates exporting analysis results to React Flow.",
+                "sections": {
+                    "What it is": "A function that coordinates exporting analysis data.",
+                    "Inputs/Outputs": "Inputs: Unknown. Outputs: Unknown.",
+                    "Side effects": "Likely prints to stdout and displays a Panel.",
+                    "Why this node exists": "To decouple analysis from export.",
+                    "Common bugs": [
+                        "Unresolved callees may cause runtime ImportError",
+                        "No explicit error handling could lead to unhandled exceptions",
+                    ],
+                    "References": [
+                        "Callers: main, module:main",
+                        "Neighbors: print, Panel, CodeAnalyzer",
+                    ],
+                },
+                "unknowns": ["Exact signature of handle_export."],
+            }
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            response_json
+        )
+        result = self.teacher.explain_code(
+            "", context="External Library / Built-in", node_id="handle_export"
+        )
+
+        # The technical field must always be a string (Pydantic contract).
+        assert isinstance(result["technical"], str)
+        # Structured technical metadata is preserved, not dropped.
+        assert "Technical Details" in result["technical"]
+        assert (
+            "External (likely defined in dependency package 'analyst')"
+            in (result["technical"])
+        )
+        # List-valued sections render readably, not as Python list repr.
+        assert "['" not in result["technical"]
+        assert "Unresolved callees may cause runtime ImportError" in result["technical"]
+        # The Pydantic model accepts the result without raising.
+        detail = ExplanationDetail(**result)
+        assert isinstance(detail.technical, str)
+
+    def test_explain_code_recovers_from_truncated_json(self):
+        """A response truncated at the token limit must degrade to usable
+        content instead of surfacing an 'AI Formatting Error'."""
+        truncated = (
+            '{"analogy": "like a conductor", '
+            '"key_takeaway": "entry point", '
+            '"sections": {"What it is": "Coordinates the analysis pipeline'
+        )
+        self.mock_client.chat.completions.create.return_value = _mock_completion(
+            truncated
+        )
+        result = self.teacher.explain_code(
+            "def handle_start(): pass", node_id="handle_start", file_path="main.py"
+        )
+        assert not result.get("is_error")
+        assert result["analogy"] == "like a conductor"
+        assert "Coordinates the analysis pipeline" in result["technical"]
 
     def test_explain_code_caches_results(self):
         response_json = json.dumps(

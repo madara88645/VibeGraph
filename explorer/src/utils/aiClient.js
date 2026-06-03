@@ -1,18 +1,40 @@
 const API_KEY_STORAGE_KEY = 'vg_v1_openrouter_key';
 const MODEL_STORAGE_KEY = 'vg_v1_ai_model';
+const DEFAULT_UPLOAD_LIMITS = {
+  maxTotalBytes: 25 * 1024 * 1024,
+  maxPerFileBytes: 1024 * 1024,
+};
 
 export const DEFAULT_AI_CONFIG = {
   provider: 'openrouter',
-  defaultModel: 'anthropic/claude-haiku-4.5',
+  defaultModel: 'deepseek/deepseek-v4-flash',
   allowedModels: [
-    'anthropic/claude-haiku-4.5',
-    'google/gemini-2.5-flash-lite',
-    'openai/gpt-5-mini',
-    'deepseek/deepseek-chat-v3.1',
-    'x-ai/grok-4.1-fast',
+    'deepseek/deepseek-v4-flash',
+    'qwen/qwen3-coder-30b-a3b-instruct',
+    'google/gemini-3.1-flash-lite',
+    'anthropic/claude-sonnet-4.6',
+    'meta-llama/llama-3.3-70b-instruct:free',
   ],
   requiresUserKey: true,
+  uploadLimits: DEFAULT_UPLOAD_LIMITS,
 };
+
+function normalizePositiveNumber(value, fallback) {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function normalizeUploadLimits(uploadLimits) {
+  return {
+    maxTotalBytes: normalizePositiveNumber(
+      Number(uploadLimits?.maxTotalBytes),
+      DEFAULT_UPLOAD_LIMITS.maxTotalBytes,
+    ),
+    maxPerFileBytes: normalizePositiveNumber(
+      Number(uploadLimits?.maxPerFileBytes),
+      DEFAULT_UPLOAD_LIMITS.maxPerFileBytes,
+    ),
+  };
+}
 
 export function getStoredApiKey() {
   try {
@@ -71,6 +93,7 @@ export async function fetchAiConfig() {
     provider: data.provider || DEFAULT_AI_CONFIG.provider,
     defaultModel: data.defaultModel || allowedModels[0] || DEFAULT_AI_CONFIG.defaultModel,
     allowedModels,
+    uploadLimits: normalizeUploadLimits(data.uploadLimits),
     requiresUserKey:
       typeof data.requiresUserKey === 'boolean'
         ? data.requiresUserKey
@@ -97,12 +120,26 @@ export function ensureAiReady(aiReady, onRequireAiKey, message) {
   return false;
 }
 
-export async function fetchAiJson(path, { apiKey, method = 'POST', body }) {
-  const response = await fetch(path, {
+export async function fetchWithTimeout(path, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(path, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+export async function fetchAiJson(path, { apiKey, method = 'POST', body, timeoutMs } = {}) {
+  const response = await fetchWithTimeout(path, {
     method,
     headers: buildAiHeaders(apiKey),
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, timeoutMs);
 
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
@@ -122,6 +159,7 @@ export function getFriendlyAiErrorMessage(error, fallbackMessage) {
   if (error instanceof Error && error.message) {
     const loweredMessage = error.message.toLowerCase();
     if (
+      error.name === 'AbortError' ||
       loweredMessage === 'network error' ||
       loweredMessage.includes('failed to fetch') ||
       loweredMessage.includes('load failed')

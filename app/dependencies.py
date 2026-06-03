@@ -2,21 +2,16 @@
 
 import os
 
+from analyst.analyzer import MAX_FILE_SIZE
 from fastapi import HTTPException, Request
 
 from analyst.exporter import GraphExporter
+from app.ai_models import CURATED_MODELS, DEFAULT_OPENROUTER_MODEL
 from teacher.openrouter_teacher import OpenRouterTeacher
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_OPENROUTER_MODEL = "anthropic/claude-haiku-4.5"
-CURATED_MODELS = [
-    "anthropic/claude-haiku-4.5",
-    "google/gemini-2.5-flash-lite",
-    "openai/gpt-5-mini",
-    "deepseek/deepseek-chat-v3.1",
-    "x-ai/grok-4.1-fast",
-]
+DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 teacher = None
 exporter = GraphExporter()
@@ -59,12 +54,29 @@ def is_server_fallback_enabled() -> bool:
     return bool((os.getenv("OPENROUTER_API_KEY") or "").strip())
 
 
+def get_max_upload_bytes() -> int:
+    raw_value = os.getenv("VIBEGRAPH_MAX_UPLOAD_BYTES", str(DEFAULT_MAX_UPLOAD_BYTES))
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        return DEFAULT_MAX_UPLOAD_BYTES
+    return parsed if parsed > 0 else DEFAULT_MAX_UPLOAD_BYTES
+
+
+def get_public_upload_config() -> dict[str, int]:
+    return {
+        "maxTotalBytes": get_max_upload_bytes(),
+        "maxPerFileBytes": MAX_FILE_SIZE,
+    }
+
+
 def get_public_ai_config() -> dict[str, object]:
     return {
         "provider": "openrouter",
         "defaultModel": get_default_model(),
         "allowedModels": get_allowed_models(),
         "requiresUserKey": not is_server_fallback_enabled(),
+        "uploadLimits": get_public_upload_config(),
     }
 
 

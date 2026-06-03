@@ -1,43 +1,71 @@
 """Path safety and file upload security utilities."""
 
 import os
-import re
 import tempfile
 
 from fastapi import HTTPException
 
 
 UPLOAD_PREFIX = "vibegraph_upload_"
+PROJECT_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DEMO_PROJECT_DIR = os.path.join(PROJECT_ROOT, "app", "demo_project")
 
-# Match any hidden segment (starts with a dot) except the current directory single dot (.)
-HIDDEN_RE = re.compile(
-    rf"(^|{re.escape(os.sep)})\.(?![{re.escape(os.sep)}]|$)", re.IGNORECASE
+SENSITIVE_HIDDEN_SEGMENTS = frozenset(
+    {
+        ".env",
+        ".git",
+        ".ssh",
+        ".aws",
+        ".npmrc",
+        ".pypirc",
+        ".netrc",
+    }
+)
+SENSITIVE_KEY_FILENAMES = frozenset(
+    {"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "identity"}
 )
 
 
+def _contains_sensitive_segment(rel_path: str) -> bool:
+    parts = [part.lower() for part in rel_path.replace("\\", os.sep).split(os.sep)]
+    for part in parts:
+        if part in SENSITIVE_HIDDEN_SEGMENTS or part in SENSITIVE_KEY_FILENAMES:
+            return True
+        if part.endswith((".pem", ".key")):
+            return True
+    return False
+
+
+def _is_within_path(path: str, root: str) -> bool:
+    try:
+        return os.path.commonpath([path, root]) == root
+    except ValueError:
+        return False
+
+
 def is_safe_path(path: str) -> bool:
-    """Ensure the path is within a valid upload temp directory."""
+    """Ensure the path is within a valid upload temp directory or bundled demo."""
     try:
         resolved = os.path.realpath(path)
     except ValueError:
         return False
 
-    tmp_dir = os.path.realpath(tempfile.gettempdir())
-    try:
-        if os.path.commonpath([resolved, tmp_dir]) == tmp_dir:
-            rel_path = os.path.relpath(resolved, tmp_dir)
-            # Block hidden files and directories
-            if HIDDEN_RE.search(rel_path):
-                return False
+    if _is_within_path(resolved, DEMO_PROJECT_DIR):
+        rel_path = os.path.relpath(resolved, DEMO_PROJECT_DIR)
+        return not _contains_sensitive_segment(rel_path)
 
-            first_part = rel_path.partition(os.sep)[0]
-            if first_part and (
-                first_part.startswith(UPLOAD_PREFIX)
-                or first_part.startswith("vibegraph_test_")
-            ):
-                return True
-    except ValueError:
-        pass
+    tmp_dir = os.path.realpath(tempfile.gettempdir())
+    if _is_within_path(resolved, tmp_dir):
+        rel_path = os.path.relpath(resolved, tmp_dir)
+        if _contains_sensitive_segment(rel_path):
+            return False
+
+        first_part = rel_path.partition(os.sep)[0]
+        if first_part and (
+            first_part.startswith(UPLOAD_PREFIX)
+            or first_part.startswith("vibegraph_test_")
+        ):
+            return True
 
     return False
 
@@ -55,9 +83,9 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
     if ".." in parts:
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
 
-    sensitive_names = {".env", ".git", ".ssh", ".aws", ".config"}
+    sensitive_names = {".env", ".git", ".ssh", ".aws", ".npmrc", ".pypirc", ".netrc"}
     for part in parts:
-        if part in sensitive_names:
+        if part.lower() in sensitive_names:
             raise HTTPException(
                 status_code=400,
                 detail=f"Sensitive hidden file or directory not allowed: {part}",

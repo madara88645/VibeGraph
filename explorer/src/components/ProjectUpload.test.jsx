@@ -145,6 +145,28 @@ describe('ProjectUpload', () => {
         expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
     });
 
+    it('blocks oversized file picker uploads before calling fetch', async () => {
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const fileInput = document.querySelector('input[type="file"]');
+        const file = new File(['content'], 'large.py', { type: 'text/plain' });
+        Object.defineProperty(file, 'size', { value: 25 * 1024 * 1024 + 1 });
+
+        await act(async () => {
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: Upload too large. Max total upload size is 25 MB.',
+            'error'
+        );
+    });
+
     it('handles upload errors gracefully', async () => {
         globalThis.fetch = vi.fn(() =>
             Promise.resolve({
@@ -331,6 +353,77 @@ describe('ProjectUpload', () => {
         expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
     });
 
+    it('blocks oversized drag-and-drop uploads before calling fetch', async () => {
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        const file = new File(['zip content'], 'project.zip', { type: 'application/zip' });
+        Object.defineProperty(file, 'size', { value: 25 * 1024 * 1024 + 1 });
+
+        const mockEntry = {
+            name: 'project.zip',
+            isDirectory: false,
+        };
+
+        await act(async () => {
+            fireEvent.drop(uploadZone, {
+                dataTransfer: {
+                    items: [
+                        {
+                            webkitGetAsEntry: () => mockEntry,
+                        },
+                    ],
+                    files: [file],
+                },
+            });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: Upload too large. Max total upload size is 25 MB.',
+            'error'
+        );
+    });
+
+    it('shows an info toast when upload succeeds with warnings', async () => {
+        const mockResult = {
+            nodes: [{ id: '1' }],
+            edges: [{ source: '1', target: '2' }],
+            warnings: ['huge.py skipped', 'bad.py skipped'],
+        };
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(mockResult),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const fileInput = document.querySelector('input[type="file"]');
+        const file = new File(['content'], 'main.py', { type: 'text/plain' });
+
+        await act(async () => {
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        });
+
+        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
+        expect(showToast).toHaveBeenCalledWith(
+            'Project analyzed with warnings: huge.py skipped (+1 more skipped files)',
+            'info'
+        );
+        expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
+    });
+
     it('loads the demo project successfully when CTA is clicked', async () => {
         const mockResult = { nodes: [{ id: 'demo-1' }], edges: [] };
         globalThis.fetch = vi.fn(() =>
@@ -353,7 +446,7 @@ describe('ProjectUpload', () => {
             fireEvent.click(demoBtn);
         });
 
-        expect(globalThis.fetch).toHaveBeenCalledWith('/graph_data.json');
+        expect(globalThis.fetch).toHaveBeenCalledWith('/demo_graph_data.json');
         expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
         expect(showToast).toHaveBeenCalledWith('Demo project loaded successfully!', 'success');
     });

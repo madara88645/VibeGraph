@@ -1,0 +1,1145 @@
+{
+  "nodes": [
+    {
+      "id": "summarize_progress",
+      "type": "default",
+      "data": {
+        "label": "summarize_progress",
+        "type": "function",
+        "lineno": 4,
+        "docstring": null,
+        "file": "app/demo_project/analytics.py",
+        "entry_point": true,
+        "end_lineno": 10,
+        "loc": 7,
+        "nesting_depth": 0,
+        "dependency_count": 3,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "detect_risk",
+      "type": "default",
+      "data": {
+        "label": "detect_risk",
+        "type": "function",
+        "lineno": 13,
+        "docstring": null,
+        "file": "app/demo_project/analytics.py",
+        "entry_point": true,
+        "end_lineno": 18,
+        "loc": 6,
+        "nesting_depth": 1,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:round",
+      "type": "default",
+      "data": {
+        "label": "round",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "external:statistics.mean",
+      "type": "default",
+      "data": {
+        "label": "statistics.mean",
+        "type": "external",
+        "module": "statistics",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:len",
+      "type": "default",
+      "data": {
+        "label": "len",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DemoRepository",
+      "type": "default",
+      "data": {
+        "label": "DemoRepository",
+        "type": "class",
+        "lineno": 4,
+        "docstring": null,
+        "file": "app/demo_project/api.py",
+        "entry_point": false,
+        "end_lineno": 11,
+        "loc": 8,
+        "nesting_depth": 0,
+        "dependency_count": 1,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DemoRepository.load_sessions",
+      "type": "default",
+      "data": {
+        "label": "DemoRepository.load_sessions",
+        "type": "function",
+        "lineno": 5,
+        "docstring": null,
+        "file": "app/demo_project/api.py",
+        "entry_point": false,
+        "end_lineno": 11,
+        "loc": 7,
+        "nesting_depth": 0,
+        "dependency_count": 1,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "build_daily_plan",
+      "type": "default",
+      "data": {
+        "label": "build_daily_plan",
+        "type": "function",
+        "lineno": 14,
+        "docstring": null,
+        "file": "app/demo_project/api.py",
+        "entry_point": true,
+        "end_lineno": 18,
+        "loc": 5,
+        "nesting_depth": 0,
+        "dependency_count": 4,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "handle_request",
+      "type": "default",
+      "data": {
+        "label": "handle_request",
+        "type": "function",
+        "lineno": 21,
+        "docstring": null,
+        "file": "app/demo_project/api.py",
+        "entry_point": true,
+        "end_lineno": 23,
+        "loc": 3,
+        "nesting_depth": 0,
+        "dependency_count": 2,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:print",
+      "type": "default",
+      "data": {
+        "label": "print",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:load_sessions",
+      "type": "default",
+      "data": {
+        "label": "load_sessions",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "LearningPlanner",
+      "type": "default",
+      "data": {
+        "label": "LearningPlanner",
+        "type": "class",
+        "lineno": 4,
+        "docstring": null,
+        "file": "app/demo_project/planner.py",
+        "entry_point": false,
+        "end_lineno": 15,
+        "loc": 12,
+        "nesting_depth": 0,
+        "dependency_count": 5,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:build_plan",
+      "type": "default",
+      "data": {
+        "label": "build_plan",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:get",
+      "type": "default",
+      "data": {
+        "label": "get",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "LearningPlanner.__init__",
+      "type": "default",
+      "data": {
+        "label": "LearningPlanner.__init__",
+        "type": "function",
+        "lineno": 5,
+        "docstring": null,
+        "file": "app/demo_project/planner.py",
+        "entry_point": false,
+        "end_lineno": 6,
+        "loc": 2,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": false,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "LearningPlanner.build_plan",
+      "type": "default",
+      "data": {
+        "label": "LearningPlanner.build_plan",
+        "type": "function",
+        "lineno": 8,
+        "docstring": null,
+        "file": "app/demo_project/planner.py",
+        "entry_point": false,
+        "end_lineno": 15,
+        "loc": 8,
+        "nesting_depth": 0,
+        "dependency_count": 5,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "rank_topics",
+      "type": "default",
+      "data": {
+        "label": "rank_topics",
+        "type": "function",
+        "lineno": 18,
+        "docstring": null,
+        "file": "app/demo_project/planner.py",
+        "entry_point": true,
+        "end_lineno": 26,
+        "loc": 9,
+        "nesting_depth": 0,
+        "dependency_count": 2,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "create_step",
+      "type": "default",
+      "data": {
+        "label": "create_step",
+        "type": "function",
+        "lineno": 29,
+        "docstring": null,
+        "file": "app/demo_project/planner.py",
+        "entry_point": true,
+        "end_lineno": 31,
+        "loc": 3,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:enumerate",
+      "type": "default",
+      "data": {
+        "label": "enumerate",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:sorted",
+      "type": "default",
+      "data": {
+        "label": "sorted",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:items",
+      "type": "default",
+      "data": {
+        "label": "items",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ThemeController",
+      "type": "default",
+      "data": {
+        "label": "ThemeController",
+        "type": "class",
+        "lineno": 8,
+        "docstring": null,
+        "file": "app/demo_project/ui.ts",
+        "entry_point": false,
+        "language": "typescript",
+        "end_lineno": 15,
+        "loc": 8,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "ThemeController.setMode",
+      "type": "default",
+      "data": {
+        "label": "ThemeController.setMode",
+        "type": "function",
+        "lineno": 11,
+        "docstring": null,
+        "file": "app/demo_project/ui.ts",
+        "entry_point": false,
+        "language": "typescript",
+        "end_lineno": 14,
+        "loc": 4,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "formatMinutes",
+      "type": "default",
+      "data": {
+        "label": "formatMinutes",
+        "type": "function",
+        "lineno": 17,
+        "docstring": null,
+        "file": "app/demo_project/ui.ts",
+        "entry_point": true,
+        "language": "typescript",
+        "end_lineno": 17,
+        "loc": 1,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "renderPlan",
+      "type": "default",
+      "data": {
+        "label": "renderPlan",
+        "type": "function",
+        "lineno": 19,
+        "docstring": null,
+        "file": "app/demo_project/ui.ts",
+        "entry_point": true,
+        "language": "typescript",
+        "end_lineno": 21,
+        "loc": 3,
+        "nesting_depth": 0,
+        "dependency_count": 2,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:map",
+      "type": "default",
+      "data": {
+        "label": "map",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DemoClient",
+      "type": "default",
+      "data": {
+        "label": "DemoClient",
+        "type": "class",
+        "lineno": 3,
+        "docstring": null,
+        "file": "app/demo_project/web.js",
+        "entry_point": false,
+        "language": "javascript",
+        "end_lineno": 15,
+        "loc": 13,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DemoClient.constructor",
+      "type": "default",
+      "data": {
+        "label": "DemoClient.constructor",
+        "type": "function",
+        "lineno": 4,
+        "docstring": null,
+        "file": "app/demo_project/web.js",
+        "entry_point": false,
+        "language": "javascript",
+        "end_lineno": 6,
+        "loc": 3,
+        "nesting_depth": 0,
+        "dependency_count": 0,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "DemoClient.fetchPlan",
+      "type": "default",
+      "data": {
+        "label": "DemoClient.fetchPlan",
+        "type": "function",
+        "lineno": 8,
+        "docstring": null,
+        "file": "app/demo_project/web.js",
+        "entry_point": false,
+        "language": "javascript",
+        "end_lineno": 14,
+        "loc": 7,
+        "nesting_depth": 0,
+        "dependency_count": 3,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": true
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "bootDashboard",
+      "type": "default",
+      "data": {
+        "label": "bootDashboard",
+        "type": "function",
+        "lineno": 17,
+        "docstring": null,
+        "file": "app/demo_project/web.js",
+        "entry_point": true,
+        "language": "javascript",
+        "end_lineno": 23,
+        "loc": 7,
+        "nesting_depth": 0,
+        "dependency_count": 4,
+        "public_api": true,
+        "api_boundary": false,
+        "side_effect_boundary": false
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:json",
+      "type": "default",
+      "data": {
+        "label": "json",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "builtin:fetch",
+      "type": "default",
+      "data": {
+        "label": "fetch",
+        "type": "builtin",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:stringify",
+      "type": "default",
+      "data": {
+        "label": "stringify",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "external:console.log",
+      "type": "default",
+      "data": {
+        "label": "console.log",
+        "type": "external",
+        "module": "console",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:fetchPlan",
+      "type": "default",
+      "data": {
+        "label": "fetchPlan",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "unresolved:setMode",
+      "type": "default",
+      "data": {
+        "label": "setMode",
+        "type": "unresolved",
+        "file": null
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "module:analytics",
+      "type": "default",
+      "data": {
+        "label": "analytics.py",
+        "type": "module",
+        "file": "app/demo_project/analytics.py",
+        "entry_point": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "module:api",
+      "type": "default",
+      "data": {
+        "label": "api.py",
+        "type": "module",
+        "file": "app/demo_project/api.py",
+        "entry_point": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "module:planner",
+      "type": "default",
+      "data": {
+        "label": "planner.py",
+        "type": "module",
+        "file": "app/demo_project/planner.py",
+        "entry_point": false,
+        "language": "python"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "module:ui",
+      "type": "default",
+      "data": {
+        "label": "ui.ts",
+        "type": "module",
+        "file": "app/demo_project/ui.ts",
+        "entry_point": false,
+        "language": "typescript"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "module:web",
+      "type": "default",
+      "data": {
+        "label": "web.js",
+        "type": "module",
+        "file": "app/demo_project/web.js",
+        "entry_point": false,
+        "language": "javascript"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "esummarize_progress-builtin:round",
+      "source": "summarize_progress",
+      "target": "builtin:round",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "esummarize_progress-external:statistics.mean",
+      "source": "summarize_progress",
+      "target": "external:statistics.mean",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "esummarize_progress-builtin:len",
+      "source": "summarize_progress",
+      "target": "builtin:len",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eDemoRepository.load_sessions-builtin:print",
+      "source": "DemoRepository.load_sessions",
+      "target": "builtin:print",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebuild_daily_plan-DemoRepository",
+      "source": "build_daily_plan",
+      "target": "DemoRepository",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebuild_daily_plan-unresolved:load_sessions",
+      "source": "build_daily_plan",
+      "target": "unresolved:load_sessions",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebuild_daily_plan-LearningPlanner",
+      "source": "build_daily_plan",
+      "target": "LearningPlanner",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebuild_daily_plan-unresolved:build_plan",
+      "source": "build_daily_plan",
+      "target": "unresolved:build_plan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ehandle_request-unresolved:get",
+      "source": "handle_request",
+      "target": "unresolved:get",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ehandle_request-build_daily_plan",
+      "source": "handle_request",
+      "target": "build_daily_plan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eLearningPlanner.build_plan-summarize_progress",
+      "source": "LearningPlanner.build_plan",
+      "target": "summarize_progress",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eLearningPlanner.build_plan-detect_risk",
+      "source": "LearningPlanner.build_plan",
+      "target": "detect_risk",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eLearningPlanner.build_plan-rank_topics",
+      "source": "LearningPlanner.build_plan",
+      "target": "rank_topics",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eLearningPlanner.build_plan-create_step",
+      "source": "LearningPlanner.build_plan",
+      "target": "create_step",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eLearningPlanner.build_plan-builtin:enumerate",
+      "source": "LearningPlanner.build_plan",
+      "target": "builtin:enumerate",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "erank_topics-builtin:sorted",
+      "source": "rank_topics",
+      "target": "builtin:sorted",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "erank_topics-unresolved:items",
+      "source": "rank_topics",
+      "target": "unresolved:items",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "erenderPlan-unresolved:map",
+      "source": "renderPlan",
+      "target": "unresolved:map",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eDemoClient.fetchPlan-unresolved:json",
+      "source": "DemoClient.fetchPlan",
+      "target": "unresolved:json",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eDemoClient.fetchPlan-builtin:fetch",
+      "source": "DemoClient.fetchPlan",
+      "target": "builtin:fetch",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "eDemoClient.fetchPlan-unresolved:stringify",
+      "source": "DemoClient.fetchPlan",
+      "target": "unresolved:stringify",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebootDashboard-external:console.log",
+      "source": "bootDashboard",
+      "target": "external:console.log",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebootDashboard-renderPlan",
+      "source": "bootDashboard",
+      "target": "renderPlan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebootDashboard-unresolved:fetchPlan",
+      "source": "bootDashboard",
+      "target": "unresolved:fetchPlan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "ebootDashboard-unresolved:setMode",
+      "source": "bootDashboard",
+      "target": "unresolved:setMode",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:analytics-summarize_progress",
+      "source": "module:analytics",
+      "target": "summarize_progress",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:analytics-detect_risk",
+      "source": "module:analytics",
+      "target": "detect_risk",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:api-DemoRepository",
+      "source": "module:api",
+      "target": "DemoRepository",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:api-build_daily_plan",
+      "source": "module:api",
+      "target": "build_daily_plan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:api-handle_request",
+      "source": "module:api",
+      "target": "handle_request",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:api-module:planner",
+      "source": "module:api",
+      "target": "module:planner",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:planner-LearningPlanner",
+      "source": "module:planner",
+      "target": "LearningPlanner",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:planner-rank_topics",
+      "source": "module:planner",
+      "target": "rank_topics",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:planner-create_step",
+      "source": "module:planner",
+      "target": "create_step",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:planner-module:analytics",
+      "source": "module:planner",
+      "target": "module:analytics",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:ui-ThemeController",
+      "source": "module:ui",
+      "target": "ThemeController",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:ui-formatMinutes",
+      "source": "module:ui",
+      "target": "formatMinutes",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:ui-renderPlan",
+      "source": "module:ui",
+      "target": "renderPlan",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:web-DemoClient",
+      "source": "module:web",
+      "target": "DemoClient",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    },
+    {
+      "id": "emodule:web-bootDashboard",
+      "source": "module:web",
+      "target": "bootDashboard",
+      "animated": true,
+      "data": {
+        "is_cycle_edge": false
+      }
+    }
+  ],
+  "meta": {
+    "truncated": false,
+    "total_nodes": 41,
+    "total_edges": 40,
+    "kept_nodes": 41,
+    "kept_edges": 40,
+    "budget": null
+  },
+  "file_dependencies": [
+    {
+      "source_file": "app/demo_project/api.py",
+      "target_file": "planner",
+      "imports": [
+        "LearningPlanner"
+      ]
+    },
+    {
+      "source_file": "app/demo_project/planner.py",
+      "target_file": "analytics",
+      "imports": [
+        "detect_risk",
+        "summarize_progress"
+      ]
+    }
+  ]
+}

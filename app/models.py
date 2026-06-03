@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.ai_models import DEFAULT_OPENROUTER_MODEL
 from app.utils.sanitize import sanitize_llm_input
 
 
@@ -14,6 +15,7 @@ MAX_QUESTION_LENGTH = 2000
 MAX_CONTENT_LENGTH = 4000
 MAX_HISTORY_LENGTH = 100
 MAX_MODEL_NAME_LENGTH = 120
+MODEL_EXAMPLE = DEFAULT_OPENROUTER_MODEL
 
 
 def _normalize_model_name(value: str | None) -> str | None:
@@ -26,6 +28,9 @@ def _normalize_model_name(value: str | None) -> str | None:
 class ExplainRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     level: Literal["beginner", "intermediate", "advanced"] = "intermediate"
     model: str | None = Field(default=None, max_length=MAX_MODEL_NAME_LENGTH)
     callers: list[str] = Field(default_factory=list, max_length=100)
@@ -39,7 +44,7 @@ class ExplainRequest(BaseModel):
                     "file_path": "my_project/app.py",
                     "node_id": "main",
                     "level": "beginner",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                 }
             ]
         }
@@ -78,6 +83,9 @@ class ExplainRequest(BaseModel):
 class SnippetRequest(BaseModel):
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
 
     model_config = {
         "json_schema_extra": {
@@ -107,13 +115,18 @@ class ChatMessage(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_CONTENT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_CONTENT_LENGTH, truncate=True
+            )
         return value
 
 
 class ChatRequest(BaseModel):
     node_id: str | None = Field(default=None, max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     project_context: str | None = Field(
         default=None,
         max_length=MAX_PROJECT_CONTEXT_LENGTH,
@@ -135,7 +148,7 @@ class ChatRequest(BaseModel):
                     "node_id": "main",
                     "file_path": "my_project/app.py",
                     "question": "What does this function do?",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                     "history": [],
                 }
             ]
@@ -164,7 +177,9 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_QUESTION_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_QUESTION_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("project_context", mode="before")
@@ -175,7 +190,9 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"String should have at most {MAX_PROJECT_CONTEXT_LENGTH} characters"
                 )
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(
+                value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=True
+            )
         return value
 
     @field_validator("callers", "callees", "neighbors")
@@ -206,7 +223,7 @@ class LearningPathRequest(BaseModel):
             "examples": [
                 {
                     "file_path": "my_project/app.py",
-                    "model": "anthropic/claude-haiku-4.5",
+                    "model": MODEL_EXAMPLE,
                 }
             ]
         }
@@ -230,6 +247,9 @@ class LearningPathRequest(BaseModel):
 class GhostNarrateRequest(BaseModel):
     node_id: str = Field(max_length=MAX_NODE_ID_LENGTH)
     file_path: str | None = Field(default=None, max_length=MAX_FILE_PATH_LENGTH)
+    language: str | None = Field(default=None, max_length=40)
+    start_line: int | None = Field(default=None, ge=1)
+    end_line: int | None = Field(default=None, ge=1)
     previous_node_id: str | None = Field(
         default=None,
         max_length=MAX_NODE_ID_LENGTH,
@@ -256,7 +276,7 @@ class GhostNarrateRequest(BaseModel):
         if isinstance(value, str):
             if len(value) > 50:
                 raise ValueError("String should have at most 50 characters")
-            return sanitize_llm_input(value, truncate=False)
+            return sanitize_llm_input(value, max_length=50, truncate=True)
         return value
 
     @field_validator("model", mode="before")
@@ -280,6 +300,7 @@ class ExplanationDetail(BaseModel):
     analogy: str
     technical: str
     key_takeaway: str
+    is_error: bool | None = None
 
 
 class ExplainResponse(BaseModel):
@@ -292,6 +313,7 @@ class SnippetResponse(BaseModel):
     node_id: str
     snippet: str
     file_path: str | None
+    language: str | None = None
     start_line: int | None
     end_line: int | None
     full_source: str | None

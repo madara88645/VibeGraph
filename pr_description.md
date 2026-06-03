@@ -1,5 +1,0 @@
-🚨 **Severity:** MEDIUM
-💡 **Vulnerability:** FastAPI's default `RequestValidationError` handler, driven by Pydantic v2, includes the raw, unsanitized user `input` in the `detail` array of the 422 JSON response. This can lead to input reflection or information disclosure vulnerabilities if an attacker sends malformed data that gets reflected back.
-🎯 **Impact:** Potential reflected Cross-Site Scripting (XSS) if the client mishandles the raw error payload, or general information disclosure and log injection risks.
-🔧 **Fix:** Overrode the global `RequestValidationError` handler in `app/__init__.py` to catch the validation error and construct a safe `422 Unprocessable Entity` response. The customized `detail` array only includes `loc`, `msg`, and `type`, strictly omitting the `input` and `url` fields.
-✅ **Verification:** Verified by throwing intentional 422 errors via the FastAPI `TestClient` (e.g., passing integers instead of strings) and ensuring the `input` field is absent from the response. Ran the full backend test suite (`pytest`) to ensure no functional regressions.

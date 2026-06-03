@@ -25,10 +25,26 @@ const LearningPath = ({
   const [error, setError] = useState(null);
   const { fitView } = useReactFlow();
 
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isDismissed, setIsDismissed] = useState(!isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      const timer = setTimeout(() => setIsDismissed(false), 20);
+      return () => clearTimeout(timer);
+    } else {
+      setIsDismissed(true);
+      const timer = setTimeout(() => setIsRendered(false), 300); // match transition
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen || allNodes.length === 0) {
       return;
     }
+
 
     const fetchPath = async () => {
       setLoading(true);
@@ -95,7 +111,7 @@ const LearningPath = ({
     [allNodes, allNodesMap, fitView, onSelectFile, onSelectNode, steps]
   );
 
-  if (!isOpen) {
+  if (!isRendered) {
     return null;
   }
 
@@ -105,7 +121,8 @@ const LearningPath = ({
   const fileName = getShortName(activeFile);
 
   return (
-    <div id="learning-path-panel" className="lp-bar">
+    <div id="learning-path-panel" className={`lp-bar ${isDismissed ? 'dismissed' : ''}`}>
+
       <div className="lp-bar-icon">Target</div>
 
       <div className="lp-bar-main">

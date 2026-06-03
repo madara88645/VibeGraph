@@ -48,14 +48,14 @@ const CodeViewer = ({ code }) => {
             {/* Fullscreen overlay via portal */}
             {isFullscreen && ReactDOM.createPortal(
                 <div className="code-viewer-overlay" onClick={() => setIsFullscreen(false)}>
-                    <div className="code-viewer-fullscreen" onClick={(e) => e.stopPropagation()}>
+                    <div className="code-viewer-fullscreen" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Source Code Preview">
                         <div className="code-viewer-header">
                             <span>Source Code Preview</span>
                             <button
                                 className="code-viewer-expand"
                                 onClick={() => setIsFullscreen(false)}
-                                title="Exit fullscreen"
-                                aria-label="Exit fullscreen"
+                                title="Exit fullscreen (Press Esc)"
+                                aria-label="Exit fullscreen (Press Esc)"
                             >
                                 <span aria-hidden="true">✕</span>
                             </button>

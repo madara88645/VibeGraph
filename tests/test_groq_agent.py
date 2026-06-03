@@ -26,10 +26,16 @@ class TestTryParseJson(unittest.TestCase):
         result = _try_parse_json('   \n  ```json\n{"key": "value"}\n``` \n  ')
         self.assertEqual(result, {"key": "value"})
 
-    def test_invalid_json(self):
+    def test_truncated_object_is_recovered(self):
+        # A response truncated before its closing brace is now repaired rather
+        # than raising, so a model that hits its token limit still yields data.
+        result = _try_parse_json('{"key": "value"')
+        self.assertEqual(result, {"key": "value"})
+
+    def test_unrecoverable_json_raises(self):
         with self.assertRaises(ValueError) as context:
-            _try_parse_json('{"key": "value"')
-        self.assertEqual(str(context.exception), '{"key": "value"')
+            _try_parse_json("no json here at all")
+        self.assertEqual(str(context.exception), "no json here at all")
 
     def test_empty_string(self):
         with self.assertRaises(ValueError) as context:

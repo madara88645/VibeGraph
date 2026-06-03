@@ -2,7 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
+import { fetchWithTimeout, getFriendlyAiErrorMessage } from '../utils/aiClient';
+import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { getShortName } from '../utils/stringUtils';
+
+const CODE_FETCH_TIMEOUT_MS = 15000;
+
+async function readSnippetError(response) {
+    if (response.status === 429) {
+        return 'Too many code requests. Slow down and try again.';
+    }
+
+    let detail = `Code request failed (${response.status})`;
+    try {
+        const payload = await response.json();
+        detail = payload.detail || payload.message || payload.error || detail;
+    } catch {
+        // Keep HTTP fallback when the backend response is not JSON.
+    }
+    return detail;
+}
 
 /**
  * CodePanel — Bottom panel that shows code for the active node.
@@ -28,7 +47,8 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         if (lastFetchedId.current === activeNode.id) return;
 
         const fetchCode = async () => {
-            const filePath = activeNode.data?.file || activeNode.data?.original_data?.file;
+            const nodeContext = buildNodeCodeContext(activeNode);
+            const filePath = nodeContext.file_path;
             if (!filePath) {
                 setCodeData({
                     snippet: `// External: ${activeNode.data?.label || activeNode.id}\n// No source code available`,
@@ -44,21 +64,22 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             setError(null);
 
             try {
-                const response = await fetch('/api/snippet', {
+                const response = await fetchWithTimeout('/api/snippet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        ...nodeContext,
                         file_path: filePath,
                         node_id: activeNode.id,
                     }),
-                });
+                }, CODE_FETCH_TIMEOUT_MS);
 
-                if (!response.ok) throw new Error('Failed to fetch');
+                if (!response.ok) throw new Error(await readSnippetError(response));
                 const data = await response.json();
                 setCodeData(data);
                 lastFetchedId.current = activeNode.id;
             } catch (err) {
-                setError('Could not connect to backend');
+                setError(getFriendlyAiErrorMessage(err, 'Could not connect to backend'));
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -84,22 +105,36 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         }
     }, [codeData]);
 
-    if (!isOpen) {
-        return (
-            <button className="code-panel-toggle" onClick={onToggle} title="Open Code Panel" aria-label="Open Code Panel">
-                <span aria-hidden="true">{'<>'}</span> Code
-            </button>
-        );
-    }
-
     const fileName = getShortName(codeData?.file_path) || '';
     const hasFullSource = codeData?.full_source;
     const startLine = codeData?.start_line;
     const endLine = codeData?.end_line;
     const hasCopyText = Boolean(codeData?.full_source || codeData?.snippet);
 
+    const isExternalOrBuiltin = codeData?.snippet && (
+        codeData.snippet.includes('External or Built-in') ||
+        codeData.snippet.includes('External:') ||
+        codeData.snippet.includes('(External/Built-in)')
+    );
+
+    const isMissingOrInaccessible = codeData?.snippet && (
+        codeData.snippet.includes('not found in') ||
+        codeData.snippet.includes('Error reading file') ||
+        codeData.snippet.includes('Access denied')
+    );
+
     return (
-        <div className={`code-panel ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
+        <>
+            <button
+                className={`code-panel-toggle ${isOpen ? 'hidden' : ''}`}
+                onClick={onToggle}
+                title="Open Code Panel"
+                aria-label="Open Code Panel"
+            >
+                <span aria-hidden="true">{'<>'}</span> Code
+            </button>
+
+            <div className={`code-panel ${isOpen ? 'open' : ''} ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
             {/* Backdrop for fullscreen */}
             {isFullscreen && <div className="code-panel-backdrop" onClick={() => setIsFullscreen(false)} />}
 
@@ -218,8 +253,8 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     <button
                         className="code-panel-close"
                         onClick={() => setIsFullscreen(prev => !prev)}
-                        title={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
-                        aria-label={isFullscreen ? 'Exit fullscreen' : 'Expand code'}
+                        title={isFullscreen ? 'Exit fullscreen (Press Esc)' : 'Expand code'}
+                        aria-label={isFullscreen ? 'Exit fullscreen (Press Esc)' : 'Expand code'}
                     >
                         <span aria-hidden="true">{isFullscreen ? '⊙' : '⛶'}</span>
                     </button>
@@ -261,19 +296,67 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         </div>
                     ) : (
                         // Snippet-only view
-                        <SyntaxHighlighter
-                            language="python"
-                            style={oneDark}
-                            showLineNumbers
-                            customStyle={{
-                                margin: 0,
-                                borderRadius: 0,
-                                background: 'transparent',
-                                fontSize: '0.8rem',
-                            }}
-                        >
-                            {codeData.snippet || '// No code available'}
-                        </SyntaxHighlighter>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px 20px' }}>
+                            {isExternalOrBuiltin && (
+                                <div className="fade-in" style={{
+                                    padding: '14px 16px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(59, 130, 246, 0.06)',
+                                    border: '1px solid rgba(59, 130, 246, 0.15)',
+                                    borderLeft: '4px solid #3b82f6',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>📦</span>
+                                        <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>External or Built-in Module</h4>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                                        This code node belongs to an external library or a built-in Python module outside your project, so local source code is not available. AI explanation will be provided based on name and context.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isMissingOrInaccessible && (
+                                <div className="fade-in" style={{
+                                    padding: '14px 16px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(234, 179, 8, 0.06)',
+                                    border: '1px solid rgba(234, 179, 8, 0.15)',
+                                    borderLeft: '4px solid #eab308',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                                        <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Source File Not Found</h4>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                                        The local source file for this function could not be found or is inaccessible (possibly a temporary path from a demo or a deleted file). AI explanation will be provided based on the available context.
+                                    </p>
+                                </div>
+                            )}
+
+                            <SyntaxHighlighter
+                                language={codeData.language || 'python'}
+                                style={oneDark}
+                                showLineNumbers
+                                customStyle={{
+                                    margin: 0,
+                                    borderRadius: '8px',
+                                    background: 'rgba(0, 0, 0, 0.25)',
+                                    fontSize: '0.8rem',
+                                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                                    padding: '12px',
+                                }}
+                            >
+                                {codeData.snippet || '// No code available'}
+                            </SyntaxHighlighter>
+                        </div>
                     )
                 )}
 
@@ -286,6 +369,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

@@ -1,17 +1,69 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 
-const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes }) => {
-    if (!ghostTutorial || totalNodes === 0) {
-        return null;
-    }
+const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, showTutorial = true, onClose }) => {
+    const shouldShow = showTutorial && ghostTutorial && totalNodes > 0;
 
-    const { runState, currentPhase, acceptance, progressLabel, isComplete } = ghostTutorial;
+    const [isDismissed, setIsDismissed] = useState(!shouldShow);
+    const [isRendered, setIsRendered] = useState(shouldShow);
+
+
+    useEffect(() => {
+        let activeTimer;
+        let activeTransitionTimer;
+
+        if (shouldShow) {
+            activeTimer = setTimeout(() => {
+                setIsDismissed(false);
+                setIsRendered(true);
+            }, 0);
+        } else {
+            activeTimer = setTimeout(() => {
+                setIsDismissed(true);
+                activeTransitionTimer = setTimeout(() => {
+                    setIsRendered(false);
+                }, 250);
+            }, 0);
+        }
+
+        return () => {
+            clearTimeout(activeTimer);
+            clearTimeout(activeTransitionTimer);
+        };
+    }, [shouldShow]);
+
+    if (!isRendered) return null;
+
+    const { runState, currentPhase, acceptance, progressLabel, isComplete } = ghostTutorial || {};
+
+    const handleClose = () => {
+        setIsDismissed(true);
+        if (onClose) {
+            onClose();
+        } else {
+            setTimeout(() => {
+                setIsRendered(false);
+            }, 250);
+        }
+    };
+
 
     return (
         <section
-            className={`ghost-tutorial-panel ghost-tutorial-${runState}`}
+            className={`ghost-tutorial-panel ghost-tutorial-${runState} ${isDismissed ? 'dismissed' : ''}`}
             aria-label="Ghost Runner guided tour"
         >
+            <button
+                className="ghost-tutorial-close-btn"
+                onClick={handleClose}
+                aria-label="Close guided tour"
+                title="Close guided tour"
+            >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
             <header className="ghost-tutorial-header">
                 <span className="ghost-tutorial-badge" aria-hidden="true">
                     {isComplete ? '✓' : '👻'}

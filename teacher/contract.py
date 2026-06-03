@@ -79,6 +79,18 @@ def _coerce_text(value: object) -> str:
     return str(value)
 
 
+def _render_value(value: object) -> str:
+    """Render an arbitrary JSON value (dict/list/scalar) as readable markdown text."""
+    if isinstance(value, dict):
+        return "\n".join(
+            f"- **{str(k).replace('_', ' ').strip().capitalize()}**: {_render_value(v)}"
+            for k, v in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return ", ".join(_render_value(item) for item in value)
+    return _coerce_text(value)
+
+
 def _extract_sections_from_text(text: str) -> dict[str, str]:
     section_map: dict[str, str] = {}
     current: str | None = None
@@ -114,13 +126,13 @@ def _normalize_contract_sections(
         unknowns_list = [_coerce_text(item).strip() for item in unknowns_payload]
     section_map = {
         section: clip_text(
-            _coerce_text(sections_payload.get(section, "")),
+            _render_value(sections_payload.get(section, "")),
             SECTION_BUDGETS[section],
         )
         for section in CHAT_SECTION_ORDER
     }
     references_text = clip_text(
-        _coerce_text(sections_payload.get("References", references.render())),
+        _render_value(sections_payload.get("References", references.render())),
         SECTION_BUDGETS["References"],
         fallback=references.render(),
     )
@@ -179,6 +191,10 @@ def normalize_explain_payload(
     )
     sections = _normalize_contract_sections(parsed, references)
     technical = render_contract_text(sections)
+    technical_raw = parsed.get("technical")
+    if isinstance(technical_raw, (dict, list)) and technical_raw:
+        detail_block = _render_value(technical_raw)
+        technical = f"### Technical Details\n{detail_block}\n\n{technical}"
     return {
         "analogy": analogy,
         "technical": technical,

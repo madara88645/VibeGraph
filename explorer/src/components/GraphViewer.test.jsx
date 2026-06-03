@@ -48,6 +48,8 @@ function renderViewer(props = {}) {
 }
 
 describe('GraphViewer', () => {
+  const graphNode = { id: 'main', data: { label: 'main' }, position: { x: 0, y: 0 } };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -78,21 +80,38 @@ describe('GraphViewer', () => {
     expect(onRequestUpload).toHaveBeenCalledTimes(1);
   });
 
-  it('renders PNG export button', () => {
+  it('does not render export controls before a graph is loaded', () => {
     renderViewer();
-    expect(screen.getByTitle('Export as PNG')).toBeInTheDocument();
+
+    expect(screen.queryByRole('button', { name: 'Export' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Export as SVG' })).not.toBeInTheDocument();
   });
 
-  it('renders SVG export button', () => {
-    renderViewer();
-    expect(screen.getByTitle('Export as SVG')).toBeInTheDocument();
+  it('renders a single export trigger once a graph exists', () => {
+    renderViewer({ nodes: [graphNode] });
+
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Export as SVG' })).not.toBeInTheDocument();
+  });
+
+  it('reveals PNG and SVG actions when export is opened', async () => {
+    const user = userEvent.setup();
+    renderViewer({ nodes: [graphNode] });
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Export as PNG' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Export as SVG' })).toBeInTheDocument();
   });
 
   it('calls exportAsPng and shows success toast when PNG button is clicked', async () => {
     const user = userEvent.setup();
-    renderViewer();
+    renderViewer({ nodes: [graphNode] });
 
-    await user.click(screen.getByRole('button', { name: 'Export as PNG' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export as PNG' }));
 
     await waitFor(() => {
       expect(mockExportAsPng).toHaveBeenCalled();
@@ -104,9 +123,10 @@ describe('GraphViewer', () => {
 
   it('calls exportAsSvg and shows success toast when SVG button is clicked', async () => {
     const user = userEvent.setup();
-    renderViewer();
+    renderViewer({ nodes: [graphNode] });
 
-    await user.click(screen.getByRole('button', { name: 'Export as SVG' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export as SVG' }));
 
     await waitFor(() => {
       expect(mockExportAsSvg).toHaveBeenCalled();
@@ -119,9 +139,10 @@ describe('GraphViewer', () => {
   it('shows error toast when PNG export fails', async () => {
     const user = userEvent.setup();
     mockExportAsPng.mockRejectedValueOnce(new Error('Canvas error'));
-    renderViewer();
+    renderViewer({ nodes: [graphNode] });
 
-    await user.click(screen.getByRole('button', { name: 'Export as PNG' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export as PNG' }));
 
     await waitFor(() => {
       expect(mockAddToast).toHaveBeenCalledWith('PNG export failed', 'error');
@@ -131,20 +152,34 @@ describe('GraphViewer', () => {
   it('shows error toast when SVG export fails', async () => {
     const user = userEvent.setup();
     mockExportAsSvg.mockRejectedValueOnce(new Error('SVG error'));
-    renderViewer();
+    renderViewer({ nodes: [graphNode] });
 
-    await user.click(screen.getByRole('button', { name: 'Export as SVG' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export as SVG' }));
 
     await waitFor(() => {
       expect(mockAddToast).toHaveBeenCalledWith('SVG export failed', 'error');
     });
   });
 
+  it('closes the export menu after choosing PNG', async () => {
+    const user = userEvent.setup();
+    renderViewer({ nodes: [graphNode] });
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export as PNG' }));
+
+    await waitFor(() => {
+      expect(mockExportAsPng).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
+  });
+
   it('calls onNodeClick when a node is clicked', async () => {
     const user = userEvent.setup();
     const onNodeClick = vi.fn();
     renderViewer({
-      nodes: [{ id: 'main', data: { label: 'main' }, position: { x: 0, y: 0 } }],
+      nodes: [graphNode],
       onNodeClick,
     });
 
@@ -154,7 +189,7 @@ describe('GraphViewer', () => {
 
   it('shows a summary warning when the uploaded graph was truncated', () => {
     renderViewer({
-      nodes: [{ id: 'main', data: { label: 'main' }, position: { x: 0, y: 0 } }],
+      nodes: [graphNode],
       graphMeta: {
         truncated: true,
         kept_nodes: 1500,
