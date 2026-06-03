@@ -70,8 +70,6 @@ def test_upload_safe_zip():
     assert "Unsafe zip file detected" not in detail
 
 
-from unittest.mock import patch
-
 def test_upload_too_many_multipart_files():
     """Ensure that uploading too many files directly via multipart is rejected."""
     # MAX_UPLOAD_FILES is 10000, so we create 10001 mock files
