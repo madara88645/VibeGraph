@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -203,6 +204,26 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
     )
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        """Prevent input reflection in validation errors."""
+        errors = exc.errors()
+        safe_errors = []
+        for error in errors:
+            safe_errors.append(
+                {
+                    "loc": error.get("loc"),
+                    "msg": error.get("msg"),
+                    "type": error.get("type"),
+                }
+            )
+        return JSONResponse(
+            status_code=422,
+            content={"detail": safe_errors},
+        )
 
     # Global exception handler
     @application.exception_handler(Exception)
