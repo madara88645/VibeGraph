@@ -118,9 +118,14 @@ def build_learning_path(
     if not normalized_nodes:
         return []
 
-    max_fan_out = max(
-        (len(outgoing[node_id]) for node_id in normalized_nodes), default=0
-    )
+    # PERFORMANCE OPTIMIZATION (Bolt): Replaced max() with generator expression
+    # with an explicit for-loop to eliminate generator allocation overhead.
+    max_fan_out = 0
+    for node_id in normalized_nodes:
+        fan_out = len(outgoing[node_id])
+        if fan_out > max_fan_out:
+            max_fan_out = fan_out
+
     max_fan_in = max(incoming_count.values(), default=0)
     scored: dict[str, dict[str, Any]] = {}
 
