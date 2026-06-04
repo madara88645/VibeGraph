@@ -121,13 +121,18 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     aria-autocomplete="list"
                     aria-activedescendant={isOpen && results[highlightIdx] ? `search-result-${results[highlightIdx].id}` : undefined}
                     className="search-input"
-                    placeholder="Search nodes... (Ctrl+K)"
-                    aria-label="Search nodes (Ctrl+K)"
+                    placeholder="Search nodes..."
+                    aria-label="Search nodes (Press Ctrl+K)"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                 />
+                {!query && (
+                    <kbd className="ghost-choice-kbd" aria-hidden="true" style={{ position: 'absolute', right: '10px', pointerEvents: 'none', background: 'var(--bg-panel)' }}>
+                        Ctrl+K
+                    </kbd>
+                )}
                 {query && (
                     <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search"><span aria-hidden="true">✕</span></button>
                 )}
