@@ -50,7 +50,9 @@ def is_safe_path(path: str) -> bool:
     except ValueError:
         return False
 
-    if _is_within_path(resolved, PROJECT_ROOT) and not _is_within_path(resolved, DEMO_PROJECT_DIR):
+    if _is_within_path(resolved, PROJECT_ROOT) and not _is_within_path(
+        resolved, DEMO_PROJECT_DIR
+    ):
         return False
 
     if _is_within_path(resolved, DEMO_PROJECT_DIR):
