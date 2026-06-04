@@ -117,6 +117,13 @@ def upload_project(
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
     max_upload_size = deps.get_max_upload_bytes()
     MAX_ZIP_FILES = 10000
+    MAX_UPLOAD_FILES = 10000
+
+    if len(files) > MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many files uploaded (max {MAX_UPLOAD_FILES})",
+        )
 
     try:
         profile_mode = request.query_params.get("profile") == "1"
