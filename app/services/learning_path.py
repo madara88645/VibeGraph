@@ -229,7 +229,8 @@ def build_learning_path(
 
     steps = []
     for index, node_id in enumerate(ordered_ids, start=1):
-        step = {key: value for key, value in scored[node_id].items() if key != "_sort"}
+        step = scored[node_id].copy()
+        step.pop("_sort", None)
         step["step"] = index
         steps.append(step)
 
@@ -277,7 +278,10 @@ def refine_learning_path_with_ai(
             merged_window.append(step)
 
     merged = merged_window + baseline_steps[window_size:]
-    merged = [{**step, "step": index} for index, step in enumerate(merged, start=1)]
+    merged = [
+        {**step, "step": index} if step.get("step") != index else step
+        for index, step in enumerate(merged, start=1)
+    ]
     if nodes is not None and edges is not None:
         from app.services.learning_path_quality import apply_learning_path_quality
 
