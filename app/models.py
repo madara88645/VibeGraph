@@ -52,7 +52,7 @@ class ExplainRequest(BaseModel):
 
     @field_validator("model", mode="before")
     @classmethod
-    def normalize_model(cls, value: str | None) -> str | None:
+    def normalize_model_explain(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
     @field_validator("node_id", "file_path", mode="before", check_fields=False)
@@ -66,7 +66,7 @@ class ExplainRequest(BaseModel):
 
     @field_validator("callers", "callees", "neighbors")
     @classmethod
-    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+    def validate_node_context_lists_base(cls, values: list[str]) -> list[str]:
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
@@ -157,7 +157,7 @@ class ChatRequest(BaseModel):
 
     @field_validator("model", mode="before")
     @classmethod
-    def normalize_model(cls, value: str | None) -> str | None:
+    def normalize_model_chat(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
     @field_validator("node_id", "file_path", mode="before", check_fields=False)
@@ -197,7 +197,7 @@ class ChatRequest(BaseModel):
 
     @field_validator("callers", "callees", "neighbors")
     @classmethod
-    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+    def validate_node_context_lists_chat(cls, values: list[str]) -> list[str]:
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
@@ -231,7 +231,7 @@ class LearningPathRequest(BaseModel):
 
     @field_validator("model", mode="before")
     @classmethod
-    def normalize_model(cls, value: str | None) -> str | None:
+    def normalize_model_learning(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
     @field_validator("file_path", "selected_file", mode="before", check_fields=False)
@@ -281,7 +281,7 @@ class GhostNarrateRequest(BaseModel):
 
     @field_validator("model", mode="before")
     @classmethod
-    def normalize_model(cls, value: str | None) -> str | None:
+    def normalize_model_ghost(cls, value: str | None) -> str | None:
         return _normalize_model_name(value)
 
     @field_validator(
