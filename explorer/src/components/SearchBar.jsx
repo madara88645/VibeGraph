@@ -123,6 +123,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     className="search-input"
                     placeholder="Search nodes..."
                     aria-label="Search nodes (Press Ctrl+K)"
+                    title="Search nodes (Press Ctrl+K)"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHighlightIdx(0); }}
                     onFocus={() => setIsOpen(true)}

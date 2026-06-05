@@ -78,3 +78,7 @@
 ## 2024-05-25 - Appending keyboard shortcuts to Title and Aria-Label
 **Learning:** When indicating keyboard shortcuts via visually hidden `<kbd>` tags inside interactive elements, screen readers may not announce the hidden text natively, leaving non-sighted users unaware of the keyboard shortcut options.
 **Action:** When defining interactive options that have explicit keyboard shortcuts, dynamically build both the `title` and `aria-label` strings to append the shortcut hint (e.g. `(Press 1)`), ensuring screen reader users and mouse users have parity on keyboard affordances.
+
+## 2024-05-15 - Adding title attributes to inputs with keyboard shortcuts
+**Learning:** Adding a `title` attribute matching the `aria-label` on inputs with visual shortcuts (like SearchBar) provides critical hover context for mouse users who might not recognize the visual `<kbd>` representation or understand what the input does without screen reader context.
+**Action:** Always add a `title` attribute matching the `aria-label` (including the keyboard shortcut hint) to interactive elements that have visually hidden or `aria-hidden` shortcut indicators.
