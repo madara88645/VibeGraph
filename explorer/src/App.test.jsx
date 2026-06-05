@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
@@ -8,6 +8,41 @@ const mockOnResetSimulation = vi.fn();
 const mockSetIsPlaying = vi.fn();
 const mockSetActiveNodeId = vi.fn();
 const mockHandleUploadSuccess = vi.fn();
+let resizeObserverCallback = null;
+let headerBottom = 72;
+
+const graphDataState = {
+  allNodes: [],
+  allNodesMap: new Map(),
+  allEdges: [],
+  selectedFile: null,
+  setSelectedFile: vi.fn(),
+  files: [],
+  nodeStats: {},
+  fileDependencies: [],
+  handleUploadSuccess: mockHandleUploadSuccess,
+  currentDegreeMap: {},
+  graphMeta: {},
+};
+
+const nodeInteractionState = {
+  selectedNode: null,
+  setSelectedNode: vi.fn(),
+  explanation: null,
+  loading: false,
+  codePanelOpen: false,
+  setCodePanelOpen: vi.fn(),
+  codePanelNode: null,
+  setCodePanelNode: vi.fn(),
+  chatOpen: false,
+  setChatOpen: vi.fn(),
+  learningPathOpen: false,
+  setLearningPathOpen: vi.fn(),
+  fetchExplanation: vi.fn(),
+  handleSelectNode: vi.fn(),
+  onNodeClick: vi.fn(),
+  resetInteractionState: vi.fn(),
+};
 
 vi.mock('reactflow', () => ({
   ReactFlowProvider: ({ children }) => <>{children}</>,
@@ -24,24 +59,7 @@ vi.mock('./hooks/useToast', () => ({
 }));
 
 vi.mock('./hooks/useNodeInteraction', () => ({
-  useNodeInteraction: () => ({
-    selectedNode: null,
-    setSelectedNode: vi.fn(),
-    explanation: null,
-    loading: false,
-    codePanelOpen: false,
-    setCodePanelOpen: vi.fn(),
-    codePanelNode: null,
-    setCodePanelNode: vi.fn(),
-    chatOpen: false,
-    setChatOpen: vi.fn(),
-    learningPathOpen: false,
-    setLearningPathOpen: vi.fn(),
-    fetchExplanation: vi.fn(),
-    handleSelectNode: vi.fn(),
-    onNodeClick: vi.fn(),
-    resetInteractionState: vi.fn(),
-  }),
+  useNodeInteraction: () => nodeInteractionState,
 }));
 
 vi.mock('./hooks/useGhostRunner', () => ({
@@ -71,18 +89,7 @@ vi.mock('./hooks/useGhostRunner', () => ({
 }));
 
 vi.mock('./hooks/useGraphData', () => ({
-  useGraphData: () => ({
-    allNodes: [],
-    allNodesMap: new Map(),
-    allEdges: [],
-    selectedFile: null,
-    setSelectedFile: vi.fn(),
-    files: [],
-    nodeStats: {},
-    fileDependencies: [],
-    handleUploadSuccess: mockHandleUploadSuccess,
-    currentDegreeMap: {},
-  }),
+  useGraphData: () => graphDataState,
 }));
 
 vi.mock('./components/GraphViewer', () => ({
@@ -101,7 +108,11 @@ vi.mock('./components/ChatDrawer', () => ({
   default: ({ isOpen }) => <div>ChatDrawer:{isOpen ? 'open' : 'closed'}</div>,
 }));
 vi.mock('./components/LearningPath', () => ({
-  default: ({ isOpen }) => <div>LearningPath:{isOpen ? 'open' : 'closed'}</div>,
+  default: ({ isOpen, topOffset }) => (
+    <div data-testid="learning-path" data-open={isOpen ? 'open' : 'closed'} data-top-offset={String(topOffset)}>
+      LearningPath:{isOpen ? 'open' : 'closed'}
+    </div>
+  ),
 }));
 vi.mock('./components/SimulationControls', () => ({ default: () => <div>SimulationControls</div> }));
 vi.mock('./components/GhostNarration', () => ({ default: () => null }));
@@ -133,6 +144,8 @@ vi.mock('./components/ProjectUpload', () => ({
 describe('App upload flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resizeObserverCallback = null;
+    headerBottom = 72;
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
@@ -146,8 +159,39 @@ describe('App upload flow', () => {
           requiresUserKey: true,
         }),
     });
+    globalThis.ResizeObserver = class {
+      constructor(callback) {
+        resizeObserverCallback = callback;
+      }
+
+      observe() {}
+      disconnect() {}
+    };
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect() {
+      if (this.classList?.contains('vibe-header')) {
+        return { top: 16, bottom: headerBottom, left: 16, right: 600, width: 584, height: headerBottom - 16 };
+      }
+
+      return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 };
+    });
     sessionStorage.clear();
     localStorage.clear();
+    Object.assign(graphDataState, {
+      allNodes: [],
+      allNodesMap: new Map(),
+      allEdges: [],
+      selectedFile: null,
+      graphMeta: {},
+    });
+    Object.assign(nodeInteractionState, {
+      selectedNode: null,
+      explanation: null,
+      loading: false,
+      codePanelOpen: false,
+      codePanelNode: null,
+      chatOpen: false,
+      learningPathOpen: false,
+    });
     mockHandleUploadSuccess.mockImplementation((result, resetCallback) => {
       resetCallback?.(result);
     });
@@ -198,5 +242,34 @@ describe('App upload flow', () => {
     render(<App />);
 
     expect(await screen.findByText('Model: gemini-3.1-flash-lite')).toBeInTheDocument();
+  });
+
+  it('renders Learning Path inside the graph shell and updates its top offset from header size', async () => {
+    graphDataState.allNodes = [{ id: 'main', data: { label: 'main', file: 'repo/main.py' } }];
+    graphDataState.allNodesMap = new Map([['main', graphDataState.allNodes[0]]]);
+    nodeInteractionState.learningPathOpen = true;
+
+    const { container } = render(<App />);
+
+    const learningPath = await screen.findByTestId('learning-path');
+    const graphShell = container.querySelector('.graph-shell');
+
+    expect(graphShell).not.toBeNull();
+    expect(graphShell?.contains(learningPath)).toBe(true);
+    await waitFor(() => {
+      expect(learningPath).toHaveAttribute('data-top-offset', '84');
+    });
+    await waitFor(() => {
+      expect(typeof resizeObserverCallback).toBe('function');
+    });
+
+    headerBottom = 96;
+    act(() => {
+      resizeObserverCallback?.([]);
+    });
+
+    await waitFor(() => {
+      expect(learningPath).toHaveAttribute('data-top-offset', '108');
+    });
   });
 });

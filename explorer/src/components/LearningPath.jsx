@@ -18,6 +18,7 @@ const LearningPath = ({
   onToggle,
   apiKey,
   selectedModel,
+  topOffset = 84,
 }) => {
   const [steps, setSteps] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -121,7 +122,11 @@ const LearningPath = ({
   const fileName = getShortName(activeFile);
 
   return (
-    <div id="learning-path-panel" className={`lp-bar ${isDismissed ? 'dismissed' : ''}`}>
+    <div
+      id="learning-path-panel"
+      className={`lp-bar ${isDismissed ? 'dismissed' : ''}`}
+      style={{ top: `${topOffset}px` }}
+    >
 
       <div className="lp-bar-icon">Target</div>
 

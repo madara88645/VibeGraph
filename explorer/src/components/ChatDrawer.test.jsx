@@ -62,6 +62,25 @@ describe('ChatDrawer', () => {
     expect(screen.getByLabelText('Open Chat')).toBeInTheDocument();
   });
 
+  it('uses inherited icon color for the FAB instead of a hardcoded white style', () => {
+    render(
+      <ChatDrawer
+        selectedNode={null}
+        allNodes={[]}
+        isOpen={false}
+        onToggle={vi.fn()}
+        apiKey="test-key"
+        selectedModel="anthropic/claude-haiku-4.5"
+        aiReady={true}
+        onOpenAiSettings={vi.fn()}
+      />
+    );
+
+    const fabIcon = screen.getByLabelText('Open Chat').querySelector('svg');
+    expect(fabIcon).toBeTruthy();
+    expect(fabIcon?.getAttribute('style')).toBeNull();
+  });
+
   it('calls onToggle when FAB is clicked', async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();

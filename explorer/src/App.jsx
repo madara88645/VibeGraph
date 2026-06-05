@@ -43,6 +43,7 @@ function AppInner() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { theme, toggleTheme } = useTheme();
   const uploadRef = useRef(null);
+  const headerRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
@@ -52,6 +53,7 @@ function AppInner() {
   const [draftModel, setDraftModel] = useState(() => getStoredModel());
   const [aiConfig, setAiConfig] = useState(DEFAULT_AI_CONFIG);
   const [aiConfigError, setAiConfigError] = useState('');
+  const [learningPathTopOffset, setLearningPathTopOffset] = useState(84);
   const [showFirstSteps, setShowFirstSteps] = useState(true);
   const [showTutorial, setShowTutorial] = useState(true);
 
@@ -178,6 +180,40 @@ function AppInner() {
   } = useGraphData(setNodes, setEdges);
 
   const hasGraph = allNodes.length > 0 || allEdges.length > 0;
+
+  useEffect(() => {
+    if (!hasGraph) {
+      return;
+    }
+
+    const headerElement = headerRef.current;
+    if (!headerElement) {
+      return;
+    }
+
+    const updateLearningPathOffset = () => {
+      const { bottom } = headerElement.getBoundingClientRect();
+      setLearningPathTopOffset(Math.max(84, Math.round(bottom + 12)));
+    };
+
+    updateLearningPathOffset();
+
+    if (typeof ResizeObserver === 'function') {
+      const resizeObserver = new ResizeObserver(() => {
+        updateLearningPathOffset();
+      });
+      resizeObserver.observe(headerElement);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+
+    window.addEventListener('resize', updateLearningPathOffset);
+    return () => {
+      window.removeEventListener('resize', updateLearningPathOffset);
+    };
+  }, [hasGraph]);
 
   const {
     selectedNode,
@@ -308,7 +344,10 @@ function AppInner() {
           </svg>
         </button>
 
-        <div className={`vibe-header ${hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact'}`}>
+        <div
+          ref={headerRef}
+          className={`vibe-header ${hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact'}`}
+        >
           <button
             className="hamburger-btn"
             onClick={handleToggleSidebar}
@@ -392,6 +431,22 @@ function AppInner() {
         </div>
 
         <div className="graph-shell">
+          {hasGraph ? (
+            <LearningPath
+              selectedFile={selectedFile}
+              allNodes={allNodes}
+              allNodesMap={allNodesMap}
+              allEdges={allEdges}
+              onSelectNode={handleSelectNode}
+              onSelectFile={setSelectedFile}
+              isOpen={learningPathOpen}
+              onToggle={handleCloseLearningPath}
+              apiKey={apiKey}
+              selectedModel={effectiveModel}
+              topOffset={learningPathTopOffset}
+            />
+          ) : null}
+
           {hasGraph && showFirstSteps ? (
             <div
               className="first-steps-banner"
@@ -497,23 +552,6 @@ function AppInner() {
           />
         ) : null}
       </div>
-
-      {hasGraph ? (
-        <LearningPath
-          selectedFile={selectedFile}
-          allNodes={allNodes}
-          allNodesMap={allNodesMap}
-          allEdges={allEdges}
-          onSelectNode={handleSelectNode}
-          onSelectFile={setSelectedFile}
-          isOpen={learningPathOpen}
-          onToggle={handleCloseLearningPath}
-          apiKey={apiKey}
-          selectedModel={effectiveModel}
-          aiReady={aiReady}
-          onOpenAiSettings={openAiSettings}
-        />
-      ) : null}
 
       <AISettingsModal
         isOpen={aiSettingsOpen}

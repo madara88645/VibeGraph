@@ -41,6 +41,7 @@ function renderLearningPath(props = {}) {
     onToggle: vi.fn(),
     apiKey: '',
     selectedModel: 'anthropic/claude-haiku-4.5',
+    topOffset: 84,
     aiReady: false,
     onOpenAiSettings: vi.fn(),
   };
@@ -96,6 +97,14 @@ describe('LearningPath', () => {
     expect(body.nodes).toEqual(NODES);
     expect(body.edges).toEqual(EDGES);
     expect(body.selected_file).toBe('repo/main.py');
+  });
+
+  it('positions the panel using the provided top offset', () => {
+    renderLearningPath({ allNodes: [], topOffset: 132 });
+
+    expect(screen.getByLabelText('Close Learning Path').closest('#learning-path-panel')).toHaveStyle({
+      top: '132px',
+    });
   });
 
   it('renders step reason and selects returned node/file on navigation', async () => {
