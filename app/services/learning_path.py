@@ -191,10 +191,6 @@ def build_learning_path(
     heappush = heapq.heappush
     heappop = heapq.heappop
 
-    # PERFORMANCE OPTIMIZATION (Bolt): Replace O(N) list comprehension inside the loop
-    # with an O(1) unvisited set to eliminate O(N^2) overhead during fallback traversal.
-    unvisited_set = set(scored)
-
     def push(n_id: str) -> None:
         if n_id not in visited and n_id not in enqueued:
             enqueued.add(n_id)
@@ -272,7 +268,8 @@ def refine_learning_path_with_ai(
             merged_window.append(step)
 
     merged = merged_window + baseline_steps[window_size:]
-    merged = [{**step, "step": index} for index, step in enumerate(merged, start=1)]
+    for index, step in enumerate(merged, start=1):
+        step["step"] = index
     if nodes is not None and edges is not None:
         from app.services.learning_path_quality import apply_learning_path_quality
 
