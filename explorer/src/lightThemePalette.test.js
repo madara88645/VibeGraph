@@ -52,4 +52,16 @@ describe('light theme palette', () => {
     const vars = getLightThemeVariables();
     expect(relativeLuminance(vars['color-bg'])).toBeLessThan(0.88);
   });
+
+  it('defines light-theme chat FAB tokens and uses them in chat FAB styles', () => {
+    const vars = getLightThemeVariables();
+
+    expect(vars['chat-fab-bg']).toBeDefined();
+    expect(vars['chat-fab-text']).toBeDefined();
+    expect(vars['chat-fab-shadow']).toBeDefined();
+    expect(vars['chat-fab-shadow-strong']).toBeDefined();
+    expect(cssSource).toMatch(/\.chat-fab\s*\{[\s\S]*background:\s*var\(--chat-fab-bg\)/);
+    expect(cssSource).toMatch(/\.chat-fab\s*\{[\s\S]*color:\s*var\(--chat-fab-text\)/);
+    expect(cssSource).toMatch(/\.chat-fab\s*\{[\s\S]*box-shadow:\s*var\(--chat-fab-shadow\)/);
+  });
 });
