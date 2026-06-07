@@ -163,12 +163,21 @@ const LearningPath = ({
               <span className="lp-bar-step">
                 Step {currentStep + 1}/{steps.length}:
               </span>
-              <span className="lp-bar-node">
+              <span
+                className="lp-bar-node"
+                title={activeStep.node_name || activeStep.node_id}
+              >
                 {activeStep.node_name || activeStep.node_id}
               </span>
-              {fileName ? <span className="lp-bar-file">{fileName}</span> : null}
+              {fileName ? (
+                <span className="lp-bar-file" title={activeFile || fileName}>
+                  {fileName}
+                </span>
+              ) : null}
               {activeStep.reason ? (
-                <span className="lp-bar-reason">{activeStep.reason}</span>
+                <span className="lp-bar-reason" title={activeStep.reason}>
+                  {activeStep.reason}
+                </span>
               ) : null}
             </>
           ) : (

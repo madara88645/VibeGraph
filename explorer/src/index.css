@@ -1592,7 +1592,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 200px;
+  flex: 1 1 auto;
+  min-width: 0;
   justify-content: center;
 }
 
@@ -1621,6 +1622,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 0.75rem;
   white-space: nowrap;
@@ -1629,17 +1631,21 @@ body {
 .lp-bar-step {
   color: var(--text-muted);
   font-weight: 500;
+  flex: 0 0 auto;
 }
 
 .lp-bar-node {
   color: var(--text-primary);
   font-weight: 600;
+  flex: 0 1 auto;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .lp-bar-file {
   color: var(--text-muted);
+  flex: 0 1 auto;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1647,7 +1653,8 @@ body {
 
 .lp-bar-reason {
   color: var(--text-secondary);
-  max-width: 360px;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -3775,11 +3782,15 @@ body {
 
   .lp-bar-main {
     min-width: 0;
-    flex: 1;
+    flex: 1 1 auto;
   }
 
   .lp-bar-info {
     overflow: hidden;
+  }
+
+  .lp-bar-node {
+    max-width: 30vw;
   }
 
   .lp-bar-file {
@@ -3787,7 +3798,8 @@ body {
   }
 
   .lp-bar-reason {
-    max-width: 34vw;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .code-panel,

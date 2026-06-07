@@ -125,6 +125,31 @@ describe('LearningPath', () => {
     expect(screen.getByText('Then follow the call to helper.')).toBeInTheDocument();
   });
 
+  it('exposes the full step description via a title attribute for truncated text', async () => {
+    const longReason =
+      'Start with the web entry point (web.js) as it is the external interface that wires routing, middleware and the request lifecycle together.';
+    globalThis.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          steps: [
+            {
+              step: 1,
+              node_id: 'main',
+              node_name: 'main',
+              file_path: 'repo/main.py',
+              reason: longReason,
+            },
+          ],
+        }),
+    });
+
+    renderLearningPath();
+
+    const reason = await screen.findByText(longReason);
+    expect(reason).toHaveAttribute('title', longReason);
+  });
+
   it('fetches learning path when no file is selected but nodes exist (repo-wide path)', async () => {
     renderLearningPath({ selectedFile: null });
 
