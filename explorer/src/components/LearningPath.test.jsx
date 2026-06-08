@@ -125,9 +125,28 @@ describe('LearningPath', () => {
     expect(screen.getByText('Then follow the call to helper.')).toBeInTheDocument();
   });
 
-  it('exposes the full step description via a title attribute for truncated text', async () => {
-    const longReason =
-      'Start with the web entry point (web.js) as it is the external interface that wires routing, middleware and the request lifecycle together.';
+  it('renders separate controls, metadata, and description regions for the active step', async () => {
+    renderLearningPath();
+
+    const controls = await screen.findByTestId('learning-path-controls');
+    const metadata = screen.getByTestId('learning-path-metadata');
+    const description = screen.getByTestId('learning-path-description');
+
+    expect(controls).toBeInTheDocument();
+    expect(metadata).toBeInTheDocument();
+    expect(description).toBeInTheDocument();
+
+    expect(screen.getByLabelText('Previous step')).toBeVisible();
+    expect(screen.getByLabelText('Next step')).toBeVisible();
+    expect(screen.getByLabelText('Close Learning Path')).toBeVisible();
+    expect(metadata).toHaveTextContent('main');
+    expect(metadata).toHaveTextContent('main.py');
+    expect(description).toHaveTextContent('Start at the real entry point.');
+  });
+
+  it('exposes full node, file, and description values via title tooltips', async () => {
+    const longReason = 'Trace the real entry point before branching into helper logic so the learning path has clear context.';
+
     globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: () =>
@@ -146,8 +165,13 @@ describe('LearningPath', () => {
 
     renderLearningPath();
 
-    const reason = await screen.findByText(longReason);
-    expect(reason).toHaveAttribute('title', longReason);
+    const metadata = await screen.findByTestId('learning-path-metadata');
+    const description = screen.getByTestId('learning-path-description');
+
+    expect(screen.getByText('main')).toHaveAttribute('title', 'main');
+    expect(screen.getByText('main.py')).toHaveAttribute('title', 'repo/main.py');
+    expect(metadata).toBeInTheDocument();
+    expect(description).toHaveAttribute('title', longReason);
   });
 
   it('fetches learning path when no file is selected but nodes exist (repo-wide path)', async () => {
