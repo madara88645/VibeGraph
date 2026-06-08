@@ -112,7 +112,12 @@ const ChatDrawer = ({
 
     const userMsg = { role: 'user', content: text };
     const nextMessages = [...messages, userMsg];
-    setMessages([...nextMessages, { role: 'assistant', content: '' }]);
+    // Show the user's message immediately. The assistant reply is appended
+    // once a response arrives; we intentionally do NOT insert an empty
+    // assistant placeholder so the user bubble is never masked by an empty
+    // markdown render (issue #436). While loading, the typing indicator is
+    // driven off the trailing user message instead.
+    setMessages(nextMessages);
     setInputText('');
     setLoading(true);
 
@@ -233,10 +238,16 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             }
             assistantContent += eventData;
           }
-          setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
         }
 
-        persistMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
+        // Append the assistant reply alongside the user message. If the
+        // stream produced nothing, keep just the user message so an empty
+        // response never wipes the user's question (issue #436).
+        const finalMessages = assistantContent
+          ? [...nextMessages, { role: 'assistant', content: assistantContent }]
+          : nextMessages;
+        setMessages(finalMessages);
+        persistMessages(finalMessages);
       }
     } catch (error) {
       const errorMessage = getFriendlyAiErrorMessage(
@@ -388,7 +399,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             </div>
           ))}
 
-          {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
+          {loading && messages[messages.length - 1]?.role === 'user' ? (
             <div className="chat-message chat-message-assistant">
               <div className="chat-bubble chat-typing">
                 <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
