@@ -78,3 +78,7 @@
 ## 2024-05-25 - Appending keyboard shortcuts to Title and Aria-Label
 **Learning:** When indicating keyboard shortcuts via visually hidden `<kbd>` tags inside interactive elements, screen readers may not announce the hidden text natively, leaving non-sighted users unaware of the keyboard shortcut options.
 **Action:** When defining interactive options that have explicit keyboard shortcuts, dynamically build both the `title` and `aria-label` strings to append the shortcut hint (e.g. `(Press 1)`), ensuring screen reader users and mouse users have parity on keyboard affordances.
+
+## 2026-06-01 - Decorative Carets in Custom Dropdowns
+**Learning:** Custom dropdown triggers often use text characters like '▼' to indicate an expansion state. Without `aria-hidden="true"`, screen readers announce this as 'black down-pointing triangle', which is redundant if the button already uses `aria-expanded` to communicate its state.
+**Action:** Always apply `aria-hidden="true"` to decorative visual indicators (like carets or arrows) inside custom dropdowns or accordions that already expose their state via ARIA attributes.
