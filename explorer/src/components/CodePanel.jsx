@@ -310,7 +310,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '1.2rem' }}>📦</span>
+                                        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">📦</span>
                                         <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>External or Built-in Module</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
@@ -332,7 +332,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                                        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">🔍</span>
                                         <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Source File Not Found</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>

@@ -169,7 +169,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     margin: '10px 0'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '1.5rem' }}>{errorIcon}</span>
+                        <span style={{ fontSize: '1.5rem' }} aria-hidden="true">{errorIcon}</span>
                         <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
                     </div>
                     <div className="markdown-content" style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
@@ -184,7 +184,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         borderLeft: '2px solid rgba(252, 165, 165, 0.3)',
                         marginBottom: '14px'
                     }}>
-                        <strong>💡 Suggestion:</strong> {errorTakeaway}
+                        <strong><span aria-hidden="true">💡</span> Suggestion:</strong> {errorTakeaway}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {showSettingsBtn && onOpenAiSettings && (
@@ -204,7 +204,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.filter = 'brightness(1.1)'}
                                 onMouseLeave={(e) => e.target.style.filter = 'none'}
                             >
-                                ⚙️ Open AI Settings
+                                <span aria-hidden="true">⚙️</span> Open AI Settings
                             </button>
                         )}
                         {showRetryBtn && (
@@ -224,7 +224,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.12)'}
                                 onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.08)'}
                             >
-                                🔄 Retry
+                                <span aria-hidden="true">🔄</span> Retry
                             </button>
                         )}
                     </div>
@@ -251,7 +251,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                             }}>
-                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                         </div>
                     )}
@@ -269,7 +269,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
                              }}>
-                                <strong style={{ color: 'var(--text-primary)' }}>💡 Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
                                 <div style={{ marginTop: '12px' }}>
