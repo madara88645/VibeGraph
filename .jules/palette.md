@@ -82,3 +82,6 @@
 ## 2026-06-01 - Decorative Carets in Custom Dropdowns
 **Learning:** Custom dropdown triggers often use text characters like '▼' to indicate an expansion state. Without `aria-hidden="true"`, screen readers announce this as 'black down-pointing triangle', which is redundant if the button already uses `aria-expanded` to communicate its state.
 **Action:** Always apply `aria-hidden="true"` to decorative visual indicators (like carets or arrows) inside custom dropdowns or accordions that already expose their state via ARIA attributes.
+## 2026-06-09 - Add Enter shortcut hint to Chat Drawer send button
+**Learning:** Adding a keyboard shortcut hint to the tooltip or accessible name improves the UX for users who prefer keyboard navigation, making it clearer what the default action is. Modifying the accessible name requires updating the corresponding tests that rely on `getByRole` queries for exact names.
+**Action:** Always verify corresponding UI tests when modifying accessible names or text content of components.

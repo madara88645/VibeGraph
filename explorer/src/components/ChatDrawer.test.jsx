@@ -159,7 +159,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
-    expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send message (Enter)' })).not.toBeDisabled();
   });
 
   it('blocks API send without selected node and shows guidance', async () => {
@@ -190,7 +190,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     expect(onOpenAiSettings).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -228,7 +228,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     expect(screen.getByText('What is main?')).toBeInTheDocument();
     const [, options] = globalThis.fetch.mock.calls[0];
@@ -254,7 +254,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'test question'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     await waitFor(() => {
       expect(screen.getByText('Fallback answer')).toBeInTheDocument();
@@ -268,7 +268,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'test');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     await waitFor(() => {
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument();
@@ -345,7 +345,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Why?');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     await waitFor(() =>
       expect(screen.getByText('Because reasons')).toBeInTheDocument()
@@ -375,7 +375,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Anyone there?');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     await waitFor(() =>
       expect(
@@ -392,7 +392,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Still here?');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
 
     await waitFor(() =>
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument()
@@ -415,7 +415,7 @@ describe('ChatDrawer', () => {
     const { rerender } = renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Remember me');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
     await waitFor(() => expect(screen.getByText('Stored reply')).toBeInTheDocument());
 
     const baseProps = {

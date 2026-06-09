@@ -299,7 +299,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       ? 'Select a graph node to send'
       : !inputText.trim()
         ? 'Type a message to send'
-        : 'Send message';
+        : 'Send message (Enter)';
 
   return (
     <>
