@@ -410,7 +410,8 @@ export function useGhostRunner(
         // and subsequent O(N) loop with a single O(N) pass to populate both the Map and entryPoints.
         const nodesMap = new Map();
         const entryPoints = [];
-        for (let i = 0; i < nodes.length; i++) {
+        const len = nodes.length;
+        for (let i = 0; i < len; i++) {
             const n = nodes[i];
             nodesMap.set(n.id, n);
             if (n.data?.entry_point) {
