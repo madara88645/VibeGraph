@@ -292,6 +292,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
 
   const hasSelectedNode = Boolean(selectedNode?.id);
   const canSend = hasSelectedNode && !loading && Boolean(inputText.trim());
+  const chatInputHelpId = 'chat-input-shortcuts';
 
   const sendDisabledReason = loading
     ? 'Waiting for AI response...'
@@ -300,6 +301,8 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       : !inputText.trim()
         ? 'Type a message to send'
         : 'Send message';
+  const sendButtonLabel = canSend ? 'Send message' : sendDisabledReason;
+  const showShortcutHint = hasSelectedNode && !loading;
 
   return (
     <>
@@ -425,21 +428,50 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             className="chat-input"
             placeholder={hasSelectedNode ? 'Ask a question...' : NO_NODE_PLACEHOLDER}
             aria-label="Chat input"
+            aria-describedby={hasSelectedNode ? chatInputHelpId : undefined}
             value={inputText}
             onChange={(event) => setInputText(event.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
           />
+          {hasSelectedNode ? (
+            <span
+              id={chatInputHelpId}
+              style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}
+            >
+              Press Enter to send. Press Shift+Enter to add a new line.
+            </span>
+          ) : null}
           <span
-            style={{ display: 'inline-flex' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             className="chat-send-wrapper"
-            title={sendDisabledReason}
+            title={sendButtonLabel}
           >
+            {showShortcutHint ? (
+              <span
+                aria-hidden="true"
+                style={{
+                  padding: '5px 8px',
+                  borderRadius: '999px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.01em',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                  opacity: canSend ? 1 : 0.7,
+                }}
+              >
+                Enter
+              </span>
+            ) : null}
             <button
               className="chat-send"
               onClick={sendMessage}
               disabled={!canSend}
-              aria-label={sendDisabledReason}
+              aria-label={sendButtonLabel}
             >
               <span aria-hidden="true">
                 {loading ? (

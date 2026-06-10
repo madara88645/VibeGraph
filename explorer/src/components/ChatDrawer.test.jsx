@@ -162,6 +162,28 @@ describe('ChatDrawer', () => {
     expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
   });
 
+  it('shows a visible Enter shortcut hint without changing the send button name', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
+
+    expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument();
+    expect(screen.getByText('Enter')).toBeVisible();
+  });
+
+  it('adds chat input help text that explains Enter and Shift+Enter behavior', () => {
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    const input = screen.getByLabelText('Chat input');
+    const helpId = input.getAttribute('aria-describedby');
+
+    expect(helpId).toBeTruthy();
+    expect(document.getElementById(helpId)).toHaveTextContent(
+      'Press Enter to send. Press Shift+Enter to add a new line.'
+    );
+  });
+
   it('blocks API send without selected node and shows guidance', async () => {
     const user = userEvent.setup();
     renderDrawer({ selectedNode: null, allNodes: [MOCK_NODE] });
@@ -292,6 +314,17 @@ describe('ChatDrawer', () => {
     await user.type(input, 'Enter key test{Enter}');
 
     expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('does not send the message on Shift+Enter and keeps the newline in the input', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    const input = screen.getByPlaceholderText('Ask a question...');
+    await user.type(input, 'Line 1{Shift>}{Enter}{/Shift}Line 2');
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(input).toHaveValue('Line 1\nLine 2');
   });
 
   it('resets messages when selected node changes', async () => {
