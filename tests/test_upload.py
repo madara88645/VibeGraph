@@ -96,6 +96,7 @@ def test_cleanup_tmp_dir_not_exists():
 def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
     """Test that cleanup_tmp_dir passes onexc to shutil.rmtree."""
     from app.routers.upload import _handle_rmtree_error
+
     tmp_dir = tempfile.mkdtemp()
     assert os.path.exists(tmp_dir)
 
