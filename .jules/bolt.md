@@ -125,3 +125,7 @@
 ## 2024-05-28 - Optimize Graph Traversal Fallback with O(1) Sets
 **Learning:** In graph traversal algorithms (like `build_learning_path`), repeatedly finding unvisited nodes inside a loop using an O(N) list comprehension like `[nid for nid in scored if nid not in visited]` creates a severe O(N²) time complexity bottleneck when the graph contains many isolated nodes or disconnected components.
 **Action:** Replace the O(N) list comprehension with an O(1) tracking set. Initialize an `unvisited_set = set(all_nodes)` before the loop, and use `.discard(node_id)` whenever a node is visited. This reduces the fallback search to O(1) set operations, drastically improving performance on sparse or disconnected graphs.
+
+## 2024-05-29 - O(N) Array Iteration Dictionary Comprehension Replacement
+**Learning:** In performance-critical Python paths, replacing a dictionary comprehension that filters and copies a dictionary (`{key: value for key, value in dict.items() if key != "exclude_key"}`) with a native `dict.copy()` followed by `dict.pop("exclude_key", None)` leverages C-optimized implementations. This significantly reduces interpreter overhead by avoiding the manual Python bytecode loop over every item in the dictionary.
+**Action:** Use `.copy()` and `.pop()` to copy and modify dictionaries instead of dictionary comprehensions where possible, especially inside large loops.
