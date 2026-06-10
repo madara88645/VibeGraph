@@ -94,13 +94,14 @@ def test_cleanup_tmp_dir_not_exists():
 
 @patch("app.routers.upload.shutil.rmtree")
 def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
-    """Test that cleanup_tmp_dir passes ignore_errors=True to shutil.rmtree."""
+    """Test that cleanup_tmp_dir passes onexc to shutil.rmtree."""
+    from app.routers.upload import _handle_rmtree_error
     tmp_dir = tempfile.mkdtemp()
     assert os.path.exists(tmp_dir)
 
     cleanup_tmp_dir(tmp_dir)
 
-    mock_rmtree.assert_called_once_with(tmp_dir, ignore_errors=True)
+    mock_rmtree.assert_called_once_with(tmp_dir, onexc=_handle_rmtree_error)
 
     # Cleanup the actual temp dir since the mock prevented it
     os.rmdir(tmp_dir)
@@ -283,11 +284,12 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_rmtree):
 
     # Rmtree should be called for entry 1 and 3, bypassing the error on entry 2
     from unittest.mock import call
+    from app.routers.upload import _handle_rmtree_error
 
     mock_rmtree.assert_has_calls(
         [
-            call("mock_upload_dir_1", ignore_errors=True),
-            call("mock_upload_dir_3", ignore_errors=True),
+            call("mock_upload_dir_1", onexc=_handle_rmtree_error),
+            call("mock_upload_dir_3", onexc=_handle_rmtree_error),
         ]
     )
     assert mock_rmtree.call_count == 2

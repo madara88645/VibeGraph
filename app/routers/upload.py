@@ -36,10 +36,15 @@ def _format_upload_limit(byte_count: int) -> str:
     return f"{megabytes:.1f} MB"
 
 
+def _handle_rmtree_error(func, path, exc_info):
+    """Log errors that occur during shutil.rmtree."""
+    logger.error(f"Failed to remove {path} during cleanup: {exc_info}")
+
+
 def cleanup_tmp_dir(path: str) -> None:
     """Background task to remove temp directory."""
     if os.path.exists(path):
-        shutil.rmtree(path, ignore_errors=True)
+        shutil.rmtree(path, onexc=_handle_rmtree_error)
 
 
 def contains_supported_file(path: str) -> bool:
@@ -89,11 +94,14 @@ def cleanup_expired_upload_dirs(
                         continue
                     age = now - entry.stat().st_mtime
                     if age > retention_seconds:
-                        shutil.rmtree(entry.path, ignore_errors=True)
-                except Exception:
+                        shutil.rmtree(entry.path, onexc=_handle_rmtree_error)
+                except Exception as e:
+                    logger.error(
+                        f"Error checking or deleting expired upload dir {entry.path}: {e}"
+                    )
                     continue
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Error scanning temp directory for expired uploads: {e}")
 
 
 @router.post(
