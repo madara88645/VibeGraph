@@ -159,7 +159,29 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
-    expect(screen.getByRole('button', { name: 'Send message (Enter)' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
+  });
+
+  it('shows a visible Enter shortcut hint without changing the send button name', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    await user.type(screen.getByPlaceholderText('Ask a question...'), 'hello');
+
+    expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument();
+    expect(screen.getByText('Enter')).toBeVisible();
+  });
+
+  it('adds chat input help text that explains Enter and Shift+Enter behavior', () => {
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    const input = screen.getByLabelText('Chat input');
+    const helpId = input.getAttribute('aria-describedby');
+
+    expect(helpId).toBeTruthy();
+    expect(document.getElementById(helpId)).toHaveTextContent(
+      'Press Enter to send. Press Shift+Enter to add a new line.'
+    );
   });
 
   it('blocks API send without selected node and shows guidance', async () => {
@@ -190,7 +212,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(onOpenAiSettings).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -228,7 +250,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'What is main?'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(screen.getByText('What is main?')).toBeInTheDocument();
     const [, options] = globalThis.fetch.mock.calls[0];
@@ -254,7 +276,7 @@ describe('ChatDrawer', () => {
       screen.getByPlaceholderText('Ask a question...'),
       'test question'
     );
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText('Fallback answer')).toBeInTheDocument();
@@ -268,7 +290,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'test');
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument();
@@ -292,6 +314,17 @@ describe('ChatDrawer', () => {
     await user.type(input, 'Enter key test{Enter}');
 
     expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('does not send the message on Shift+Enter and keeps the newline in the input', async () => {
+    const user = userEvent.setup();
+    renderDrawer({ selectedNode: MOCK_NODE });
+
+    const input = screen.getByPlaceholderText('Ask a question...');
+    await user.type(input, 'Line 1{Shift>}{Enter}{/Shift}Line 2');
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(input).toHaveValue('Line 1\nLine 2');
   });
 
   it('resets messages when selected node changes', async () => {
@@ -345,7 +378,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Why?');
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() =>
       expect(screen.getByText('Because reasons')).toBeInTheDocument()
@@ -375,7 +408,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Anyone there?');
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() =>
       expect(
@@ -392,7 +425,7 @@ describe('ChatDrawer', () => {
     renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Still here?');
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() =>
       expect(screen.getByText(/Could not reach the backend/)).toBeInTheDocument()
@@ -415,7 +448,7 @@ describe('ChatDrawer', () => {
     const { rerender } = renderDrawer({ selectedNode: MOCK_NODE });
 
     await user.type(screen.getByPlaceholderText('Ask a question...'), 'Remember me');
-    await user.click(screen.getByRole('button', { name: 'Send message (Enter)' }));
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
     await waitFor(() => expect(screen.getByText('Stored reply')).toBeInTheDocument());
 
     const baseProps = {
