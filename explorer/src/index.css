@@ -1562,14 +1562,14 @@ body {
   left: 50%;
   transform: translateX(-50%) translateY(0);
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 16px;
-  max-width: min(720px, calc(100% - 180px));
+  flex-direction: column;
+  gap: 8px;
+  width: min(760px, calc(100% - 180px));
+  padding: 10px 14px 12px;
   background: var(--panel-bg);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
-  border-radius: 20px;
+  border-radius: 16px;
   z-index: 8;
   box-shadow: var(--shadow-soft);
   overflow: hidden;
@@ -1585,71 +1585,168 @@ body {
 }
 
 .lp-bar-icon {
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-accent);
+  color: var(--color-accent-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.lp-bar-main {
+.lp-bar-row {
+  min-width: 0;
+}
+
+.lp-bar-row-top {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 200px;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lp-bar-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lp-bar-title {
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lp-bar-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .lp-bar-nav {
-  background: transparent;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-subtle);
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 1rem;
-  padding: 0 4px;
+  font-size: 0.9rem;
   opacity: 0.7;
-  transition: opacity 0.1s;
+  flex: 0 0 auto;
+  transition: opacity 0.1s, border-color 0.15s ease, background 0.15s ease;
 }
 
 .lp-bar-nav:hover:not(:disabled) {
   opacity: 1;
   color: var(--accent-info);
+  border-color: var(--border-light);
+  background: var(--surface-soft);
 }
 
 .lp-bar-nav:disabled {
-  opacity: 0.2;
+  opacity: 0.35;
   cursor: default;
 }
 
-.lp-bar-info {
-  display: flex;
+.lp-bar-step {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.lp-bar-status {
   min-width: 0;
-  font-size: 0.75rem;
+}
+
+.lp-bar-row-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.lp-bar-meta-block {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--surface-softer);
+  border: 1px solid var(--border-subtle);
+}
+
+.lp-bar-meta-label {
+  color: var(--text-muted);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lp-bar-node,
+.lp-bar-file {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.78rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.lp-bar-step {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.lp-bar-node {
-  color: var(--text-primary);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .lp-bar-file {
-  color: var(--text-muted);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--text-secondary);
+}
+
+.lp-bar-row-description {
+  min-width: 0;
 }
 
 .lp-bar-reason {
+  display: -webkit-box;
   color: var(--text-secondary);
-  max-width: 360px;
+  font-size: 0.76rem;
+  line-height: 1.45;
   overflow: hidden;
   text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lp-bar-loading,
+.lp-bar-error,
+.lp-bar-empty {
+  display: block;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 .lp-bar-loading {
@@ -1657,24 +1754,26 @@ body {
   font-style: italic;
 }
 
-.lp-bar-error,
-.lp-bar-empty {
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .lp-bar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
   background: transparent;
-  border: none;
   color: var(--text-muted);
   cursor: pointer;
   font-size: 0.8rem;
-  margin-left: 4px;
+  flex: 0 0 auto;
 }
 
 .lp-bar-close:hover {
   color: var(--accent-ghost);
+  border-color: rgba(251, 113, 133, 0.35);
+  background: rgba(251, 113, 133, 0.08);
 }
 
 .lp-bar-progress {
@@ -3761,33 +3860,52 @@ body {
   }
 
   .lp-bar {
+    position: fixed;
     left: 12px;
     right: 12px;
-    max-width: none;
+    width: auto;
     transform: translateY(0);
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 7px;
+    padding: 9px 10px 11px;
   }
 
   .lp-bar.dismissed {
     transform: translateY(-18px);
   }
 
-  .lp-bar-main {
+  .lp-bar-row-top {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .lp-bar-heading {
     min-width: 0;
-    flex: 1;
   }
 
-  .lp-bar-info {
-    overflow: hidden;
+  .lp-bar-title {
+    font-size: 0.78rem;
   }
 
-  .lp-bar-file {
-    max-width: 80px;
+  .lp-bar-controls {
+    gap: 5px;
+  }
+
+  .lp-bar-step {
+    padding: 0 7px;
+    font-size: 0.64rem;
+  }
+
+  .lp-bar-row-meta {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .lp-bar-meta-block {
+    padding: 6px 8px;
   }
 
   .lp-bar-reason {
-    max-width: 34vw;
+    -webkit-line-clamp: 2;
   }
 
   .code-panel,
@@ -3871,6 +3989,32 @@ body {
 
   .empty-feature-card {
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .lp-bar-title {
+    font-size: 0.74rem;
+  }
+
+  .lp-bar-controls {
+    gap: 4px;
+  }
+
+  .lp-bar-nav,
+  .lp-bar-close {
+    width: 26px;
+    height: 26px;
+  }
+
+  .lp-bar-step {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lp-bar-reason {
+    -webkit-line-clamp: 1;
   }
 }
 
