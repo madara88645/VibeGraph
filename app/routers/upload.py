@@ -7,6 +7,7 @@ import stat
 import tempfile
 import time
 import zipfile
+import sys
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
@@ -37,19 +38,22 @@ def _format_upload_limit(byte_count: int) -> str:
 
 
 def _handle_rmtree_error(func, path, exc_info):
-    """Log errors that occur during shutil.rmtree.
+    """Log errors that occur during shutil.rmtree."""
+    logger.error(f"Failed to remove {path} during cleanup: {exc_info}")
 
-    Uses onerror signature (Python 3.3+) for compatibility with Python 3.10/3.11.
-    exc_info is a 3-tuple (type, value, traceback).
-    """
-    exc_type, exc_value, exc_tb = exc_info
-    logger.error(f"Failed to remove {path} during cleanup: {exc_value}")
+
+def _safe_rmtree(path: str) -> None:
+    """Safely remove a directory tree, handling Python version differences for error logging."""
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=_handle_rmtree_error)
+    else:
+        shutil.rmtree(path, onerror=_handle_rmtree_error)
 
 
 def cleanup_tmp_dir(path: str) -> None:
     """Background task to remove temp directory."""
     if os.path.exists(path):
-        shutil.rmtree(path, onerror=_handle_rmtree_error)
+        _safe_rmtree(path)
 
 
 def contains_supported_file(path: str) -> bool:
@@ -99,7 +103,7 @@ def cleanup_expired_upload_dirs(
                         continue
                     age = now - entry.stat().st_mtime
                     if age > retention_seconds:
-                        shutil.rmtree(entry.path, onerror=_handle_rmtree_error)
+                        _safe_rmtree(entry.path)
                 except Exception as e:
                     logger.error(
                         f"Error checking or deleting expired upload dir {entry.path}: {e}"
