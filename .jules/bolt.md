@@ -125,3 +125,7 @@
 ## 2024-05-28 - Optimize Graph Traversal Fallback with O(1) Sets
 **Learning:** In graph traversal algorithms (like `build_learning_path`), repeatedly finding unvisited nodes inside a loop using an O(N) list comprehension like `[nid for nid in scored if nid not in visited]` creates a severe O(N²) time complexity bottleneck when the graph contains many isolated nodes or disconnected components.
 **Action:** Replace the O(N) list comprehension with an O(1) tracking set. Initialize an `unvisited_set = set(all_nodes)` before the loop, and use `.discard(node_id)` whenever a node is visited. This reduces the fallback search to O(1) set operations, drastically improving performance on sparse or disconnected graphs.
+
+## 2024-05-30 - Array allocation overhead in `Set` initialization
+**Learning:** In utility functions (e.g., `buildNodeGroundingContext`), chaining `.map()` and `.filter(Boolean)` on a large array (like `allNodes`) directly into a `Set` constructor creates hidden `O(N)` memory allocations. This forces the engine to build two intermediate arrays before iterating a third time to construct the Set, significantly increasing garbage collection pressure.
+**Action:** Replace `.map().filter()` chains passed to `Set` or `Map` constructors with a fast, imperative `for` loop that iterates once and populates the `Set` directly using `.add()`.
