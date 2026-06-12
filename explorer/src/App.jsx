@@ -234,6 +234,8 @@ function AppInner() {
     resetInteractionState,
   } = useNodeInteraction({ ...aiContext, allNodes, allEdges });
 
+  const explanationPanelOpen = Boolean(selectedNode);
+
   const {
     isPlaying,
     setIsPlaying,
@@ -346,7 +348,11 @@ function AppInner() {
 
         <div
           ref={headerRef}
-          className={`vibe-header ${hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact'}`}
+          className={[
+            'vibe-header',
+            hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact',
+            explanationPanelOpen ? 'vibe-header-panel-open' : '',
+          ].filter(Boolean).join(' ')}
         >
           <button
             className="hamburger-btn"
@@ -430,7 +436,10 @@ function AppInner() {
           ) : null}
         </div>
 
-        <div className="graph-shell">
+        <div
+          className={`graph-shell ${explanationPanelOpen ? 'graph-shell-panel-open' : ''}`}
+          style={{ '--vibe-header-safe-bottom': `${learningPathTopOffset}px` }}
+        >
           {hasGraph ? (
             <LearningPath
               selectedFile={selectedFile}

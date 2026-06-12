@@ -85,6 +85,9 @@
   --text-muted: var(--color-text-muted);
   --border-subtle: var(--color-border-subtle);
   --border-light: var(--color-border-strong);
+  --explanation-panel-width: 330px;
+  --explanation-panel-edge-offset: 16px;
+  --floating-controls-gap: 16px;
 }
 
 /* ===== LIGHT THEME ===== */
@@ -162,6 +165,9 @@
   --text-muted: var(--color-text-muted);
   --border-subtle: var(--color-border-subtle);
   --border-light: var(--color-border-strong);
+  --explanation-panel-width: 330px;
+  --explanation-panel-edge-offset: 16px;
+  --floating-controls-gap: 16px;
 }
 
 [data-theme="light"] body {
@@ -317,6 +323,17 @@ body {
 
 .export-trigger-caret.open {
   transform: rotate(180deg);
+}
+
+@media (min-width: 769px) {
+  .vibe-header-panel-open {
+    flex-wrap: wrap;
+    max-width: calc(100% - 1rem - var(--explanation-panel-width) - var(--explanation-panel-edge-offset) - var(--floating-controls-gap));
+  }
+
+  .graph-shell-panel-open .export-controls {
+    right: calc(var(--explanation-panel-width) + var(--explanation-panel-edge-offset) + var(--floating-controls-gap));
+  }
 }
 
 .export-menu {
@@ -3230,8 +3247,8 @@ body {
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 330px;
-  max-height: calc(100vh - 32px);
+  width: var(--explanation-panel-width);
+  max-height: calc(100vh - (var(--explanation-panel-edge-offset) * 2));
   background: var(--panel-gradient);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border-subtle);
@@ -3426,6 +3443,10 @@ body {
 }
 
 @media (max-width: 1200px) {
+  :root {
+    --explanation-panel-width: min(92vw, 350px);
+  }
+
   .vibe-header {
     right: 16px;
     flex-wrap: wrap;
@@ -3912,6 +3933,15 @@ body {
   .explanation-panel {
     max-width: 100% !important;
     width: 100% !important;
+  }
+
+  .graph-shell-panel-open .explanation-panel.open {
+    left: 12px;
+    right: 12px;
+    top: var(--vibe-header-safe-bottom, 84px);
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100vh - var(--vibe-header-safe-bottom, 84px) - 12px);
   }
 
   .hamburger-btn {
