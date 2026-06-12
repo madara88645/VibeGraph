@@ -37,6 +37,8 @@ function shortenModelName(modelName) {
   return modelName.split('/').pop() || modelName;
 }
 
+const EXPLANATION_PANEL_CLOSE_MS = 300;
+
 function AppInner() {
   const showToast = useToast();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -235,6 +237,9 @@ function AppInner() {
   } = useNodeInteraction({ ...aiContext, allNodes, allEdges });
 
   const explanationPanelOpen = Boolean(selectedNode);
+  const [explanationPanelClosing, setExplanationPanelClosing] = useState(false);
+  const explanationPanelCloseTimerRef = useRef(null);
+  const explanationPanelLayoutOpen = explanationPanelOpen || explanationPanelClosing;
 
   const {
     isPlaying,
@@ -296,10 +301,26 @@ function AppInner() {
     },
     [setSelectedFile]
   );
-  const handleCloseExplanation = useCallback(
-    () => setSelectedNode(null),
-    [setSelectedNode]
-  );
+  const handleCloseExplanation = useCallback(() => {
+    setExplanationPanelClosing(true);
+
+    if (explanationPanelCloseTimerRef.current) {
+      clearTimeout(explanationPanelCloseTimerRef.current);
+    }
+
+    explanationPanelCloseTimerRef.current = setTimeout(() => {
+      setExplanationPanelClosing(false);
+      explanationPanelCloseTimerRef.current = null;
+    }, EXPLANATION_PANEL_CLOSE_MS);
+
+    setSelectedNode(null);
+  }, [setSelectedNode]);
+
+  useEffect(() => () => {
+    if (explanationPanelCloseTimerRef.current) {
+      clearTimeout(explanationPanelCloseTimerRef.current);
+    }
+  }, []);
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
   const handleToggleSidebar = useCallback(
     () => setSidebarOpen((prev) => !prev),
@@ -351,7 +372,7 @@ function AppInner() {
           className={[
             'vibe-header',
             hasGraph ? 'vibe-header-with-export' : 'vibe-header-compact',
-            explanationPanelOpen ? 'vibe-header-panel-open' : '',
+            explanationPanelLayoutOpen ? 'vibe-header-panel-open' : '',
           ].filter(Boolean).join(' ')}
         >
           <button
@@ -437,7 +458,7 @@ function AppInner() {
         </div>
 
         <div
-          className={`graph-shell ${explanationPanelOpen ? 'graph-shell-panel-open' : ''}`}
+          className={`graph-shell ${explanationPanelLayoutOpen ? 'graph-shell-panel-open' : ''}`}
           style={{ '--vibe-header-safe-bottom': `${learningPathTopOffset}px` }}
         >
           {hasGraph ? (

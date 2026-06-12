@@ -3245,8 +3245,8 @@ body {
 
 .explanation-panel {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: var(--explanation-panel-edge-offset);
+  right: var(--explanation-panel-edge-offset);
   width: var(--explanation-panel-width);
   max-height: calc(100vh - (var(--explanation-panel-edge-offset) * 2));
   background: var(--panel-gradient);
