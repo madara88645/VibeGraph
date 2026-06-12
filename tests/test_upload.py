@@ -93,8 +93,8 @@ def test_cleanup_tmp_dir_not_exists():
 
 
 @patch("app.routers.upload.shutil.rmtree")
-def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
-    """Test that cleanup_tmp_dir passes onexc to shutil.rmtree."""
+def test_cleanup_tmp_dir_calls_onerror(mock_rmtree):
+    """Test that cleanup_tmp_dir passes onerror to shutil.rmtree."""
     from app.routers.upload import _handle_rmtree_error
 
     tmp_dir = tempfile.mkdtemp()
@@ -102,7 +102,7 @@ def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
 
     cleanup_tmp_dir(tmp_dir)
 
-    mock_rmtree.assert_called_once_with(tmp_dir, onexc=_handle_rmtree_error)
+    mock_rmtree.assert_called_once_with(tmp_dir, onerror=_handle_rmtree_error)
 
     # Cleanup the actual temp dir since the mock prevented it
     os.rmdir(tmp_dir)
@@ -289,8 +289,8 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_rmtree):
 
     mock_rmtree.assert_has_calls(
         [
-            call("mock_upload_dir_1", onexc=_handle_rmtree_error),
-            call("mock_upload_dir_3", onexc=_handle_rmtree_error),
+            call("mock_upload_dir_1", onerror=_handle_rmtree_error),
+            call("mock_upload_dir_3", onerror=_handle_rmtree_error),
         ]
     )
     assert mock_rmtree.call_count == 2
@@ -326,3 +326,55 @@ def test_cleanup_expired_upload_dirs_error_path():
 
             # Should have been called twice (once for each directory)
             assert mock_rmtree.call_count == 2
+
+
+def test_cleanup_tmp_dir_real_error_handler_invocation():
+    """Test that the error handler is invoked for real cleanup failures and logs properly."""
+    import stat
+    from unittest.mock import patch
+    from app.routers.upload import cleanup_tmp_dir
+
+    tmp_dir = tempfile.mkdtemp()
+
+    try:
+        # Create a subdirectory with a file
+        sub_dir = os.path.join(tmp_dir, "subdir")
+        os.mkdir(sub_dir)
+        test_file = os.path.join(sub_dir, "test.txt")
+        with open(test_file, "w") as f:
+            f.write("test content")
+
+        # Make the file read-only to trigger a permission error during rmtree
+        # This simulates a real cleanup failure scenario
+        os.chmod(test_file, stat.S_IRUSR)  # Read-only for owner
+        os.chmod(sub_dir, stat.S_IRUSR | stat.S_IXUSR)  # Read + execute only
+
+        # Patch logger to verify error logging
+        with patch("app.routers.upload.logger") as mock_logger:
+            cleanup_tmp_dir(tmp_dir)
+
+            # On Unix systems, the error handler should be called for the permission error
+            # On Windows or if running as root, cleanup might succeed, so we check conditionally
+            if os.path.exists(tmp_dir):
+                # Cleanup failed as expected - verify logger was called
+                assert mock_logger.error.called, (
+                    "Expected error handler to log cleanup failure"
+                )
+                error_call_args = str(mock_logger.error.call_args)
+                assert (
+                    "Failed to remove" in error_call_args
+                    or "during cleanup" in error_call_args
+                )
+    finally:
+        # Restore permissions and clean up
+        try:
+            if os.path.exists(test_file):
+                os.chmod(test_file, stat.S_IWUSR | stat.S_IRUSR)
+            if os.path.exists(sub_dir):
+                os.chmod(sub_dir, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
+            if os.path.exists(tmp_dir):
+                import shutil
+
+                shutil.rmtree(tmp_dir)
+        except Exception:
+            pass  # Best effort cleanup
