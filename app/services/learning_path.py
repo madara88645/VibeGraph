@@ -229,7 +229,11 @@ def build_learning_path(
 
     steps = []
     for index, node_id in enumerate(ordered_ids, start=1):
-        step = {key: value for key, value in scored[node_id].items() if key != "_sort"}
+        # PERFORMANCE OPTIMIZATION (Bolt): Replace dictionary comprehension
+        # with native C-optimized .copy() and .pop() to reduce CPU overhead
+        # when processing thousands of graph nodes.
+        step = scored[node_id].copy()
+        step.pop("_sort", None)
         step["step"] = index
         steps.append(step)
 

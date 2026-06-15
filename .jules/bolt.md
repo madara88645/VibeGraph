@@ -128,3 +128,7 @@
 ## 2026-06-10 - FileSidebar Render Optimization
 **Learning:** Using `Object.entries(deps).map()` and `Object.keys(deps).length` to render JSX elements creates severe garbage collection pressure by allocating intermediate arrays during high-frequency component re-renders.
 **Action:** Replace these array-allocating methods with imperative `for...in` loops combined with IIFEs or pre-computed arrays to build the JSX elements directly. This drops the intermediate allocation overhead and ensures smoother frame rates in high-frequency rendering contexts.
+
+## 2026-05-29 - Optimize dictionary copying in Python
+**Learning:** In performance-critical Python paths (e.g., node fallback generation in `app/services/learning_path.py`), copying and filtering a dictionary using a dictionary comprehension like `{k: v for k, v in d.items() if k != 'key'}` is much slower than using native C-optimized dictionary methods.
+**Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.

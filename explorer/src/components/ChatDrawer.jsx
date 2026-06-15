@@ -112,7 +112,12 @@ const ChatDrawer = ({
 
     const userMsg = { role: 'user', content: text };
     const nextMessages = [...messages, userMsg];
-    setMessages([...nextMessages, { role: 'assistant', content: '' }]);
+    // Show the user's message immediately. The assistant reply is appended
+    // once a response arrives; we intentionally do NOT insert an empty
+    // assistant placeholder so the user bubble is never masked by an empty
+    // markdown render (issue #436). While loading, the typing indicator is
+    // driven off the trailing user message instead.
+    setMessages(nextMessages);
     setInputText('');
     setLoading(true);
 
@@ -233,10 +238,16 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             }
             assistantContent += eventData;
           }
-          setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
         }
 
-        persistMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
+        // Append the assistant reply alongside the user message. If the
+        // stream produced nothing, keep just the user message so an empty
+        // response never wipes the user's question (issue #436).
+        const finalMessages = assistantContent
+          ? [...nextMessages, { role: 'assistant', content: assistantContent }]
+          : nextMessages;
+        setMessages(finalMessages);
+        persistMessages(finalMessages);
       }
     } catch (error) {
       const errorMessage = getFriendlyAiErrorMessage(
@@ -281,6 +292,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
 
   const hasSelectedNode = Boolean(selectedNode?.id);
   const canSend = hasSelectedNode && !loading && Boolean(inputText.trim());
+  const chatInputHelpId = 'chat-input-shortcuts';
 
   const sendDisabledReason = loading
     ? 'Waiting for AI response...'
@@ -289,6 +301,8 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       : !inputText.trim()
         ? 'Type a message to send'
         : 'Send message';
+  const sendButtonLabel = canSend ? 'Send message' : sendDisabledReason;
+  const showShortcutHint = hasSelectedNode && !loading;
 
   return (
     <>
@@ -298,7 +312,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         title="Open Chat"
         aria-label="Open Chat"
       >
-        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'white' }}>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
       </button>
@@ -388,7 +402,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             </div>
           ))}
 
-          {loading && messages.length > 0 && messages[messages.length - 1]?.content === '' ? (
+          {loading && messages[messages.length - 1]?.role === 'user' ? (
             <div className="chat-message chat-message-assistant">
               <div className="chat-bubble chat-typing">
                 <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
@@ -414,27 +428,56 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             className="chat-input"
             placeholder={hasSelectedNode ? 'Ask a question...' : NO_NODE_PLACEHOLDER}
             aria-label="Chat input"
+            aria-describedby={hasSelectedNode ? chatInputHelpId : undefined}
             value={inputText}
             onChange={(event) => setInputText(event.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
           />
+          {hasSelectedNode ? (
+            <span
+              id={chatInputHelpId}
+              style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}
+            >
+              Press Enter to send. Press Shift+Enter to add a new line.
+            </span>
+          ) : null}
           <span
-            style={{ display: 'inline-flex' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             className="chat-send-wrapper"
-            title={sendDisabledReason}
+            title={sendButtonLabel}
           >
+            {showShortcutHint ? (
+              <span
+                aria-hidden="true"
+                style={{
+                  padding: '5px 8px',
+                  borderRadius: '999px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.01em',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                  opacity: canSend ? 1 : 0.7,
+                }}
+              >
+                Enter
+              </span>
+            ) : null}
             <button
               className="chat-send"
               onClick={sendMessage}
               disabled={!canSend}
-              aria-label={sendDisabledReason}
+              aria-label={sendButtonLabel}
             >
               <span aria-hidden="true">
                 {loading ? (
                   <span className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--bg-panel)' }} />
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                   </svg>
                 )}

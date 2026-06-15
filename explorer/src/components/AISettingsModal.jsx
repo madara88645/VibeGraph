@@ -172,7 +172,7 @@ const AISettingsModal = ({
                 aria-labelledby="ai-settings-model-label"
               >
                 <span>{shortenModelName(draftModel)}</span>
-                <span className="custom-dropdown-arrow">▼</span>
+                <span className="custom-dropdown-arrow" aria-hidden="true">▼</span>
               </button>
               
               <ul
