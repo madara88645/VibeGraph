@@ -92,18 +92,37 @@ def test_cleanup_tmp_dir_not_exists():
     cleanup_tmp_dir(fake_path)
 
 
-@patch("app.routers.upload.shutil.rmtree")
-def test_cleanup_tmp_dir_calls_ignore_errors(mock_rmtree):
-    """Test that cleanup_tmp_dir passes ignore_errors=True to shutil.rmtree."""
+@patch("app.routers.upload._safe_rmtree")
+def test_cleanup_tmp_dir_calls_safe_rmtree(mock_safe_rmtree):
+    """Test that cleanup_tmp_dir delegates to _safe_rmtree."""
     tmp_dir = tempfile.mkdtemp()
     assert os.path.exists(tmp_dir)
 
     cleanup_tmp_dir(tmp_dir)
 
-    mock_rmtree.assert_called_once_with(tmp_dir, ignore_errors=True)
+    mock_safe_rmtree.assert_called_once_with(tmp_dir)
 
     # Cleanup the actual temp dir since the mock prevented it
     os.rmdir(tmp_dir)
+
+
+@patch("app.routers.upload.shutil.rmtree")
+def test_safe_rmtree_version_handling(mock_rmtree):
+    """Test that _safe_rmtree passes the correct error handler based on Python version."""
+    from app.routers.upload import _safe_rmtree, _handle_rmtree_error
+    import sys
+
+    tmp_dir = "mock_dir"
+
+    # Test Python 3.12+ path
+    with patch.object(sys, "version_info", (3, 12)):
+        _safe_rmtree(tmp_dir)
+        mock_rmtree.assert_called_with(tmp_dir, onexc=_handle_rmtree_error)
+
+    # Test Python 3.10/3.11 path
+    with patch.object(sys, "version_info", (3, 11)):
+        _safe_rmtree(tmp_dir)
+        mock_rmtree.assert_called_with(tmp_dir, onerror=_handle_rmtree_error)
 
 
 def test_zip_with_non_utf8_file_returns_200_with_partial_graph():
@@ -245,9 +264,9 @@ def test_upload_project_size_limit():
     )
 
 
-@patch("app.routers.upload.shutil.rmtree")
+@patch("app.routers.upload._safe_rmtree")
 @patch("os.scandir")
-def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_rmtree):
+def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_safe_rmtree):
     """Test that cleanup_expired_upload_dirs continues when one entry raises an exception."""
     from unittest.mock import MagicMock
     from app.routers.upload import cleanup_expired_upload_dirs, UPLOAD_PREFIX
@@ -284,13 +303,13 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_rmtree):
     # Rmtree should be called for entry 1 and 3, bypassing the error on entry 2
     from unittest.mock import call
 
-    mock_rmtree.assert_has_calls(
+    mock_safe_rmtree.assert_has_calls(
         [
-            call("mock_upload_dir_1", ignore_errors=True),
-            call("mock_upload_dir_3", ignore_errors=True),
+            call("mock_upload_dir_1"),
+            call("mock_upload_dir_3"),
         ]
     )
-    assert mock_rmtree.call_count == 2
+    assert mock_safe_rmtree.call_count == 2
 
 
 def test_cleanup_expired_upload_dirs_error_path():
