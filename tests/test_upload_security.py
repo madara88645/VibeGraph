@@ -128,12 +128,11 @@ def test_upload_absolute_path_zip():
     # Clean up
     os.remove(zip_path)
 
-    # If the file is properly sanitized, it will extract to `tmp_dir/etc/passwd` rather than `/etc/passwd`.
-    # Therefore, we shouldn't get an "Unsafe zip file detected" error.
-    # Let's verify that the endpoint doesn't return the specific error.
-    if response.status_code == 400:
-        detail = response.json().get("detail", "")
-        assert "Unsafe zip file detected" not in detail
+    # With the new behavior, absolute paths inside zip files are explicitly rejected
+    # instead of silently sanitized, so we *do* expect an "Unsafe zip file detected" error.
+    assert response.status_code == 400
+    detail = response.json().get("detail", "")
+    assert "Unsafe zip file detected" in detail
 
 
 def test_upload_hidden_file_zip():
