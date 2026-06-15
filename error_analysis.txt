@@ -1,5 +1,0 @@
-The CI job log shows:
-Error creating PR review request: You've reached your weekly rate limit. Please wait for your limit to reset on June 1, 2026 at 12:00 AM or switch to auto model to continue. Learn More (https://docs.github.com/copilot/concepts/rate-limits). (Request ID: 3C31:362A81:42D806E:46E1916:6A189E2A) (errorDetails: {"configurationError":false,"statusCode":429,"errorCode":"rate_limit"}, autofind.js version: 0.1.73)
-
-This is a Copilot PR Reviewer rate limit error. It is completely independent of the actual code changes or tests I've written. The Python test suite ran and passed locally with 100% success.
-The failure is transient and out of my control (an external CI service quota issue).
