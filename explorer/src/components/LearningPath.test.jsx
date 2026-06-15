@@ -129,8 +129,8 @@ describe('LearningPath', () => {
     renderLearningPath();
 
     const controls = await screen.findByTestId('learning-path-controls');
-    const metadata = screen.getByTestId('learning-path-metadata');
-    const description = screen.getByTestId('learning-path-description');
+    const metadata = await screen.findByTestId('learning-path-metadata');
+    const description = await screen.findByTestId('learning-path-description');
 
     expect(controls).toBeInTheDocument();
     expect(metadata).toBeInTheDocument();
