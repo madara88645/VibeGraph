@@ -17,7 +17,7 @@ Upload your code → explore the call graph → ask AI anything about it.
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
 [![License](https://img.shields.io/badge/License-GPLv3-22C55E)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-319%20passing-22C55E)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-320%20passing-22C55E)](tests/)
 [![Backend](https://img.shields.io/badge/Backend-Fly.io-8B5CF6)](https://fly.io)
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel-000000)](https://vercel.com)
 
