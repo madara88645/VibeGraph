@@ -149,11 +149,18 @@ const FileSidebar = ({
                                     )}
                                     {isSelected && stats.types && (
                                         <div className="file-types">
-                                            {Object.entries(stats.types).map(([type, count]) => (
-                                                <span key={type} className={`type-badge type-${type}`}>
-                                                    <span aria-hidden="true">{typeIcons[type] || '○'}</span> {count}
-                                                </span>
-                                            ))}
+                                            {(() => {
+                                                const typeBadges = [];
+                                                for (const type in stats.types) {
+                                                    const count = stats.types[type];
+                                                    typeBadges.push(
+                                                        <span key={type} className={`type-badge type-${type}`}>
+                                                            <span aria-hidden="true">{typeIcons[type] || '○'}</span> {count}
+                                                        </span>
+                                                    );
+                                                }
+                                                return typeBadges;
+                                            })()}
                                         </div>
                                     )}
                                 </button>
@@ -185,71 +192,93 @@ const FileSidebar = ({
                         </div>
                     )}
 
-                    {deps && Object.keys(deps).length === 0 && (
-                        <div className="deps-empty">No file dependencies found.</div>
-                    )}
+                    {deps && (() => {
+                        let isEmpty = true;
+                        for (const _ in deps) {
+                            isEmpty = false;
+                            break;
+                        }
+                        if (isEmpty) {
+                            return <div className="deps-empty">No file dependencies found.</div>;
+                        }
 
-                    {deps && Object.entries(deps).map(([file, info]) => {
-                        const shortName = getShortName(file) || file;
-                        const isSelected = file === selectedFile;
-                        const imports = info.imports || info.imports_from || [];
-                        const importedBy = info.imported_by || [];
+                        const depElements = [];
+                        for (const file in deps) {
+                            const info = deps[file];
+                            const shortName = getShortName(file) || file;
+                            const isSelected = file === selectedFile;
+                            const imports = info.imports || info.imports_from || [];
+                            const importedBy = info.imported_by || [];
 
-                        return (
-                            <div key={file} className={`deps-file ${isSelected ? 'selected' : ''}`}>
-                                <button
-                                    className="deps-file-header"
-                                    onClick={() => onSelectFile(file)}
-                                    title={file}
-                                    aria-label={file}
-                                >
-                                    <span className="deps-file-icon" aria-hidden="true">📄</span>
-                                    <span className="deps-file-name" title={file}>{shortName}</span>
-                                </button>
+                            depElements.push(
+                                <div key={file} className={`deps-file ${isSelected ? 'selected' : ''}`}>
+                                    <button
+                                        className="deps-file-header"
+                                        onClick={() => onSelectFile(file)}
+                                        title={file}
+                                        aria-label={file}
+                                    >
+                                        <span className="deps-file-icon" aria-hidden="true">📄</span>
+                                        <span className="deps-file-name" title={file}>{shortName}</span>
+                                    </button>
 
-                                {imports.length > 0 && (
-                                    <div className="deps-section">
-                                        <span className="deps-section-label">→ imports</span>
-                                        {imports.map((imp, i) => {
-                                            const impName = typeof imp === 'string' ? imp : imp.module || imp.name;
-                                            const details = typeof imp === 'object' ? imp.names : null;
-                                            return (
-                                                <div key={i} className="deps-item">
-                                                    <span className="deps-item-name" title={impName}>
-                                                        {getShortName(impName || '')}
-                                                    </span>
-                                                    {details && details.length > 0 && (
-                                                        <span className="deps-item-detail" title={details.join(', ')}>
-                                                            ({details.join(', ')})
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                    {imports.length > 0 && (
+                                        <div className="deps-section">
+                                            <span className="deps-section-label">→ imports</span>
+                                            {(() => {
+                                                const impElements = [];
+                                                for (let i = 0; i < imports.length; i++) {
+                                                    const imp = imports[i];
+                                                    const impName = typeof imp === 'string' ? imp : imp.module || imp.name;
+                                                    const details = typeof imp === 'object' ? imp.names : null;
+                                                    impElements.push(
+                                                        <div key={i} className="deps-item">
+                                                            <span className="deps-item-name" title={impName}>
+                                                                {getShortName(impName || '')}
+                                                            </span>
+                                                            {details && details.length > 0 && (
+                                                                <span className="deps-item-detail" title={details.join(', ')}>
+                                                                    ({details.join(', ')})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }
+                                                return impElements;
+                                            })()}
+                                        </div>
+                                    )}
 
-                                {importedBy.length > 0 && (
-                                    <div className="deps-section">
-                                        <span className="deps-section-label">← used by</span>
-                                        {importedBy.map((ref, i) => (
-                                            <button
-                                                key={i}
-                                                className="deps-item deps-item-clickable"
-                                                onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
-                                                title={typeof ref === 'string' ? ref : ref.file}
-                                                aria-label={typeof ref === 'string' ? ref : ref.file}
-                                            >
-                                                <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
-                                                    {getShortName(typeof ref === 'string' ? ref : ref.file || '')}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                    {importedBy.length > 0 && (
+                                        <div className="deps-section">
+                                            <span className="deps-section-label">← used by</span>
+                                            {(() => {
+                                                const refElements = [];
+                                                for (let i = 0; i < importedBy.length; i++) {
+                                                    const ref = importedBy[i];
+                                                    refElements.push(
+                                                        <button
+                                                            key={i}
+                                                            className="deps-item deps-item-clickable"
+                                                            onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
+                                                            title={typeof ref === 'string' ? ref : ref.file}
+                                                            aria-label={typeof ref === 'string' ? ref : ref.file}
+                                                        >
+                                                            <span className="deps-item-name" title={typeof ref === 'string' ? ref : ref.file}>
+                                                                {getShortName(typeof ref === 'string' ? ref : ref.file || '')}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                }
+                                                return refElements;
+                                            })()}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+                        return depElements;
+                    })()}
                 </div>
             )}
         </div>
