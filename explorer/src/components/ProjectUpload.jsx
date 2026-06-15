@@ -253,6 +253,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
                                 <span className="analyzing-subtitle">Building call graph</span>
                             </div>
                         ) : (
+                            <>
                             <div
                                 className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
                                 onClick={() => fileInputRef.current?.click()}
@@ -303,7 +304,12 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
                                         multiple
                                     />
                                     <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Browse files</button>
-                                    <div className="demo-cta-divider" style={{ margin: '12px 0 6px 0', fontSize: '11px', color: 'var(--text-secondary)' }}>or</div>
+                                </div>
+                            </div>
+
+                            {!isAnalyzing && (
+                                <div className="demo-upload-section" style={{ padding: '0 24px 24px 24px' }}>
+                                    <div className="demo-cta-divider" style={{ margin: '0 0 16px 0', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center' }}>or</div>
                                     <button
                                         type="button"
                                         className="upload-select-btn demo-load-btn"
@@ -328,12 +334,13 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
                                                 setIsAnalyzing(false);
                                             }
                                         }}
-                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none' }}
+                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%' }}
                                     >
                                         Try with a Demo Project
                                     </button>
                                 </div>
-                            </div>
+                            )}
+                        </>
                         )}
                     </div>
                 </div>,

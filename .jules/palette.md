@@ -82,3 +82,7 @@
 ## 2026-06-01 - Decorative Carets in Custom Dropdowns
 **Learning:** Custom dropdown triggers often use text characters like '▼' to indicate an expansion state. Without `aria-hidden="true"`, screen readers announce this as 'black down-pointing triangle', which is redundant if the button already uses `aria-expanded` to communicate its state.
 **Action:** Always apply `aria-hidden="true"` to decorative visual indicators (like carets or arrows) inside custom dropdowns or accordions that already expose their state via ARIA attributes.
+
+## 2026-06-03 - Nested Interactive Elements inside Dropzones
+**Learning:** Placing interactive `<button>` elements (like "Try with a Demo Project") inside a parent `<div>` that has `role="button"` and `tabIndex={0}` (like a file upload dropzone) creates a severe accessibility anti-pattern. Screen readers and keyboard navigation struggle to differentiate or activate nested interactive elements, violating WCAG semantics.
+**Action:** Always extract interactive elements outside of parent containers that define their own `role="button"` or `tabIndex`. Ensure alternative actions (like loading a demo) are siblings, not children, of a clickable dropzone area to preserve clear focus order and semantic boundaries.
