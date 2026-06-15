@@ -66,7 +66,7 @@ class ExplainRequest(BaseModel):
 
     @field_validator("callers", "callees", "neighbors")
     @classmethod
-    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+    def validate_explain_node_context_lists(cls, values: list[str]) -> list[str]:
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
@@ -197,7 +197,7 @@ class ChatRequest(BaseModel):
 
     @field_validator("callers", "callees", "neighbors")
     @classmethod
-    def validate_node_context_lists(cls, values: list[str]) -> list[str]:
+    def validate_chat_node_context_lists(cls, values: list[str]) -> list[str]:
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
