@@ -90,7 +90,7 @@ def test_normalize_uploaded_filename_empty():
     with pytest.raises(HTTPException) as exc_info:
         normalize_uploaded_filename("/")
     assert exc_info.value.status_code == 400
-    assert "Invalid upload path" in exc_info.value.detail
+    assert "Unsafe upload path" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         normalize_uploaded_filename(".")
@@ -133,13 +133,13 @@ def test_normalize_uploaded_filename_blocks_sensitive_hidden_names_case_insensit
 
 
 def test_normalize_uploaded_filename_absolute():
-    """Test absolute paths are converted or blocked.
-    Because empty strings are filtered out by split('/'),
-    an absolute path like '/etc/passwd' becomes ['etc', 'passwd'],
-    which is considered a valid relative path 'etc/passwd' and returned.
-    This effectively converts absolute paths to relative paths.
-    """
-    assert normalize_uploaded_filename("/etc/passwd") == "etc/passwd"
-    assert (
-        normalize_uploaded_filename("/absolute/path/file.py") == "absolute/path/file.py"
-    )
+    """Test absolute paths are blocked."""
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename("/etc/passwd")
+    assert exc_info.value.status_code == 400
+    assert "Unsafe upload path" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename("/absolute/path/file.py")
+    assert exc_info.value.status_code == 400
+    assert "Unsafe upload path" in exc_info.value.detail

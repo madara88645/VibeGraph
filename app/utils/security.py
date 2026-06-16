@@ -81,6 +81,9 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
         raise HTTPException(status_code=400, detail="Uploaded file has no filename")
 
     normalized = raw_name.replace("\\", "/")
+    if os.path.isabs(normalized) or normalized.startswith("/"):
+        raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
+
     parts = [p for p in normalized.split("/") if p not in ("", ".")]
     if not parts:
         raise HTTPException(status_code=400, detail=f"Invalid upload path: {raw_name}")
