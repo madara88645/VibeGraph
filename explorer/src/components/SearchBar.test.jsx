@@ -154,6 +154,38 @@ describe('SearchBar', () => {
         expect(screen.queryByText('main')).not.toBeInTheDocument();
     });
 
+    it('selects existing query text on Ctrl+K so new typing replaces it (no append)', async () => {
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        const input = screen.getByPlaceholderText(/Search nodes/);
+        await user.type(input, 'summarize');
+        expect(input).toHaveValue('summarize');
+
+        // Re-open with Ctrl+K — existing text should become fully selected
+        await user.keyboard('{Control>}k{/Control}');
+        expect(input.selectionStart).toBe(0);
+        expect(input.selectionEnd).toBe('summarize'.length);
+
+        // Typing now replaces the selection instead of appending
+        await user.keyboard('round');
+        expect(input).toHaveValue('round');
+    });
+
+    it('opens search with Cmd+K (metaKey) on Mac', async () => {
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        const input = screen.getByPlaceholderText(/Search nodes/);
+        await user.type(input, 'main');
+        await user.keyboard('{Escape}');
+        expect(screen.queryByText('main')).not.toBeInTheDocument();
+
+        // Cmd+K should re-open and focus the input
+        await user.keyboard('{Meta>}k{/Meta}');
+        expect(input).toHaveFocus();
+    });
+
     it('limits results to 8 items', async () => {
         const user = userEvent.setup();
         const manyNodes = Array.from({ length: 20 }, (_, i) => ({

@@ -17,9 +17,11 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     // Keyboard shortcut: Ctrl+K or /
     useEffect(() => {
         const handler = (e) => {
-            if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))) {
+            if (((e.ctrlKey || e.metaKey) && e.key === 'k') || (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))) {
                 e.preventDefault();
                 inputRef.current?.focus();
+                // Select any existing text so new typing replaces it instead of appending
+                inputRef.current?.select();
                 setIsOpen(true);
             }
             if (e.key === 'Escape') {
