@@ -40,12 +40,15 @@ const ChatDrawer = ({
   const inputRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [messages, loading, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 200);
+      messagesEndRef.current?.scrollIntoView({ block: 'nearest' });
     }
   }, [isOpen]);
 
