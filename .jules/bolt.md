@@ -132,3 +132,7 @@
 ## 2026-05-29 - Optimize dictionary copying in Python
 **Learning:** In performance-critical Python paths (e.g., node fallback generation in `app/services/learning_path.py`), copying and filtering a dictionary using a dictionary comprehension like `{k: v for k, v in d.items() if k != 'key'}` is much slower than using native C-optimized dictionary methods.
 **Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.
+
+## 2026-06-16 - Zero-allocation string methods
+**Learning:** In high-frequency React renders, using array-generating string operations like `.split('/').pop()` causes garbage collection pressure due to temporary array allocations.
+**Action:** Replace these methods with zero-allocation alternatives like `.lastIndexOf()` and `.substring()` for critical paths.

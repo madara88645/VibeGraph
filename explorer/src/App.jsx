@@ -33,8 +33,13 @@ import {
 } from './utils/aiClient';
 import { getShortName } from './utils/stringUtils';
 
+// PERFORMANCE OPTIMIZATION (Bolt): Zero-allocation string helper
+// Replaces O(N) array-creating string.split('/').pop() logic
+// which reduces garbage collection pressure during renders.
 function shortenModelName(modelName) {
-  return modelName.split('/').pop() || modelName;
+  if (!modelName) return modelName;
+  const lastSlash = modelName.lastIndexOf('/');
+  return lastSlash >= 0 ? modelName.substring(lastSlash + 1) : modelName;
 }
 
 const EXPLANATION_PANEL_CLOSE_MS = 300;
