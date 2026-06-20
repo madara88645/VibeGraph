@@ -60,3 +60,8 @@
 **Vulnerability:** In `app/models.py`, multiple Pydantic models (`ExplainRequest` and `ChatRequest`) defined a `@field_validator` with the exact same method name (`validate_node_context_lists`).
 **Learning:** Defining multiple class methods with the same name in the same file triggers Python to potentially mask the earlier function and causes F811 `Redefinition of unused name` linting errors in Ruff. This can silently cause security validation bypasses if Pydantic uses an overridden method instead of the intended one.
 **Prevention:** Always use unique, model-specific names for Pydantic `@field_validator` methods (e.g., `validate_explain_node_context_lists`) when defining multiple models in a single module.
+
+## 2024-05-24 - Redundant Silent Truncation in Pydantic Models
+**Vulnerability:** Redundant silent truncation (`truncate=True`) was being applied inside `sanitize_llm_input` for string fields (`content`, `question`, `project_context`, `strategy`) in `app/models.py` even after explicit length checks that would otherwise raise a `ValueError`.
+**Learning:** Adding silent truncation to Pydantic fields that already have explicit length checks (which raise `ValueError`) is redundant and dangerous because it masks explicit validation errors without providing additional security.
+**Prevention:** When explicitly validating string lengths and raising `ValueError` in Pydantic models, ensure that downstream string sanitization functions (e.g., `sanitize_llm_input`) are called with truncation disabled (`truncate=False`) to preserve the explicit validation behaviour.
