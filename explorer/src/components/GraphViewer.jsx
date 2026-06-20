@@ -101,16 +101,16 @@ const GraphViewer = ({
       </div>
       {hasGraph ? (
         <div className="export-controls">
-          <button
-            type="button"
-            className="export-trigger"
-            aria-haspopup="menu"
-            aria-expanded={exportMenuOpen}
-            aria-label="Export"
-            title={isExporting ? 'Export in progress...' : 'Export graph'}
-            onClick={() => setExportMenuOpen((prev) => !prev)}
-            disabled={isExporting}
-          >
+          <span style={{ display: 'inline-flex' }} title={isExporting ? 'Export in progress...' : 'Export graph'}>
+            <button
+              type="button"
+              className="export-trigger"
+              aria-haspopup="menu"
+              aria-expanded={exportMenuOpen}
+              aria-label="Export"
+              onClick={() => setExportMenuOpen((prev) => !prev)}
+              disabled={isExporting}
+            >
             {isExporting ? (
               <span
                 className="vibe-spinner"
@@ -149,7 +149,8 @@ const GraphViewer = ({
             >
               <polyline points="6 9 12 15 18 9" />
             </svg>
-          </button>
+            </button>
+          </span>
 
           {exportMenuOpen ? (
             <div className="export-menu" role="menu" aria-label="Export options">
