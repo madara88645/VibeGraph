@@ -39,6 +39,16 @@ function shortenModelName(modelName) {
 
 const EXPLANATION_PANEL_CLOSE_MS = 300;
 
+// Badge copy is deliberately honest: a present-but-unchecked key shows "Key Set",
+// never "AI Ready". "AI Ready" is reserved for a server-provided key (no user key
+// required) or a key that has actually produced a successful response.
+const AI_STATUS_LABELS = {
+  ready: 'AI Ready',
+  set: 'Key Set',
+  invalid: 'Key Invalid',
+  needsKey: 'Key Needed',
+};
+
 function AppInner() {
   const showToast = useToast();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -55,6 +65,8 @@ function AppInner() {
   const [draftModel, setDraftModel] = useState(() => getStoredModel());
   const [aiConfig, setAiConfig] = useState(DEFAULT_AI_CONFIG);
   const [aiConfigError, setAiConfigError] = useState('');
+  // True only after an AI request actually reports an auth/invalid-key error.
+  const [keyInvalid, setKeyInvalid] = useState(false);
   const [learningPathTopOffset, setLearningPathTopOffset] = useState(84);
   const [showFirstSteps, setShowFirstSteps] = useState(true);
   const [showTutorial, setShowTutorial] = useState(true);
@@ -111,6 +123,13 @@ function AppInner() {
   const effectiveModel =
     selectedModel || aiConfig.defaultModel || DEFAULT_AI_CONFIG.defaultModel;
   const aiReady = Boolean(apiKey.trim()) || !aiConfig.requiresUserKey;
+  const aiStatus = !aiConfig.requiresUserKey
+    ? 'ready'
+    : !apiKey.trim()
+      ? 'needsKey'
+      : keyInvalid
+        ? 'invalid'
+        : 'set';
 
   const openAiSettings = useCallback(
     (message) => {
@@ -139,6 +158,9 @@ function AppInner() {
       setStoredApiKey(cleanedKey);
       setSelectedModelState(nextModel);
       setStoredModel(nextModel);
+      // A freshly saved/changed key is not yet known to be bad; let the next
+      // request re-prove it rather than carrying over a stale "invalid" badge.
+      setKeyInvalid(false);
 
       showToast(
         cleanedKey
@@ -154,6 +176,7 @@ function AppInner() {
     setApiKeyState('');
     setDraftApiKey('');
     setStoredApiKey('');
+    setKeyInvalid(false);
     showToast('Session API key cleared.', 'info');
   }, [showToast]);
 
@@ -163,6 +186,8 @@ function AppInner() {
       selectedModel: effectiveModel,
       aiReady,
       onRequireAiKey: openAiSettings,
+      onAuthError: () => setKeyInvalid(true),
+      onAuthCleared: () => setKeyInvalid(false),
     }),
     [aiReady, apiKey, effectiveModel, openAiSettings]
   );
@@ -397,8 +422,12 @@ function AppInner() {
 
           <img src="/vibegraph-logo.png" alt="VibeGraph" className="header-logo" />
           <h1>VibeGraph Explorer</h1>
-          <span className={`status-badge ${aiReady ? '' : 'status-badge-warning'}`}>
-            {aiReady ? 'AI Ready' : 'Key Needed'}
+          <span
+            className={`status-badge ${
+              aiStatus === 'invalid' || aiStatus === 'needsKey' ? 'status-badge-warning' : ''
+            }`}
+          >
+            {AI_STATUS_LABELS[aiStatus]}
           </span>
 
           <span className="current-file-badge">

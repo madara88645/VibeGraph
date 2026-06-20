@@ -10,6 +10,7 @@ const mockSetActiveNodeId = vi.fn();
 const mockHandleUploadSuccess = vi.fn();
 let resizeObserverCallback = null;
 let headerBottom = 72;
+let mockAiContext = null;
 
 const graphDataState = {
   allNodes: [],
@@ -59,7 +60,10 @@ vi.mock('./hooks/useToast', () => ({
 }));
 
 vi.mock('./hooks/useNodeInteraction', () => ({
-  useNodeInteraction: () => nodeInteractionState,
+  useNodeInteraction: (config) => {
+    mockAiContext = config;
+    return nodeInteractionState;
+  },
 }));
 
 vi.mock('./hooks/useGhostRunner', () => ({
@@ -271,5 +275,53 @@ describe('App upload flow', () => {
     await waitFor(() => {
       expect(learningPath).toHaveAttribute('data-top-offset', '108');
     });
+  });
+
+  it('shows "Key Needed" when a user key is required but none is set', async () => {
+    render(<App />);
+
+    expect(await screen.findByText('Key Needed')).toBeInTheDocument();
+    expect(screen.queryByText('AI Ready')).not.toBeInTheDocument();
+  });
+
+  it('shows "Key Set" (not "AI Ready") for a present but unvalidated user key', async () => {
+    sessionStorage.setItem('vg_v1_openrouter_key', 'sk-unvalidated');
+
+    render(<App />);
+
+    expect(await screen.findByText('Key Set')).toBeInTheDocument();
+    expect(screen.queryByText('AI Ready')).not.toBeInTheDocument();
+  });
+
+  it('shows "AI Ready" only when the backend does not require a user key', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          provider: 'openrouter',
+          defaultModel: 'google/gemini-3.1-flash-lite',
+          allowedModels: ['google/gemini-3.1-flash-lite'],
+          requiresUserKey: false,
+        }),
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText('AI Ready')).toBeInTheDocument();
+  });
+
+  it('flips the badge to "Key Invalid" when an AI request reports an auth error', async () => {
+    sessionStorage.setItem('vg_v1_openrouter_key', 'sk-bad');
+
+    render(<App />);
+
+    expect(await screen.findByText('Key Set')).toBeInTheDocument();
+
+    act(() => {
+      mockAiContext.onAuthError();
+    });
+
+    expect(await screen.findByText('Key Invalid')).toBeInTheDocument();
+    expect(screen.queryByText('Key Set')).not.toBeInTheDocument();
   });
 });
