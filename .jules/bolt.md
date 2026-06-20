@@ -132,3 +132,7 @@
 ## 2026-05-29 - Optimize dictionary copying in Python
 **Learning:** In performance-critical Python paths (e.g., node fallback generation in `app/services/learning_path.py`), copying and filtering a dictionary using a dictionary comprehension like `{k: v for k, v in d.items() if k != 'key'}` is much slower than using native C-optimized dictionary methods.
 **Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.
+
+## 2026-06-11 - Optimize Array Splitting in CodePanel
+**Learning:** In components that re-render frequently (like `CodePanel` responding to animation ticks), executing `.split('\n')` directly inside the render loop on large strings (like the entire file source) allocates massive arrays continuously. This forces the garbage collector to work harder and drops the frame rate significantly during the ghost runner simulation.
+**Action:** Extract large string manipulations out of the render loop using `useMemo` with the raw text as a dependency, so it is only split once per file instead of once per frame.

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
@@ -107,6 +107,15 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
 
     const fileName = getShortName(codeData?.file_path) || '';
     const hasFullSource = codeData?.full_source;
+
+    // PERFORMANCE OPTIMIZATION (Bolt): Memoize the split lines
+    // When codeData updates, this avoids an O(N) array allocation on every single
+    // re-render of CodePanel, reducing GC pressure during simulation.
+    const codeLines = useMemo(() => {
+        if (!hasFullSource) return [];
+        return codeData.full_source.split('\n');
+    }, [codeData?.full_source, hasFullSource]);
+
     const startLine = codeData?.start_line;
     const endLine = codeData?.end_line;
     const hasCopyText = Boolean(codeData?.full_source || codeData?.snippet);
@@ -279,7 +288,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     hasFullSource ? (
                         // Full file view with highlighted section
                         <div className="code-full-file">
-                            {codeData.full_source.split('\n').map((line, i) => {
+                            {codeLines.map((line, i) => {
                                 const lineNum = i + 1;
                                 const isHighlighted = startLine && endLine && lineNum >= startLine && lineNum <= endLine;
                                 return (
