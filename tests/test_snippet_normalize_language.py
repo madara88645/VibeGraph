@@ -47,7 +47,9 @@ def test_explicit_language_takes_priority_over_extension() -> None:
         ("a.py", "python"),
     ],
 )
-def test_extension_fallback_when_language_missing(file_path: str, expected: str) -> None:
+def test_extension_fallback_when_language_missing(
+    file_path: str, expected: str
+) -> None:
     assert _normalize_language(None, file_path) == expected
 
 
