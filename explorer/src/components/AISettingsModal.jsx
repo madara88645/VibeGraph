@@ -1,12 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 
-// PERFORMANCE OPTIMIZATION (Bolt): Zero-allocation string helper
-// Replaces O(N) array-creating string.split('/').pop() logic
-// which reduces garbage collection pressure during renders.
 function shortenModelName(modelName) {
-  if (!modelName) return modelName;
-  const lastSlash = modelName.lastIndexOf('/');
-  return lastSlash >= 0 ? modelName.substring(lastSlash + 1) : modelName;
+  return modelName.split('/').pop() || modelName;
 }
 
 const AISettingsModal = ({

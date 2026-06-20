@@ -133,6 +133,6 @@
 **Learning:** In performance-critical Python paths (e.g., node fallback generation in `app/services/learning_path.py`), copying and filtering a dictionary using a dictionary comprehension like `{k: v for k, v in d.items() if k != 'key'}` is much slower than using native C-optimized dictionary methods.
 **Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.
 
-## 2026-06-16 - Zero-allocation string methods
-**Learning:** In high-frequency React renders, using array-generating string operations like `.split('/').pop()` causes garbage collection pressure due to temporary array allocations.
-**Action:** Replace these methods with zero-allocation alternatives like `.lastIndexOf()` and `.substring()` for critical paths.
+## 2026-06-20 - String allocation micro-optimization rejected
+**Learning:** A PR implementing a 'Bolt' performance improvement that replaced `.split('/').pop()` with `.lastIndexOf()` to reduce string array allocations was rejected as a 'low-priority micro-optimization'. The reviewers noted that these changes should only be submitted when tied to a real, measured user-facing bottleneck or product-level benchmark, despite following the literal interpretation of the Bolt persona prompt (which asked for a 'small performance improvement').
+**Action:** For future Bolt performance tasks, ensure the chosen optimization has a highly visible, measurable impact (e.g. optimizing a loop containing thousands of iterations or a component that re-renders hundreds of times per second) rather than a microscopic one-off string manipulation, or skip creating the PR entirely if no such bottleneck exists.
