@@ -16,11 +16,28 @@ const EXPLAIN_TIMEOUT_MESSAGE =
 const EXPLAIN_CONNECTIVITY_MESSAGE =
   'Could not connect to Vibe Teacher. Check your connection and try again.';
 
+// Short, non-cryptographic hash so cached explanations are namespaced per API key.
+// Switching keys must miss the cache (so a new/invalid key is actually exercised),
+// and we must never persist the raw key into the localStorage cache keys.
+function hashApiKey(apiKey) {
+  const value = (apiKey || '').trim();
+  if (!value) {
+    return 'anon';
+  }
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export function useNodeInteraction({
   aiApiKey = '',
   selectedModel = '',
   aiReady = true,
   onRequireAiKey,
+  onAuthError,
+  onAuthCleared,
   allNodes = [],
   allEdges = [],
 } = {}) {
@@ -45,7 +62,7 @@ export function useNodeInteraction({
 
   const fetchExplanation = useCallback(
     async (node, type = 'technical', level = 'intermediate') => {
-      const cacheKey = `${node.id}__${type}__${level}`;
+      const cacheKey = `${node.id}__${type}__${level}__${hashApiKey(aiApiKey)}`;
       if (lastFetchedRef.current === cacheKey) {
         return;
       }
@@ -101,12 +118,14 @@ export function useNodeInteraction({
           // Ignore localStorage write errors.
         }
         setExplanation(result);
+        onAuthCleared?.();
       } catch (error) {
         const message =
           error instanceof DOMException && error.name === 'AbortError'
             ? EXPLAIN_TIMEOUT_MESSAGE
             : getFriendlyAiErrorMessage(error, EXPLAIN_CONNECTIVITY_MESSAGE);
         if (message.toLowerCase().includes('api key')) {
+          onAuthError?.();
           onRequireAiKey?.(message);
         }
         setExplanation(message);
@@ -114,7 +133,16 @@ export function useNodeInteraction({
         setLoading(false);
       }
     },
-    [aiApiKey, aiReady, allEdges, allNodes, onRequireAiKey, selectedModel]
+    [
+      aiApiKey,
+      aiReady,
+      allEdges,
+      allNodes,
+      onAuthCleared,
+      onAuthError,
+      onRequireAiKey,
+      selectedModel,
+    ]
   );
 
   const handleSelectNode = useCallback((node) => {

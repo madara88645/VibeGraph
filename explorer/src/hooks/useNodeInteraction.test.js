@@ -311,3 +311,101 @@ describe('useNodeInteraction - onNodeClick', () => {
     expect(result.current.explanation).toMatch(/could not connect to vibe teacher/i);
   });
 });
+
+describe('useNodeInteraction - API key namespacing & auth signal', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const mockNode = {
+    id: 'test_func',
+    data: { file: 'test.py', label: 'test_func' },
+  };
+  const graphNodes = [mockNode];
+  const graphEdges = [];
+
+  function renderWithKey(key, extra = {}) {
+    return renderHook(
+      ({ aiApiKey }) =>
+        useNodeInteraction({
+          aiApiKey,
+          selectedModel: 'anthropic/claude-haiku-4.5',
+          aiReady: true,
+          onRequireAiKey: vi.fn(),
+          allNodes: graphNodes,
+          allEdges: graphEdges,
+          ...extra,
+        }),
+      { initialProps: { aiApiKey: key } }
+    );
+  }
+
+  it('does not reuse a cached explanation across different API keys', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ explanation: { technical: 'ok' } }),
+    });
+
+    const { result, rerender } = renderWithKey('valid-key');
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Same key -> cache hit, no new request.
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Different key -> cache miss, so the new (possibly invalid) key is actually exercised.
+    rerender({ aiApiKey: 'different-key' });
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('signals an auth error, then clears it on a later successful explanation', async () => {
+    const onAuthError = vi.fn();
+    const onAuthCleared = vi.fn();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const { result, rerender } = renderWithKey('bad-key', { onAuthError, onAuthCleared });
+
+    fetchSpy.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ detail: 'Invalid API key provided.' }),
+    });
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(onAuthError).toHaveBeenCalledTimes(1);
+    expect(onAuthCleared).not.toHaveBeenCalled();
+
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ explanation: { technical: 'fixed' } }),
+    });
+    rerender({ aiApiKey: 'good-key' });
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(onAuthCleared).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not signal an auth error for non-auth failures', async () => {
+    const onAuthError = vi.fn();
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { result } = renderWithKey('some-key', { onAuthError });
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(onAuthError).not.toHaveBeenCalled();
+  });
+});
