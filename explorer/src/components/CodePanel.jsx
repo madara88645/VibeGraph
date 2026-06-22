@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
@@ -122,6 +122,13 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         codeData.snippet.includes('Error reading file') ||
         codeData.snippet.includes('Access denied')
     );
+
+    // PERFORMANCE OPTIMIZATION (Bolt): Memoize the result of splitting the full source
+    // code into lines to avoid severe garbage collection pressure and CPU overhead
+    // during high-frequency render cycles or panel toggles.
+    const codeLines = useMemo(() => {
+        return codeData?.full_source ? codeData.full_source.split('\n') : [];
+    }, [codeData?.full_source]);
 
     return (
         <>
@@ -279,7 +286,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     hasFullSource ? (
                         // Full file view with highlighted section
                         <div className="code-full-file">
-                            {codeData.full_source.split('\n').map((line, i) => {
+                            {codeLines.map((line, i) => {
                                 const lineNum = i + 1;
                                 const isHighlighted = startLine && endLine && lineNum >= startLine && lineNum <= endLine;
                                 return (

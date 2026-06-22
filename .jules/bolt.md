@@ -132,3 +132,7 @@
 ## 2026-05-29 - Optimize dictionary copying in Python
 **Learning:** In performance-critical Python paths (e.g., node fallback generation in `app/services/learning_path.py`), copying and filtering a dictionary using a dictionary comprehension like `{k: v for k, v in d.items() if k != 'key'}` is much slower than using native C-optimized dictionary methods.
 **Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.
+
+## 2024-05-30 - Prevent O(N) Array Allocation in CodePanel Render
+**Learning:** In high-frequency React components (like `CodePanel` rendering large code blocks during rapid simulation ticks), executing `.split('\n')` on large strings directly inside the render cycle (or `.map()` loop) creates severe garbage collection pressure. This is because every render allocates a massive new array of strings, leading to excessive GC pauses and degrading frame rates.
+**Action:** Always memoize the result of heavy string splits (like full source code files) using `useMemo` so that the string is only split once when the source actually changes, rather than on every render cycle.
