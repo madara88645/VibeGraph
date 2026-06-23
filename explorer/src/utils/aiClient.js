@@ -149,10 +149,58 @@ export async function fetchAiJson(path, { apiKey, method = 'POST', body, timeout
     } catch {
       // Ignore JSON parsing failures and keep the HTTP fallback message.
     }
-    throw new Error(detail);
+    const error = new Error(detail);
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();
+}
+
+// Gateway/proxy statuses that signal a transient backend hiccup (e.g. a Fly.io
+// cold start) worth retrying. Client (4xx) errors are deliberately excluded —
+// retrying an invalid API key or a bad request just wastes time and money.
+const TRANSIENT_HTTP_STATUSES = new Set([502, 503, 504]);
+
+export function isRetryableAiError(error) {
+  if (!error) {
+    return false;
+  }
+  const { status } = error;
+  if (status === undefined || status === null) {
+    // No HTTP status means the request never completed. A plain network
+    // failure is worth retrying; an abort/timeout is not — retrying would only
+    // compound an already-long wait.
+    return error.name !== 'AbortError';
+  }
+  return TRANSIENT_HTTP_STATUSES.has(status);
+}
+
+// Wraps fetchAiJson with bounded, backed-off retries for transient failures.
+// Opt-in: callers that should NOT retry (explain, chat) keep using fetchAiJson
+// directly, so this keeps the blast radius to the caller that needs it.
+export async function fetchAiJsonWithRetry(
+  path,
+  options = {},
+  { retries = 2, delaysMs = [1000, 2000], isRetryable = isRetryableAiError } = {},
+) {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchAiJson(path, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isRetryable(error)) {
+        throw error;
+      }
+      const delay = delaysMs[Math.min(attempt, delaysMs.length - 1)] ?? 0;
+      if (delay > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, delay));
+      }
+    }
+  }
+  // The loop always returns or throws; this satisfies control-flow analysis.
+  throw lastError;
 }
 
 export function getFriendlyAiErrorMessage(error, fallbackMessage) {

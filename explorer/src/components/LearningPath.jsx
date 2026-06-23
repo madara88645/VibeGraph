@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import {
-  fetchAiJson,
+  fetchAiJsonWithRetry,
   getFriendlyAiErrorMessage,
 } from '../utils/aiClient';
 import { getShortName } from '../utils/stringUtils';
@@ -41,41 +41,59 @@ const LearningPath = ({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen || allNodes.length === 0) {
-      return;
-    }
+  // Monotonic id so a superseded or unmounted request never applies its result.
+  const requestIdRef = useRef(0);
 
+  const runFetch = useCallback(async () => {
+    const requestId = (requestIdRef.current += 1);
+    setLoading(true);
+    setError(null);
+    setSteps([]);
+    setCurrentStep(0);
 
-    const fetchPath = async () => {
-      setLoading(true);
-      setError(null);
-      setSteps([]);
-      setCurrentStep(0);
+    try {
+      // fetchAiJsonWithRetry silently retries transient gateway errors (e.g. a
+      // Fly.io cold-start 503) before surfacing failure to the user.
+      const data = await fetchAiJsonWithRetry('/api/learning-path', {
+        apiKey,
+        body: {
+          nodes: allNodes,
+          edges: allEdges || [],
+          selected_file: selectedFile,
+          model: selectedModel || null,
+        },
+      });
 
-      try {
-        const data = await fetchAiJson('/api/learning-path', {
-          apiKey,
-          body: {
-            nodes: allNodes,
-            edges: allEdges || [],
-            selected_file: selectedFile,
-            model: selectedModel || null,
-          },
-        });
-
-        if (data.steps && data.steps.length > 0) {
-          setSteps(data.steps);
-        }
-      } catch (requestError) {
-        setError(getFriendlyAiErrorMessage(requestError, 'Could not build learning path.'));
-      } finally {
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+      if (data.steps && data.steps.length > 0) {
+        setSteps(data.steps);
+      }
+    } catch (requestError) {
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+      setError(getFriendlyAiErrorMessage(requestError, 'Could not build learning path.'));
+    } finally {
+      if (requestIdRef.current === requestId) {
         setLoading(false);
       }
-    };
+    }
+  }, [allEdges, allNodes, apiKey, selectedFile, selectedModel]);
 
-    fetchPath();
-  }, [allEdges, allNodes, apiKey, isOpen, selectedFile, selectedModel]);
+  useEffect(() => {
+    if (!isOpen || allNodes.length === 0) {
+      return undefined;
+    }
+
+    runFetch();
+
+    return () => {
+      // Invalidate any in-flight request when inputs change or the panel closes.
+      requestIdRef.current += 1;
+    };
+  }, [isOpen, allNodes, runFetch]);
 
   const goToStep = useCallback(
     (idx) => {
@@ -210,6 +228,14 @@ const LearningPath = ({
       ) : error ? (
         <div className="lp-bar-status">
           <span className="lp-bar-error">{error}</span>
+          <button
+            type="button"
+            className="lp-bar-retry"
+            onClick={runFetch}
+            aria-label="Retry building learning path"
+          >
+            Retry
+          </button>
         </div>
       ) : hasStepContent ? (
         <>
