@@ -1703,6 +1703,9 @@ body {
 }
 
 .lp-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -1776,6 +1779,24 @@ body {
 .lp-bar-loading {
   color: var(--text-muted);
   font-style: italic;
+}
+
+.lp-bar-retry {
+  flex: 0 0 auto;
+  padding: 3px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.lp-bar-retry:hover {
+  border-color: var(--accent-info);
+  color: var(--accent-info);
 }
 
 .lp-bar-close {

@@ -6,8 +6,10 @@ import {
   ensureAiReady,
   fetchAiConfig,
   fetchAiJson,
+  fetchAiJsonWithRetry,
   fetchWithTimeout,
   getFriendlyAiErrorMessage,
+  isRetryableAiError,
   getStoredApiKey,
   getStoredModel,
   setStoredApiKey,
@@ -285,5 +287,102 @@ describe('fetchAiJson', () => {
     const [, options] = globalThis.fetch.mock.calls[0];
     expect(options.method).toBe('GET');
     expect(options.body).toBeUndefined();
+  });
+});
+
+describe('fetchAiJson error status', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('attaches the HTTP status to the thrown error (5xx with no JSON body)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: () => Promise.reject(new Error('not json')),
+    });
+
+    await expect(
+      fetchAiJson('/api/learning-path', { apiKey: '', body: {} }),
+    ).rejects.toMatchObject({ status: 503, message: 'Request failed (503)' });
+  });
+
+  it('attaches the HTTP status to the thrown error (4xx with JSON detail)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ detail: 'Invalid API key' }),
+    });
+
+    await expect(
+      fetchAiJson('/api/explain', { apiKey: 'bad', body: {} }),
+    ).rejects.toMatchObject({ status: 401, message: 'Invalid API key' });
+  });
+});
+
+describe('isRetryableAiError', () => {
+  it('treats 502/503/504 gateway errors as retryable', () => {
+    expect(isRetryableAiError({ status: 502 })).toBe(true);
+    expect(isRetryableAiError({ status: 503 })).toBe(true);
+    expect(isRetryableAiError({ status: 504 })).toBe(true);
+  });
+
+  it('treats 4xx client errors as non-retryable', () => {
+    expect(isRetryableAiError({ status: 400 })).toBe(false);
+    expect(isRetryableAiError({ status: 401 })).toBe(false);
+    expect(isRetryableAiError({ status: 404 })).toBe(false);
+  });
+
+  it('treats a network error (no status) as retryable but an abort/timeout as not', () => {
+    expect(isRetryableAiError(new TypeError('Failed to fetch'))).toBe(true);
+    const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
+    expect(isRetryableAiError(abortError)).toBe(false);
+  });
+});
+
+describe('fetchAiJsonWithRetry', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('retries a transient 503 and resolves once a later attempt succeeds', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: false, status: 503, json: () => Promise.reject(new Error('x')) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ steps: [] }) });
+
+    const data = await fetchAiJsonWithRetry(
+      '/api/learning-path',
+      { apiKey: '', body: {} },
+      { delaysMs: [0, 0] },
+    );
+
+    expect(data).toEqual({ steps: [] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after exhausting the retry budget (3 attempts) and throws the last error', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: () => Promise.reject(new Error('x')),
+    });
+
+    await expect(
+      fetchAiJsonWithRetry('/api/learning-path', { apiKey: '', body: {} }, { delaysMs: [0, 0] }),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry a non-transient 4xx error', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ detail: 'Invalid API key' }),
+    });
+
+    await expect(
+      fetchAiJsonWithRetry('/api/explain', { apiKey: 'bad', body: {} }, { delaysMs: [0, 0] }),
+    ).rejects.toThrow('Invalid API key');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -6,7 +6,19 @@ vi.mock('reactflow', () => ({
   useReactFlow: () => ({ fitView: vi.fn() }),
 }));
 
+// Keep the real helper by default (so existing fetch-based tests work), but make
+// it spy-able so we can drive the retry-exhausted / Retry-button UI directly
+// without waiting on real backoff timers.
+vi.mock('../utils/aiClient', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    fetchAiJsonWithRetry: vi.fn((...args) => actual.fetchAiJsonWithRetry(...args)),
+  };
+});
+
 import LearningPath from './LearningPath';
+import * as aiClient from '../utils/aiClient';
 
 const NODES = [
   {
@@ -221,5 +233,39 @@ describe('LearningPath', () => {
     expect(screen.getByText('Building learning path...')).toBeInTheDocument();
     
     resolveFetch({ ok: true, json: () => Promise.resolve({ steps: [] }) });
+  });
+
+  it('shows the error message and a Retry button when the request ultimately fails', async () => {
+    aiClient.fetchAiJsonWithRetry.mockRejectedValueOnce(
+      Object.assign(new Error('Request failed (503)'), { status: 503 }),
+    );
+
+    renderLearningPath();
+
+    expect(await screen.findByText('Request failed (503)')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /retry building learning path/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('refetches and renders the path when the Retry button is clicked', async () => {
+    const user = userEvent.setup();
+    // First attempt fails; the click then falls through to the real helper,
+    // which hits the default success fetch mocked in beforeEach.
+    aiClient.fetchAiJsonWithRetry.mockRejectedValueOnce(
+      Object.assign(new Error('Request failed (503)'), { status: 503 }),
+    );
+
+    renderLearningPath();
+
+    const retryButton = await screen.findByRole('button', {
+      name: /retry building learning path/i,
+    });
+    await user.click(retryButton);
+
+    expect(await screen.findByText('main')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /retry building learning path/i }),
+    ).not.toBeInTheDocument();
   });
 });
