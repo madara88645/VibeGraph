@@ -175,6 +175,23 @@ describe('fetchWithTimeout', () => {
 });
 
 // ─── fetchAiConfig ────────────────────────────────────────────────────
+describe('DEFAULT_AI_CONFIG.allowedModels', () => {
+  it('excludes the unreliable free Llama model', () => {
+    expect(DEFAULT_AI_CONFIG.allowedModels).not.toContain(
+      'meta-llama/llama-3.3-70b-instruct:free'
+    );
+  });
+
+  it('keeps the curated models with a valid default', () => {
+    expect(DEFAULT_AI_CONFIG.defaultModel).toBe('deepseek/deepseek-v4-flash');
+    expect(DEFAULT_AI_CONFIG.allowedModels).toContain('deepseek/deepseek-v4-flash');
+    expect(DEFAULT_AI_CONFIG.allowedModels).toContain('qwen/qwen3-coder-30b-a3b-instruct');
+    expect(DEFAULT_AI_CONFIG.allowedModels).toContain('google/gemini-3.1-flash-lite');
+    expect(DEFAULT_AI_CONFIG.allowedModels).toContain('anthropic/claude-sonnet-4.6');
+    expect(DEFAULT_AI_CONFIG.allowedModels).toContain(DEFAULT_AI_CONFIG.defaultModel);
+  });
+});
+
 describe('fetchAiConfig', () => {
   afterEach(() => {
     vi.restoreAllMocks();
