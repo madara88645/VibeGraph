@@ -368,6 +368,44 @@ describe('useNodeInteraction - API key namespacing & auth signal', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('does not reuse a cached explanation across different models', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ explanation: { technical: 'ok' } }),
+    });
+
+    const { result, rerender } = renderHook(
+      ({ selectedModel }) =>
+        useNodeInteraction({
+          aiApiKey: 'valid-key',
+          selectedModel,
+          aiReady: true,
+          onRequireAiKey: vi.fn(),
+          allNodes: graphNodes,
+          allEdges: graphEdges,
+        }),
+      { initialProps: { selectedModel: 'anthropic/claude-haiku-4.5' } }
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Same model -> cache hit, no new request.
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Different model -> cache miss, so the newly selected model is actually exercised.
+    rerender({ selectedModel: 'deepseek/deepseek-v4-flash' });
+    await act(async () => {
+      await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
   it('signals an auth error, then clears it on a later successful explanation', async () => {
     const onAuthError = vi.fn();
     const onAuthCleared = vi.fn();

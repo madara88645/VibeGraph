@@ -62,7 +62,9 @@ export function useNodeInteraction({
 
   const fetchExplanation = useCallback(
     async (node, type = 'technical', level = 'intermediate') => {
-      const cacheKey = `${node.id}__${type}__${level}__${hashApiKey(aiApiKey)}`;
+      const cacheKey = `${node.id}__${type}__${level}__${
+        selectedModel || 'default'
+      }__${hashApiKey(aiApiKey)}`;
       if (lastFetchedRef.current === cacheKey) {
         return;
       }
