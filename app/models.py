@@ -116,7 +116,7 @@ class ChatMessage(BaseModel):
                     f"String should have at most {MAX_CONTENT_LENGTH} characters"
                 )
             return sanitize_llm_input(
-                value, max_length=MAX_CONTENT_LENGTH, truncate=True
+                value, max_length=MAX_CONTENT_LENGTH, truncate=False
             )
         return value
 
@@ -178,7 +178,7 @@ class ChatRequest(BaseModel):
                     f"String should have at most {MAX_QUESTION_LENGTH} characters"
                 )
             return sanitize_llm_input(
-                value, max_length=MAX_QUESTION_LENGTH, truncate=True
+                value, max_length=MAX_QUESTION_LENGTH, truncate=False
             )
         return value
 
@@ -191,7 +191,7 @@ class ChatRequest(BaseModel):
                     f"String should have at most {MAX_PROJECT_CONTEXT_LENGTH} characters"
                 )
             return sanitize_llm_input(
-                value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=True
+                value, max_length=MAX_PROJECT_CONTEXT_LENGTH, truncate=False
             )
         return value
 
@@ -276,7 +276,7 @@ class GhostNarrateRequest(BaseModel):
         if isinstance(value, str):
             if len(value) > 50:
                 raise ValueError("String should have at most 50 characters")
-            return sanitize_llm_input(value, max_length=50, truncate=True)
+            return sanitize_llm_input(value, max_length=50, truncate=False)
         return value
 
     @field_validator("model", mode="before")
