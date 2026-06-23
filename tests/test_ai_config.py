@@ -50,7 +50,7 @@ def test_ai_config_reports_openrouter_defaults():
     assert "google/gemini-3.1-flash-lite" in data["allowedModels"]
     assert "anthropic/claude-sonnet-4.6" in data["allowedModels"]
     assert "qwen/qwen3-coder-30b-a3b-instruct" in data["allowedModels"]
-    assert "meta-llama/llama-3.3-70b-instruct:free" in data["allowedModels"]
+    assert "meta-llama/llama-3.3-70b-instruct:free" not in data["allowedModels"]
     assert data["requiresUserKey"] is True
     assert data["uploadLimits"]["maxTotalBytes"] == 25 * 1024 * 1024
     assert data["uploadLimits"]["maxPerFileBytes"] == 1024 * 1024

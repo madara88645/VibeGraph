@@ -17,7 +17,6 @@ describe('AISettingsModal', () => {
             'qwen/qwen3-coder-30b-a3b-instruct',
             'google/gemini-3.1-flash-lite',
             'anthropic/claude-sonnet-4.6',
-            'meta-llama/llama-3.3-70b-instruct:free',
           ],
           requiresUserKey: true,
         }}
@@ -40,7 +39,7 @@ describe('AISettingsModal', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Supported now: deepseek-v4-flash, qwen3-coder-30b-a3b-instruct, gemini-3.1-flash-lite, claude-sonnet-4.6, llama-3.3-70b-instruct:free'
+        'Supported now: deepseek-v4-flash, qwen3-coder-30b-a3b-instruct, gemini-3.1-flash-lite, claude-sonnet-4.6'
       )
     ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'qwen3-coder-30b-a3b-instruct' })).toBeInTheDocument();

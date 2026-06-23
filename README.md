@@ -240,7 +240,7 @@ VibeGraph/
 | Layer | Technology |
 |-------|-----------|
 | Backend | Python 3.12, FastAPI, NetworkX, `ast` stdlib |
-| AI | OpenRouter — DeepSeek V4 Flash, Qwen3 Coder 30B, Gemini 3.1 Flash Lite, Claude Sonnet 4.6, Llama 3.3 70B |
+| AI | OpenRouter — DeepSeek V4 Flash, Qwen3 Coder 30B, Gemini 3.1 Flash Lite, Claude Sonnet 4.6 |
 | Frontend | React 19, React Flow, Vite 7 |
 | Styling | Custom CSS — dark/light themes, glassmorphism |
 | Testing | pytest (128 tests), Vitest (80 tests) |
