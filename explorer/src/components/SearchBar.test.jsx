@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SearchBar uses useReactFlow — mock before importing component
+// SearchBar uses useReactFlow — mock before importing component.
+// Hoisted spies so individual tests can assert how the viewport is moved.
+const { fitViewMock, setCenterMock } = vi.hoisted(() => ({
+    fitViewMock: vi.fn(),
+    setCenterMock: vi.fn(),
+}));
+
 vi.mock('reactflow', () => ({
-    useReactFlow: () => ({ setCenter: vi.fn() }),
+    useReactFlow: () => ({ fitView: fitViewMock, setCenter: setCenterMock }),
 }));
 
 import SearchBar from './SearchBar';
@@ -184,6 +190,42 @@ describe('SearchBar', () => {
         // Cmd+K should re-open and focus the input
         await user.keyboard('{Meta>}k{/Meta}');
         expect(input).toHaveFocus();
+    });
+
+    it('focuses the selected node via fitView by id, not stale coordinates (#460)', async () => {
+        // Selecting a node in a different file triggers a dagre re-layout that
+        // moves the node. Centering must target the node by id (reactflow
+        // resolves its live post-relayout position) — never the pre-relayout
+        // coordinates, which is what caused the drift-to-empty-space bug.
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        await user.type(screen.getByPlaceholderText(/Search nodes/), 'FileProcessor');
+        await user.click(screen.getByText('FileProcessor'));
+
+        await waitFor(() => {
+            expect(fitViewMock).toHaveBeenCalledTimes(1);
+        });
+        expect(fitViewMock.mock.calls[0][0].nodes).toEqual([
+            expect.objectContaining({ id: 'FileProcessor' }),
+        ]);
+        expect(setCenterMock).not.toHaveBeenCalled();
+    });
+
+    it('focuses via fitView by id on Enter selection too (#460)', async () => {
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        await user.type(screen.getByPlaceholderText(/Search nodes/), 'helper');
+        await user.keyboard('{Enter}');
+
+        await waitFor(() => {
+            expect(fitViewMock).toHaveBeenCalledTimes(1);
+        });
+        expect(fitViewMock.mock.calls[0][0].nodes).toEqual([
+            expect.objectContaining({ id: 'helper' }),
+        ]);
+        expect(setCenterMock).not.toHaveBeenCalled();
     });
 
     it('limits results to 8 items', async () => {

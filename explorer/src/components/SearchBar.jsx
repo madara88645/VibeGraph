@@ -12,7 +12,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [highlightIdx, setHighlightIdx] = useState(0);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
-    const { setCenter } = useReactFlow();
+    const { fitView } = useReactFlow();
 
     // Keyboard shortcut: Ctrl+K or /
     useEffect(() => {
@@ -78,13 +78,17 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const handleSelect = useCallback((node) => {
         if (node.data?.file) onSelectFile(node.data.file);
         onSelectNode(node);
-        // Zoom to node
-        if (node.position) {
-            setCenter(node.position.x + 86, node.position.y + 18, { zoom: 1.5, duration: 600 });
-        }
+        // Picking a node in another file triggers a dagre re-layout (useGraphData)
+        // that repositions nodes. Defer the focus past that relayout and target the
+        // node by id so reactflow uses its live post-layout position. Centering on
+        // the pre-relayout coordinates is what made the camera drift to empty
+        // space (#460). Mirrors LearningPath.goToStep.
+        setTimeout(() => {
+            fitView({ nodes: [{ id: node.id }], duration: 600, padding: 2.0 });
+        }, 50);
         setIsOpen(false);
         setQuery('');
-    }, [onSelectFile, onSelectNode, setCenter]);
+    }, [onSelectFile, onSelectNode, fitView]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'ArrowDown') {
