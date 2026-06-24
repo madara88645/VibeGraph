@@ -12,7 +12,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [highlightIdx, setHighlightIdx] = useState(0);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
-    const { fitView } = useReactFlow();
+    const { getNode, setCenter } = useReactFlow();
 
     // Keyboard shortcut: Ctrl+K or /
     useEffect(() => {
@@ -79,16 +79,29 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         if (node.data?.file) onSelectFile(node.data.file);
         onSelectNode(node);
         // Picking a node in another file triggers a dagre re-layout (useGraphData)
-        // that repositions nodes. Defer the focus past that relayout and target the
-        // node by id so reactflow uses its live post-layout position. Centering on
-        // the pre-relayout coordinates is what made the camera drift to empty
-        // space (#460). Mirrors LearningPath.goToStep.
-        setTimeout(() => {
-            fitView({ nodes: [{ id: node.id }], duration: 600, padding: 2.0 });
-        }, 50);
+        // that repositions nodes. The `node` from `allNodes` carries a stale
+        // pre-relayout position, so centering on it drifts the camera to empty
+        // space (#460). Wait until the node lands in the post-relayout store, then
+        // center on its current laid-out position.
+        let attempts = 0;
+        const focusNode = () => {
+            const laidOut = getNode(node.id);
+            const position = laidOut?.positionAbsolute || laidOut?.position;
+            if (position) {
+                const width = laidOut.width ?? 172;
+                const height = laidOut.height ?? 36;
+                setCenter(position.x + width / 2, position.y + height / 2, {
+                    zoom: 1.5,
+                    duration: 600,
+                });
+            } else if (attempts++ < 30) {
+                setTimeout(focusNode, 16);
+            }
+        };
+        focusNode();
         setIsOpen(false);
         setQuery('');
-    }, [onSelectFile, onSelectNode, fitView]);
+    }, [onSelectFile, onSelectNode, getNode, setCenter]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'ArrowDown') {

@@ -4,13 +4,13 @@ import userEvent from '@testing-library/user-event';
 
 // SearchBar uses useReactFlow — mock before importing component.
 // Hoisted spies so individual tests can assert how the viewport is moved.
-const { fitViewMock, setCenterMock } = vi.hoisted(() => ({
-    fitViewMock: vi.fn(),
+const { getNodeMock, setCenterMock } = vi.hoisted(() => ({
+    getNodeMock: vi.fn(),
     setCenterMock: vi.fn(),
 }));
 
 vi.mock('reactflow', () => ({
-    useReactFlow: () => ({ fitView: fitViewMock, setCenter: setCenterMock }),
+    useReactFlow: () => ({ getNode: getNodeMock, setCenter: setCenterMock }),
 }));
 
 import SearchBar from './SearchBar';
@@ -34,6 +34,7 @@ function renderSearchBar(overrides = {}) {
 describe('SearchBar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        getNodeMock.mockReturnValue(undefined);
     });
 
     it('renders search input with placeholder', () => {
@@ -192,11 +193,16 @@ describe('SearchBar', () => {
         expect(input).toHaveFocus();
     });
 
-    it('focuses the selected node via fitView by id, not stale coordinates (#460)', async () => {
-        // Selecting a node in a different file triggers a dagre re-layout that
-        // moves the node. Centering must target the node by id (reactflow
-        // resolves its live post-relayout position) — never the pre-relayout
-        // coordinates, which is what caused the drift-to-empty-space bug.
+    it('centers on the node\'s post-relayout position from the store (#460)', async () => {
+        // Selecting a node in another file triggers a dagre re-layout that moves
+        // the node. The store (getNode) returns its CURRENT laid-out position
+        // once relayout settles; centering must use that, never the stale prop
+        // position — that staleness is what drifted the camera to empty space.
+        getNodeMock.mockImplementation((id) =>
+            id === 'FileProcessor'
+                ? { id, positionAbsolute: { x: 200, y: 100 }, width: 120, height: 40 }
+                : undefined,
+        );
         const user = userEvent.setup();
         renderSearchBar();
 
@@ -204,15 +210,22 @@ describe('SearchBar', () => {
         await user.click(screen.getByText('FileProcessor'));
 
         await waitFor(() => {
-            expect(fitViewMock).toHaveBeenCalledTimes(1);
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
         });
-        expect(fitViewMock.mock.calls[0][0].nodes).toEqual([
-            expect.objectContaining({ id: 'FileProcessor' }),
-        ]);
-        expect(setCenterMock).not.toHaveBeenCalled();
+        // node center = position + half of measured size
+        expect(setCenterMock).toHaveBeenCalledWith(
+            260,
+            120,
+            expect.objectContaining({ zoom: expect.any(Number) }),
+        );
     });
 
-    it('focuses via fitView by id on Enter selection too (#460)', async () => {
+    it('centers via the store on Enter selection too (#460)', async () => {
+        getNodeMock.mockImplementation((id) =>
+            id === 'helper'
+                ? { id, positionAbsolute: { x: 300, y: 50 }, width: 100, height: 40 }
+                : undefined,
+        );
         const user = userEvent.setup();
         renderSearchBar();
 
@@ -220,12 +233,13 @@ describe('SearchBar', () => {
         await user.keyboard('{Enter}');
 
         await waitFor(() => {
-            expect(fitViewMock).toHaveBeenCalledTimes(1);
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
         });
-        expect(fitViewMock.mock.calls[0][0].nodes).toEqual([
-            expect.objectContaining({ id: 'helper' }),
-        ]);
-        expect(setCenterMock).not.toHaveBeenCalled();
+        expect(setCenterMock).toHaveBeenCalledWith(
+            350,
+            70,
+            expect.objectContaining({ zoom: expect.any(Number) }),
+        );
     });
 
     it('limits results to 8 items', async () => {
