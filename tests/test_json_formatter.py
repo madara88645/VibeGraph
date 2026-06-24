@@ -3,8 +3,6 @@
 import json
 import logging
 
-import pytest
-
 from app import JSONFormatter
 
 
@@ -68,8 +66,13 @@ class TestJSONFormatterRequiredFields:
     def test_message_with_printf_args_is_expanded(self):
         fmt = JSONFormatter()
         record = logging.LogRecord(
-            name="t", level=logging.INFO, pathname="", lineno=0,
-            msg="count is %d", args=(42,), exc_info=None,
+            name="t",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="count is %d",
+            args=(42,),
+            exc_info=None,
         )
         parsed = json.loads(fmt.format(record))
         assert parsed["message"] == "count is 42"
@@ -103,6 +106,7 @@ class TestJSONFormatterException:
             raise exc
         except Exception:
             import sys
+
             exc_info = sys.exc_info()
         record = _make_record()
         record.exc_info = exc_info
