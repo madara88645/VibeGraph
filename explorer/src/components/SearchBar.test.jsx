@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SearchBar uses useReactFlow — mock before importing component
+// SearchBar uses useReactFlow — mock before importing component.
+// Hoisted spies so individual tests can assert how the viewport is moved.
+const { getNodeMock, setCenterMock } = vi.hoisted(() => ({
+    getNodeMock: vi.fn(),
+    setCenterMock: vi.fn(),
+}));
+
 vi.mock('reactflow', () => ({
-    useReactFlow: () => ({ setCenter: vi.fn() }),
+    useReactFlow: () => ({ getNode: getNodeMock, setCenter: setCenterMock }),
 }));
 
 import SearchBar from './SearchBar';
@@ -28,6 +34,7 @@ function renderSearchBar(overrides = {}) {
 describe('SearchBar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        getNodeMock.mockReturnValue(undefined);
     });
 
     it('renders search input with placeholder', () => {
@@ -184,6 +191,55 @@ describe('SearchBar', () => {
         // Cmd+K should re-open and focus the input
         await user.keyboard('{Meta>}k{/Meta}');
         expect(input).toHaveFocus();
+    });
+
+    it('centers on the node\'s post-relayout position from the store (#460)', async () => {
+        // Selecting a node in another file triggers a dagre re-layout that moves
+        // the node. The store (getNode) returns its CURRENT laid-out position
+        // once relayout settles; centering must use that, never the stale prop
+        // position — that staleness is what drifted the camera to empty space.
+        getNodeMock.mockImplementation((id) =>
+            id === 'FileProcessor'
+                ? { id, positionAbsolute: { x: 200, y: 100 }, width: 120, height: 40 }
+                : undefined,
+        );
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        await user.type(screen.getByPlaceholderText(/Search nodes/), 'FileProcessor');
+        await user.click(screen.getByText('FileProcessor'));
+
+        await waitFor(() => {
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
+        });
+        // node center = position + half of measured size
+        expect(setCenterMock).toHaveBeenCalledWith(
+            260,
+            120,
+            expect.objectContaining({ zoom: expect.any(Number) }),
+        );
+    });
+
+    it('centers via the store on Enter selection too (#460)', async () => {
+        getNodeMock.mockImplementation((id) =>
+            id === 'helper'
+                ? { id, positionAbsolute: { x: 300, y: 50 }, width: 100, height: 40 }
+                : undefined,
+        );
+        const user = userEvent.setup();
+        renderSearchBar();
+
+        await user.type(screen.getByPlaceholderText(/Search nodes/), 'helper');
+        await user.keyboard('{Enter}');
+
+        await waitFor(() => {
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
+        });
+        expect(setCenterMock).toHaveBeenCalledWith(
+            350,
+            70,
+            expect.objectContaining({ zoom: expect.any(Number) }),
+        );
     });
 
     it('limits results to 8 items', async () => {

@@ -12,7 +12,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [highlightIdx, setHighlightIdx] = useState(0);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
-    const { setCenter } = useReactFlow();
+    const { getNode, setCenter } = useReactFlow();
 
     // Keyboard shortcut: Ctrl+K or /
     useEffect(() => {
@@ -78,13 +78,30 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const handleSelect = useCallback((node) => {
         if (node.data?.file) onSelectFile(node.data.file);
         onSelectNode(node);
-        // Zoom to node
-        if (node.position) {
-            setCenter(node.position.x + 86, node.position.y + 18, { zoom: 1.5, duration: 600 });
-        }
+        // Picking a node in another file triggers a dagre re-layout (useGraphData)
+        // that repositions nodes. The `node` from `allNodes` carries a stale
+        // pre-relayout position, so centering on it drifts the camera to empty
+        // space (#460). Wait until the node lands in the post-relayout store, then
+        // center on its current laid-out position.
+        let attempts = 0;
+        const focusNode = () => {
+            const laidOut = getNode(node.id);
+            const position = laidOut?.positionAbsolute || laidOut?.position;
+            if (position) {
+                const width = laidOut.width ?? 172;
+                const height = laidOut.height ?? 36;
+                setCenter(position.x + width / 2, position.y + height / 2, {
+                    zoom: 1.5,
+                    duration: 600,
+                });
+            } else if (attempts++ < 30) {
+                setTimeout(focusNode, 16);
+            }
+        };
+        focusNode();
         setIsOpen(false);
         setQuery('');
-    }, [onSelectFile, onSelectNode, setCenter]);
+    }, [onSelectFile, onSelectNode, getNode, setCenter]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'ArrowDown') {
