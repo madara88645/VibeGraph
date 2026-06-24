@@ -3,8 +3,6 @@
 import json
 import logging
 
-import pytest
-
 from app import JSONFormatter
 
 
