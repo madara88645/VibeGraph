@@ -2376,6 +2376,43 @@ body {
   transform: translateY(0);
 }
 
+/* ---- CTA row: primary upload + secondary live demo ---- */
+.empty-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.empty-demo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  margin-top: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  color: var(--color-accent-primary);
+  background: transparent;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.empty-demo-cta:hover {
+  transform: translateY(-2px);
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.7);
+}
+
+.empty-demo-cta:active {
+  transform: translateY(0);
+}
+
 .empty-shortcut {
   font-size: 0.75rem;
   color: var(--text-muted);

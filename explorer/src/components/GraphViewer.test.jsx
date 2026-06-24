@@ -59,11 +59,11 @@ describe('GraphViewer', () => {
     expect(screen.getByTestId('react-flow')).toBeInTheDocument();
   });
 
-  it('shows an upload-first empty state when no graph has been loaded yet', () => {
+  it('shows an outcome-led empty state when no graph has been loaded yet', () => {
     const onRequestUpload = vi.fn();
     renderViewer({ onRequestUpload });
 
-    expect(screen.getByText('Visualize your codebase')).toBeInTheDocument();
+    expect(screen.getByText('Understand any codebase in minutes')).toBeInTheDocument();
     expect(screen.getByText('Upload your project')).toBeInTheDocument();
     // Feature cards
     expect(screen.getByText('AI Explanations')).toBeInTheDocument();
@@ -78,6 +78,21 @@ describe('GraphViewer', () => {
 
     await user.click(screen.getByText('Upload your project'));
     expect(onRequestUpload).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers a zero-setup live demo CTA in the empty state', () => {
+    renderViewer({ onLoadDemo: vi.fn() });
+
+    expect(screen.getByRole('button', { name: /see a live demo/i })).toBeInTheDocument();
+  });
+
+  it('calls onLoadDemo when the live demo CTA is clicked', async () => {
+    const user = userEvent.setup();
+    const onLoadDemo = vi.fn();
+    renderViewer({ onLoadDemo });
+
+    await user.click(screen.getByRole('button', { name: /see a live demo/i }));
+    expect(onLoadDemo).toHaveBeenCalledTimes(1);
   });
 
   it('does not render export controls before a graph is loaded', () => {
