@@ -25,6 +25,8 @@ import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
 import {
   DEFAULT_AI_CONFIG,
+  TRIAL_EXHAUSTED_EVENT,
+  TRIAL_REMAINING_EVENT,
   fetchAiConfig,
   getStoredApiKey,
   getStoredModel,
@@ -130,6 +132,11 @@ function AppInner() {
       : keyInvalid
         ? 'invalid'
         : 'set';
+  const showTrialCounter = Boolean(aiConfig.trialEnabled) && !apiKey.trim();
+  const trialRemaining = Math.max(0, Number(aiConfig.trialRemaining) || 0);
+  const aiStatusLabel = showTrialCounter
+    ? `${trialRemaining} free request${trialRemaining === 1 ? '' : 's'} left`
+    : AI_STATUS_LABELS[aiStatus];
 
   const openAiSettings = useCallback(
     (message) => {
@@ -142,6 +149,32 @@ function AppInner() {
     },
     [apiKey, effectiveModel, showToast]
   );
+
+  useEffect(() => {
+    const handleTrialRemaining = (event) => {
+      const remaining = Math.max(0, Number(event.detail?.remaining) || 0);
+      setAiConfig((current) => ({
+        ...current,
+        trialRemaining: remaining,
+      }));
+    };
+
+    const handleTrialExhausted = (event) => {
+      setAiConfig((current) => ({
+        ...current,
+        trialRemaining: 0,
+        requiresUserKey: true,
+      }));
+      openAiSettings(event.detail?.message);
+    };
+
+    window.addEventListener(TRIAL_REMAINING_EVENT, handleTrialRemaining);
+    window.addEventListener(TRIAL_EXHAUSTED_EVENT, handleTrialExhausted);
+    return () => {
+      window.removeEventListener(TRIAL_REMAINING_EVENT, handleTrialRemaining);
+      window.removeEventListener(TRIAL_EXHAUSTED_EVENT, handleTrialExhausted);
+    };
+  }, [openAiSettings]);
 
   const handleSaveAiSettings = useCallback(
     ({ apiKey: nextApiKey, model }) => {
@@ -424,10 +457,12 @@ function AppInner() {
           <h1>VibeGraph Explorer</h1>
           <span
             className={`status-badge ${
-              aiStatus === 'invalid' || aiStatus === 'needsKey' ? 'status-badge-warning' : ''
+              aiStatus === 'invalid' || aiStatus === 'needsKey' || (showTrialCounter && trialRemaining === 0)
+                ? 'status-badge-warning'
+                : ''
             }`}
           >
-            {AI_STATUS_LABELS[aiStatus]}
+            {aiStatusLabel}
           </span>
 
           <span className="current-file-badge">

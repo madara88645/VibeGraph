@@ -72,4 +72,32 @@ describe('AISettingsModal', () => {
     expect(clearKeyButton).toBeDisabled();
     expect(clearKeyButton.closest('span')).toHaveAttribute('title', 'Key is already clear');
   });
+
+  it('shows the exhausted trial wall and points to the key field', () => {
+    render(
+      <AISettingsModal
+        isOpen
+        onClose={vi.fn()}
+        apiConfig={{
+          provider: 'openrouter',
+          defaultModel: 'deepseek/deepseek-v4-flash',
+          allowedModels: ['deepseek/deepseek-v4-flash'],
+          requiresUserKey: true,
+          trialEnabled: true,
+          trialRemaining: 0,
+        }}
+        draftApiKey=""
+        draftModel="deepseek/deepseek-v4-flash"
+        configError=""
+        onSave={vi.fn()}
+        onClear={vi.fn()}
+        onDraftApiKeyChange={vi.fn()}
+        onDraftModelChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Free trial used up');
+    expect(screen.getByRole('alert')).toHaveTextContent('OpenRouter key');
+    expect(screen.getByLabelText('OpenRouter API Key')).toBeInTheDocument();
+  });
 });

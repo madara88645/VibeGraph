@@ -15,11 +15,41 @@ export const DEFAULT_AI_CONFIG = {
     'anthropic/claude-sonnet-4.6',
   ],
   requiresUserKey: true,
+  trialEnabled: false,
+  trialRemaining: 0,
   uploadLimits: DEFAULT_UPLOAD_LIMITS,
 };
 
+export const TRIAL_REMAINING_EVENT = 'vibegraph:trial-remaining';
+export const TRIAL_EXHAUSTED_EVENT = 'vibegraph:trial-exhausted';
+
+const TRIAL_EXHAUSTED_MESSAGE =
+  'Free trial used up — add your own OpenRouter key in AI Settings.';
+
 function normalizePositiveNumber(value, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function normalizeNonNegativeNumber(value, fallback = 0) {
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+function publishTrialResponse(response) {
+  const rawRemaining = response?.headers?.get?.('X-Trial-Remaining');
+  if (rawRemaining !== null && rawRemaining !== undefined) {
+    const remaining = normalizeNonNegativeNumber(Number(rawRemaining));
+    window.dispatchEvent(
+      new CustomEvent(TRIAL_REMAINING_EVENT, { detail: { remaining } }),
+    );
+  }
+
+  if (response?.status === 402) {
+    window.dispatchEvent(
+      new CustomEvent(TRIAL_EXHAUSTED_EVENT, {
+        detail: { message: TRIAL_EXHAUSTED_MESSAGE },
+      }),
+    );
+  }
 }
 
 function normalizeUploadLimits(uploadLimits) {
@@ -97,6 +127,14 @@ export async function fetchAiConfig() {
       typeof data.requiresUserKey === 'boolean'
         ? data.requiresUserKey
         : DEFAULT_AI_CONFIG.requiresUserKey,
+    trialEnabled:
+      typeof data.trialEnabled === 'boolean'
+        ? data.trialEnabled
+        : DEFAULT_AI_CONFIG.trialEnabled,
+    trialRemaining: normalizeNonNegativeNumber(
+      Number(data.trialRemaining),
+      DEFAULT_AI_CONFIG.trialRemaining,
+    ),
   };
 }
 
@@ -124,10 +162,12 @@ export async function fetchWithTimeout(path, options = {}, timeoutMs = 30000) {
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(path, {
+    const response = await fetch(path, {
       ...options,
       signal: controller.signal,
     });
+    publishTrialResponse(response);
+    return response;
   } finally {
     window.clearTimeout(timeoutId);
   }

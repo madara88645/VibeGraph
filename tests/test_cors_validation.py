@@ -22,10 +22,12 @@ def test_cors_origins_with_allowed_domains():
     assert cors_middleware is not None
 
     allowed_origins = cors_middleware.kwargs.get("allow_origins", [])
+    exposed_headers = cors_middleware.kwargs.get("expose_headers", [])
 
     assert "http://localhost:5173" in allowed_origins
     assert "https://vibegraph.vercel.app" in allowed_origins
     assert "https://evil.com" not in allowed_origins
+    assert "X-Trial-Remaining" in exposed_headers
 
 
 @patch.dict(

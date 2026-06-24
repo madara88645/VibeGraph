@@ -1,20 +1,37 @@
 """Shared dependencies and AI configuration helpers for the VibeGraph API."""
 
 import os
+from threading import Lock
 
 from analyst.analyzer import MAX_FILE_SIZE
 from fastapi import HTTPException, Request
+from slowapi.util import get_remote_address
 
 from analyst.exporter import GraphExporter
 from app.ai_models import CURATED_MODELS, DEFAULT_OPENROUTER_MODEL
+from app.services.trial_meter import TrialMeter
 from teacher.openrouter_teacher import OpenRouterTeacher
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+DEFAULT_TRIAL_FREE_CALLS = 5
+DEFAULT_TRIAL_GLOBAL_DAILY_CAP = 500
+TRIAL_EXHAUSTED_MESSAGE = (
+    "Free trial used up — add your own OpenRouter key in AI Settings."
+)
+TRIAL_GLOBAL_CAP_MESSAGE = (
+    "Free trial is unavailable for today — add your own OpenRouter key in AI Settings."
+)
+GHOST_OWN_KEY_MESSAGE = (
+    "Ghost Runner narration requires your own OpenRouter key in AI Settings."
+)
 
 teacher = None
 exporter = GraphExporter()
+_trial_meter: TrialMeter | None = None
+_trial_meter_config: tuple[int, int] | None = None
+_trial_meter_lock = Lock()
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -22,6 +39,47 @@ def _env_flag(name: str, default: bool = False) -> bool:
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_non_negative_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        parsed = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed >= 0 else default
+
+
+def get_trial_meter() -> TrialMeter:
+    """Return the process-local meter for the current trial configuration."""
+    global _trial_meter, _trial_meter_config
+
+    config = (
+        _env_non_negative_int("TRIAL_FREE_CALLS", DEFAULT_TRIAL_FREE_CALLS),
+        _env_non_negative_int("TRIAL_GLOBAL_DAILY_CAP", DEFAULT_TRIAL_GLOBAL_DAILY_CAP),
+    )
+    with _trial_meter_lock:
+        if _trial_meter is None or _trial_meter_config != config:
+            _trial_meter = TrialMeter(
+                free_calls=config[0],
+                global_daily_cap=config[1],
+            )
+            _trial_meter_config = config
+        return _trial_meter
+
+
+def _reset_trial_meter() -> None:
+    """Reset process-local trial state. Intended for isolated test setup."""
+    global _trial_meter, _trial_meter_config
+    with _trial_meter_lock:
+        _trial_meter = None
+        _trial_meter_config = None
+
+
+def _get_trial_identity(request: Request) -> str:
+    return get_remote_address(request)
 
 
 def get_default_model() -> str:
@@ -70,12 +128,20 @@ def get_public_upload_config() -> dict[str, int]:
     }
 
 
-def get_public_ai_config() -> dict[str, object]:
+def get_public_ai_config(request: Request | None = None) -> dict[str, object]:
+    trial_enabled = is_server_fallback_enabled()
+    trial_remaining = 0
+    if trial_enabled:
+        identity = _get_trial_identity(request) if request is not None else "anonymous"
+        trial_remaining = get_trial_meter().remaining(identity)
+
     return {
         "provider": "openrouter",
         "defaultModel": get_default_model(),
         "allowedModels": get_allowed_models(),
-        "requiresUserKey": not is_server_fallback_enabled(),
+        "requiresUserKey": not trial_enabled or trial_remaining <= 0,
+        "trialEnabled": trial_enabled,
+        "trialRemaining": trial_remaining,
         "uploadLimits": get_public_upload_config(),
     }
 
@@ -91,12 +157,36 @@ def resolve_model_name(requested_model: str | None) -> str:
     return model_name
 
 
-def resolve_openrouter_api_key(request: Request) -> str:
+def resolve_openrouter_api_key(
+    request: Request,
+    *,
+    allow_server_trial: bool = True,
+) -> str:
     bearer_token = _get_bearer_token(request)
     if bearer_token:
         return bearer_token
 
     if is_server_fallback_enabled():
+        if not allow_server_trial:
+            raise HTTPException(status_code=401, detail=GHOST_OWN_KEY_MESSAGE)
+
+        meter = get_trial_meter()
+        identity = _get_trial_identity(request)
+        allowed, remaining = meter.consume_if_available(identity)
+        if not allowed:
+            request.state.trial_remaining = 0
+            message = (
+                TRIAL_GLOBAL_CAP_MESSAGE
+                if meter.is_global_exhausted()
+                else TRIAL_EXHAUSTED_MESSAGE
+            )
+            raise HTTPException(
+                status_code=402,
+                detail=message,
+                headers={"X-Trial-Remaining": "0"},
+            )
+
+        request.state.trial_remaining = remaining
         return os.getenv("OPENROUTER_API_KEY", "").strip()
 
     raise HTTPException(
@@ -108,12 +198,17 @@ def resolve_openrouter_api_key(request: Request) -> str:
 def get_teacher_for_request(
     request: Request,
     requested_model: str | None = None,
+    *,
+    allow_server_trial: bool = True,
 ):
     if teacher is not None:
         return teacher
 
     return OpenRouterTeacher(
-        api_key=resolve_openrouter_api_key(request),
+        api_key=resolve_openrouter_api_key(
+            request,
+            allow_server_trial=allow_server_trial,
+        ),
         model_name=resolve_model_name(requested_model),
         base_url=OPENROUTER_BASE_URL,
         http_referer=os.getenv(

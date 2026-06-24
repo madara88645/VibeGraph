@@ -42,7 +42,11 @@ def ghost_narrate(request: Request, body: GhostNarrateRequest):
         neighbors=body.context_nodes,
     )
 
-    teacher = deps.get_teacher_for_request(request, body.model)
+    teacher = deps.get_teacher_for_request(
+        request,
+        body.model,
+        allow_server_trial=False,
+    )
     result = teacher.narrate_step(context)
 
     return {

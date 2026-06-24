@@ -305,4 +305,21 @@ describe('useGhostRunner', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(onRequireAiKey).not.toHaveBeenCalled();
   });
+
+  it('skips narration during the server-funded trial without an own key', () => {
+    const nodes = [createNode('main', { entry_point: true })];
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const setCodePanelNode = vi.fn();
+
+    renderHook(() =>
+      useGhostRunner(nodes, [], setNodes, setEdges, setCodePanelNode, {
+        aiApiKey: '',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+      })
+    );
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
 });

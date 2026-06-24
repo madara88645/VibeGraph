@@ -12,4 +12,4 @@ router = APIRouter(prefix="/api", tags=["ai"])
 @limiter.limit(CHAT_LIMIT)
 def get_ai_config(request: Request):
     """Return safe frontend-facing AI configuration details."""
-    return deps.get_public_ai_config()
+    return deps.get_public_ai_config(request)

@@ -30,6 +30,7 @@ CHAT_PAYLOAD = {
 
 
 def test_ai_config_reports_openrouter_defaults():
+    deps._reset_trial_meter()
     with patch.dict(
         os.environ,
         {
@@ -52,6 +53,8 @@ def test_ai_config_reports_openrouter_defaults():
     assert "qwen/qwen3-coder-30b-a3b-instruct" in data["allowedModels"]
     assert "meta-llama/llama-3.3-70b-instruct:free" not in data["allowedModels"]
     assert data["requiresUserKey"] is True
+    assert data["trialEnabled"] is False
+    assert data["trialRemaining"] == 0
     assert data["uploadLimits"]["maxTotalBytes"] == 25 * 1024 * 1024
     assert data["uploadLimits"]["maxPerFileBytes"] == 1024 * 1024
 
@@ -114,6 +117,7 @@ def test_chat_uses_bearer_key_and_selected_model(monkeypatch):
 
 
 def test_chat_can_use_server_fallback_key(monkeypatch):
+    deps._reset_trial_meter()
     monkeypatch.setattr(deps, "teacher", None)
     monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
     monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
@@ -130,3 +134,133 @@ def test_chat_can_use_server_fallback_key(monkeypatch):
     assert response.status_code == 200
     assert response.json()["answer"] == "Fallback answer"
     assert mock_teacher_cls.call_args.kwargs["api_key"] == "server-side-fallback-key"
+
+
+def test_server_trial_counts_ai_actions_across_routes_and_blocks_the_sixth(
+    monkeypatch,
+):
+    deps._reset_trial_meter()
+    monkeypatch.setattr(deps, "teacher", None)
+    monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
+    monkeypatch.setenv("TRIAL_FREE_CALLS", "5")
+    monkeypatch.setenv("TRIAL_GLOBAL_DAILY_CAP", "50")
+
+    mock_teacher = MagicMock()
+    mock_teacher.explain_code.return_value = {
+        "analogy": "Analogy",
+        "technical": "Technical",
+        "key_takeaway": "Takeaway",
+    }
+    mock_teacher.chat.return_value = "Fallback answer"
+    mock_teacher.refine_learning_path.side_effect = lambda window, allowed_node_ids: (
+        window
+    )
+
+    learning_payload = {
+        "nodes": [
+            {
+                "id": "main",
+                "data": {
+                    "label": "main",
+                    "file": "repo/main.py",
+                    "type": "function",
+                    "entry_point": True,
+                    "lineno": 1,
+                },
+            }
+        ],
+        "edges": [],
+        "selected_file": "repo/main.py",
+    }
+    actions = [
+        ("/api/explain", {"file_path": test_file_path, "node_id": "main"}),
+        ("/api/chat", CHAT_PAYLOAD),
+        ("/api/learning-path", learning_payload),
+        ("/api/explain", {"file_path": test_file_path, "node_id": "main"}),
+        ("/api/chat", CHAT_PAYLOAD),
+    ]
+
+    with patch("app.dependencies.OpenRouterTeacher", return_value=mock_teacher):
+        for expected_remaining, (path, payload) in zip(
+            [4, 3, 2, 1, 0], actions, strict=True
+        ):
+            response = client.post(path, json=payload)
+            assert response.status_code == 200
+            assert response.headers["X-Trial-Remaining"] == str(expected_remaining)
+
+        blocked = client.post("/api/chat", json=CHAT_PAYLOAD)
+
+    assert blocked.status_code == 402
+    assert blocked.headers["X-Trial-Remaining"] == "0"
+    assert "Free trial used up" in blocked.json()["detail"]
+
+    config = client.get("/api/ai-config").json()
+    assert config["trialEnabled"] is True
+    assert config["trialRemaining"] == 0
+    assert config["requiresUserKey"] is True
+
+
+def test_server_trial_never_meters_user_key(monkeypatch):
+    deps._reset_trial_meter()
+    monkeypatch.setattr(deps, "teacher", None)
+    monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
+    monkeypatch.setenv("TRIAL_FREE_CALLS", "5")
+    monkeypatch.setenv("TRIAL_GLOBAL_DAILY_CAP", "50")
+
+    with patch("app.dependencies.OpenRouterTeacher") as mock_teacher_cls:
+        mock_teacher = MagicMock()
+        mock_teacher.chat.return_value = "User-funded answer"
+        mock_teacher_cls.return_value = mock_teacher
+
+        response = client.post(
+            "/api/chat",
+            json=CHAT_PAYLOAD,
+            headers={"Authorization": "Bearer user-openrouter-key"},
+        )
+
+    assert response.status_code == 200
+    assert "X-Trial-Remaining" not in response.headers
+    config = client.get("/api/ai-config").json()
+    assert config["trialRemaining"] == 5
+
+
+def test_ghost_narration_requires_own_key_without_consuming_trial(monkeypatch):
+    deps._reset_trial_meter()
+    monkeypatch.setattr(deps, "teacher", None)
+    monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
+    monkeypatch.setenv("TRIAL_FREE_CALLS", "5")
+    monkeypatch.setenv("TRIAL_GLOBAL_DAILY_CAP", "50")
+
+    response = client.post(
+        "/api/ghost-narrate",
+        json={"file_path": test_file_path, "node_id": "main"},
+    )
+
+    assert response.status_code == 401
+    assert "requires your own OpenRouter key" in response.json()["detail"]
+    assert client.get("/api/ai-config").json()["trialRemaining"] == 5
+
+
+def test_global_trial_cap_returns_clear_402_without_server_error(monkeypatch):
+    deps._reset_trial_meter()
+    monkeypatch.setattr(deps, "teacher", None)
+    monkeypatch.setenv("ALLOW_SERVER_FALLBACK_KEY", "true")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "server-side-fallback-key")
+    monkeypatch.setenv("TRIAL_FREE_CALLS", "5")
+    monkeypatch.setenv("TRIAL_GLOBAL_DAILY_CAP", "1")
+
+    with patch("app.dependencies.OpenRouterTeacher") as mock_teacher_cls:
+        mock_teacher = MagicMock()
+        mock_teacher.chat.return_value = "Final funded answer"
+        mock_teacher_cls.return_value = mock_teacher
+
+        first = client.post("/api/chat", json=CHAT_PAYLOAD)
+        blocked = client.post("/api/chat", json=CHAT_PAYLOAD)
+
+    assert first.status_code == 200
+    assert first.headers["X-Trial-Remaining"] == "0"
+    assert blocked.status_code == 402
+    assert "unavailable for today" in blocked.json()["detail"]

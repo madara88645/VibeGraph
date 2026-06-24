@@ -41,6 +41,13 @@ const AISettingsModal = ({
   const dropdownRef = useRef(null);
   const isClearDisabled = draftApiKey.length === 0;
   const clearButtonLabel = isClearDisabled ? 'Key is already clear' : 'Clear Key';
+  const trialRemaining = Math.max(0, Number(apiConfig?.trialRemaining) || 0);
+  const showTrialWall = Boolean(apiConfig?.trialEnabled)
+    && trialRemaining === 0
+    && !draftApiKey.trim();
+  const showTrialAvailable = Boolean(apiConfig?.trialEnabled)
+    && trialRemaining > 0
+    && !draftApiKey.trim();
 
 
   const allowedModels = useMemo(() => {
@@ -131,6 +138,19 @@ const AISettingsModal = ({
             <div className="ai-settings-alert ai-settings-alert-warning">{configError}</div>
           ) : null}
 
+          {showTrialWall ? (
+            <div className="ai-settings-alert ai-settings-alert-warning" role="alert">
+              <strong>Free trial used up.</strong>{' '}
+              Add your own free OpenRouter key to continue.
+            </div>
+          ) : null}
+
+          {showTrialAvailable ? (
+            <div className="ai-settings-alert" role="status">
+              You have {trialRemaining} free request{trialRemaining === 1 ? '' : 's'} left. Adding your own key removes the counter.
+            </div>
+          ) : null}
+
           <div className="ai-settings-field">
             <label htmlFor="ai-settings-key">OpenRouter API Key</label>
             <div className="ai-settings-key-row">
@@ -154,7 +174,7 @@ const AISettingsModal = ({
               </button>
             </div>
             <p className="ai-settings-help">
-              {apiConfig?.requiresUserKey
+              {showTrialWall || apiConfig?.requiresUserKey
                 ? 'Production requires your own key.'
                 : 'You can override the server key with your own key.'}
             </p>

@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildAiHeaders,
   DEFAULT_AI_CONFIG,
+  TRIAL_EXHAUSTED_EVENT,
+  TRIAL_REMAINING_EVENT,
   ensureAiReady,
   fetchAiConfig,
   fetchAiJson,
@@ -206,6 +208,8 @@ describe('fetchAiConfig', () => {
           defaultModel: 'google/gemini-2.5-flash-lite',
           allowedModels: ['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini'],
           requiresUserKey: false,
+          trialEnabled: true,
+          trialRemaining: 5,
           uploadLimits: {
             maxTotalBytes: 25 * 1024 * 1024,
             maxPerFileBytes: 1024 * 1024,
@@ -218,6 +222,8 @@ describe('fetchAiConfig', () => {
     expect(config.defaultModel).toBe('google/gemini-2.5-flash-lite');
     expect(config.allowedModels).toEqual(['google/gemini-2.5-flash-lite', 'openai/gpt-5-mini']);
     expect(config.requiresUserKey).toBe(false);
+    expect(config.trialEnabled).toBe(true);
+    expect(config.trialRemaining).toBe(5);
     expect(config.uploadLimits).toEqual({
       maxTotalBytes: 25 * 1024 * 1024,
       maxPerFileBytes: 1024 * 1024,
@@ -304,6 +310,42 @@ describe('fetchAiJson', () => {
     const [, options] = globalThis.fetch.mock.calls[0];
     expect(options.method).toBe('GET');
     expect(options.body).toBeUndefined();
+  });
+
+  it('publishes live trial remaining updates from response headers', async () => {
+    const onRemaining = vi.fn();
+    window.addEventListener(TRIAL_REMAINING_EVENT, onRemaining);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => '4' },
+      json: () => Promise.resolve({ answer: 'Hello' }),
+    });
+
+    await fetchAiJson('/api/chat', { body: { question: 'Hi' } });
+
+    expect(onRemaining).toHaveBeenCalledTimes(1);
+    expect(onRemaining.mock.calls[0][0].detail).toEqual({ remaining: 4 });
+    window.removeEventListener(TRIAL_REMAINING_EVENT, onRemaining);
+  });
+
+  it('publishes the trial wall event for a 402 response', async () => {
+    const onExhausted = vi.fn();
+    window.addEventListener(TRIAL_EXHAUSTED_EVENT, onExhausted);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 402,
+      headers: { get: () => '0' },
+      json: () => Promise.resolve({ detail: 'Free trial used up' }),
+    });
+
+    await expect(fetchAiJson('/api/chat', { body: {} })).rejects.toThrow(
+      'Free trial used up',
+    );
+
+    expect(onExhausted).toHaveBeenCalledTimes(1);
+    expect(onExhausted.mock.calls[0][0].detail.message).toMatch(/Free trial used up/);
+    window.removeEventListener(TRIAL_EXHAUSTED_EVENT, onExhausted);
   });
 });
 

@@ -14,9 +14,11 @@ from app.dependencies import (
     _get_bearer_token,
     is_server_fallback_enabled,
     get_public_ai_config,
+    get_trial_meter,
     resolve_model_name,
     resolve_openrouter_api_key,
     get_teacher_for_request,
+    _reset_trial_meter,
     DEFAULT_OPENROUTER_MODEL,
     CURATED_MODELS,
 )
@@ -101,6 +103,7 @@ def test_is_server_fallback_enabled():
 
 
 def test_get_public_ai_config():
+    _reset_trial_meter()
     with patch.dict(
         os.environ,
         {"ALLOW_SERVER_FALLBACK_KEY": "true", "OPENROUTER_API_KEY": "some-key"},
@@ -111,10 +114,14 @@ def test_get_public_ai_config():
         assert config["defaultModel"] == get_default_model()
         assert config["allowedModels"] == get_allowed_models()
         assert config["requiresUserKey"] is False
+        assert config["trialEnabled"] is True
+        assert config["trialRemaining"] == 5
 
     with patch.dict(os.environ, {}, clear=True):
         config = get_public_ai_config()
         assert config["requiresUserKey"] is True
+        assert config["trialEnabled"] is False
+        assert config["trialRemaining"] == 0
 
 
 def test_resolve_model_name():
@@ -130,6 +137,7 @@ def test_resolve_model_name():
 
 
 def test_resolve_openrouter_api_key():
+    _reset_trial_meter()
     request = MagicMock(spec=Request)
     request.headers = {"Authorization": "Bearer request-token"}
 
@@ -149,6 +157,95 @@ def test_resolve_openrouter_api_key():
             resolve_openrouter_api_key(request)
         assert exc_info.value.status_code == 401
         assert "OpenRouter API key required" in exc_info.value.detail
+
+
+def test_resolve_openrouter_api_key_meters_server_trial_and_blocks_next_call():
+    _reset_trial_meter()
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/explain",
+            "headers": [],
+            "client": ("203.0.113.10", 1234),
+        }
+    )
+
+    with patch.dict(
+        os.environ,
+        {
+            "ALLOW_SERVER_FALLBACK_KEY": "true",
+            "OPENROUTER_API_KEY": "env-key",
+            "TRIAL_FREE_CALLS": "2",
+            "TRIAL_GLOBAL_DAILY_CAP": "10",
+        },
+        clear=True,
+    ):
+        assert resolve_openrouter_api_key(request) == "env-key"
+        assert request.state.trial_remaining == 1
+        assert resolve_openrouter_api_key(request) == "env-key"
+        assert request.state.trial_remaining == 0
+
+        with pytest.raises(HTTPException) as exc_info:
+            resolve_openrouter_api_key(request)
+
+    assert exc_info.value.status_code == 402
+    assert "Free trial used up" in exc_info.value.detail
+    assert exc_info.value.headers == {"X-Trial-Remaining": "0"}
+
+
+def test_resolve_openrouter_api_key_never_meters_bearer_key():
+    _reset_trial_meter()
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/explain",
+            "headers": [(b"authorization", b"Bearer user-key")],
+            "client": ("203.0.113.11", 1234),
+        }
+    )
+
+    with patch.dict(
+        os.environ,
+        {
+            "ALLOW_SERVER_FALLBACK_KEY": "true",
+            "OPENROUTER_API_KEY": "env-key",
+            "TRIAL_FREE_CALLS": "2",
+            "TRIAL_GLOBAL_DAILY_CAP": "10",
+        },
+        clear=True,
+    ):
+        assert resolve_openrouter_api_key(request) == "user-key"
+        assert resolve_openrouter_api_key(request) == "user-key"
+        assert get_trial_meter().remaining("203.0.113.11") == 2
+
+
+def test_resolve_openrouter_api_key_requires_own_key_for_ghost():
+    _reset_trial_meter()
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/ghost-narrate",
+            "headers": [],
+            "client": ("203.0.113.12", 1234),
+        }
+    )
+
+    with patch.dict(
+        os.environ,
+        {
+            "ALLOW_SERVER_FALLBACK_KEY": "true",
+            "OPENROUTER_API_KEY": "env-key",
+        },
+        clear=True,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            resolve_openrouter_api_key(request, allow_server_trial=False)
+
+    assert exc_info.value.status_code == 401
+    assert "Ghost Runner narration requires your own" in exc_info.value.detail
 
 
 def test_get_teacher_for_request():

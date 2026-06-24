@@ -310,6 +310,50 @@ describe('App upload flow', () => {
     expect(await screen.findByText('AI Ready')).toBeInTheDocument();
   });
 
+  it('shows and live-updates the free trial counter, then opens the key wall at zero', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          provider: 'openrouter',
+          defaultModel: 'google/gemini-3.1-flash-lite',
+          allowedModels: ['google/gemini-3.1-flash-lite'],
+          requiresUserKey: false,
+          trialEnabled: true,
+          trialRemaining: 5,
+        }),
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText('5 free requests left')).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('vibegraph:trial-remaining', { detail: { remaining: 4 } }),
+      );
+    });
+    expect(await screen.findByText('4 free requests left')).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('vibegraph:trial-remaining', { detail: { remaining: 0 } }),
+      );
+    });
+    expect(await screen.findByText('0 free requests left')).toBeInTheDocument();
+    expect(mockAiContext.aiReady).toBe(true);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('vibegraph:trial-exhausted', {
+          detail: { message: 'Free trial used up' },
+        }),
+      );
+    });
+
+    expect(screen.getByText('Close AI Settings')).toBeInTheDocument();
+  });
+
   it('flips the badge to "Key Invalid" when an AI request reports an auth error', async () => {
     sessionStorage.setItem('vg_v1_openrouter_key', 'sk-bad');
 

@@ -115,6 +115,17 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class TrialRemainingHeaderMiddleware(BaseHTTPMiddleware):
+    """Expose the updated trial allowance after server-funded AI requests."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        remaining = getattr(request.state, "trial_remaining", None)
+        if remaining is not None:
+            response.headers["X-Trial-Remaining"] = str(remaining)
+        return response
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     configure_logging()
@@ -150,6 +161,9 @@ def create_app() -> FastAPI:
 
     # Request ID tracing
     application.add_middleware(RequestIDMiddleware)
+
+    # Live server-funded trial counter
+    application.add_middleware(TrialRemainingHeaderMiddleware)
 
     # Security headers
     application.add_middleware(SecurityHeadersMiddleware)
@@ -204,6 +218,7 @@ def create_app() -> FastAPI:
         allow_credentials=allow_credentials,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["X-Trial-Remaining"],
     )
 
     # Validation error handler

@@ -504,7 +504,9 @@ export function useGhostRunner(
 
     // ── Narration fetcher (non-blocking) ──
     const fetchNarration = useCallback((nodeId, previousNodeId) => {
-        if (!aiReady) return;
+        // Ghost narration is intentionally excluded from the server-funded
+        // trial because it can make one AI call per traversal step.
+        if (!aiReady || !aiApiKey.trim()) return;
 
         const requestId = ++narrationRequestIdRef.current;
         const node = nodesMapRef.current.get(nodeId);
