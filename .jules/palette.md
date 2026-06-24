@@ -86,3 +86,6 @@
 ## 2026-06-03 - Nested Interactive Elements inside Dropzones
 **Learning:** Placing interactive `<button>` elements (like "Try with a Demo Project") inside a parent `<div>` that has `role="button"` and `tabIndex={0}` (like a file upload dropzone) creates a severe accessibility anti-pattern. Screen readers and keyboard navigation struggle to differentiate or activate nested interactive elements, violating WCAG semantics.
 **Action:** Always extract interactive elements outside of parent containers that define their own `role="button"` or `tabIndex`. Ensure alternative actions (like loading a demo) are siblings, not children, of a clickable dropzone area to preserve clear focus order and semantic boundaries.
+## 2026-06-23 - Hide Decorative Ghost Emoji from Screen Readers
+**Learning:** Decorative emojis (like 👻 in the Ghost Runner controls) without `aria-hidden` are read aloud by screen readers, creating unnecessary noise when adjacent text already provides context.
+**Action:** Always wrap decorative or illustrative emojis in `<span aria-hidden="true">`, particularly in badges or placeholder text, to preserve a clean a11y experience.
