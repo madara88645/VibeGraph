@@ -164,7 +164,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                     {isGhostRunning && (
                         <span className="code-follow-badge">
-                            👻 Following
+                            <span aria-hidden="true">👻</span> Following
                         </span>
                     )}
                 </div>
@@ -370,7 +370,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 {!loading && !error && !codeData && (
                     <div className="code-placeholder">
                         {isGhostRunning
-                            ? '👻 Code will appear automatically when Ghost Runner starts...'
+                            ? <><span aria-hidden="true">👻</span> Code will appear automatically when Ghost Runner starts...</>
                             : 'Click a node or start Ghost Runner'}
                     </div>
                 )}
