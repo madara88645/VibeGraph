@@ -41,6 +41,7 @@ export function DemoContentProvider({ children }) {
   return <DemoContentContext.Provider value={value}>{children}</DemoContentContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDemoContent() {
   const ctx = useContext(DemoContentContext);
   if (!ctx) {
