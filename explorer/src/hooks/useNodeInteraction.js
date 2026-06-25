@@ -40,6 +40,7 @@ export function useNodeInteraction({
   onAuthCleared,
   allNodes = [],
   allEdges = [],
+  getBakedExplanation = null,
 } = {}) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [explanation, setExplanation] = useState(null);
@@ -73,6 +74,14 @@ export function useNodeInteraction({
       const cached = explanationCacheRef.current.get(cacheKey);
       if (cached) {
         setExplanation(cached);
+        setLoading(false);
+        return;
+      }
+
+      const baked = getBakedExplanation?.(node.id, level);
+      if (baked) {
+        explanationCacheRef.current.set(cacheKey, baked);
+        setExplanation(baked);
         setLoading(false);
         return;
       }
@@ -140,6 +149,7 @@ export function useNodeInteraction({
       aiReady,
       allEdges,
       allNodes,
+      getBakedExplanation,
       onAuthCleared,
       onAuthError,
       onRequireAiKey,

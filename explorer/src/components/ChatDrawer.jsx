@@ -19,6 +19,9 @@ const MISSING_KEY_MESSAGE =
 const NO_NODE_MESSAGE =
   'Pick a function or class on the graph first so answers use real code from your project.';
 
+const DEMO_FREEFORM_MESSAGE =
+  'This is a live demo with sample answers. To ask your own questions or analyze your own code, add a free OpenRouter key.';
+
 const NO_NODE_PLACEHOLDER = 'Select a node on the graph to ask…';
 const CHAT_STREAM_TIMEOUT_MS = 45000;
 
@@ -32,6 +35,8 @@ const ChatDrawer = ({
   selectedModel,
   aiReady,
   onOpenAiSettings,
+  isDemo = false,
+  getCannedChats = () => [],
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -80,6 +85,19 @@ const ChatDrawer = ({
     [selectedNode?.id]
   );
 
+  const sendCannedChat = useCallback(
+    (qa) => {
+      const next = [
+        ...messages,
+        { role: 'user', content: qa.question },
+        { role: 'assistant', content: qa.answer },
+      ];
+      setMessages(next);
+      persistMessages(next);
+    },
+    [messages, persistMessages]
+  );
+
   const sendMessage = useCallback(async (overrideText) => {
     const rawText =
       typeof overrideText === 'string' && overrideText.trim()
@@ -87,6 +105,18 @@ const ChatDrawer = ({
         : inputText;
     const text = rawText.trim();
     if (!text || loading) {
+      return;
+    }
+
+    if (isDemo) {
+      const next = [
+        ...messages,
+        { role: 'user', content: text },
+        { role: 'assistant', content: DEMO_FREEFORM_MESSAGE },
+      ];
+      setMessages(next);
+      persistMessages(next);
+      setInputText('');
       return;
     }
 
@@ -278,6 +308,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
     allEdges,
     apiKey,
     inputText,
+    isDemo,
     loading,
     messages,
     onOpenAiSettings,
@@ -420,6 +451,21 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
 
           <div ref={messagesEndRef} />
         </div>
+
+        {isDemo && getCannedChats(selectedNode?.id).length > 0 && (
+          <div className="demo-chat-suggestions">
+            {getCannedChats(selectedNode?.id).map((qa) => (
+              <button
+                key={qa.question}
+                type="button"
+                className="demo-chat-chip"
+                onClick={() => sendCannedChat(qa)}
+              >
+                {qa.question}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="chat-input-area">
           <label htmlFor="chat-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>

@@ -135,7 +135,7 @@ export function useGraphData(setNodes, setEdges) {
         return { files: fileList, nodeStats: statsMap };
     }, [allNodes]);
 
-    const handleUploadSuccess = useCallback((result, resetGhostStateCallback) => {
+    const handleUploadSuccess = useCallback((result, resetGhostStateCallback, source = GRAPH_CACHE_SOURCE) => {
         const { nodes: newNodes, edges: newEdges, file_dependencies: newFileDependencies } = result;
         const safeNodes = Array.isArray(newNodes) ? newNodes : [];
         const safeEdges = Array.isArray(newEdges) ? newEdges : [];
@@ -187,7 +187,7 @@ export function useGraphData(setNodes, setEdges) {
             const stringifyStart = PERF_DEBUG ? performance.now() : 0;
             const payload = JSON.stringify({
                 schemaVersion: GRAPH_CACHE_SCHEMA_VERSION,
-                source: GRAPH_CACHE_SOURCE,
+                source,
                 nodes: customNodes,
                 edges: safeEdges,
                 fileDependencies: Array.isArray(newFileDependencies) ? newFileDependencies : null,
@@ -372,6 +372,7 @@ export function useGraphData(setNodes, setEdges) {
     }, [selectedFile, allNodes, allEdges]);
 
     return {
+        cacheKey,
         allNodes,
         allNodesMap,
         allEdges,

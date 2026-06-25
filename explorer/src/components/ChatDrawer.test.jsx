@@ -468,3 +468,70 @@ describe('ChatDrawer', () => {
     expect(screen.getByText('Stored reply')).toBeInTheDocument();
   });
 });
+
+const node = { id: 'n1', data: { file: 'a.py' } };
+
+describe('ChatDrawer demo mode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    globalThis.fetch = vi.fn();
+    localStorage.clear();
+  });
+
+  it('shows canned question chips and replays the baked answer with no network', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const getCannedChats = vi.fn(() => [
+      { nodeId: 'n1', question: 'What does n1 do?', answer: 'It sums things.' },
+    ]);
+
+    render(
+      <ChatDrawer
+        selectedNode={node}
+        allNodes={[node]}
+        allEdges={[]}
+        isOpen
+        onToggle={() => {}}
+        apiKey=""
+        selectedModel=""
+        aiReady={false}
+        onOpenAiSettings={() => {}}
+        isDemo
+        getCannedChats={getCannedChats}
+      />
+    );
+
+    const chip = await screen.findByRole('button', { name: /What does n1 do\?/i });
+    await user.click(chip);
+
+    expect(await screen.findByText('It sums things.')).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the demo wall for a free-form question and makes no network call', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    render(
+      <ChatDrawer
+        selectedNode={node}
+        allNodes={[node]}
+        allEdges={[]}
+        isOpen
+        onToggle={() => {}}
+        apiKey=""
+        selectedModel=""
+        aiReady={false}
+        onOpenAiSettings={() => {}}
+        isDemo
+        getCannedChats={() => []}
+      />
+    );
+
+    await user.type(screen.getByRole('textbox'), 'my own question');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByText(/add a free OpenRouter key/i)).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

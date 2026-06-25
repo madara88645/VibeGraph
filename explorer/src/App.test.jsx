@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
-import { loadDemoGraph } from './utils/loadDemoGraph';
+import { loadDemoGraph, loadDemoAiContent } from './utils/loadDemoGraph';
 
 const mockOnResetSimulation = vi.fn();
 const mockSetIsPlaying = vi.fn();
@@ -115,6 +115,7 @@ vi.mock('./components/GraphViewer', () => ({
 
 vi.mock('./utils/loadDemoGraph', () => ({
   loadDemoGraph: vi.fn(),
+  loadDemoAiContent: vi.fn(),
 }));
 vi.mock('./components/ExplanationPanel', () => ({ default: () => null }));
 vi.mock('./components/FileSidebar', () => ({
@@ -154,10 +155,13 @@ vi.mock('./components/AISettingsModal', () => ({
 }));
 
 vi.mock('./components/ProjectUpload', () => ({
-  default: ({ onUploadSuccess }) => (
-    <button onClick={() => onUploadSuccess({ nodes: [], edges: [] })}>
-      Trigger Upload
-    </button>
+  default: ({ onUploadSuccess, onLoadDemo }) => (
+    <>
+      <button onClick={() => onUploadSuccess({ nodes: [], edges: [] })}>
+        Trigger Upload
+      </button>
+      <button onClick={() => onLoadDemo?.()}>Modal Demo</button>
+    </>
   ),
 }));
 
@@ -274,7 +278,7 @@ describe('App upload flow', () => {
       expect(loadDemoGraph).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(mockHandleUploadSuccess).toHaveBeenCalledWith(payload, expect.any(Function));
+      expect(mockHandleUploadSuccess).toHaveBeenCalledWith(payload, expect.any(Function), 'demo');
     });
   });
 
@@ -359,5 +363,49 @@ describe('App upload flow', () => {
 
     expect(await screen.findByText('Key Invalid')).toBeInTheDocument();
     expect(screen.queryByText('Key Set')).not.toBeInTheDocument();
+  });
+
+  it('loads pre-baked AI content alongside the demo graph and serves a baked explanation', async () => {
+    const user = userEvent.setup();
+    loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
+    loadDemoAiContent.mockResolvedValue({
+      explanations: {
+        n1: {
+          snippet: 'def n1(): pass',
+          levels: {
+            beginner: { analogy: 'a', technical: 't', key_takeaway: 'k' },
+            intermediate: { analogy: 'a2', technical: 't2', key_takeaway: 'k2' },
+            advanced: { analogy: 'a3', technical: 't3', key_takeaway: 'k3' },
+          },
+        },
+      },
+      chat: [],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config'));
+    await user.click(screen.getByText('load-demo'));
+
+    await waitFor(() => expect(loadDemoAiContent).toHaveBeenCalledTimes(1));
+  });
+
+  it('routes the upload-modal demo button through the same baked-content demo load', async () => {
+    const user = userEvent.setup();
+    loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
+    loadDemoAiContent.mockResolvedValue({ explanations: {}, chat: [] });
+
+    render(<App />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config'));
+
+    await user.click(screen.getByText('Modal Demo'));
+
+    await waitFor(() => expect(loadDemoAiContent).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockHandleUploadSuccess).toHaveBeenCalledWith(
+        expect.objectContaining({ nodes: expect.any(Array) }),
+        expect.any(Function),
+        'demo'
+      )
+    );
   });
 });
