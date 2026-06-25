@@ -31,6 +31,7 @@ import {
   setStoredApiKey,
   setStoredModel,
 } from './utils/aiClient';
+import { loadDemoGraph } from './utils/loadDemoGraph';
 import { getShortName } from './utils/stringUtils';
 
 function shortenModelName(modelName) {
@@ -319,6 +320,15 @@ function AppInner() {
     () => uploadRef.current?.openModal(),
     []
   );
+  const handleLoadDemo = useCallback(async () => {
+    try {
+      const data = await loadDemoGraph();
+      onUploadSuccess(data);
+      showToast('Demo project loaded successfully!', 'success');
+    } catch (err) {
+      showToast('Failed to load demo project: ' + err.message, 'error');
+    }
+  }, [onUploadSuccess, showToast]);
   const handleSelectFile = useCallback(
     (file) => {
       setSelectedFile(file);
@@ -533,6 +543,7 @@ function AppInner() {
               onEdgesChange={onEdgesChange}
               onNodeClick={onNodeClick}
               onRequestUpload={handleRequestUpload}
+              onLoadDemo={handleLoadDemo}
             />
           </ErrorBoundary>
 

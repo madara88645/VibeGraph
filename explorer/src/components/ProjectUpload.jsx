@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useI
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
+import { loadDemoGraph } from '../utils/loadDemoGraph';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable Python code found.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
@@ -317,14 +318,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
                                             e.stopPropagation();
                                             setIsAnalyzing(true);
                                             try {
-                                                let res = await fetch('/demo_graph_data.json');
-                                                if (!res.ok) {
-                                                    res = await fetch('/graph_data.json');
-                                                }
-                                                if (!res.ok) {
-                                                    throw new Error(`Demo file not found on the server (HTTP ${res.status})`);
-                                                }
-                                                const data = await res.json();
+                                                const data = await loadDemoGraph();
                                                 if (onUploadSuccess) onUploadSuccess(data);
                                                 setIsModalOpen(false);
                                                 showToast('Demo project loaded successfully!', 'success');

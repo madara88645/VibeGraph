@@ -3,6 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
+import { loadDemoGraph } from './utils/loadDemoGraph';
 
 const mockOnResetSimulation = vi.fn();
 const mockSetIsPlaying = vi.fn();
@@ -97,8 +98,23 @@ vi.mock('./hooks/useGraphData', () => ({
 }));
 
 vi.mock('./components/GraphViewer', () => ({
-  default: ({ nodes = [] }) =>
-    nodes.length === 0 ? <div>Visualize your codebase</div> : <div>GraphViewer</div>,
+  default: ({ nodes = [], onLoadDemo }) =>
+    nodes.length === 0 ? (
+      <div>
+        <div>Visualize your codebase</div>
+        {onLoadDemo ? (
+          <button type="button" onClick={() => onLoadDemo()}>
+            load-demo
+          </button>
+        ) : null}
+      </div>
+    ) : (
+      <div>GraphViewer</div>
+    ),
+}));
+
+vi.mock('./utils/loadDemoGraph', () => ({
+  loadDemoGraph: vi.fn(),
 }));
 vi.mock('./components/ExplanationPanel', () => ({ default: () => null }));
 vi.mock('./components/FileSidebar', () => ({
@@ -240,6 +256,26 @@ describe('App upload flow', () => {
     expect(screen.queryByText('SearchBar')).not.toBeInTheDocument();
     expect(screen.queryByText('SimulationControls')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Learning Path' })).not.toBeInTheDocument();
+  });
+
+  it('loads the bundled demo graph when the empty-state demo CTA is used', async () => {
+    const user = userEvent.setup();
+    const payload = { nodes: [{ id: 'demo' }], edges: [] };
+    loadDemoGraph.mockResolvedValue(payload);
+
+    render(<App />);
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config');
+    });
+
+    await user.click(screen.getByText('load-demo'));
+
+    await waitFor(() => {
+      expect(loadDemoGraph).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(mockHandleUploadSuccess).toHaveBeenCalledWith(payload, expect.any(Function));
+    });
   });
 
   it('shows the active model from backend config in the header', async () => {

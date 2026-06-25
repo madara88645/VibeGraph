@@ -34,6 +34,7 @@ const GraphViewer = ({
   onEdgesChange,
   onNodeClick,
   onRequestUpload,
+  onLoadDemo,
 }) => {
   const graphRef = useRef(null);
   const showToast = useToast();
@@ -197,26 +198,39 @@ const GraphViewer = ({
               </svg>
             </div>
 
-            <h2>Visualize your codebase</h2>
+            <h2>Understand any codebase in minutes</h2>
             <p className="empty-subtitle">
-              Upload a Python, JavaScript, or TypeScript project and VibeGraph will map its functions, classes, and call relationships into an interactive graph you can explore with AI.
+              Drop in a Python, JavaScript, or TypeScript project and VibeGraph maps its functions, classes, and call relationships into an interactive graph — then explains any part in plain language with AI.
             </p>
 
-            <button
-              className="empty-upload-cta"
-              onClick={onRequestUpload}
-              id="empty-state-upload-btn"
-              aria-label="Upload your project"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              Upload your project
-            </button>
-             <span className="empty-shortcut">
-              Tip: click Upload Project, then drop your folder / .zip file, or try the Demo!
+            <div className="empty-cta-row">
+              <button
+                className="empty-upload-cta"
+                onClick={onRequestUpload}
+                id="empty-state-upload-btn"
+                aria-label="Upload your project"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Upload your project
+              </button>
+              <button
+                className="empty-demo-cta"
+                type="button"
+                onClick={() => onLoadDemo?.()}
+                aria-label="See a live demo"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <polygon points="6 4 20 12 6 20 6 4" />
+                </svg>
+                See a live demo
+              </button>
+            </div>
+            <span className="empty-shortcut">
+              No upload, no API key — explore a sample project instantly.
             </span>
           </div>
 
