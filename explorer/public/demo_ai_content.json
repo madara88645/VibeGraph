@@ -1,0 +1,860 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-25",
+  "author": "claude-authored (no live API call, no key)",
+  "graphFile": "demo_graph_data.json",
+  "explanations": {
+    "summarize_progress": {
+      "snippet": "def summarize_progress(sessions: list[dict]) -> dict:\n    minutes = [session[\"minutes\"] for session in sessions]\n    completed = [session for session in sessions if session[\"completed\"]]\n    return {\n        \"average_minutes\": round(mean(minutes), 1) if minutes else 0,\n        \"completion_rate\": round(len(completed) / len(sessions), 2) if sessions else 0,\n    }",
+      "levels": {
+        "beginner": {
+          "analogy": "Think of a fitness tracker that reads your week of workouts and prints a tiny report card: your average workout length and how many you actually finished.",
+          "technical": "### What it is\nA function that turns a list of study-session records into a small summary: the average minutes per session and the share that were completed.\n\n### Inputs/Outputs\nInput: `sessions`, a list of dicts each having `minutes` and `completed`. Output: a dict with `average_minutes` and `completion_rate`.\n\n### Side effects\nNone. It only reads the input and returns a new dict; it does not change anything outside.\n\n### Why this node exists\nIt is the first step that converts raw session data into the numbers the planner uses to judge how a learner is doing.\n\n### Common bugs\nIf a session dict is missing the `minutes` or `completed` key, the lookup would raise a KeyError.\n\n### References\nSelected node: summarize_progress\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: builtin:round, external:statistics.mean, builtin:len\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Reads study sessions and returns average minutes and completion rate as a small summary dict."
+        },
+        "intermediate": {
+          "analogy": "Like a spreadsheet formula row that condenses many raw rows into two headline cells.",
+          "technical": "### What it is\n`summarize_progress` aggregates a list of session dicts into `average_minutes` (rounded mean of `minutes`) and `completion_rate` (rounded ratio of completed sessions to total).\n\n### Inputs/Outputs\nInput: `sessions: list[dict]` where each item has `minutes` and `completed`. Output: `dict` with `average_minutes` and `completion_rate`. Empty input yields zeros via the `if minutes`/`if sessions` guards.\n\n### Side effects\nPure: no I/O, no mutation of the input list.\n\n### Why this node exists\nIt is the analytics layer feeding `detect_risk` and the planner; it isolates the math so callers work with stable summary fields.\n\n### Common bugs\nEach session must contain `minutes` and `completed`; a malformed record raises KeyError. The empty-list guards prevent divide-by-zero and `statistics.mean` on an empty sequence.\n\n### References\nSelected node: summarize_progress\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: builtin:round, external:statistics.mean, builtin:len\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pure aggregator: computes rounded average minutes and completion rate, with guards for empty input."
+        },
+        "advanced": {
+          "analogy": "A small map-reduce: comprehensions project the rows, then `mean`/`len` reduce them to two rounded scalars.",
+          "technical": "### What it is\nBuilds `minutes` and `completed` via list comprehensions, then returns a dict using `round(mean(minutes), 1)` and `round(len(completed)/len(sessions), 2)`, each short-circuited to 0 when the source is empty.\n\n### Inputs/Outputs\nSignature `(sessions: list[dict]) -> dict`. Reads `session['minutes']` and `session['completed']`. Returns `{'average_minutes': float|int, 'completion_rate': float|int}`.\n\n### Side effects\nReferentially transparent; depends only on `statistics.mean`, `round`, and `len`.\n\n### Why this node exists\nDecouples raw collection from decision logic; `detect_risk` consumes exactly these two keys, so this contract is the analytics boundary.\n\n### Common bugs\nTruthiness guards key on the comprehension result, not the raw `sessions`: `minutes` would be empty only if `sessions` is empty, so both guards are effectively the same condition. KeyError on malformed records remains the main failure mode.\n\n### References\nSelected node: summarize_progress\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: builtin:round, external:statistics.mean, builtin:len\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Two comprehensions plus rounded reductions; empty-input guards keep it total and divide-by-zero safe."
+        }
+      }
+    },
+    "detect_risk": {
+      "snippet": "def detect_risk(summary: dict) -> str:\n    if summary[\"completion_rate\"] < 0.5:\n        return \"needs_support\"\n    if summary[\"average_minutes\"] < 20:\n        return \"needs_focus_time\"\n    return \"on_track\"",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a traffic light that looks at your report card and flips to red, yellow, or green.",
+          "technical": "### What it is\nTakes the summary from `summarize_progress` and returns one of three status strings describing how much help the learner needs.\n\n### Inputs/Outputs\nInput: a `summary` dict with `completion_rate` and `average_minutes`. Output: one string: `needs_support`, `needs_focus_time`, or `on_track`.\n\n### Side effects\nNone. It only checks numbers and returns a label.\n\n### Why this node exists\nIt turns raw numbers into a simple human-readable risk label the planner can act on.\n\n### Common bugs\nIf the summary lacks `completion_rate` or `average_minutes`, the lookup raises a KeyError.\n\n### References\nSelected node: detect_risk\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Maps a progress summary to one of three risk labels."
+        },
+        "intermediate": {
+          "analogy": "A rules engine with two thresholds and a default: low completion first, then low minutes, otherwise on track.",
+          "technical": "### What it is\n`detect_risk` classifies a summary: completion under 0.5 -> `needs_support`; else average minutes under 20 -> `needs_focus_time`; otherwise `on_track`.\n\n### Inputs/Outputs\nInput: `summary: dict` with `completion_rate` and `average_minutes`. Output: `str` (one of three labels).\n\n### Side effects\nPure; reads two keys and returns a constant string.\n\n### Why this node exists\nEncapsulates the thresholds in one place so the planner does not hard-code business rules.\n\n### Common bugs\nOrder matters: completion is checked before minutes, so a low-completion learner is always `needs_support`. Missing keys raise KeyError.\n\n### References\nSelected node: detect_risk\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Threshold classifier; completion check takes priority over the minutes check."
+        },
+        "advanced": {
+          "analogy": "A short-circuit guard ladder: the first satisfied predicate wins, with `on_track` as the fall-through.",
+          "technical": "### What it is\nSequential `if` checks on `summary['completion_rate'] < 0.5` then `summary['average_minutes'] < 20`, returning early; final `return 'on_track'`.\n\n### Inputs/Outputs\n`(summary: dict) -> str`. Consumes exactly the two keys produced by `summarize_progress`.\n\n### Side effects\nNone; deterministic given the summary.\n\n### Why this node exists\nKeeps risk policy isolated and unit-testable; its output drives `create_step`'s minutes allocation downstream.\n\n### Common bugs\nBoundary values are exclusive (`< 0.5`, `< 20`), so exactly 0.5 or 20 is treated as healthier. Relies on the summary contract; a renamed key breaks it with KeyError.\n\n### References\nSelected node: detect_risk\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Ordered exclusive-threshold ladder; first matching predicate returns, default is on_track."
+        }
+      }
+    },
+    "builtin:round": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like rounding a price to the nearest cent.",
+          "technical": "### What it is\nPython's built-in `round` function, used to round numbers.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `round` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `round`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `round`.\n\n### Common bugs\nMisuse would surface where `round` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:round\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `round`, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like rounding a price to the nearest cent.",
+          "technical": "### What it is\nThe built-in `round`, called by `summarize_progress` to round the average and rate.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a Python builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced Python builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:round\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `round`, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like rounding a price to the nearest cent.",
+          "technical": "### What it is\nCPython's `round` builtin; here it rounds `mean(...)` and the completion ratio.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque Python builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying Python builtin provides.\n\n### Why this node exists\nRepresented as a Python builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external Python builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:round\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `round`, not part of the demo project source."
+        }
+      }
+    },
+    "external:statistics.mean": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like finding the typical value in a set of numbers.",
+          "technical": "### What it is\n`mean` from Python's standard `statistics` module, which averages numbers.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `statistics.mean` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `statistics.mean`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `statistics.mean`.\n\n### Common bugs\nMisuse would surface where `statistics.mean` is called, not in the demo project itself.\n\n### References\nSelected node: external:statistics.mean\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `statistics.mean` from the Python standard library, not demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like finding the typical value in a set of numbers.",
+          "technical": "### What it is\n`statistics.mean`, imported into analytics.py and used by `summarize_progress`.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a external module function referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced external module function, not in the demo source shown here.\n\n### References\nSelected node: external:statistics.mean\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `statistics.mean` from the Python standard library, not demo project source."
+        },
+        "advanced": {
+          "analogy": "Like finding the typical value in a set of numbers.",
+          "technical": "### What it is\nThe stdlib `statistics.mean`; computes the average minutes before rounding.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque external module function.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying external module function provides.\n\n### Why this node exists\nRepresented as a external module function node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external external module function or its usage site, not the demo project code.\n\n### References\nSelected node: external:statistics.mean\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `statistics.mean` from the Python standard library, not demo project source."
+        }
+      }
+    },
+    "builtin:len": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like counting how many cards are in a stack.",
+          "technical": "### What it is\nPython's built-in `len`, which counts items.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `len` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `len`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `len`.\n\n### Common bugs\nMisuse would surface where `len` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:len\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `len`, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like counting how many cards are in a stack.",
+          "technical": "### What it is\nThe built-in `len`, used by `summarize_progress` to count completed and total sessions.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a Python builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced Python builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:len\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `len`, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like counting how many cards are in a stack.",
+          "technical": "### What it is\nCPython's `len`; here it powers the completion-rate denominator and numerator.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque Python builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying Python builtin provides.\n\n### Why this node exists\nRepresented as a Python builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external Python builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:len\nFile path: Unknown (not in provided code context).\nCallers: summarize_progress\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `len`, not part of the demo project source."
+        }
+      }
+    },
+    "DemoRepository": {
+      "snippet": "class DemoRepository:\n    def load_sessions(self, user_id: str) -> list[dict]:\n        print(f\"loading sessions for {user_id}\")\n        return [\n            {\"minutes\": 30, \"completed\": True},\n            {\"minutes\": 18, \"completed\": False},\n            {\"minutes\": 42, \"completed\": True},\n        ]",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a filing cabinet drawer that hands you sample records when you ask for them.",
+          "technical": "### What it is\nA small class that stands in for a database; its one method returns a fixed list of study sessions.\n\n### Inputs/Outputs\nNo constructor arguments. Provides `load_sessions(user_id)` which returns a list of session dicts.\n\n### Side effects\nWhen `load_sessions` runs it prints a log line, but the class itself does nothing on creation.\n\n### Why this node exists\nIt gives the demo a fake data source so the planner has something to work with without a real database.\n\n### Common bugs\nThe data is hard-coded, so every `user_id` gets the same sessions.\n\n### References\nSelected node: DemoRepository\nFile path: app/demo_project/api.py\nCallers: build_daily_plan, module:api\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "A stub data source that returns canned study sessions."
+        },
+        "intermediate": {
+          "analogy": "A test double / in-memory repository that always replies with the same seed data.",
+          "technical": "### What it is\n`DemoRepository` is a class wrapping `load_sessions`, returning three hard-coded session dicts regardless of input.\n\n### Inputs/Outputs\nInstantiated with no args (`DemoRepository()`). Exposes `load_sessions(user_id) -> list[dict]`.\n\n### Side effects\nIts method prints a line; the class definition has no side effects.\n\n### Why this node exists\nProvides a deterministic data layer so `build_daily_plan` can be demoed without external storage.\n\n### Common bugs\nIgnores `user_id` for data selection, so results are identical per user; fine for a demo, misleading as a real repo.\n\n### References\nSelected node: DemoRepository\nFile path: app/demo_project/api.py\nCallers: build_daily_plan, module:api\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "In-memory stub repository exposing load_sessions with fixed seed data."
+        },
+        "advanced": {
+          "analogy": "A hard-coded fixture masquerading as a repository boundary.",
+          "technical": "### What it is\nClass with a single method `load_sessions`; the constructor is implicit (no `__init__`).\n\n### Inputs/Outputs\n`DemoRepository()` -> instance; `.load_sessions(user_id: str) -> list[dict]` of three records.\n\n### Side effects\nMethod-level `print`; no instance state is stored.\n\n### Why this node exists\nMarks the seam where a real persistence layer would plug in; `build_daily_plan` depends on this abstraction, not concrete storage.\n\n### Common bugs\nStateless and parameter-insensitive; swapping for a real repo requires honoring the same `load_sessions` signature or callers break.\n\n### References\nSelected node: DemoRepository\nFile path: app/demo_project/api.py\nCallers: build_daily_plan, module:api\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Stateless repository seam; the canned data ignores user_id by design."
+        }
+      }
+    },
+    "DemoRepository.load_sessions": {
+      "snippet": "    def load_sessions(self, user_id: str) -> list[dict]:\n        print(f\"loading sessions for {user_id}\")\n        return [\n            {\"minutes\": 30, \"completed\": True},\n            {\"minutes\": 18, \"completed\": False},\n            {\"minutes\": 42, \"completed\": True},\n        ]",
+      "levels": {
+        "beginner": {
+          "analogy": "Like opening a drawer and reading out three index cards every time.",
+          "technical": "### What it is\nA method that logs a message and returns three sample study-session records.\n\n### Inputs/Outputs\nInput: `user_id` (a string). Output: a list of three dicts, each with `minutes` and `completed`.\n\n### Side effects\nIt prints `loading sessions for <user_id>` to the console.\n\n### Why this node exists\nIt supplies the raw sessions that the planner later summarizes.\n\n### Common bugs\nThe records are fixed, so the `user_id` only appears in the log, not in the data.\n\n### References\nSelected node: DemoRepository.load_sessions\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: builtin:print\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Logs and returns three canned session records."
+        },
+        "intermediate": {
+          "analogy": "A seeded fetch that always returns the same three rows plus a log line.",
+          "technical": "### What it is\n`load_sessions` prints a load message then returns a literal list of three session dicts.\n\n### Inputs/Outputs\nInput: `user_id: str`. Output: `list[dict]` with `minutes` and `completed` keys.\n\n### Side effects\nCalls `print`, writing to stdout.\n\n### Why this node exists\nIt is the concrete data-fetch the demo flow relies on; its shape matches what `summarize_progress` expects.\n\n### Common bugs\n`user_id` is used only in the log, never to filter data, so output is constant.\n\n### References\nSelected node: DemoRepository.load_sessions\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: builtin:print\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Returns three fixed sessions and logs the request."
+        },
+        "advanced": {
+          "analogy": "A deterministic fixture loader with an observable side effect (the print).",
+          "technical": "### What it is\nMethod returning a hard-coded `list[dict]` after an f-string `print`; no persistence or query.\n\n### Inputs/Outputs\n`(self, user_id: str) -> list[dict]`; output records carry exactly the `minutes`/`completed` keys downstream code reads.\n\n### Side effects\n`print` to stdout is the only effect (a side-effect boundary).\n\n### Why this node exists\nDefines the data contract consumed by `summarize_progress` via the planner; keeping it explicit makes the demo reproducible.\n\n### Common bugs\nThe print makes it impure; redirecting or capturing stdout is needed in tests. `user_id` is decorative for the data.\n\n### References\nSelected node: DemoRepository.load_sessions\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: builtin:print\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Impure-by-print fixture loader returning a constant, contract-shaped session list."
+        }
+      }
+    },
+    "build_daily_plan": {
+      "snippet": "def build_daily_plan(user_id: str) -> dict:\n    repo = DemoRepository()\n    sessions = repo.load_sessions(user_id)\n    planner = LearningPlanner({\"python\": 5, \"typescript\": 4, \"graphs\": 3})\n    return {\"user_id\": user_id, \"steps\": planner.build_plan(sessions)}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a head chef who gathers ingredients, hands them to a cook, and plates the finished dish.",
+          "technical": "### What it is\nA function that loads a user's sessions, builds a learning planner, and returns the user's id with their plan steps.\n\n### Inputs/Outputs\nInput: `user_id` (string). Output: a dict `{user_id, steps}` where steps come from the planner.\n\n### Side effects\nThrough the repository it triggers a log print, but it does not store anything itself.\n\n### Why this node exists\nIt wires the data source and the planner together into one daily-plan call.\n\n### Common bugs\nIf the planner or repository changes its expected shape, this function breaks.\n\n### References\nSelected node: build_daily_plan\nFile path: app/demo_project/api.py\nCallers: handle_request, module:api\nCallees: DemoRepository, unresolved:load_sessions, LearningPlanner, unresolved:build_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Orchestrates repository + planner to produce a user's daily plan."
+        },
+        "intermediate": {
+          "analogy": "An orchestrator: it composes a repository fetch and a planner build into a single result.",
+          "technical": "### What it is\n`build_daily_plan` instantiates `DemoRepository`, loads sessions, creates a `LearningPlanner` with fixed topic weights, and returns `{user_id, steps}`.\n\n### Inputs/Outputs\nInput: `user_id: str`. Output: `dict` with `user_id` and `steps` (the planner's list).\n\n### Side effects\nIndirect: the repository's `load_sessions` prints.\n\n### Why this node exists\nIt is the main service-layer entry that ties storage to planning; `handle_request` delegates to it.\n\n### Common bugs\nTopic weights are hard-coded here, so all users get the same weighting. Depends on both the repository and planner contracts.\n\n### References\nSelected node: build_daily_plan\nFile path: app/demo_project/api.py\nCallers: handle_request, module:api\nCallees: DemoRepository, unresolved:load_sessions, LearningPlanner, unresolved:build_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Service-layer orchestrator wiring repository sessions into a planner build."
+        },
+        "advanced": {
+          "analogy": "A composition root for the request: it constructs collaborators and threads data between them.",
+          "technical": "### What it is\nCreates `DemoRepository()`, calls `load_sessions(user_id)`, builds `LearningPlanner({...weights})`, and returns `{'user_id': user_id, 'steps': planner.build_plan(sessions)}`.\n\n### Inputs/Outputs\n`(user_id: str) -> dict`. Output `steps` is whatever `LearningPlanner.build_plan` yields (up to three step dicts).\n\n### Side effects\nTransitively performs the repository's stdout print; no persistence.\n\n### Why this node exists\nCentral wiring point; it owns the dependency construction so `handle_request` stays a thin adapter.\n\n### Common bugs\nHard-coded weights and a fresh repository per call make it non-configurable and untestable without monkeypatching; a signature drift in either collaborator propagates here.\n\n### References\nSelected node: build_daily_plan\nFile path: app/demo_project/api.py\nCallers: handle_request, module:api\nCallees: DemoRepository, unresolved:load_sessions, LearningPlanner, unresolved:build_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Composition root: instantiates collaborators inline and threads sessions into the planner."
+        }
+      }
+    },
+    "handle_request": {
+      "snippet": "def handle_request(payload: dict) -> dict:\n    user_id = payload.get(\"user_id\", \"demo-user\")\n    return build_daily_plan(user_id)",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a receptionist who reads who you are off a form, defaults to a guest name if blank, and sends you to the right office.",
+          "technical": "### What it is\nA function that pulls `user_id` out of a request payload (defaulting to `demo-user`) and asks `build_daily_plan` to make the plan.\n\n### Inputs/Outputs\nInput: a `payload` dict. Output: the daily-plan dict from `build_daily_plan`.\n\n### Side effects\nNone directly, though the work it triggers prints a log line.\n\n### Why this node exists\nIt is the entry point that turns an incoming request into a plan.\n\n### Common bugs\nIf `payload` is not a dict, calling `.get` on it would fail.\n\n### References\nSelected node: handle_request\nFile path: app/demo_project/api.py\nCallers: module:api\nCallees: unresolved:get, build_daily_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Entry point that reads user_id from a payload and returns the daily plan."
+        },
+        "intermediate": {
+          "analogy": "A thin controller/adapter: parse input, apply a default, delegate to the service.",
+          "technical": "### What it is\n`handle_request` extracts `payload.get('user_id', 'demo-user')` and returns `build_daily_plan(user_id)`.\n\n### Inputs/Outputs\nInput: `payload: dict`. Output: the `dict` returned by `build_daily_plan` (`{user_id, steps}`).\n\n### Side effects\nNone of its own; downstream the repository prints.\n\n### Why this node exists\nIt is the public request boundary, keeping defaulting logic out of the service layer.\n\n### Common bugs\nAssumes `payload` supports `.get`; a non-mapping argument raises AttributeError. Only `user_id` is read; other payload fields are ignored.\n\n### References\nSelected node: handle_request\nFile path: app/demo_project/api.py\nCallers: module:api\nCallees: unresolved:get, build_daily_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Request adapter that defaults user_id and delegates to build_daily_plan."
+        },
+        "advanced": {
+          "analogy": "An adapter layer mapping the transport payload onto the service call.",
+          "technical": "### What it is\nReads `user_id` with a default and tail-calls `build_daily_plan`; no validation or transformation beyond the default.\n\n### Inputs/Outputs\n`(payload: dict) -> dict`. Reads only `payload['user_id']` (via `.get`).\n\n### Side effects\nNone locally; effects are transitive through `build_daily_plan`.\n\n### Why this node exists\nProvides a stable entry signature so transport concerns stay separate from orchestration in `build_daily_plan`.\n\n### Common bugs\nNo schema validation: unexpected payload types break at `.get`; silent default may mask a missing id. The single delegation makes it a pass-through with one defaulting rule.\n\n### References\nSelected node: handle_request\nFile path: app/demo_project/api.py\nCallers: module:api\nCallees: unresolved:get, build_daily_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pass-through request boundary: default user_id then delegate; no validation."
+        }
+      }
+    },
+    "builtin:print": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like saying something out loud so you can hear it happened.",
+          "technical": "### What it is\nPython's built-in `print`, which writes text to the console.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `print` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `print`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `print`.\n\n### Common bugs\nMisuse would surface where `print` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:print\nFile path: Unknown (not in provided code context).\nCallers: DemoRepository.load_sessions\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `print`, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like saying something out loud so you can hear it happened.",
+          "technical": "### What it is\nThe built-in `print`, called by `DemoRepository.load_sessions` to log a load message.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a Python builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced Python builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:print\nFile path: Unknown (not in provided code context).\nCallers: DemoRepository.load_sessions\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `print`, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like saying something out loud so you can hear it happened.",
+          "technical": "### What it is\nCPython's `print`; the side-effect boundary in `load_sessions`.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque Python builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying Python builtin provides.\n\n### Why this node exists\nRepresented as a Python builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external Python builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:print\nFile path: Unknown (not in provided code context).\nCallers: DemoRepository.load_sessions\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `print`, not part of the demo project source."
+        }
+      }
+    },
+    "unresolved:load_sessions": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `load_sessions` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `load_sessions` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `load_sessions`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `load_sessions`.\n\n### Common bugs\nMisuse would surface where `load_sessions` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:load_sessions\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `load_sessions` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`load_sessions`, referenced by `build_daily_plan`; likely the repository's `load_sessions` method, but the static analyzer recorded it as an unresolved attribute call.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:load_sessions\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `load_sessions` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `load_sessions` (used by `build_daily_plan`); not bound to demo source. likely the repository's `load_sessions` method, but the static analyzer recorded it as an unresolved attribute call.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:load_sessions\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `load_sessions` could not be matched to demo project source."
+        }
+      }
+    },
+    "LearningPlanner": {
+      "snippet": "class LearningPlanner:\n    def __init__(self, topic_weights: dict[str, int]):\n        self.topic_weights = topic_weights\n\n    def build_plan(self, sessions: list[dict]) -> list[dict]:\n        summary = summarize_progress(sessions)\n        risk = detect_risk(summary)\n        ranked_topics = rank_topics(self.topic_weights)\n        return [\n            create_step(topic, index + 1, risk)\n            for index, topic in enumerate(ranked_topics[:3])\n        ]",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a personal tutor who remembers which subjects matter most and then writes you a study plan.",
+          "technical": "### What it is\nA class that holds topic importance weights and can build a short study plan from a learner's sessions.\n\n### Inputs/Outputs\nCreated with a `topic_weights` dict. Its `build_plan(sessions)` returns a list of plan steps.\n\n### Side effects\nNone of its own; it calls helper functions that do the math.\n\n### Why this node exists\nIt is the core planner that combines progress analysis with topic ranking to choose steps.\n\n### Common bugs\nIt depends on the helper functions and analytics being available and correctly shaped.\n\n### References\nSelected node: LearningPlanner\nFile path: app/demo_project/planner.py\nCallers: build_daily_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Holds topic weights and builds a study plan from sessions."
+        },
+        "intermediate": {
+          "analogy": "A small strategy object: configured once with weights, then asked to produce plans.",
+          "technical": "### What it is\n`LearningPlanner` stores `topic_weights` in `__init__` and exposes `build_plan`, which summarizes progress, detects risk, ranks topics, and emits up to three steps.\n\n### Inputs/Outputs\nConstruct with `topic_weights: dict[str,int]`. `build_plan(sessions: list[dict]) -> list[dict]`.\n\n### Side effects\nNone directly; `build_plan` delegates to `summarize_progress`, `detect_risk`, `rank_topics`, `create_step`.\n\n### Why this node exists\nIt is the hub that composes analytics and ranking into the final plan; `build_daily_plan` instantiates it.\n\n### Common bugs\nRelies on the imported analytics functions and module-level `rank_topics`/`create_step`; changing their contracts breaks the plan.\n\n### References\nSelected node: LearningPlanner\nFile path: app/demo_project/planner.py\nCallers: build_daily_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Configurable strategy object composing analytics and ranking into plan steps."
+        },
+        "advanced": {
+          "analogy": "A stateful coordinator parameterized by weights, orchestrating four collaborators per call.",
+          "technical": "### What it is\nConstructor stores `topic_weights`; `build_plan` runs `summarize_progress` -> `detect_risk` -> `rank_topics`, then a comprehension over `enumerate(ranked[:3])` calling `create_step`.\n\n### Inputs/Outputs\n`__init__(topic_weights: dict[str,int])`; `build_plan(sessions: list[dict]) -> list[dict]` of <=3 step dicts.\n\n### Side effects\nNone intrinsic; effects bubble up only from collaborators.\n\n### Why this node exists\nCentral fan-out node (five callees) that fixes the planning pipeline order; isolating it keeps `build_daily_plan` thin.\n\n### Common bugs\nTightly coupled to module-level functions and analytics imports; the `[:3]` slice silently caps output, which can surprise callers expecting all topics.\n\n### References\nSelected node: LearningPlanner\nFile path: app/demo_project/planner.py\nCallers: build_daily_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Weight-parameterized coordinator; build_plan fans out to five collaborators and caps at three steps."
+        }
+      }
+    },
+    "unresolved:build_plan": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `build_plan` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `build_plan` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `build_plan`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `build_plan`.\n\n### Common bugs\nMisuse would surface where `build_plan` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:build_plan\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `build_plan` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`build_plan`, referenced by `build_daily_plan`; likely `LearningPlanner.build_plan`, recorded as unresolved because it is called on a local variable.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:build_plan\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `build_plan` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `build_plan` (used by `build_daily_plan`); not bound to demo source. likely `LearningPlanner.build_plan`, recorded as unresolved because it is called on a local variable.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:build_plan\nFile path: Unknown (not in provided code context).\nCallers: build_daily_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `build_plan` could not be matched to demo project source."
+        }
+      }
+    },
+    "unresolved:get": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `get` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `get` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `get`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `get`.\n\n### Common bugs\nMisuse would surface where `get` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:get\nFile path: Unknown (not in provided code context).\nCallers: handle_request\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `get` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`get`, referenced by `handle_request`; the dict `.get` used to read `user_id`, which the analyzer left unresolved as a method call.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:get\nFile path: Unknown (not in provided code context).\nCallers: handle_request\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `get` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `get` (used by `handle_request`); not bound to demo source. the dict `.get` used to read `user_id`, which the analyzer left unresolved as a method call.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:get\nFile path: Unknown (not in provided code context).\nCallers: handle_request\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `get` could not be matched to demo project source."
+        }
+      }
+    },
+    "LearningPlanner.__init__": {
+      "snippet": "    def __init__(self, topic_weights: dict[str, int]):\n        self.topic_weights = topic_weights",
+      "levels": {
+        "beginner": {
+          "analogy": "Like writing your priorities on a sticky note so you can refer to them later.",
+          "technical": "### What it is\nThe setup method that saves the topic weights onto the planner object.\n\n### Inputs/Outputs\nInput: `topic_weights` dict. Output: none; it stores the value on `self`.\n\n### Side effects\nNone outside the object; it only sets `self.topic_weights`.\n\n### Why this node exists\nIt remembers the weights so `build_plan` can rank topics later.\n\n### Common bugs\nIf no weights are passed, later ranking has nothing to sort.\n\n### References\nSelected node: LearningPlanner.__init__\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Stores topic weights on the planner instance."
+        },
+        "intermediate": {
+          "analogy": "A one-line constructor that captures configuration for later use.",
+          "technical": "### What it is\n`__init__` assigns the provided `topic_weights` to `self.topic_weights`.\n\n### Inputs/Outputs\nInput: `topic_weights: dict[str,int]`. Output: none (mutates the new instance).\n\n### Side effects\nMutates instance state only.\n\n### Why this node exists\nSeparates configuration (weights) from behavior (`build_plan`).\n\n### Common bugs\nNo validation; an empty or wrong-typed dict surfaces only later in `rank_topics`.\n\n### References\nSelected node: LearningPlanner.__init__\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Trivial constructor capturing topic_weights as instance state."
+        },
+        "advanced": {
+          "analogy": "State capture at construction time; pure assignment, no computation.",
+          "technical": "### What it is\nSingle statement `self.topic_weights = topic_weights`.\n\n### Inputs/Outputs\n`(self, topic_weights: dict[str,int]) -> None`.\n\n### Side effects\nInstance mutation; no external effects.\n\n### Why this node exists\nKeeps the planner immutable in spirit after construction so `build_plan` is a function of stored weights plus sessions.\n\n### Common bugs\nStores the reference (not a copy), so external mutation of the passed dict leaks into the instance.\n\n### References\nSelected node: LearningPlanner.__init__\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Reference-storing constructor; no copy or validation."
+        }
+      }
+    },
+    "LearningPlanner.build_plan": {
+      "snippet": "    def build_plan(self, sessions: list[dict]) -> list[dict]:\n        summary = summarize_progress(sessions)\n        risk = detect_risk(summary)\n        ranked_topics = rank_topics(self.topic_weights)\n        return [\n            create_step(topic, index + 1, risk)\n            for index, topic in enumerate(ranked_topics[:3])\n        ]",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a coach who checks your stats, gauges how you're doing, ranks the topics, and writes your top-three to-do list.",
+          "technical": "### What it is\nThe method that turns sessions into a short study plan by summarizing progress, judging risk, ranking topics, and creating steps.\n\n### Inputs/Outputs\nInput: `sessions` list. Output: a list of up to three step dicts.\n\n### Side effects\nNone of its own; it calls helper functions.\n\n### Why this node exists\nIt is the heart of the planner, sequencing all the analytics into a final plan.\n\n### Common bugs\nIt only keeps the top three topics, so extra topics are dropped.\n\n### References\nSelected node: LearningPlanner.build_plan\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: summarize_progress, detect_risk, rank_topics, create_step, builtin:enumerate\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Sequences analytics and ranking into up to three plan steps."
+        },
+        "intermediate": {
+          "analogy": "A pipeline method: summarize, classify, rank, then map the top three into steps.",
+          "technical": "### What it is\n`build_plan` calls `summarize_progress(sessions)`, `detect_risk(summary)`, `rank_topics(self.topic_weights)`, then builds steps via `create_step` over `enumerate(ranked[:3])`.\n\n### Inputs/Outputs\nInput: `sessions: list[dict]`. Output: `list[dict]` of step dicts (`order, topic, minutes, risk`).\n\n### Side effects\nNone directly; delegates entirely to pure helpers.\n\n### Why this node exists\nIt composes the whole planning flow in one place and is the main fan-out hub (five callees).\n\n### Common bugs\nThe `[:3]` cap silently limits output; a shared `risk` is applied to every step regardless of topic.\n\n### References\nSelected node: LearningPlanner.build_plan\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: summarize_progress, detect_risk, rank_topics, create_step, builtin:enumerate\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Orchestration pipeline producing up to three risk-tagged steps."
+        },
+        "advanced": {
+          "analogy": "A deterministic transform chaining four pure stages with an index-bearing comprehension.",
+          "technical": "### What it is\nComputes `summary` -> `risk` -> `ranked_topics`, then returns `[create_step(topic, index+1, risk) for index, topic in enumerate(ranked_topics[:3])]`.\n\n### Inputs/Outputs\n`(self, sessions: list[dict]) -> list[dict]`; one-indexed `order` from `index+1`.\n\n### Side effects\nNone; output depends only on `sessions` and `self.topic_weights`.\n\n### Why this node exists\nThe single fan-out node binding analytics and ranking; its ordering defines the canonical pipeline the demo visualizes.\n\n### Common bugs\n`risk` is computed once and reused for all steps, so per-topic risk is not modeled; `[:3]` truncation is silent; empty `ranked_topics` yields an empty plan without error.\n\n### References\nSelected node: LearningPlanner.build_plan\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: summarize_progress, detect_risk, rank_topics, create_step, builtin:enumerate\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Four-stage pure pipeline; one-indexed steps, shared risk, silent top-3 truncation."
+        }
+      }
+    },
+    "rank_topics": {
+      "snippet": "def rank_topics(topic_weights: dict[str, int]) -> list[str]:\n    return [\n        topic\n        for topic, _score in sorted(\n            topic_weights.items(),\n            key=lambda item: item[1],\n            reverse=True,\n        )\n    ]",
+      "levels": {
+        "beginner": {
+          "analogy": "Like sorting your chores from most to least important before starting.",
+          "technical": "### What it is\nA function that orders topic names from highest weight to lowest.\n\n### Inputs/Outputs\nInput: a `topic_weights` dict (name -> number). Output: a list of topic names, biggest weight first.\n\n### Side effects\nNone; it returns a new sorted list.\n\n### Why this node exists\nIt decides which topics the planner should prioritize.\n\n### Common bugs\nIf two topics tie, their order depends on the sort's stability.\n\n### References\nSelected node: rank_topics\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: builtin:sorted, unresolved:items\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Sorts topic names by weight, highest first."
+        },
+        "intermediate": {
+          "analogy": "A comprehension over a reverse-sorted dict, keeping only the keys.",
+          "technical": "### What it is\n`rank_topics` sorts `topic_weights.items()` by value descending and returns just the topic names.\n\n### Inputs/Outputs\nInput: `topic_weights: dict[str,int]`. Output: `list[str]` ordered by weight.\n\n### Side effects\nPure; builds a new list.\n\n### Why this node exists\nIt isolates the prioritization rule so `build_plan` stays declarative.\n\n### Common bugs\nTies keep insertion order (stable sort); discards the scores, so callers can't see weights.\n\n### References\nSelected node: rank_topics\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: builtin:sorted, unresolved:items\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Returns topic names ordered by descending weight."
+        },
+        "advanced": {
+          "analogy": "A keyed, reversed stable sort projected onto its keys.",
+          "technical": "### What it is\n`sorted(topic_weights.items(), key=lambda item: item[1], reverse=True)` then a comprehension keeping `topic`, discarding `_score`.\n\n### Inputs/Outputs\n`(topic_weights: dict[str,int]) -> list[str]`.\n\n### Side effects\nNone; deterministic for a given dict (modulo tie order).\n\n### Why this node exists\nEncapsulates ranking policy; feeds `build_plan`'s top-3 slice.\n\n### Common bugs\nStable sort means equal weights retain dict order, which is insertion order in modern Python; relying on that is fragile. Scores are dropped, so downstream can't weight further.\n\n### References\nSelected node: rank_topics\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: builtin:sorted, unresolved:items\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Reverse stable sort by weight, projecting to topic names only."
+        }
+      }
+    },
+    "create_step": {
+      "snippet": "def create_step(topic: str, order: int, risk: str) -> dict:\n    minutes = 35 if risk == \"needs_focus_time\" else 25\n    return {\"order\": order, \"topic\": topic, \"minutes\": minutes, \"risk\": risk}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like filling out one line of a to-do list: what to study, in what order, for how long.",
+          "technical": "### What it is\nA function that builds a single plan step with an order number, topic, minutes, and risk label.\n\n### Inputs/Outputs\nInputs: `topic`, `order`, `risk`. Output: a dict describing one step.\n\n### Side effects\nNone; it just returns a new dict.\n\n### Why this node exists\nIt standardizes what one plan step looks like.\n\n### Common bugs\nThe minutes value depends only on the risk being exactly `needs_focus_time`.\n\n### References\nSelected node: create_step\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Builds one plan-step dict with order, topic, minutes, and risk."
+        },
+        "intermediate": {
+          "analogy": "A small factory function producing a uniform step record.",
+          "technical": "### What it is\n`create_step` returns `{order, topic, minutes, risk}` where `minutes` is 35 if `risk == 'needs_focus_time'` else 25.\n\n### Inputs/Outputs\nInputs: `topic: str`, `order: int`, `risk: str`. Output: `dict`.\n\n### Side effects\nPure; no external effects.\n\n### Why this node exists\nIt keeps the step schema in one place so every step the planner emits is consistent.\n\n### Common bugs\nOnly `needs_focus_time` raises minutes; other risk values (including `needs_support`) get the default 25.\n\n### References\nSelected node: create_step\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Factory that emits a uniform step dict with risk-based minutes."
+        },
+        "advanced": {
+          "analogy": "A pure record constructor with a single conditional field.",
+          "technical": "### What it is\nReturns a dict literal; `minutes` is a ternary keyed solely on equality with `'needs_focus_time'`.\n\n### Inputs/Outputs\n`(topic: str, order: int, risk: str) -> dict`.\n\n### Side effects\nNone.\n\n### Why this node exists\nCentralizes the output contract consumed by `renderPlan` on the frontend; consistent keys matter for rendering.\n\n### Common bugs\nThe minutes rule ignores `needs_support`, so high-risk learners may still get 25 minutes; an unexpected `risk` string silently yields the default.\n\n### References\nSelected node: create_step\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pure step constructor; minutes branch keys only on needs_focus_time."
+        }
+      }
+    },
+    "builtin:enumerate": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like numbering each line on a list as you read it.",
+          "technical": "### What it is\nPython's built-in `enumerate`, which pairs items with their index.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `enumerate` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `enumerate`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `enumerate`.\n\n### Common bugs\nMisuse would surface where `enumerate` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:enumerate\nFile path: Unknown (not in provided code context).\nCallers: LearningPlanner.build_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `enumerate`, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like numbering each line on a list as you read it.",
+          "technical": "### What it is\nThe built-in `enumerate`, used by `build_plan` to number ranked topics.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a Python builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced Python builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:enumerate\nFile path: Unknown (not in provided code context).\nCallers: LearningPlanner.build_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `enumerate`, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like numbering each line on a list as you read it.",
+          "technical": "### What it is\nCPython's `enumerate`; supplies `index` for the one-indexed `order` in steps.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque Python builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying Python builtin provides.\n\n### Why this node exists\nRepresented as a Python builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external Python builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:enumerate\nFile path: Unknown (not in provided code context).\nCallers: LearningPlanner.build_plan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `enumerate`, not part of the demo project source."
+        }
+      }
+    },
+    "builtin:sorted": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like arranging books from tallest to shortest.",
+          "technical": "### What it is\nPython's built-in `sorted`, which orders a sequence.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `sorted` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `sorted`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `sorted`.\n\n### Common bugs\nMisuse would surface where `sorted` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:sorted\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `sorted`, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like arranging books from tallest to shortest.",
+          "technical": "### What it is\nThe built-in `sorted`, used by `rank_topics` to order topics by weight descending.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a Python builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced Python builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:sorted\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `sorted`, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like arranging books from tallest to shortest.",
+          "technical": "### What it is\nCPython's stable `sorted`; keyed on the weight with `reverse=True`.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque Python builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying Python builtin provides.\n\n### Why this node exists\nRepresented as a Python builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external Python builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:sorted\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: Python's `sorted`, not part of the demo project source."
+        }
+      }
+    },
+    "unresolved:items": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `items` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `items` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `items`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `items`.\n\n### Common bugs\nMisuse would surface where `items` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:items\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `items` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`items`, referenced by `rank_topics`; the dict `.items()` call inside `rank_topics`, left unresolved as a method on a local dict.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:items\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `items` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `items` (used by `rank_topics`); not bound to demo source. the dict `.items()` call inside `rank_topics`, left unresolved as a method on a local dict.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:items\nFile path: Unknown (not in provided code context).\nCallers: rank_topics\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `items` could not be matched to demo project source."
+        }
+      }
+    },
+    "ThemeController": {
+      "snippet": "export class ThemeController {\n  private mode = \"focus\";\n\n  setMode(mode: string) {\n    this.mode = mode;\n    return this.mode;\n  }\n}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a light switch that remembers whether the room is in focus mode or not.",
+          "technical": "### What it is\nA TypeScript class that stores a display mode and lets you change it.\n\n### Inputs/Outputs\nNo constructor input; starts in `focus` mode. `setMode(mode)` changes it.\n\n### Side effects\nNone outside the object; it only updates its own `mode`.\n\n### Why this node exists\nIt manages a simple UI state (the theme/mode) for the dashboard.\n\n### Common bugs\nAny string is accepted as a mode, even an invalid one.\n\n### References\nSelected node: ThemeController\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Holds a UI mode that defaults to focus and can be changed."
+        },
+        "intermediate": {
+          "analogy": "A tiny stateful controller wrapping a single private field.",
+          "technical": "### What it is\n`ThemeController` keeps a private `mode` initialized to `focus` and exposes `setMode` to update and return it.\n\n### Inputs/Outputs\nConstruct with no args. `setMode(mode: string): string`.\n\n### Side effects\nMutates the private `mode` field only.\n\n### Why this node exists\nEncapsulates UI mode state for `bootDashboard` to toggle.\n\n### Common bugs\nNo validation of the mode string; unknown values are stored as-is.\n\n### References\nSelected node: ThemeController\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Encapsulates a private mode field with a setter."
+        },
+        "advanced": {
+          "analogy": "A minimal encapsulated state holder with an unvalidated mutator.",
+          "technical": "### What it is\nClass with `private mode = 'focus'` and `setMode` assigning then returning the new value.\n\n### Inputs/Outputs\n`new ThemeController()`; `setMode(mode: string): string` returns the stored mode.\n\n### Side effects\nIn-place field mutation; no external effects.\n\n### Why this node exists\nProvides a typed seam for theme state that `bootDashboard` drives.\n\n### Common bugs\nAccepts arbitrary strings (no enum/union constraint); the returned value duplicates state, inviting drift if callers cache it.\n\n### References\nSelected node: ThemeController\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Typed but unvalidated state holder; setter mutates and echoes the mode."
+        }
+      }
+    },
+    "ThemeController.setMode": {
+      "snippet": "  setMode(mode: string) {\n    this.mode = mode;\n    return this.mode;\n  }",
+      "levels": {
+        "beginner": {
+          "analogy": "Like flipping the switch and telling you which way it now points.",
+          "technical": "### What it is\nA method that changes the controller's mode and returns the new value.\n\n### Inputs/Outputs\nInput: a `mode` string. Output: the same string after storing it.\n\n### Side effects\nIt updates the object's stored mode.\n\n### Why this node exists\nIt is how callers change the theme.\n\n### Common bugs\nIt accepts any string without checking it.\n\n### References\nSelected node: ThemeController.setMode\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Sets and returns the controller's mode."
+        },
+        "intermediate": {
+          "analogy": "A setter that doubles as a getter by returning the assigned value.",
+          "technical": "### What it is\n`setMode` assigns `this.mode = mode` and returns `this.mode`.\n\n### Inputs/Outputs\nInput: `mode: string`. Output: `string`.\n\n### Side effects\nMutates `this.mode`.\n\n### Why this node exists\nLets `bootDashboard` switch and confirm the mode in one call.\n\n### Common bugs\nNo validation; returning the value can mislead callers into treating it as canonical state.\n\n### References\nSelected node: ThemeController.setMode\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Mutating setter that returns the new mode."
+        },
+        "advanced": {
+          "analogy": "An assign-and-echo mutator.",
+          "technical": "### What it is\nTwo statements: store the argument, return the field.\n\n### Inputs/Outputs\n`setMode(mode: string): string`.\n\n### Side effects\nSingle field mutation.\n\n### Why this node exists\nKeeps theme changes explicit and chainable in the boot sequence.\n\n### Common bugs\nUnconstrained input type; the echo encourages caching state outside the controller.\n\n### References\nSelected node: ThemeController.setMode\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Assign-and-return setter with no input constraints."
+        }
+      }
+    },
+    "formatMinutes": {
+      "snippet": "export const formatMinutes = (minutes: number) => `${minutes} min`;",
+      "levels": {
+        "beginner": {
+          "analogy": "Like adding the word 'min' after a number so it reads as a duration.",
+          "technical": "### What it is\nA tiny function that turns a number into a string like `25 min`.\n\n### Inputs/Outputs\nInput: a number of minutes. Output: a string with ` min` appended.\n\n### Side effects\nNone.\n\n### Why this node exists\nIt formats durations for display in the plan.\n\n### Common bugs\nIt doesn't handle plurals or zero specially.\n\n### References\nSelected node: formatMinutes\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Formats a number as a `<n> min` string."
+        },
+        "intermediate": {
+          "analogy": "A one-line presentation helper (a template-string formatter).",
+          "technical": "### What it is\n`formatMinutes` is an arrow function returning a template string `` `${minutes} min` ``.\n\n### Inputs/Outputs\nInput: `minutes: number`. Output: `string`.\n\n### Side effects\nPure.\n\n### Why this node exists\nKeeps duration formatting in one reusable place used by `renderPlan`.\n\n### Common bugs\nNo localization or pluralization; passing a non-number relies on JS coercion.\n\n### References\nSelected node: formatMinutes\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pure one-line minutes-to-string formatter."
+        },
+        "advanced": {
+          "analogy": "A pure display projection from number to label.",
+          "technical": "### What it is\nArrow expression with an implicit return of an interpolated string.\n\n### Inputs/Outputs\n`(minutes: number) => string`.\n\n### Side effects\nNone.\n\n### Why this node exists\nSingle source of truth for the minutes label that `renderPlan` composes.\n\n### Common bugs\nType says `number`, but JS coercion would stringify anything; no formatting beyond concatenation.\n\n### References\nSelected node: formatMinutes\nFile path: app/demo_project/ui.ts\nCallers: module:ui\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pure formatter; relies on the type system, not runtime checks."
+        }
+      }
+    },
+    "renderPlan": {
+      "snippet": "export function renderPlan(steps: PlanStep[]) {\n  return steps.map((step) => `${step.order}. ${step.topic} - ${formatMinutes(step.minutes)}`);\n}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like turning a list of tasks into neat printed lines such as '1. python - 25 min'.",
+          "technical": "### What it is\nA function that converts plan steps into human-readable strings.\n\n### Inputs/Outputs\nInput: an array of plan steps. Output: an array of formatted strings.\n\n### Side effects\nNone.\n\n### Why this node exists\nIt prepares the plan for display on screen.\n\n### Common bugs\nIt assumes each step has order, topic, and minutes.\n\n### References\nSelected node: renderPlan\nFile path: app/demo_project/ui.ts\nCallers: bootDashboard, module:ui\nCallees: unresolved:map\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Turns plan steps into display strings."
+        },
+        "intermediate": {
+          "analogy": "A view-mapper: it maps each step object into a labeled line.",
+          "technical": "### What it is\n`renderPlan` maps `steps` to strings like `${order}. ${topic} - ${formatMinutes(minutes)}`.\n\n### Inputs/Outputs\nInput: `steps: PlanStep[]`. Output: `string[]`.\n\n### Side effects\nPure; builds a new array.\n\n### Why this node exists\nIt is the presentation layer for the plan and reuses `formatMinutes`.\n\n### Common bugs\nAssumes well-formed `PlanStep` items; missing fields yield `undefined` in the output string.\n\n### References\nSelected node: renderPlan\nFile path: app/demo_project/ui.ts\nCallers: bootDashboard, module:ui\nCallees: unresolved:map\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Maps plan steps to formatted display lines."
+        },
+        "advanced": {
+          "analogy": "A pure projection over an array using a composed formatter.",
+          "technical": "### What it is\n`steps.map(step => `${step.order}. ${step.topic} - ${formatMinutes(step.minutes)}`)`.\n\n### Inputs/Outputs\n`(steps: PlanStep[]) => string[]`; one output line per input step.\n\n### Side effects\nNone.\n\n### Why this node exists\nThe render boundary `bootDashboard` calls; depends on `formatMinutes` for the minutes fragment.\n\n### Common bugs\nNo guard for missing/extra fields; relies on the `PlanStep` type contract holding at runtime, which TS does not enforce on external data.\n\n### References\nSelected node: renderPlan\nFile path: app/demo_project/ui.ts\nCallers: bootDashboard, module:ui\nCallees: unresolved:map\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Pure map composing formatMinutes; trusts the PlanStep shape."
+        }
+      }
+    },
+    "unresolved:map": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `map` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `map` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `map`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `map`.\n\n### Common bugs\nMisuse would surface where `map` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:map\nFile path: Unknown (not in provided code context).\nCallers: renderPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `map` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`map`, referenced by `renderPlan`; the array `.map` used by `renderPlan`, recorded as an unresolved method call.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:map\nFile path: Unknown (not in provided code context).\nCallers: renderPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `map` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `map` (used by `renderPlan`); not bound to demo source. the array `.map` used by `renderPlan`, recorded as an unresolved method call.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:map\nFile path: Unknown (not in provided code context).\nCallers: renderPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `map` could not be matched to demo project source."
+        }
+      }
+    },
+    "DemoClient": {
+      "snippet": "export class DemoClient {\n  constructor(endpoint) {\n    this.endpoint = endpoint;\n  }\n\n  async fetchPlan(userId) {\n    const response = await fetch(this.endpoint, {\n      method: \"POST\",\n      body: JSON.stringify({ user_id: userId }),\n    });\n    return response.json();\n  }\n}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a delivery courier who knows the address and can go fetch your plan when asked.",
+          "technical": "### What it is\nA class that remembers an API endpoint and can request a plan from it.\n\n### Inputs/Outputs\nCreated with an `endpoint` URL. Has a `fetchPlan(userId)` method.\n\n### Side effects\nThe class itself does nothing on creation; fetching makes a network request.\n\n### Why this node exists\nIt is the demo's API client for talking to the backend.\n\n### Common bugs\nIt does not check whether the endpoint is valid.\n\n### References\nSelected node: DemoClient\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "An API client that stores an endpoint and fetches plans."
+        },
+        "intermediate": {
+          "analogy": "A thin HTTP client wrapper around a single endpoint.",
+          "technical": "### What it is\n`DemoClient` stores an `endpoint` in its constructor and exposes `async fetchPlan(userId)` that POSTs and returns parsed JSON.\n\n### Inputs/Outputs\nConstruct with `endpoint`. `fetchPlan(userId) -> Promise<object>`.\n\n### Side effects\n`fetchPlan` performs network I/O; the constructor does not.\n\n### Why this node exists\nIt encapsulates how the frontend reaches the plan API for `bootDashboard`.\n\n### Common bugs\nNo error handling for non-OK responses; assumes the body is valid JSON.\n\n### References\nSelected node: DemoClient\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Endpoint-bound HTTP client exposing an async fetchPlan."
+        },
+        "advanced": {
+          "analogy": "A minimal fetch-based service client with no resilience layer.",
+          "technical": "### What it is\nConstructor captures `endpoint`; `fetchPlan` issues a POST with a JSON body and returns `response.json()`.\n\n### Inputs/Outputs\n`new DemoClient(endpoint)`; `fetchPlan(userId): Promise<any>`.\n\n### Side effects\nNetwork request inside `fetchPlan` (side-effect boundary); constructor is pure.\n\n### Why this node exists\nIsolates transport so `bootDashboard` stays declarative.\n\n### Common bugs\nNo status check, retry, or timeout; rejects only on network failure, not on HTTP error codes; trusts response JSON shape.\n\n### References\nSelected node: DemoClient\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Bare fetch client; no status checks or resilience."
+        }
+      }
+    },
+    "DemoClient.constructor": {
+      "snippet": "  constructor(endpoint) {\n    this.endpoint = endpoint;\n  }",
+      "levels": {
+        "beginner": {
+          "analogy": "Like writing the delivery address on the courier's clipboard.",
+          "technical": "### What it is\nThe setup method that saves the endpoint URL on the client.\n\n### Inputs/Outputs\nInput: an `endpoint` string. Output: none; stores it on the object.\n\n### Side effects\nNone outside the object.\n\n### Why this node exists\nIt remembers where to send requests.\n\n### Common bugs\nIt accepts any value as the endpoint without checking it.\n\n### References\nSelected node: DemoClient.constructor\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Stores the endpoint on the client instance."
+        },
+        "intermediate": {
+          "analogy": "A one-line constructor capturing configuration.",
+          "technical": "### What it is\nAssigns `this.endpoint = endpoint`.\n\n### Inputs/Outputs\nInput: `endpoint`. Output: none (sets instance field).\n\n### Side effects\nInstance mutation only.\n\n### Why this node exists\nSeparates configuration from the `fetchPlan` behavior.\n\n### Common bugs\nNo URL validation; bad endpoints surface only at fetch time.\n\n### References\nSelected node: DemoClient.constructor\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Trivial constructor capturing the endpoint."
+        },
+        "advanced": {
+          "analogy": "Construction-time state capture.",
+          "technical": "### What it is\nSingle assignment of the `endpoint` argument to instance state.\n\n### Inputs/Outputs\n`constructor(endpoint)` -> sets `this.endpoint`.\n\n### Side effects\nInstance field mutation.\n\n### Why this node exists\nKeeps the client immutable after construction so `fetchPlan` is a function of stored config.\n\n### Common bugs\nStores whatever is passed (no validation/normalization); errors defer to the network call.\n\n### References\nSelected node: DemoClient.constructor\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Reference-capturing constructor; validation deferred to fetch."
+        }
+      }
+    },
+    "DemoClient.fetchPlan": {
+      "snippet": "  async fetchPlan(userId) {\n    const response = await fetch(this.endpoint, {\n      method: \"POST\",\n      body: JSON.stringify({ user_id: userId }),\n    });\n    return response.json();\n  }",
+      "levels": {
+        "beginner": {
+          "analogy": "Like mailing a request form to an office and waiting for the reply.",
+          "technical": "### What it is\nA method that sends the user's id to the API and returns the plan it gets back.\n\n### Inputs/Outputs\nInput: a `userId`. Output: a promise that resolves to the parsed JSON plan.\n\n### Side effects\nIt makes a network request over the internet.\n\n### Why this node exists\nIt is how the frontend actually retrieves a plan.\n\n### Common bugs\nIt does not handle the case where the server returns an error.\n\n### References\nSelected node: DemoClient.fetchPlan\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: unresolved:json, builtin:fetch, unresolved:stringify\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "POSTs the user id and returns the parsed plan."
+        },
+        "intermediate": {
+          "analogy": "An async POST-and-parse round trip.",
+          "technical": "### What it is\n`fetchPlan` awaits `fetch(this.endpoint, {method:'POST', body: JSON.stringify({user_id})})` then returns `response.json()`.\n\n### Inputs/Outputs\nInput: `userId`. Output: `Promise` resolving to the parsed response.\n\n### Side effects\nPerforms an HTTP POST (network side effect).\n\n### Why this node exists\nIt is the concrete network call behind `bootDashboard`.\n\n### Common bugs\nNo `response.ok` check, no headers (e.g. Content-Type), and JSON parse errors propagate as rejections.\n\n### References\nSelected node: DemoClient.fetchPlan\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: unresolved:json, builtin:fetch, unresolved:stringify\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Async POST that serializes the user id and parses the JSON reply."
+        },
+        "advanced": {
+          "analogy": "A fire-and-parse fetch with no error envelope.",
+          "technical": "### What it is\nAwaits a POST with a JSON-stringified `{user_id}` body and returns `response.json()` directly.\n\n### Inputs/Outputs\n`async fetchPlan(userId): Promise<any>`.\n\n### Side effects\nNetwork I/O; the function's side-effect boundary.\n\n### Why this node exists\nEncapsulates the request shape (`user_id` field) the backend expects.\n\n### Common bugs\nMissing `Content-Type: application/json` header may make some servers misparse the body; no status check means HTTP 4xx/5xx still tries to parse JSON; unhandled rejection on parse failure.\n\n### References\nSelected node: DemoClient.fetchPlan\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: unresolved:json, builtin:fetch, unresolved:stringify\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "POST-and-parse with no headers, status check, or error handling."
+        }
+      }
+    },
+    "bootDashboard": {
+      "snippet": "export async function bootDashboard(userId) {\n  const theme = new ThemeController();\n  theme.setMode(\"focus\");\n  const client = new DemoClient(\"/api/demo-plan\");\n  const plan = await client.fetchPlan(userId);\n  console.log(renderPlan(plan.steps));\n}",
+      "levels": {
+        "beginner": {
+          "analogy": "Like flipping on the lights, calling the office for your schedule, and pinning it to the board when the boss arrives.",
+          "technical": "### What it is\nA startup function that sets the theme, fetches the plan, and logs the rendered plan lines.\n\n### Inputs/Outputs\nInput: a `userId`. Output: none (it logs the result).\n\n### Side effects\nIt makes a network request and prints to the console.\n\n### Why this node exists\nIt is the entry point that boots the demo dashboard.\n\n### Common bugs\nIf the fetch fails, there is no error handling.\n\n### References\nSelected node: bootDashboard\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: external:console.log, renderPlan, unresolved:fetchPlan, unresolved:setMode\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Boots the dashboard: sets theme, fetches plan, logs it."
+        },
+        "intermediate": {
+          "analogy": "An async bootstrap sequence wiring theme, client, and rendering together.",
+          "technical": "### What it is\n`bootDashboard` creates a `ThemeController` (set to focus), builds a `DemoClient`, fetches the plan, and `console.log`s `renderPlan(plan.steps)`.\n\n### Inputs/Outputs\nInput: `userId`. Output: `Promise<void>`.\n\n### Side effects\nNetwork fetch plus `console.log` output.\n\n### Why this node exists\nIt is the top-level frontend entry composing all UI/client pieces (fan-out of four callees).\n\n### Common bugs\nNo try/catch around the await, and it assumes `plan.steps` exists in the response.\n\n### References\nSelected node: bootDashboard\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: external:console.log, renderPlan, unresolved:fetchPlan, unresolved:setMode\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Async bootstrap composing theme, client, fetch, and render."
+        },
+        "advanced": {
+          "analogy": "A composition root for the page boot: construct collaborators, await data, render side effect.",
+          "technical": "### What it is\nInstantiates `ThemeController`, calls `setMode('focus')`, builds `DemoClient('/api/demo-plan')`, awaits `fetchPlan(userId)`, then logs `renderPlan(plan.steps)`.\n\n### Inputs/Outputs\n`async bootDashboard(userId): Promise<void>`.\n\n### Side effects\nHTTP fetch and `console.log`.\n\n### Why this node exists\nThe frontend entry hub (four callees) that defines the demo's startup order; mirrors `handle_request` on the backend.\n\n### Common bugs\nUnhandled rejection if the fetch fails; `plan.steps` is assumed present, so a shape mismatch throws inside `renderPlan`; hard-coded endpoint limits reuse.\n\n### References\nSelected node: bootDashboard\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: external:console.log, renderPlan, unresolved:fetchPlan, unresolved:setMode\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Async composition root; no error handling and assumes the response shape."
+        }
+      }
+    },
+    "unresolved:json": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `json` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `json` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `json`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `json`.\n\n### Common bugs\nMisuse would surface where `json` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:json\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `json` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`json`, referenced by `DemoClient.fetchPlan`; the `response.json()` call in `fetchPlan`, left unresolved as a method on the fetch response.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:json\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `json` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `json` (used by `DemoClient.fetchPlan`); not bound to demo source. the `response.json()` call in `fetchPlan`, left unresolved as a method on the fetch response.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:json\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `json` could not be matched to demo project source."
+        }
+      }
+    },
+    "builtin:fetch": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like mailing a letter and waiting for a reply.",
+          "technical": "### What it is\nThe browser/runtime `fetch` function for making HTTP requests.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `fetch` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `fetch`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `fetch`.\n\n### Common bugs\nMisuse would surface where `fetch` is called, not in the demo project itself.\n\n### References\nSelected node: builtin:fetch\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: the runtime `fetch` API, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like mailing a letter and waiting for a reply.",
+          "technical": "### What it is\nThe global `fetch`, called by `DemoClient.fetchPlan` to POST to the API.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a runtime builtin referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced runtime builtin, not in the demo source shown here.\n\n### References\nSelected node: builtin:fetch\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: the runtime `fetch` API, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like mailing a letter and waiting for a reply.",
+          "technical": "### What it is\nThe platform `fetch` API; the network primitive behind `fetchPlan`.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque runtime builtin.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying runtime builtin provides.\n\n### Why this node exists\nRepresented as a runtime builtin node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external runtime builtin or its usage site, not the demo project code.\n\n### References\nSelected node: builtin:fetch\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External/builtin: the runtime `fetch` API, not part of the demo project source."
+        }
+      }
+    },
+    "unresolved:stringify": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `stringify` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `stringify` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `stringify`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `stringify`.\n\n### Common bugs\nMisuse would surface where `stringify` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:stringify\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `stringify` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`stringify`, referenced by `DemoClient.fetchPlan`; the `JSON.stringify` call used to build the request body, recorded as unresolved.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:stringify\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `stringify` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `stringify` (used by `DemoClient.fetchPlan`); not bound to demo source. the `JSON.stringify` call used to build the request body, recorded as unresolved.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:stringify\nFile path: Unknown (not in provided code context).\nCallers: DemoClient.fetchPlan\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `stringify` could not be matched to demo project source."
+        }
+      }
+    },
+    "external:console.log": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like writing a note on a whiteboard for anyone watching.",
+          "technical": "### What it is\n`console.log`, which prints messages in JavaScript environments.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `console.log` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `console.log`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `console.log`.\n\n### Common bugs\nMisuse would surface where `console.log` is called, not in the demo project itself.\n\n### References\nSelected node: external:console.log\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `console.log` from the JS runtime, not part of the demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like writing a note on a whiteboard for anyone watching.",
+          "technical": "### What it is\n`console.log`, called by `bootDashboard` to print the rendered plan.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a external API referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced external API, not in the demo source shown here.\n\n### References\nSelected node: external:console.log\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `console.log` from the JS runtime, not part of the demo project source."
+        },
+        "advanced": {
+          "analogy": "Like writing a note on a whiteboard for anyone watching.",
+          "technical": "### What it is\nThe host `console.log`; the demo's frontend output side effect.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque external API.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying external API provides.\n\n### Why this node exists\nRepresented as a external API node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external external API or its usage site, not the demo project code.\n\n### References\nSelected node: external:console.log\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "External: `console.log` from the JS runtime, not part of the demo project source."
+        }
+      }
+    },
+    "unresolved:fetchPlan": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `fetchPlan` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `fetchPlan` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `fetchPlan`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `fetchPlan`.\n\n### Common bugs\nMisuse would surface where `fetchPlan` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:fetchPlan\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `fetchPlan` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`fetchPlan`, referenced by `bootDashboard`; likely `DemoClient.fetchPlan`, called on a local `client` instance and recorded as unresolved.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:fetchPlan\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `fetchPlan` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `fetchPlan` (used by `bootDashboard`); not bound to demo source. likely `DemoClient.fetchPlan`, called on a local `client` instance and recorded as unresolved.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:fetchPlan\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `fetchPlan` could not be matched to demo project source."
+        }
+      }
+    },
+    "unresolved:setMode": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nA call to `setMode` that the analyzer could not link to a definition in the demo project.\n\n### Inputs/Outputs\nInputs/Outputs depend on how `setMode` is used here; details are not part of the demo project source.\n\n### Side effects\nNo side effects are defined inside the demo project for `setMode`.\n\n### Why this node exists\nIt appears in the graph because the demo code references `setMode`.\n\n### Common bugs\nMisuse would surface where `setMode` is called, not in the demo project itself.\n\n### References\nSelected node: unresolved:setMode\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `setMode` could not be matched to demo project source."
+        },
+        "intermediate": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\n`setMode`, referenced by `bootDashboard`; likely `ThemeController.setMode`, called on a local `theme` instance and recorded as unresolved.\n\n### Inputs/Outputs\nIts precise signature is external to the demo project; the demo only calls it.\n\n### Side effects\nNone defined in this project; any effects live in its own implementation.\n\n### Why this node exists\nThe graph includes it as a unresolved call referenced by demo code, for completeness of the call graph.\n\n### Common bugs\nFailures would originate in the referenced unresolved call, not in the demo source shown here.\n\n### References\nSelected node: unresolved:setMode\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `setMode` could not be matched to demo project source."
+        },
+        "advanced": {
+          "analogy": "Like a name on a call list with no matching contact card.",
+          "technical": "### What it is\nAn unresolved reference `setMode` (used by `bootDashboard`); not bound to demo source. likely `ThemeController.setMode`, called on a local `theme` instance and recorded as unresolved.\n\n### Inputs/Outputs\nSignature and contract are external; this project treats it as an opaque unresolved call.\n\n### Side effects\nNo project-local effects; behavior is whatever the underlying unresolved call provides.\n\n### Why this node exists\nRepresented as a unresolved call node so the demo call graph stays complete and groundable.\n\n### Common bugs\nAny defect is in the external unresolved call or its usage site, not the demo project code.\n\n### References\nSelected node: unresolved:setMode\nFile path: Unknown (not in provided code context).\nCallers: bootDashboard\nCallees: Unknown (not in provided code context).\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Unresolved: `setMode` could not be matched to demo project source."
+        }
+      }
+    },
+    "module:analytics": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a folder or chapter that groups related code together.",
+          "technical": "### What it is\nThe `analytics.py` module: a file that holds these definitions: summarize_progress, detect_risk.\n\n### Inputs/Outputs\nAs a module it has no single input/output; it exposes the names it defines.\n\n### Side effects\nImporting it runs its top-level code; this demo module mainly defines functions and classes.\n\n### Why this node exists\nIt groups related demo code (analytics.py) into one file.\n\n### Common bugs\nAn import error here would stop everything that depends on the module.\n\n### References\nSelected node: module:analytics\nFile path: app/demo_project/analytics.py\nCallers: module:planner\nCallees: summarize_progress, detect_risk\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "The `analytics.py` module file grouping: summarize_progress, detect_risk."
+        },
+        "intermediate": {
+          "analogy": "A namespace container for related definitions.",
+          "technical": "### What it is\n`analytics.py` (file `app/demo_project/analytics.py`) is a module node exposing summarize_progress, detect_risk.\n\n### Inputs/Outputs\nExports the listed top-level names; importing binds them into the importer's namespace.\n\n### Side effects\nTop-level statements (imports, definitions) execute on first import.\n\n### Why this node exists\nIt organizes the demo's code by responsibility and is the parent of its member nodes in the graph.\n\n### Common bugs\nCircular imports or a failing top-level statement would break dependents.\n\n### References\nSelected node: module:analytics\nFile path: app/demo_project/analytics.py\nCallers: module:planner\nCallees: summarize_progress, detect_risk\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Module `analytics.py` grouping summarize_progress, detect_risk."
+        },
+        "advanced": {
+          "analogy": "A compilation/namespace unit aggregating its member symbols.",
+          "technical": "### What it is\nModule node for `analytics.py` (`app/demo_project/analytics.py`); contains/owns summarize_progress, detect_risk.\n\n### Inputs/Outputs\nPublic surface is its exported symbols; no call signature of its own.\n\n### Side effects\nImport-time execution of module-level code (definitions and any imports).\n\n### Why this node exists\nProvides the file-level grouping the graph uses to connect functions/classes to their source file.\n\n### Common bugs\nImport-order and side-effectful top-level code are the usual hazards; here the module body is mostly pure definitions.\n\n### References\nSelected node: module:analytics\nFile path: app/demo_project/analytics.py\nCallers: module:planner\nCallees: summarize_progress, detect_risk\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "File-level namespace node for `analytics.py` owning summarize_progress, detect_risk."
+        }
+      }
+    },
+    "module:api": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a folder or chapter that groups related code together.",
+          "technical": "### What it is\nThe `api.py` module: a file that holds these definitions: DemoRepository, build_daily_plan, handle_request.\n\n### Inputs/Outputs\nAs a module it has no single input/output; it exposes the names it defines.\n\n### Side effects\nImporting it runs its top-level code; this demo module mainly defines functions and classes.\n\n### Why this node exists\nIt groups related demo code (api.py) into one file.\n\n### Common bugs\nAn import error here would stop everything that depends on the module.\n\n### References\nSelected node: module:api\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: DemoRepository, build_daily_plan, handle_request, module:planner\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "The `api.py` module file grouping: DemoRepository, build_daily_plan, handle_request."
+        },
+        "intermediate": {
+          "analogy": "A namespace container for related definitions.",
+          "technical": "### What it is\n`api.py` (file `app/demo_project/api.py`) is a module node exposing DemoRepository, build_daily_plan, handle_request.\n\n### Inputs/Outputs\nExports the listed top-level names; importing binds them into the importer's namespace.\n\n### Side effects\nTop-level statements (imports, definitions) execute on first import.\n\n### Why this node exists\nIt organizes the demo's code by responsibility and is the parent of its member nodes in the graph.\n\n### Common bugs\nCircular imports or a failing top-level statement would break dependents.\n\n### References\nSelected node: module:api\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: DemoRepository, build_daily_plan, handle_request, module:planner\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Module `api.py` grouping DemoRepository, build_daily_plan, handle_request."
+        },
+        "advanced": {
+          "analogy": "A compilation/namespace unit aggregating its member symbols.",
+          "technical": "### What it is\nModule node for `api.py` (`app/demo_project/api.py`); contains/owns DemoRepository, build_daily_plan, handle_request.\n\n### Inputs/Outputs\nPublic surface is its exported symbols; no call signature of its own.\n\n### Side effects\nImport-time execution of module-level code (definitions and any imports).\n\n### Why this node exists\nProvides the file-level grouping the graph uses to connect functions/classes to their source file.\n\n### Common bugs\nImport-order and side-effectful top-level code are the usual hazards; here the module body is mostly pure definitions.\n\n### References\nSelected node: module:api\nFile path: app/demo_project/api.py\nCallers: Unknown (not in provided code context).\nCallees: DemoRepository, build_daily_plan, handle_request, module:planner\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "File-level namespace node for `api.py` owning DemoRepository, build_daily_plan, handle_request."
+        }
+      }
+    },
+    "module:planner": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a folder or chapter that groups related code together.",
+          "technical": "### What it is\nThe `planner.py` module: a file that holds these definitions: LearningPlanner, rank_topics, create_step.\n\n### Inputs/Outputs\nAs a module it has no single input/output; it exposes the names it defines.\n\n### Side effects\nImporting it runs its top-level code; this demo module mainly defines functions and classes.\n\n### Why this node exists\nIt groups related demo code (planner.py) into one file.\n\n### Common bugs\nAn import error here would stop everything that depends on the module.\n\n### References\nSelected node: module:planner\nFile path: app/demo_project/planner.py\nCallers: module:api\nCallees: LearningPlanner, rank_topics, create_step, module:analytics\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "The `planner.py` module file grouping: LearningPlanner, rank_topics, create_step."
+        },
+        "intermediate": {
+          "analogy": "A namespace container for related definitions.",
+          "technical": "### What it is\n`planner.py` (file `app/demo_project/planner.py`) is a module node exposing LearningPlanner, rank_topics, create_step.\n\n### Inputs/Outputs\nExports the listed top-level names; importing binds them into the importer's namespace.\n\n### Side effects\nTop-level statements (imports, definitions) execute on first import.\n\n### Why this node exists\nIt organizes the demo's code by responsibility and is the parent of its member nodes in the graph.\n\n### Common bugs\nCircular imports or a failing top-level statement would break dependents.\n\n### References\nSelected node: module:planner\nFile path: app/demo_project/planner.py\nCallers: module:api\nCallees: LearningPlanner, rank_topics, create_step, module:analytics\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Module `planner.py` grouping LearningPlanner, rank_topics, create_step."
+        },
+        "advanced": {
+          "analogy": "A compilation/namespace unit aggregating its member symbols.",
+          "technical": "### What it is\nModule node for `planner.py` (`app/demo_project/planner.py`); contains/owns LearningPlanner, rank_topics, create_step.\n\n### Inputs/Outputs\nPublic surface is its exported symbols; no call signature of its own.\n\n### Side effects\nImport-time execution of module-level code (definitions and any imports).\n\n### Why this node exists\nProvides the file-level grouping the graph uses to connect functions/classes to their source file.\n\n### Common bugs\nImport-order and side-effectful top-level code are the usual hazards; here the module body is mostly pure definitions.\n\n### References\nSelected node: module:planner\nFile path: app/demo_project/planner.py\nCallers: module:api\nCallees: LearningPlanner, rank_topics, create_step, module:analytics\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "File-level namespace node for `planner.py` owning LearningPlanner, rank_topics, create_step."
+        }
+      }
+    },
+    "module:ui": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a folder or chapter that groups related code together.",
+          "technical": "### What it is\nThe `ui.ts` module: a file that holds these definitions: ThemeController, formatMinutes, renderPlan.\n\n### Inputs/Outputs\nAs a module it has no single input/output; it exposes the names it defines.\n\n### Side effects\nImporting it runs its top-level code; this demo module mainly defines functions and classes.\n\n### Why this node exists\nIt groups related demo code (ui.ts) into one file.\n\n### Common bugs\nAn import error here would stop everything that depends on the module.\n\n### References\nSelected node: module:ui\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: ThemeController, formatMinutes, renderPlan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "The `ui.ts` module file grouping: ThemeController, formatMinutes, renderPlan."
+        },
+        "intermediate": {
+          "analogy": "A namespace container for related definitions.",
+          "technical": "### What it is\n`ui.ts` (file `app/demo_project/ui.ts`) is a module node exposing ThemeController, formatMinutes, renderPlan.\n\n### Inputs/Outputs\nExports the listed top-level names; importing binds them into the importer's namespace.\n\n### Side effects\nTop-level statements (imports, definitions) execute on first import.\n\n### Why this node exists\nIt organizes the demo's code by responsibility and is the parent of its member nodes in the graph.\n\n### Common bugs\nCircular imports or a failing top-level statement would break dependents.\n\n### References\nSelected node: module:ui\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: ThemeController, formatMinutes, renderPlan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Module `ui.ts` grouping ThemeController, formatMinutes, renderPlan."
+        },
+        "advanced": {
+          "analogy": "A compilation/namespace unit aggregating its member symbols.",
+          "technical": "### What it is\nModule node for `ui.ts` (`app/demo_project/ui.ts`); contains/owns ThemeController, formatMinutes, renderPlan.\n\n### Inputs/Outputs\nPublic surface is its exported symbols; no call signature of its own.\n\n### Side effects\nImport-time execution of module-level code (definitions and any imports).\n\n### Why this node exists\nProvides the file-level grouping the graph uses to connect functions/classes to their source file.\n\n### Common bugs\nImport-order and side-effectful top-level code are the usual hazards; here the module body is mostly pure definitions.\n\n### References\nSelected node: module:ui\nFile path: app/demo_project/ui.ts\nCallers: Unknown (not in provided code context).\nCallees: ThemeController, formatMinutes, renderPlan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "File-level namespace node for `ui.ts` owning ThemeController, formatMinutes, renderPlan."
+        }
+      }
+    },
+    "module:web": {
+      "snippet": "",
+      "levels": {
+        "beginner": {
+          "analogy": "Like a folder or chapter that groups related code together.",
+          "technical": "### What it is\nThe `web.js` module: a file that holds these definitions: DemoClient, bootDashboard.\n\n### Inputs/Outputs\nAs a module it has no single input/output; it exposes the names it defines.\n\n### Side effects\nImporting it runs its top-level code; this demo module mainly defines functions and classes.\n\n### Why this node exists\nIt groups related demo code (web.js) into one file.\n\n### Common bugs\nAn import error here would stop everything that depends on the module.\n\n### References\nSelected node: module:web\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: DemoClient, bootDashboard\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "The `web.js` module file grouping: DemoClient, bootDashboard."
+        },
+        "intermediate": {
+          "analogy": "A namespace container for related definitions.",
+          "technical": "### What it is\n`web.js` (file `app/demo_project/web.js`) is a module node exposing DemoClient, bootDashboard.\n\n### Inputs/Outputs\nExports the listed top-level names; importing binds them into the importer's namespace.\n\n### Side effects\nTop-level statements (imports, definitions) execute on first import.\n\n### Why this node exists\nIt organizes the demo's code by responsibility and is the parent of its member nodes in the graph.\n\n### Common bugs\nCircular imports or a failing top-level statement would break dependents.\n\n### References\nSelected node: module:web\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: DemoClient, bootDashboard\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "Module `web.js` grouping DemoClient, bootDashboard."
+        },
+        "advanced": {
+          "analogy": "A compilation/namespace unit aggregating its member symbols.",
+          "technical": "### What it is\nModule node for `web.js` (`app/demo_project/web.js`); contains/owns DemoClient, bootDashboard.\n\n### Inputs/Outputs\nPublic surface is its exported symbols; no call signature of its own.\n\n### Side effects\nImport-time execution of module-level code (definitions and any imports).\n\n### Why this node exists\nProvides the file-level grouping the graph uses to connect functions/classes to their source file.\n\n### Common bugs\nImport-order and side-effectful top-level code are the usual hazards; here the module body is mostly pure definitions.\n\n### References\nSelected node: module:web\nFile path: app/demo_project/web.js\nCallers: Unknown (not in provided code context).\nCallees: DemoClient, bootDashboard\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context).",
+          "key_takeaway": "File-level namespace node for `web.js` owning DemoClient, bootDashboard."
+        }
+      }
+    }
+  },
+  "chat": [
+    {
+      "nodeId": "handle_request",
+      "question": "Where does a request actually enter this demo project?",
+      "answer": "### What it is\n`handle_request` is the request entry point. It reads `user_id` from the payload (defaulting to `demo-user`) and hands off to `build_daily_plan`.\n\n### Inputs/Outputs\nInput: a `payload` dict. Output: the daily-plan dict from `build_daily_plan` (`{user_id, steps}`).\n\n### Side effects\nNone of its own; the repository it transitively triggers prints a log line.\n\n### Why this node exists\nIt is the thin boundary that turns an incoming request into a plan, keeping defaulting out of the service layer.\n\n### Common bugs\nIf `payload` is not a mapping, `payload.get(...)` raises AttributeError; only `user_id` is read, other fields are ignored.\n\n### References\nSelected node: handle_request\nFile path: app/demo_project/api.py\nCallers: module:api\nCallees: unresolved:get, build_daily_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    },
+    {
+      "nodeId": "build_daily_plan",
+      "question": "How is the daily plan assembled?",
+      "answer": "### What it is\n`build_daily_plan` is the orchestrator. It creates a `DemoRepository`, loads sessions, builds a `LearningPlanner` with fixed topic weights, and returns `{user_id, steps}`.\n\n### Inputs/Outputs\nInput: `user_id: str`. Output: a dict with `user_id` and `steps` (the planner's list of step dicts).\n\n### Side effects\nIndirect: the repository's `load_sessions` prints to stdout.\n\n### Why this node exists\nIt is the composition root tying the data source to the planner; `handle_request` delegates to it.\n\n### Common bugs\nTopic weights are hard-coded so every user gets the same weighting; it depends on both the repository and planner contracts.\n\n### References\nSelected node: build_daily_plan\nFile path: app/demo_project/api.py\nCallers: handle_request, module:api\nCallees: DemoRepository, unresolved:load_sessions, LearningPlanner, unresolved:build_plan\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    },
+    {
+      "nodeId": "LearningPlanner.build_plan",
+      "question": "What steps run when the planner builds a plan?",
+      "answer": "### What it is\n`build_plan` is the planning pipeline: it summarizes progress, detects risk, ranks topics, then creates up to three steps.\n\n### Inputs/Outputs\nInput: `sessions: list[dict]`. Output: a `list[dict]` of step dicts (`order, topic, minutes, risk`).\n\n### Side effects\nNone directly; it delegates to the pure helpers `summarize_progress`, `detect_risk`, `rank_topics`, and `create_step`.\n\n### Why this node exists\nIt is the central hub (five callees) that fixes the planning order the demo visualizes.\n\n### Common bugs\nThe `[:3]` slice silently caps the plan; a single `risk` value is applied to every step regardless of topic.\n\n### References\nSelected node: LearningPlanner.build_plan\nFile path: app/demo_project/planner.py\nCallers: Unknown (not in provided code context).\nCallees: summarize_progress, detect_risk, rank_topics, create_step, builtin:enumerate\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    },
+    {
+      "nodeId": "summarize_progress",
+      "question": "How are the progress numbers computed?",
+      "answer": "### What it is\n`summarize_progress` aggregates sessions into `average_minutes` (rounded mean of minutes) and `completion_rate` (rounded completed/total ratio).\n\n### Inputs/Outputs\nInput: `sessions: list[dict]` with `minutes` and `completed`. Output: a dict with `average_minutes` and `completion_rate`; empty input yields zeros.\n\n### Side effects\nPure: no I/O and it does not mutate the input list.\n\n### Why this node exists\nIt is the analytics step feeding `detect_risk` and the planner, isolating the math behind a stable two-field contract.\n\n### Common bugs\nEach session must have `minutes` and `completed` or a KeyError is raised; the empty-list guards prevent divide-by-zero.\n\n### References\nSelected node: summarize_progress\nFile path: app/demo_project/analytics.py\nCallers: LearningPlanner.build_plan, module:analytics\nCallees: builtin:round, external:statistics.mean, builtin:len\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    },
+    {
+      "nodeId": "rank_topics",
+      "question": "How does the planner decide topic order?",
+      "answer": "### What it is\n`rank_topics` sorts the topic weights from highest to lowest and returns just the topic names in that order.\n\n### Inputs/Outputs\nInput: `topic_weights: dict[str,int]`. Output: a `list[str]` of topic names, highest weight first.\n\n### Side effects\nPure; it builds and returns a new list.\n\n### Why this node exists\nIt isolates the prioritization rule so `build_plan` stays declarative and only takes the top three.\n\n### Common bugs\nEqual weights keep insertion order via the stable sort; the numeric scores are discarded, so callers cannot see weights.\n\n### References\nSelected node: rank_topics\nFile path: app/demo_project/planner.py\nCallers: LearningPlanner.build_plan, module:planner\nCallees: builtin:sorted, unresolved:items\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    },
+    {
+      "nodeId": "bootDashboard",
+      "question": "What happens when the frontend dashboard boots?",
+      "answer": "### What it is\n`bootDashboard` is the frontend entry. It sets the theme to focus, builds a `DemoClient`, fetches the plan, and logs the rendered plan lines.\n\n### Inputs/Outputs\nInput: `userId`. Output: a `Promise<void>` (it logs the result rather than returning it).\n\n### Side effects\nIt performs a network fetch and writes to the console via `console.log`.\n\n### Why this node exists\nIt is the top-level startup hub (four callees) composing theme, client, fetch, and render, mirroring `handle_request` on the backend.\n\n### Common bugs\nThere is no try/catch around the await, and it assumes the response contains `plan.steps`.\n\n### References\nSelected node: bootDashboard\nFile path: app/demo_project/web.js\nCallers: module:web\nCallees: external:console.log, renderPlan, unresolved:fetchPlan, unresolved:setMode\nNeighbors: Unknown (not in provided code context).\n\n### Unknowns\nUnknown (not in provided code context)."
+    }
+  ]
+}
