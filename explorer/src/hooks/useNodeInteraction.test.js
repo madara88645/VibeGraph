@@ -1,6 +1,7 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as aiClient from '../utils/aiClient';
 import { useNodeInteraction } from './useNodeInteraction';
 
 describe('useNodeInteraction - explanation cache', () => {
@@ -445,5 +446,35 @@ describe('useNodeInteraction - API key namespacing & auth signal', () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'beginner');
     });
     expect(onAuthError).not.toHaveBeenCalled();
+  });
+});
+
+describe('useNodeInteraction baked demo explanations', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('serves baked explanation without any network call or key', async () => {
+    const fetchSpy = vi.spyOn(aiClient, 'fetchAiJson');
+    const baked = {
+      node_id: 'n1',
+      explanation: { analogy: 'a', technical: 't', key_takeaway: 'k' },
+      snippet: 'def n1(): pass',
+    };
+    const getBakedExplanation = vi.fn((id, level) =>
+      id === 'n1' && level === 'intermediate' ? baked : null
+    );
+
+    const { result } = renderHook(() =>
+      useNodeInteraction({ aiReady: false, getBakedExplanation })
+    );
+
+    await act(async () => {
+      await result.current.fetchExplanation({ id: 'n1', data: {} }, 'technical', 'intermediate');
+    });
+
+    await waitFor(() => expect(result.current.explanation).toEqual(baked));
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
