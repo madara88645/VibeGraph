@@ -11,3 +11,18 @@ export async function loadDemoGraph() {
     }
     return res.json();
 }
+
+// Loads the hand-authored, pre-baked demo AI content (explanations + canned chat)
+// so the demo shows AI value with zero key and zero network to the AI endpoints.
+// Best-effort: any failure returns null and the caller falls back to live/walled AI.
+export async function loadDemoAiContent() {
+    try {
+        const res = await fetch('/demo_ai_content.json');
+        if (!res.ok) {
+            return null;
+        }
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
