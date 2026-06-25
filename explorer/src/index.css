@@ -4460,3 +4460,11 @@ body {
   color: #10b981;
   font-size: 0.8rem;
 }
+
+.demo-chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+.demo-chat-chip {
+  font: inherit; font-size: 0.8rem; padding: 6px 12px; border-radius: 14px; cursor: pointer;
+  color: var(--color-accent-primary); background: transparent;
+  border: 1px solid rgba(16, 185, 129, 0.4); transition: background 0.2s ease;
+}
+.demo-chat-chip:hover { background: rgba(16, 185, 129, 0.08); }
