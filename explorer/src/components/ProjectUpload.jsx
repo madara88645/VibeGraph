@@ -82,7 +82,7 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -157,6 +157,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
             }
 
             const result = validateGraphResult(parsedPayload);
+            onClearDemo?.();
             if (onUploadSuccess) onUploadSuccess(result);
             setIsModalOpen(false);
             const warningToastMessage = buildWarningToastMessage(result.warnings);
@@ -172,7 +173,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits }, ref) => {
             // Reset input so the same folder can be uploaded again if needed.
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
-    }, [onUploadSuccess, showToast, uploadLimits]);
+    }, [onClearDemo, onUploadSuccess, showToast, uploadLimits]);
 
     const handleDragLeave = useCallback((e) => {
         e.preventDefault();

@@ -31,7 +31,8 @@ import {
   setStoredApiKey,
   setStoredModel,
 } from './utils/aiClient';
-import { loadDemoGraph } from './utils/loadDemoGraph';
+import { DemoContentProvider, useDemoContent } from './context/DemoContentContext';
+import { loadDemoAiContent, loadDemoGraph } from './utils/loadDemoGraph';
 import { getShortName } from './utils/stringUtils';
 
 function shortenModelName(modelName) {
@@ -71,6 +72,9 @@ function AppInner() {
   const [learningPathTopOffset, setLearningPathTopOffset] = useState(84);
   const [showFirstSteps, setShowFirstSteps] = useState(true);
   const [showTutorial, setShowTutorial] = useState(true);
+
+  const { isDemo, setDemoContent, clearDemoContent, getBakedExplanation, getCannedChats } =
+    useDemoContent();
 
 
   useEffect(() => {
@@ -260,7 +264,7 @@ function AppInner() {
     handleSelectNode,
     onNodeClick,
     resetInteractionState,
-  } = useNodeInteraction({ ...aiContext, allNodes, allEdges });
+  } = useNodeInteraction({ ...aiContext, allNodes, allEdges, getBakedExplanation });
 
   const explanationPanelOpen = Boolean(selectedNode);
   const [explanationPanelClosing, setExplanationPanelClosing] = useState(false);
@@ -290,12 +294,12 @@ function AppInner() {
   } = useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext, currentDegreeMap);
 
   const onUploadSuccess = useCallback(
-    (result) => {
+    (result, _resetCallback, source) => {
       handleUploadSuccess(result, () => {
         resetInteractionState();
         onResetSimulation();
         setShowFirstSteps(true);
-      });
+      }, source);
     },
     [handleUploadSuccess, onResetSimulation, resetInteractionState]
   );
@@ -322,13 +326,14 @@ function AppInner() {
   );
   const handleLoadDemo = useCallback(async () => {
     try {
-      const data = await loadDemoGraph();
-      onUploadSuccess(data);
+      const [data, ai] = await Promise.all([loadDemoGraph(), loadDemoAiContent()]);
+      setDemoContent(ai);                 // ai may be null → context stays not-demo
+      onUploadSuccess(data, undefined, 'demo');
       showToast('Demo project loaded successfully!', 'success');
     } catch (err) {
       showToast('Failed to load demo project: ' + err.message, 'error');
     }
-  }, [onUploadSuccess, showToast]);
+  }, [onUploadSuccess, showToast, setDemoContent]);
   const handleSelectFile = useCallback(
     (file) => {
       setSelectedFile(file);
@@ -485,6 +490,7 @@ function AppInner() {
             ref={uploadRef}
             onUploadSuccess={onUploadSuccess}
             uploadLimits={aiConfig.uploadLimits}
+            onClearDemo={clearDemoContent}
           />
 
           {hasGraph ? (
@@ -608,6 +614,8 @@ function AppInner() {
                 selectedModel={effectiveModel}
                 aiReady={aiReady}
                 onOpenAiSettings={openAiSettings}
+                isDemo={isDemo}
+                getCannedChats={getCannedChats}
               />
             </ErrorBoundary>
           ) : null}
@@ -644,7 +652,9 @@ export default function App() {
     <ErrorBoundary>
       <ToastProvider>
         <ReactFlowProvider>
-          <AppInner />
+          <DemoContentProvider>
+            <AppInner />
+          </DemoContentProvider>
         </ReactFlowProvider>
       </ToastProvider>
     </ErrorBoundary>
