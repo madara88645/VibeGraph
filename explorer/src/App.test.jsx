@@ -155,10 +155,13 @@ vi.mock('./components/AISettingsModal', () => ({
 }));
 
 vi.mock('./components/ProjectUpload', () => ({
-  default: ({ onUploadSuccess }) => (
-    <button onClick={() => onUploadSuccess({ nodes: [], edges: [] })}>
-      Trigger Upload
-    </button>
+  default: ({ onUploadSuccess, onLoadDemo }) => (
+    <>
+      <button onClick={() => onUploadSuccess({ nodes: [], edges: [] })}>
+        Trigger Upload
+      </button>
+      <button onClick={() => onLoadDemo?.()}>Modal Demo</button>
+    </>
   ),
 }));
 
@@ -384,5 +387,25 @@ describe('App upload flow', () => {
     await user.click(screen.getByText('load-demo'));
 
     await waitFor(() => expect(loadDemoAiContent).toHaveBeenCalledTimes(1));
+  });
+
+  it('routes the upload-modal demo button through the same baked-content demo load', async () => {
+    const user = userEvent.setup();
+    loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
+    loadDemoAiContent.mockResolvedValue({ explanations: {}, chat: [] });
+
+    render(<App />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config'));
+
+    await user.click(screen.getByText('Modal Demo'));
+
+    await waitFor(() => expect(loadDemoAiContent).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockHandleUploadSuccess).toHaveBeenCalledWith(
+        expect.objectContaining({ nodes: expect.any(Array) }),
+        expect.any(Function),
+        'demo'
+      )
+    );
   });
 });

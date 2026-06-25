@@ -424,17 +424,13 @@ describe('ProjectUpload', () => {
         expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
     });
 
-    it('loads the demo project successfully when CTA is clicked', async () => {
-        const mockResult = { nodes: [{ id: 'demo-1' }], edges: [] };
-        globalThis.fetch = vi.fn(() =>
-            Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(mockResult),
-            })
-        );
-
+    it('routes the modal demo CTA through onLoadDemo and closes the modal', async () => {
+        const onLoadDemo = vi.fn();
         const onUploadSuccess = vi.fn();
-        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+        renderWithToast(
+            <ProjectUpload onUploadSuccess={onUploadSuccess} onLoadDemo={onLoadDemo} />,
+            { showToast }
+        );
 
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
@@ -446,8 +442,11 @@ describe('ProjectUpload', () => {
             fireEvent.click(demoBtn);
         });
 
-        expect(globalThis.fetch).toHaveBeenCalledWith('/demo_graph_data.json');
-        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
-        expect(showToast).toHaveBeenCalledWith('Demo project loaded successfully!', 'success');
+        // The modal demo button now defers to App's handleLoadDemo (which loads the
+        // graph AND pre-baked AI content), instead of loading only the graph itself.
+        expect(onLoadDemo).toHaveBeenCalledTimes(1);
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(onUploadSuccess).not.toHaveBeenCalled();
+        expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
     });
 });

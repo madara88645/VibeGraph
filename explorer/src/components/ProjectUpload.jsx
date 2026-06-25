@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useI
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
-import { loadDemoGraph } from '../utils/loadDemoGraph';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable Python code found.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
@@ -82,7 +81,7 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo }, ref) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, onLoadDemo }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -315,19 +314,12 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo }
                                     <button
                                         type="button"
                                         className="upload-select-btn demo-load-btn"
-                                        onClick={async (e) => {
+                                        onClick={(e) => {
                                             e.stopPropagation();
-                                            setIsAnalyzing(true);
-                                            try {
-                                                const data = await loadDemoGraph();
-                                                if (onUploadSuccess) onUploadSuccess(data);
-                                                setIsModalOpen(false);
-                                                showToast('Demo project loaded successfully!', 'success');
-                                            } catch (err) {
-                                                showToast('Failed to load demo project: ' + err.message, 'error');
-                                            } finally {
-                                                setIsAnalyzing(false);
-                                            }
+                                            // Route both demo entry points through App's handleLoadDemo so
+                                            // the modal demo also loads pre-baked AI content (isDemo true).
+                                            setIsModalOpen(false);
+                                            onLoadDemo?.();
                                         }}
                                         style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%' }}
                                     >
