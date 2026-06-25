@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useGraphData } from './useGraphData';
@@ -185,5 +185,33 @@ describe('useGraphData', () => {
         budget: 1500,
       });
     });
+  });
+});
+
+const DEMO_RESULT = {
+  nodes: [{ id: 'n1', data: { file: 'a.py', entry_point: true } }],
+  edges: [],
+  meta: { truncated: false, total_nodes: 1, total_edges: 0, kept_nodes: 1, kept_edges: 0 },
+};
+
+describe('useGraphData source tagging', () => {
+  beforeEach(() => localStorage.clear());
+
+  it("stores source:'demo' in the graph cache when demo load passes source", () => {
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const { result } = renderHook(() => useGraphData(setNodes, setEdges));
+    act(() => result.current.handleUploadSuccess(DEMO_RESULT, null, 'demo'));
+    const cached = JSON.parse(localStorage.getItem(result.current.cacheKey));
+    expect(cached.source).toBe('demo');
+  });
+
+  it("defaults to source:'user_upload' for a normal upload", () => {
+    const setNodes = vi.fn();
+    const setEdges = vi.fn();
+    const { result } = renderHook(() => useGraphData(setNodes, setEdges));
+    act(() => result.current.handleUploadSuccess(DEMO_RESULT));
+    const cached = JSON.parse(localStorage.getItem(result.current.cacheKey));
+    expect(cached.source).toBe('user_upload');
   });
 });
