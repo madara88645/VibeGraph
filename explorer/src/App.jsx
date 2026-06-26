@@ -135,6 +135,12 @@ function AppInner() {
       : keyInvalid
         ? 'invalid'
         : 'set';
+  const aiStatusIsWarning = aiStatus === 'invalid' || aiStatus === 'needsKey';
+  // In the zero-key demo, AI answers come from pre-baked content, so a
+  // "Key Needed"/"Key Invalid" warning is misleading and contradicts the
+  // landing page's "No upload, no API key" promise. Hide the badge in that
+  // case; honest positive states (AI Ready / Key Set) still render.
+  const showAiStatusBadge = !(isDemo && aiStatusIsWarning);
 
   const openAiSettings = useCallback(
     (message) => {
@@ -437,13 +443,11 @@ function AppInner() {
 
           <img src="/vibegraph-logo.png" alt="VibeGraph" className="header-logo" />
           <h1>VibeGraph Explorer</h1>
-          <span
-            className={`status-badge ${
-              aiStatus === 'invalid' || aiStatus === 'needsKey' ? 'status-badge-warning' : ''
-            }`}
-          >
-            {AI_STATUS_LABELS[aiStatus]}
-          </span>
+          {showAiStatusBadge ? (
+            <span className={`status-badge ${aiStatusIsWarning ? 'status-badge-warning' : ''}`}>
+              {AI_STATUS_LABELS[aiStatus]}
+            </span>
+          ) : null}
 
           <span className="current-file-badge">
             Model: {shortenModelName(effectiveModel)}
