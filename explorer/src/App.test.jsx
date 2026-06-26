@@ -389,6 +389,23 @@ describe('App upload flow', () => {
     await waitFor(() => expect(loadDemoAiContent).toHaveBeenCalledTimes(1));
   });
 
+  it('hides the "Key Needed" badge once the zero-key demo is loaded', async () => {
+    const user = userEvent.setup();
+    loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
+    loadDemoAiContent.mockResolvedValue({ explanations: {}, chat: [] });
+
+    render(<App />);
+
+    // Before the demo loads, the key-required warning is shown.
+    expect(await screen.findByText('Key Needed')).toBeInTheDocument();
+
+    await user.click(screen.getByText('load-demo'));
+
+    // The zero-key demo serves pre-baked AI content, so the "Key Needed"
+    // warning must disappear to match the "No upload, no API key" promise.
+    await waitFor(() => expect(screen.queryByText('Key Needed')).not.toBeInTheDocument());
+  });
+
   it('routes the upload-modal demo button through the same baked-content demo load', async () => {
     const user = userEvent.setup();
     loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
