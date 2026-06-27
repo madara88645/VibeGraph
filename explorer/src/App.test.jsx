@@ -317,7 +317,21 @@ describe('App upload flow', () => {
     });
   });
 
-  it('shows "Key Needed" when a user key is required but none is set', async () => {
+  it('hides the key warning on the landing page (no graph loaded)', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/ai-config');
+    });
+
+    // The landing page promises "No upload, no API key", so a "Key Needed"
+    // warning must not appear before any graph is loaded.
+    expect(screen.queryByText('Key Needed')).not.toBeInTheDocument();
+  });
+
+  it('shows "Key Needed" once a real graph is loaded and no key is set', async () => {
+    graphDataState.allNodes = [{ id: 'n1', data: { label: 'n1', file: 'a.py' } }];
+
     render(<App />);
 
     expect(await screen.findByText('Key Needed')).toBeInTheDocument();
@@ -352,6 +366,7 @@ describe('App upload flow', () => {
 
   it('flips the badge to "Key Invalid" when an AI request reports an auth error', async () => {
     sessionStorage.setItem('vg_v1_openrouter_key', 'sk-bad');
+    graphDataState.allNodes = [{ id: 'n1', data: { label: 'n1', file: 'a.py' } }];
 
     render(<App />);
 
@@ -391,6 +406,9 @@ describe('App upload flow', () => {
 
   it('hides the "Key Needed" badge once the zero-key demo is loaded', async () => {
     const user = userEvent.setup();
+    // A real graph is loaded so the key warning is legitimately visible first;
+    // switching into the zero-key demo must then hide it.
+    graphDataState.allNodes = [{ id: 'n1', data: { label: 'n1', file: 'a.py' } }];
     loadDemoGraph.mockResolvedValue({ nodes: [{ id: 'n1', data: { file: 'a.py' } }], edges: [] });
     loadDemoAiContent.mockResolvedValue({ explanations: {}, chat: [] });
 

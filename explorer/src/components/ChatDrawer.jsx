@@ -372,7 +372,30 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         <div className="chat-messages" role="log">
           {messages.length === 0 && !loading ? (
             <div className="chat-empty">
-              {!aiReady ? (
+              {isDemo ? (
+                hasSelectedNode && getCannedChats(selectedNode?.id).length > 0 ? (
+                  <p className="chat-empty-lead">
+                    Live demo — pick a sample question below for a grounded
+                    answer. No API key needed.
+                  </p>
+                ) : hasSelectedNode ? (
+                  <>
+                    <p className="chat-empty-lead">
+                      This is a live demo with sample answers for the project's
+                      main functions and classes.
+                    </p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      Add a free OpenRouter key to ask your own questions about
+                      this node.
+                    </p>
+                  </>
+                ) : (
+                  <p className="chat-empty-lead">
+                    Live demo — select a function or class on the graph, then
+                    pick a sample question. No API key needed.
+                  </p>
+                )
+              ) : !aiReady ? (
                 <>
                   <p>Open AI Settings and add your OpenRouter key to start chatting.</p>
                   <button

@@ -136,11 +136,6 @@ function AppInner() {
         ? 'invalid'
         : 'set';
   const aiStatusIsWarning = aiStatus === 'invalid' || aiStatus === 'needsKey';
-  // In the zero-key demo, AI answers come from pre-baked content, so a
-  // "Key Needed"/"Key Invalid" warning is misleading and contradicts the
-  // landing page's "No upload, no API key" promise. Hide the badge in that
-  // case; honest positive states (AI Ready / Key Set) still render.
-  const showAiStatusBadge = !(isDemo && aiStatusIsWarning);
 
   const openAiSettings = useCallback(
     (message) => {
@@ -218,6 +213,13 @@ function AppInner() {
   } = useGraphData(setNodes, setEdges);
 
   const hasGraph = allNodes.length > 0 || allEdges.length > 0;
+
+  // Only surface a key warning ("Key Needed"/"Key Invalid") once a real,
+  // non-demo graph is loaded. On the landing page (no graph) the warning
+  // contradicts the "No upload, no API key" promise; in the zero-key demo,
+  // answers are pre-baked. Honest positive states (AI Ready / Key Set) always
+  // render.
+  const showAiStatusBadge = !aiStatusIsWarning || (hasGraph && !isDemo);
 
   useEffect(() => {
     if (!hasGraph) {
