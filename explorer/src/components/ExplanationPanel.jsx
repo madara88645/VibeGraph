@@ -53,6 +53,16 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        const handleKey = (e) => {
+            if (e.key === 'Escape' && isOpen && onClose) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [isOpen, onClose]);
+
     if (!isRendered && !node) return null;
 
     // Use lastNode if node is null (during animate-out) so content doesn't instantly disappear!
@@ -307,8 +317,8 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 <button
                     onClick={onClose}
                     className="ep-close"
-                    title="Close Explanation Panel"
-                    aria-label="Close Explanation Panel"
+                    title="Close Explanation Panel (Press Esc)"
+                    aria-label="Close Explanation Panel (Press Esc)"
                 >
                     <span aria-hidden="true">✕</span>
                 </button>
