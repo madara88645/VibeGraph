@@ -12,3 +12,21 @@ venv/
 explorer/public/graph_data.json
 explorer/dist/graph_data.json
 .coverage
+
+# Private marketing materials — not for public repo
+marketing-plan/
+
+# macOS junk
+.DS_Store
+
+# Local Claude Code / agent config
+.claude/
+
+# Demo-recording rig + generated media (local-only marketing assets, keep out of public repo)
+# (root package.json/lock are the Playwright demo rig — anchored with / so explorer/package.json stays tracked)
+/package.json
+/package-lock.json
+/scripts/
+docs/screenshots/_video/
+docs/screenshots/demo*.gif
+docs/screenshots/demo*.mp4
