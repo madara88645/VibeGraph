@@ -35,6 +35,7 @@ const GraphViewer = ({
   onNodeClick,
   onRequestUpload,
   onLoadDemo,
+  isDemoLoading,
 }) => {
   const graphRef = useRef(null);
   const showToast = useToast();
@@ -221,12 +222,17 @@ const GraphViewer = ({
                 className="empty-demo-cta"
                 type="button"
                 onClick={() => onLoadDemo?.()}
-                aria-label="See a live demo"
+                aria-label={isDemoLoading ? "Loading demo project..." : "See a live demo"}
+                disabled={isDemoLoading}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <polygon points="6 4 20 12 6 20 6 4" />
-                </svg>
-                See a live demo
+                {isDemoLoading ? (
+                  <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
+                )}
+                {isDemoLoading ? "Loading demo..." : "See a live demo"}
               </button>
             </div>
             <span className="empty-shortcut">
