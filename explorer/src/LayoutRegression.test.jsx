@@ -165,7 +165,7 @@ describe('Layout Regression Test for Issue #435', () => {
 
     // Wait for explanation panel to open
     await waitFor(() => {
-      expect(screen.getByLabelText('Close Explanation Panel')).toBeInTheDocument();
+      expect(screen.getByLabelText('Close Explanation Panel (Press Esc)')).toBeInTheDocument();
     });
 
     // 2. Open the Chat FAB

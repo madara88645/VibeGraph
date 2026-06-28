@@ -47,6 +47,19 @@ describe('ExplanationPanel', () => {
     vi.clearAllMocks();
   });
 
+  it('closes on Escape key press', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderPanel({ onClose });
+
+    // Ensure the panel is rendered by waiting for something
+    await screen.findByRole('tab', { name: /Technical/i });
+
+    await user.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('calls fetchExplanation on mount with default tab and level', () => {
     const fetchExplanation = vi.fn();
     renderPanel({ fetchExplanation });
