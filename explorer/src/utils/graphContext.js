@@ -11,7 +11,15 @@ export function buildNodeGroundingContext({
     return { callers: [], callees: [], neighbors: [] };
   }
 
-  const knownNodeIds = new Set(allNodes.map((node) => node.id).filter(Boolean));
+  // PERFORMANCE OPTIMIZATION (Bolt): Replaced array allocation and iteration
+  // map/filter with a simple loop over elements.
+  const knownNodeIds = new Set();
+  for (let i = 0; i < allNodes.length; i++) {
+    const id = allNodes[i].id;
+    if (id) {
+      knownNodeIds.add(id);
+    }
+  }
   const callers = [];
   const callees = [];
 
