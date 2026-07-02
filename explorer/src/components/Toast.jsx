@@ -34,7 +34,7 @@ export function ToastProvider({ children }) {
             <div className="toast-container" aria-live="polite">
                 {toasts.map(t => (
                     <div key={t.id} className={`toast toast-${t.type}`}>
-                        <span className="toast-icon">
+                        <span className="toast-icon" aria-hidden="true">
                             {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
                         </span>
                         <span className="toast-message">{t.message}</span>
