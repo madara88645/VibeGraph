@@ -22,7 +22,7 @@ const CustomNode = ({ data, selected }) => {
     // Extract short filename
     const fileName = data.file ? getShortName(data.file) : null;
 
-    // Language-aware logic
+    // Language-aware logic. Defaults are Python (PY); JS/TS override below.
     const lang = data.language || 'python';
     let langPill = 'PY';
     let langColor = '#3b82f6'; // Match builtin python accent
@@ -36,9 +36,6 @@ const CustomNode = ({ data, selected }) => {
         langPill = 'TS';
         langColor = '#3b82f6'; // TS blue
         if (nodeType === 'builtin') displayIcon = '🟦';
-    } else {
-        langPill = 'PY';
-        langColor = '#3b82f6'; // PY blue
     }
 
 
