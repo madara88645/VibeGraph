@@ -1,16 +1,45 @@
-# React + Vite
+# VibeGraph Explorer (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The React 19 + Vite single-page app for [VibeGraph](../README.md) — it renders the
+interactive call graph, the AI explanation panel, chat, learning path, and the
+Ghost Runner.
 
-Currently, two official plugins are available:
+This directory is the frontend only. For the full project overview, backend
+setup, and deployment, see the [root README](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Prerequisites
 
-## React Compiler
+- **Node.js 18+**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the ESLint configuration
+```bash
+npm install     # install dependencies
+npm run dev     # start the Vite dev server (http://localhost:5173)
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The dev server expects the FastAPI backend to be reachable so that `/api/*`
+requests resolve. Start it from the project root with `python serve.py`.
+
+## Scripts
+
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Start the Vite dev server with hot module reload |
+| `npm run build` | Build the production bundle into `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Lint the source with ESLint |
+| `npm run test` | Run the Vitest unit tests once |
+
+## Project layout
+
+```
+explorer/
+├── src/
+│   ├── components/   # GraphViewer, ChatDrawer, CodePanel, ProjectUpload, ...
+│   ├── hooks/        # useGraphData, useGhostRunner, useTheme, ...
+│   ├── utils/        # layout, aiClient, exportGraph, ...
+│   └── App.jsx       # app shell
+├── vite.config.js
+└── eslint.config.js
+```
