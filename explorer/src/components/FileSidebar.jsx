@@ -15,6 +15,13 @@ const getDirName = (path) => {
     return lastSlash >= 0 ? path.substring(0, lastSlash) : '';
 };
 
+// Pluralize a node-type label for count summaries, e.g. "1 class" / "2 classes".
+// Types ending in "s" (class, ...) take "es"; everything else takes "s".
+const pluralizeType = (type, count) => {
+    if (count === 1) return type;
+    return /s$/.test(type) ? `${type}es` : `${type}s`;
+};
+
 const typeIcons = {
     function: '⚡',
     class: '🏗️',
@@ -125,7 +132,7 @@ const FileSidebar = ({
                                 for (const type in stats.types) {
                                     const count = stats.types[type];
                                     if (typeStr) typeStr += ', ';
-                                    typeStr += `${count} ${type}${count === 1 || type.endsWith('s') ? '' : 's'}`;
+                                    typeStr += `${count} ${pluralizeType(type, count)}`;
                                 }
                             }
                             const ariaLabel = `${file}, ${stats.count || 0} nodes${typeStr ? `. ${typeStr}` : ''}`;
