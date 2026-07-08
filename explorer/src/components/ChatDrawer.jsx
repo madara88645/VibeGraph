@@ -58,6 +58,16 @@ const ChatDrawer = ({
   }, [isOpen]);
 
   useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onToggle();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onToggle]);
+
+  useEffect(() => {
     if (!selectedNode?.id) {
       setMessages([]);
       return;
@@ -364,7 +374,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           ) : (
             <span className="chat-context-badge chat-no-node-badge">No node selected</span>
           )}
-          <button className="chat-drawer-close" onClick={onToggle} title="Close Chat" aria-label="Close Chat">
+          <button className="chat-drawer-close" onClick={onToggle} title="Close Chat (Press Esc)" aria-label="Close Chat (Press Esc)">
             <span aria-hidden="true">x</span>
           </button>
         </div>

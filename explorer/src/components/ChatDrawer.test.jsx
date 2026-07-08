@@ -128,7 +128,7 @@ describe('ChatDrawer', () => {
     const onToggle = vi.fn();
     renderDrawer({ onToggle });
 
-    await user.click(screen.getByLabelText('Close Chat'));
+    await user.click(screen.getByLabelText('Close Chat (Press Esc)'));
     expect(onToggle).toHaveBeenCalled();
   });
 
