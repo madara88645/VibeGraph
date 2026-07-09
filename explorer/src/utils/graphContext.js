@@ -20,6 +20,7 @@ export function buildNodeGroundingContext({
       knownNodeIds.add(id);
     }
   }
+
   const callers = [];
   const callees = [];
 

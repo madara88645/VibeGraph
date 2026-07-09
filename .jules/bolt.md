@@ -140,3 +140,8 @@
 ## 2026-06-29 - Replaced map/filter array allocations
 **Learning:** In high-frequency operations, mapping and filtering arrays to construct a `Set` introduces redundant iterations and creates intermediate arrays, triggering garbage collection overhead.
 **Action:** Replaced `.map().filter()` chains with simple `for` loops and direct `Set.add()` operations when constructing Sets from arrays, especially for large datasets like graph nodes.
+
+## 2026-07-05 - Array map over-fetching overhead in useGraphData.js
+**Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods like `.filter().map()` over large datasets causes severe performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass.
+
