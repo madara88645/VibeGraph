@@ -97,3 +97,7 @@
 **Learning:** When using decorative text characters (like emojis) inside interactive components that already communicate their state, always wrap them in a `<span aria-hidden="true">`. Not doing so causes screen readers to read the emoji characters verbatim (like "rocket" or "high voltage sign"), which is redundant and confusing.
 **Action:** Ensure all decorative emojis or text symbols (like ▼ or 🚀) inside nodes or buttons are correctly wrapped with `<span aria-hidden="true">`.
 
+## 2024-07-08 - Escape Key to Close Side Drawers
+**Learning:** Side drawers and overlays (like the ChatDrawer) should be dismissible via the Escape key to ensure keyboard accessibility. However, if this functionality is added without updating the visual/auditory cues (like `title` and `aria-label`), users relying on screen readers or tooltips will be unaware of this keyboard affordance.
+**Action:** Always add an Escape key listener to dismiss side drawers and overlays, and ensure the corresponding close button's `title` and `aria-label` are updated to explicitly indicate the shortcut (e.g., "Close Chat (Press Esc)").
+
