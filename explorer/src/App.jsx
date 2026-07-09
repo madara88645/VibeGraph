@@ -72,6 +72,7 @@ function AppInner() {
   const [learningPathTopOffset, setLearningPathTopOffset] = useState(84);
   const [showFirstSteps, setShowFirstSteps] = useState(true);
   const [showTutorial, setShowTutorial] = useState(true);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const { isDemo, setDemoContent, clearDemoContent, getBakedExplanation, getCannedChats } =
     useDemoContent();
@@ -333,6 +334,7 @@ function AppInner() {
     []
   );
   const handleLoadDemo = useCallback(async () => {
+    setIsDemoLoading(true);
     try {
       const [data, ai] = await Promise.all([loadDemoGraph(), loadDemoAiContent()]);
       setDemoContent(ai);                 // ai may be null → context stays not-demo
@@ -340,6 +342,8 @@ function AppInner() {
       showToast('Demo project loaded successfully!', 'success');
     } catch (err) {
       showToast('Failed to load demo project: ' + err.message, 'error');
+    } finally {
+      setIsDemoLoading(false);
     }
   }, [onUploadSuccess, showToast, setDemoContent]);
   const handleSelectFile = useCallback(
@@ -557,6 +561,7 @@ function AppInner() {
               onNodeClick={onNodeClick}
               onRequestUpload={handleRequestUpload}
               onLoadDemo={handleLoadDemo}
+              isDemoLoading={isDemoLoading}
             />
           </ErrorBoundary>
 
