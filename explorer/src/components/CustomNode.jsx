@@ -55,7 +55,7 @@ const CustomNode = ({ data, selected }) => {
 
             {/* Header Row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.85rem' }}>{displayIcon}</span>
+                <span style={{ fontSize: '0.85rem' }} aria-hidden="true">{displayIcon}</span>
                 <span
                     title={data.label}
                     style={{
