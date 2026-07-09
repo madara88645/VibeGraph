@@ -34,7 +34,12 @@ export const getLayoutedElements = (nodes, edges) => {
     });
 
     // Add edges (only those connecting nodes in our set)
-    const nodeIds = new Set(nodes.map(n => n.id));
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced map to avoid intermediate
+    // array allocation
+    const nodeIds = new Set();
+    for (let i = 0; i < nodes.length; i++) {
+        nodeIds.add(nodes[i].id);
+    }
     edges.forEach(edge => {
         if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
             g.setEdge(edge.source, edge.target);
