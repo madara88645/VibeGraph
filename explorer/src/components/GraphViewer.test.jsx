@@ -190,6 +190,29 @@ describe('GraphViewer', () => {
     expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
   });
 
+  it('closes the export menu when Escape key is pressed', async () => {
+    const user = userEvent.setup();
+    renderViewer({ nodes: [graphNode] });
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    expect(screen.getByRole('menuitem', { name: 'Export as PNG' })).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
+  });
+
+  it('closes the export menu when clicking outside the export controls', async () => {
+    const user = userEvent.setup();
+    renderViewer({ nodes: [graphNode] });
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    expect(screen.getByRole('menuitem', { name: 'Export as PNG' })).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('react-flow'));
+    expect(screen.queryByRole('menuitem', { name: 'Export as PNG' })).not.toBeInTheDocument();
+  });
+
+
   it('calls onNodeClick when a node is clicked', async () => {
     const user = userEvent.setup();
     const onNodeClick = vi.fn();

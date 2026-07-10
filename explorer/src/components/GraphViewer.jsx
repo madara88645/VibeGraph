@@ -1,4 +1,4 @@
-import React, { useRef, useState, memo } from 'react';
+import React, { useRef, useState, useEffect, memo } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -38,9 +38,34 @@ const GraphViewer = ({
   isDemoLoading,
 }) => {
   const graphRef = useRef(null);
+  const exportControlsRef = useRef(null);
   const showToast = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && exportMenuOpen) {
+        setExportMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [exportMenuOpen]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        exportMenuOpen &&
+        exportControlsRef.current &&
+        !exportControlsRef.current.contains(event.target)
+      ) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [exportMenuOpen]);
   const hasGraph = nodes.length > 0 || edges.length > 0;
   const showSummaryWarning = hasGraph && graphMeta?.truncated;
 
@@ -102,7 +127,8 @@ const GraphViewer = ({
         </ReactFlow>
       </div>
       {hasGraph ? (
-        <div className="export-controls">
+        <div className="export-controls" ref={exportControlsRef}>
+
           <span style={{ display: 'inline-flex' }} title={isExporting ? 'Export in progress...' : 'Export graph'}>
             <button
               type="button"
