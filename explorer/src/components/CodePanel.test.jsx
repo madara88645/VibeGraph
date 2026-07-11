@@ -100,6 +100,65 @@ describe('CodePanel', () => {
         });
     });
 
+    it('resets code data and fetch cache when activeNode is set to null', async () => {
+        const mockData = {
+            snippet: 'def main():\n    pass',
+            file_path: 'tests/file_a.py',
+            start_line: 1,
+            end_line: 2,
+            full_source: null,
+        };
+        globalThis.fetch.mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve(mockData),
+        });
+
+        const defaults = {
+            activeNode: {
+                id: 'main',
+                data: { label: 'main', file: 'tests/file_a.py' },
+            },
+            isGhostRunning: false,
+            isOpen: true,
+            onToggle: vi.fn(),
+        };
+        const { rerender } = render(<CodePanel {...defaults} />);
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        expect(screen.getByText(/def main/)).toBeInTheDocument();
+
+        rerender(
+            <CodePanel
+                activeNode={null}
+                isGhostRunning={false}
+                isOpen={true}
+                onToggle={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText(/Click a node or start Ghost Runner/)).toBeInTheDocument();
+        expect(screen.queryByText(/def main/)).not.toBeInTheDocument();
+
+        rerender(
+            <CodePanel
+                activeNode={{
+                    id: 'main',
+                    data: { label: 'main', file: 'tests/file_a.py' },
+                }}
+                isGhostRunning={false}
+                isOpen={true}
+                onToggle={vi.fn()}
+            />
+        );
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        });
+    });
+
     it('sends node language and line metadata when fetching code', async () => {
         globalThis.fetch.mockResolvedValue({
             ok: true,
