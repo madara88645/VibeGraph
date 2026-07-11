@@ -20,6 +20,22 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
     const [level, setLevel] = useState('intermediate');
     const [lastNode, setLastNode] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
+    const [showSlowHint, setShowSlowHint] = useState(false);
+
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setShowSlowHint(true);
+            }, 10000);
+        }
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            setShowSlowHint(false);
+        };
+    }, [loading]);
 
     useEffect(() => {
         if (node) {
@@ -83,7 +99,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite'
                     }} />
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>AI is thinking...</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>AI is thinking...{showSlowHint ? ' (slower models may take up to 75s)' : ''}</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
             );
