@@ -29,7 +29,11 @@ SENSITIVE_KEY_FILENAMES = frozenset(
 def _contains_sensitive_segment(rel_path: str) -> bool:
     parts = [part.lower() for part in rel_path.replace("\\", os.sep).split(os.sep)]
     for part in parts:
-        if part in SENSITIVE_HIDDEN_SEGMENTS or part in SENSITIVE_KEY_FILENAMES:
+        if (
+            part.startswith(".env")
+            or part in SENSITIVE_HIDDEN_SEGMENTS
+            or part in SENSITIVE_KEY_FILENAMES
+        ):
             return True
         if part.endswith((".pem", ".key")):
             return True
@@ -93,7 +97,8 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
 
     sensitive_names = {".env", ".git", ".ssh", ".aws", ".npmrc", ".pypirc", ".netrc"}
     for part in parts:
-        if part.lower() in sensitive_names:
+        part_lower = part.lower()
+        if part_lower.startswith(".env") or part_lower in sensitive_names:
             raise HTTPException(
                 status_code=400,
                 detail=f"Sensitive hidden file or directory not allowed: {part}",
