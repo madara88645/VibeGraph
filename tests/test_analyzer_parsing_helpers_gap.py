@@ -20,9 +20,7 @@ from analyst.analyzer import _extract_imports, _file_to_module_id, _is_better_st
 
 class TestFileToModuleId(unittest.TestCase):
     def test_nested_package_path(self):
-        self.assertEqual(
-            _file_to_module_id("/proj/pkg/sub/a.py", "/proj"), "pkg.sub.a"
-        )
+        self.assertEqual(_file_to_module_id("/proj/pkg/sub/a.py", "/proj"), "pkg.sub.a")
 
     def test_init_py_is_stripped_to_package_name(self):
         self.assertEqual(_file_to_module_id("/proj/pkg/__init__.py", "/proj"), "pkg")
