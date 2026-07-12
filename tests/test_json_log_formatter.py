@@ -82,6 +82,7 @@ class TestJSONFormatterFormat:
             raise ValueError("boom")
         except ValueError:
             import sys
+
             exc_info = sys.exc_info()
 
         record = _make_record("error occurred", exc_info=exc_info)
