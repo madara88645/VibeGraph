@@ -139,8 +139,15 @@ describe('useNodeInteraction - explanation cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
     act(() => {
+      result.current.setCodePanelNode(mockNode);
+    });
+    expect(result.current.codePanelNode).toEqual(mockNode);
+
+    act(() => {
       result.current.resetInteractionState();
     });
+
+    expect(result.current.codePanelNode).toBeNull();
 
     await act(async () => {
       await result.current.fetchExplanation(mockNode, 'technical', 'beginner');

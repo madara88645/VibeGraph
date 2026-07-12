@@ -38,7 +38,7 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
         totalNodes,
         filesVisited,
         mostConnected,
-        unvisitedEntries,
+        unvisitedEntries = [],
         guidedTourComplete,
         recentSteps = [],
     } = runSummary || {};

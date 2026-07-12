@@ -176,6 +176,7 @@ export function useNodeInteraction({
   const resetInteractionState = useCallback(() => {
     setSelectedNode(null);
     setExplanation(null);
+    setCodePanelNode(null);
     lastFetchedRef.current = null;
     explanationCacheRef.current.clear();
     try {

@@ -17,7 +17,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
+        <div role="alert" aria-atomic="true" style={{
           padding: '2rem',
           textAlign: 'center',
           color: 'var(--color-text-secondary, #a7b4c8)',

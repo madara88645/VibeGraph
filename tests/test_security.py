@@ -143,3 +143,40 @@ def test_normalize_uploaded_filename_absolute():
         normalize_uploaded_filename("/absolute/path/file.py")
     assert exc_info.value.status_code == 400
     assert "Unsafe upload path" in exc_info.value.detail
+
+
+def test_normalize_uploaded_filename_blocks_env_variants():
+    """Test that all .env variants are blocked by normalize_uploaded_filename."""
+    variants = [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test",
+        ".env.custom",
+        ".ENV.LOCAL",
+        "subdir/.env.local",
+        "subdir/.env.development",
+    ]
+    for raw_name in variants:
+        with pytest.raises(HTTPException) as exc_info:
+            normalize_uploaded_filename(raw_name)
+        assert exc_info.value.status_code == 400
+        assert "Sensitive hidden file or directory not allowed" in exc_info.value.detail
+
+
+def test_is_safe_path_blocks_env_variants_in_uploads():
+    """Test that is_safe_path blocks .env variants in temp directory uploads."""
+    tmp_dir = tempfile.mkdtemp(prefix="vibegraph_test_")
+    variants = [
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test",
+        ".ENV.LOCAL",
+    ]
+    for variant in variants:
+        path = os.path.join(tmp_dir, variant)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("secret\n")
+        assert is_safe_path(path) is False

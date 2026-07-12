@@ -1,4 +1,4 @@
-import React, { useRef, useState, memo } from 'react';
+import React, { useRef, useState, useEffect, memo } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -35,11 +35,38 @@ const GraphViewer = ({
   onNodeClick,
   onRequestUpload,
   onLoadDemo,
+  isDemoLoading,
 }) => {
   const graphRef = useRef(null);
+  const exportControlsRef = useRef(null);
   const showToast = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && exportMenuOpen) {
+        setExportMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [exportMenuOpen]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        exportMenuOpen &&
+        exportControlsRef.current &&
+        !exportControlsRef.current.contains(event.target)
+      ) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [exportMenuOpen]);
+
   const hasGraph = nodes.length > 0 || edges.length > 0;
   const showSummaryWarning = hasGraph && graphMeta?.truncated;
 
@@ -101,7 +128,7 @@ const GraphViewer = ({
         </ReactFlow>
       </div>
       {hasGraph ? (
-        <div className="export-controls">
+        <div className="export-controls" ref={exportControlsRef}>
           <span style={{ display: 'inline-flex' }} title={isExporting ? 'Export in progress...' : 'Export graph'}>
             <button
               type="button"
@@ -155,28 +182,32 @@ const GraphViewer = ({
 
           {exportMenuOpen ? (
             <div className="export-menu" role="menu" aria-label="Export options">
-              <button
-                type="button"
-                onClick={handleExportPng}
-                className="export-menu-item"
-                aria-label="Export as PNG"
-                role="menuitem"
-                disabled={isExporting}
-              >
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                <span>Export as PNG</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportSvg}
-                className="export-menu-item"
-                aria-label="Export as SVG"
-                role="menuitem"
-                disabled={isExporting}
-              >
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                <span>Export as SVG</span>
-              </button>
+              <span style={{ display: 'inline-flex', width: '100%' }} title={isExporting ? 'Export in progress...' : 'Export as PNG'}>
+                <button
+                  type="button"
+                  onClick={handleExportPng}
+                  className="export-menu-item"
+                  aria-label="Export as PNG"
+                  role="menuitem"
+                  disabled={isExporting}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>Export as PNG</span>
+                </button>
+              </span>
+              <span style={{ display: 'inline-flex', width: '100%' }} title={isExporting ? 'Export in progress...' : 'Export as SVG'}>
+                <button
+                  type="button"
+                  onClick={handleExportSvg}
+                  className="export-menu-item"
+                  aria-label="Export as SVG"
+                  role="menuitem"
+                  disabled={isExporting}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <span>Export as SVG</span>
+                </button>
+              </span>
             </div>
           ) : null}
         </div>
@@ -221,12 +252,17 @@ const GraphViewer = ({
                 className="empty-demo-cta"
                 type="button"
                 onClick={() => onLoadDemo?.()}
-                aria-label="See a live demo"
+                aria-label={isDemoLoading ? "Loading demo project..." : "See a live demo"}
+                disabled={isDemoLoading}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <polygon points="6 4 20 12 6 20 6 4" />
-                </svg>
-                See a live demo
+                {isDemoLoading ? (
+                  <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
+                )}
+                {isDemoLoading ? "Loading demo..." : "See a live demo"}
               </button>
             </div>
             <span className="empty-shortcut">

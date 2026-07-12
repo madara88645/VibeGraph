@@ -180,7 +180,7 @@ describe('Layout Regression Test for Issue #435', () => {
     await user.click(sendBtn);
 
     // 4. Immediately close the Chat drawer
-    const closeChatBtn = screen.getByLabelText('Close Chat');
+    const closeChatBtn = screen.getByLabelText('Close Chat (Press Esc)');
     await user.click(closeChatBtn);
     expect(container.querySelector('.chat-drawer')).not.toHaveClass('open');
 

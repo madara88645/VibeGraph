@@ -89,3 +89,16 @@
 ## 2026-06-23 - Hide Decorative Ghost Emoji from Screen Readers
 **Learning:** Decorative emojis (like 👻 in the Ghost Runner controls) without `aria-hidden` are read aloud by screen readers, creating unnecessary noise when adjacent text already provides context.
 **Action:** Always wrap decorative or illustrative emojis in `<span aria-hidden="true">`, particularly in badges or placeholder text, to preserve a clean a11y experience.
+## 2024-06-26 - Loading states for async actions
+**Learning:** Loading states for async actions (like fetching a demo project) are critical to prevent users from spam-clicking CTA buttons when the result is not instantaneous.
+**Action:** Always verify that components handling async logic reflect an active loading state. If the async action is passed down as a prop (e.g. `onLoadDemo`), ensure that a loading flag (e.g. `isDemoLoading`) is also passed down and wired into the disabled state and UI of the interactive element.
+
+## 2026-07-02 - Added aria-hidden to decorative emoji in CustomNode
+**Learning:** When using decorative text characters (like emojis) inside interactive components that already communicate their state, always wrap them in a `<span aria-hidden="true">`. Not doing so causes screen readers to read the emoji characters verbatim (like "rocket" or "high voltage sign"), which is redundant and confusing.
+**Action:** Ensure all decorative emojis or text symbols (like ▼ or 🚀) inside nodes or buttons are correctly wrapped with `<span aria-hidden="true">`.
+
+## 2024-07-08 - Escape Key to Close Side Drawers
+**Learning:** Side drawers and overlays (like the ChatDrawer) should be dismissible via the Escape key to ensure keyboard accessibility. However, if this functionality is added without updating the visual/auditory cues (like `title` and `aria-label`), users relying on screen readers or tooltips will be unaware of this keyboard affordance.
+**Action:** Always add an Escape key listener to dismiss side drawers and overlays, and ensure the corresponding close button's `title` and `aria-label` are updated to explicitly indicate the shortcut (e.g., "Close Chat (Press Esc)").
+
+## 2026-07-09 - Add Tooltip to Disabled Export Buttons\n**Learning:** When async buttons inside a dropdown lack a tooltip explaining their disabled state, users don't receive proper visual feedback. But wrapping them in a standard `<span style={{ display: 'inline-flex' }}>` to support tooltips on disabled elements preserves semantic roles like `menuitem`.\n**Action:** Apply `span` wrappers to disabled menu items to provide a title tooltip without breaking semantic accessibility structures.

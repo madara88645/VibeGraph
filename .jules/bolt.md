@@ -134,5 +134,14 @@
 **Action:** Replace Python-level dictionary comprehensions with `.copy()` and `.pop('key', None)` to significantly reduce CPU overhead when evaluating thousands of items.
 
 ## 2024-05-30 - Prevent O(N) Array Allocation in CodePanel Render
-**Learning:** In high-frequency React components (like `CodePanel` rendering large code blocks during rapid simulation ticks), executing `.split('\n')` on large strings directly inside the render cycle (or `.map()` loop) creates severe garbage collection pressure. This is because every render allocates a massive new array of strings, leading to excessive GC pauses and degrading frame rates.
+**Learning:** In high-frequency React components (like `CodePanel` rendering large code blocks during rapid simulation ticks), executing `.split('
+')` on large strings directly inside the render cycle (or `.map()` loop) creates severe garbage collection pressure. This is because every render allocates a massive new array of strings, leading to excessive GC pauses and degrading frame rates.
 **Action:** Always memoize the result of heavy string splits (like full source code files) using `useMemo` so that the string is only split once when the source actually changes, rather than on every render cycle.
+## 2026-06-29 - Replaced map/filter array allocations
+**Learning:** In high-frequency operations, mapping and filtering arrays to construct a `Set` introduces redundant iterations and creates intermediate arrays, triggering garbage collection overhead.
+**Action:** Replaced `.map().filter()` chains with simple `for` loops and direct `Set.add()` operations when constructing Sets from arrays, especially for large datasets like graph nodes.
+
+## 2026-07-05 - Array map over-fetching overhead in useGraphData.js
+**Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods like `.filter().map()` over large datasets causes severe performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
+**Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass.
+

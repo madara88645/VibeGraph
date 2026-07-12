@@ -87,6 +87,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
+    const zipInputRef = useRef(null);
 
     useImperativeHandle(ref, () => ({
         openModal: () => setIsModalOpen(true),
@@ -123,6 +124,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                 'error',
             );
             if (fileInputRef.current) fileInputRef.current.value = '';
+            if (zipInputRef.current) zipInputRef.current.value = '';
             return;
         }
 
@@ -171,6 +173,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
             setIsAnalyzing(false);
             // Reset input so the same folder can be uploaded again if needed.
             if (fileInputRef.current) fileInputRef.current.value = '';
+            if (zipInputRef.current) zipInputRef.current.value = '';
         }
     }, [onClearDemo, onUploadSuccess, showToast, uploadLimits]);
 
@@ -233,13 +236,13 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                         <span
                             className="modal-close-wrapper"
                             style={{ display: 'inline-flex' }}
-                            title={isAnalyzing ? "Cannot close while analyzing project" : "Close"}
+                            title={isAnalyzing ? "Cannot close while analyzing project" : "Close (Press Esc)"}
                         >
                             <button
                                 className="modal-close-btn"
                                 onClick={() => setIsModalOpen(false)}
                                 disabled={isAnalyzing}
-                                aria-label={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal"}
+                                aria-label={isAnalyzing ? "Cannot close while analyzing project" : "Close Upload Modal (Press Esc)"}
                             >
                                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <path d="M4 4l8 8M12 4l-8 8" />
@@ -257,11 +260,11 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             <>
                             <div
                                 className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => zipInputRef.current?.click()}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        fileInputRef.current?.click();
+                                        zipInputRef.current?.click();
                                     }
                                 }}
                                 onDragOver={handleDragOver}
@@ -304,7 +307,18 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                                         onChange={handleUpload}
                                         multiple
                                     />
-                                    <button className="upload-select-btn" tabIndex={-1} aria-hidden="true">Browse files</button>
+                                    <input
+                                        id="project-upload-zip-input"
+                                        type="file"
+                                        ref={zipInputRef}
+                                        style={{ display: 'none' }}
+                                        accept=".zip"
+                                        onChange={handleUpload}
+                                    />
+                                    <div className="upload-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
+                                        <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                    </div>
                                 </div>
                             </div>
 
