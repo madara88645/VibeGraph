@@ -43,7 +43,13 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
 
     // Fetch code when active node changes
     useEffect(() => {
-        if (!activeNode || !isOpen) return;
+        if (!activeNode) {
+            setCodeData(null);
+            setError(null);
+            lastFetchedId.current = null;
+            return;
+        }
+        if (!isOpen) return;
         if (lastFetchedId.current === activeNode.id) return;
 
         const fetchCode = async () => {
