@@ -53,6 +53,8 @@ const FileSidebar = ({
         const grouped = {};
         fileDependencies.forEach((dependency) => {
             const sourceFile = dependency.source_file || 'unknown';
+            const targetFile = dependency.target_file || 'unknown';
+
             if (!grouped[sourceFile]) {
                 grouped[sourceFile] = {
                     imports: [],
@@ -61,10 +63,22 @@ const FileSidebar = ({
                 };
             }
 
+            if (!grouped[targetFile]) {
+                grouped[targetFile] = {
+                    imports: [],
+                    imports_from: [],
+                    imported_by: [],
+                };
+            }
+
             grouped[sourceFile].imports.push({
-                module: dependency.target_file,
+                module: targetFile,
                 names: dependency.imports || [],
             });
+
+            if (!grouped[targetFile].imported_by.includes(sourceFile)) {
+                grouped[targetFile].imported_by.push(sourceFile);
+            }
         });
 
         return grouped;
