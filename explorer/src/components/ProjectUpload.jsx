@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
 
-const EMPTY_GRAPH_MESSAGE = 'No analyzable Python code found.';
+const EMPTY_GRAPH_MESSAGE = 'No analyzable code found. Try a Python, JavaScript, or TypeScript project.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
 const DEFAULT_UPLOAD_LIMITS = DEFAULT_AI_CONFIG.uploadLimits;
 

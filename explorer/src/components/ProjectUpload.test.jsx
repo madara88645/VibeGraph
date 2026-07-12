@@ -247,7 +247,7 @@ describe('ProjectUpload', () => {
 
         expect(onUploadSuccess).not.toHaveBeenCalled();
         expect(showToast).toHaveBeenCalledWith(
-            'Upload failed: No analyzable Python code found.',
+            'Upload failed: No analyzable code found. Try a Python, JavaScript, or TypeScript project.',
             'error'
         );
         expect(screen.getByText('Upload your project')).toBeInTheDocument();
@@ -282,7 +282,7 @@ describe('ProjectUpload', () => {
 
         expect(onUploadSuccess).not.toHaveBeenCalled();
         expect(showToast).toHaveBeenCalledWith(
-            'Upload failed: No analyzable Python code found.',
+            'Upload failed: No analyzable code found. Try a Python, JavaScript, or TypeScript project.',
             'error'
         );
     });
