@@ -188,12 +188,7 @@ class TestNormalizeChatText:
         # only starts buffering content on the lines *after* a header line
         # matches — text appended after a colon on the header's own line is
         # dropped (the header line itself is never added to the buffer).
-        raw = (
-            "What it is\n"
-            "parses config files.\n"
-            "Side effects\n"
-            "writes a log line."
-        )
+        raw = "What it is\nparses config files.\nSide effects\nwrites a log line."
         result = normalize_chat_text(raw, _refs())
         assert "### What it is\nparses config files." in result
         assert "### Side effects\nwrites a log line." in result
@@ -213,7 +208,10 @@ class TestNormalizeChatText:
     def test_plain_text_with_no_recognizable_sections_becomes_what_it_is(self):
         raw = "Just a raw sentence with no section headers at all."
         result = normalize_chat_text(raw, _refs())
-        assert "### What it is\nJust a raw sentence with no section headers at all." in result
+        assert (
+            "### What it is\nJust a raw sentence with no section headers at all."
+            in result
+        )
 
     def test_json_array_is_treated_as_non_dict_and_falls_back_to_text(self):
         raw = '["not", "a", "dict"]'
@@ -341,15 +339,24 @@ class TestNormalizeLearningSteps:
         assert "step" not in result[0]
 
     def test_wrong_type_steps_returns_empty_list(self):
-        assert normalize_learning_steps(
-            "not a list", allowed_node_ids=None, include_step_numbers=True
-        ) == []
-        assert normalize_learning_steps(
-            None, allowed_node_ids=None, include_step_numbers=True
-        ) == []
-        assert normalize_learning_steps(
-            {"node_id": "a"}, allowed_node_ids=None, include_step_numbers=True
-        ) == []
+        assert (
+            normalize_learning_steps(
+                "not a list", allowed_node_ids=None, include_step_numbers=True
+            )
+            == []
+        )
+        assert (
+            normalize_learning_steps(
+                None, allowed_node_ids=None, include_step_numbers=True
+            )
+            == []
+        )
+        assert (
+            normalize_learning_steps(
+                {"node_id": "a"}, allowed_node_ids=None, include_step_numbers=True
+            )
+            == []
+        )
 
     def test_missing_node_id_is_skipped(self):
         steps = [{"reason": "no id here"}, {"node_id": "", "reason": "blank id"}]
