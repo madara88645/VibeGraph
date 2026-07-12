@@ -182,28 +182,32 @@ const GraphViewer = ({
 
           {exportMenuOpen ? (
             <div className="export-menu" role="menu" aria-label="Export options">
-              <button
-                type="button"
-                onClick={handleExportPng}
-                className="export-menu-item"
-                aria-label="Export as PNG"
-                role="menuitem"
-                disabled={isExporting}
-              >
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                <span>Export as PNG</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportSvg}
-                className="export-menu-item"
-                aria-label="Export as SVG"
-                role="menuitem"
-                disabled={isExporting}
-              >
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                <span>Export as SVG</span>
-              </button>
+              <span style={{ display: 'inline-flex', width: '100%' }} title={isExporting ? 'Export in progress...' : 'Export as PNG'}>
+                <button
+                  type="button"
+                  onClick={handleExportPng}
+                  className="export-menu-item"
+                  aria-label="Export as PNG"
+                  role="menuitem"
+                  disabled={isExporting}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>Export as PNG</span>
+                </button>
+              </span>
+              <span style={{ display: 'inline-flex', width: '100%' }} title={isExporting ? 'Export in progress...' : 'Export as SVG'}>
+                <button
+                  type="button"
+                  onClick={handleExportSvg}
+                  className="export-menu-item"
+                  aria-label="Export as SVG"
+                  role="menuitem"
+                  disabled={isExporting}
+                >
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <span>Export as SVG</span>
+                </button>
+              </span>
             </div>
           ) : null}
         </div>
