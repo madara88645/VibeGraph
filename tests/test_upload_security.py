@@ -233,3 +233,33 @@ def test_upload_extraction_error():
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid zip archive detected."
+
+
+def test_upload_env_variants_zip():
+    """Ensure that zip files containing various .env variants are rejected."""
+    variants = [
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test",
+        ".ENV.LOCAL",
+    ]
+    for variant in variants:
+        zip_path = f"test_env_variant_{variant}.zip"
+        with zipfile.ZipFile(zip_path, "w") as z:
+            # A sensitive .env variant
+            z.writestr(variant, "SECRET_KEY=abc")
+            # A normal file
+            z.writestr("normal.py", "print('hello')")
+
+        with open(zip_path, "rb") as f:
+            response = client.post(
+                "/api/upload-project",
+                files={"files": (zip_path, f, "application/zip")},
+            )
+
+        # Clean up
+        os.remove(zip_path)
+
+        assert response.status_code == 400
+        assert "Unsafe zip file detected" in response.json()["detail"]
