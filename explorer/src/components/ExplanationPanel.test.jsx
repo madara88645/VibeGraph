@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('react-markdown', () => ({
@@ -105,6 +105,22 @@ describe('ExplanationPanel', () => {
   it('shows loading UI while explanation is loading', () => {
     renderPanel({ loading: true });
     expect(screen.getByText('AI is thinking...')).toBeInTheDocument();
+  });
+
+  it('shows dynamic slow model hint after 10 seconds of loading', () => {
+    vi.useFakeTimers();
+    renderPanel({ loading: true });
+    
+    expect(screen.getByText('AI is thinking...')).toBeInTheDocument();
+    expect(screen.queryByText(/slower models may take up to 75s/)).not.toBeInTheDocument();
+    
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+    
+    expect(screen.getByText('AI is thinking... (slower models may take up to 75s)')).toBeInTheDocument();
+    
+    vi.useRealTimers();
   });
 
   it('shows a formatting error as such, not as an invalid API key', () => {
