@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const speedOptions = [
     { label: 'Slow', value: 3500 },
@@ -39,6 +39,47 @@ const SimulationControls = ({
     const [showGuide, setShowGuide] = useState(false);
     const [showStrategyPicker, setShowStrategyPicker] = useState(false);
 
+    const helpButtonRef = useRef(null);
+    const guideRef = useRef(null);
+    const strategyWrapperRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showGuide) {
+                const clickOnHelpButton = helpButtonRef.current && helpButtonRef.current.contains(event.target);
+                const clickInsideGuide = guideRef.current && guideRef.current.contains(event.target);
+                if (!clickOnHelpButton && !clickInsideGuide) {
+                    setShowGuide(false);
+                }
+            }
+
+            if (showStrategyPicker) {
+                if (strategyWrapperRef.current && !strategyWrapperRef.current.contains(event.target)) {
+                    setShowStrategyPicker(false);
+                }
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                if (showGuide) {
+                    setShowGuide(false);
+                }
+                if (showStrategyPicker) {
+                    setShowStrategyPicker(false);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [showGuide, showStrategyPicker]);
+
     const coveragePercent = totalNodes > 0 ? Math.round((visitedCount / totalNodes) * 100) : 0;
     const currentStrategy = strategyOptions.find(s => s.value === strategy) || strategyOptions[0];
 
@@ -46,6 +87,7 @@ const SimulationControls = ({
         <div className="sim-controls">
             {/* Help */}
             <button
+                ref={helpButtonRef}
                 onClick={() => setShowGuide(prev => !prev)}
                 className={`sim-btn sim-btn-help ${showGuide ? 'active' : ''}`}
                 title="What is this?"
@@ -71,7 +113,7 @@ const SimulationControls = ({
 
             {/* Guide Popover */}
             {showGuide && (
-                <div className="sim-guide">
+                <div className="sim-guide" ref={guideRef}>
                     <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide" title="Close guide"><span aria-hidden="true">✕</span></button>
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
@@ -138,7 +180,7 @@ const SimulationControls = ({
             <div className="sim-divider" />
 
             {/* Strategy Selector */}
-            <div className="sim-strategy-wrapper">
+            <div className="sim-strategy-wrapper" ref={strategyWrapperRef}>
                 <button
                     onClick={() => setShowStrategyPicker(prev => !prev)}
                     className={`sim-strategy-btn ${showStrategyPicker ? 'active' : ''}`}
