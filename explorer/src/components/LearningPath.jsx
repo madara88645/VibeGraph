@@ -41,6 +41,23 @@ const LearningPath = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onToggle();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onToggle]);
+
   // Monotonic id so a superseded or unmounted request never applies its result.
   const requestIdRef = useRef(0);
 
