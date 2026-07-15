@@ -563,6 +563,44 @@ class TestASTCaching(unittest.TestCase):
             CodeAnalyzer().analyze_file(bad_path)
             self.assertEqual(spy.call_count, 2)
 
+    def test_nested_class_scope_qualification(self):
+        code = """
+class Outer:
+    class Inner:
+        def inner_method(self):
+            self.other_inner_method()
+            
+        def other_inner_method(self):
+            pass
+            
+    def outer_method(self):
+        pass
+"""
+        file_path = self._write("nested.py", code)
+        analyzer = CodeAnalyzer()
+        result = analyzer.analyze_file(file_path)
+        graph = result["graph"]
+        def_names = [d["name"] for d in result["definitions"]]
+
+        # Verify definitions names
+        self.assertIn("Outer", def_names)
+        self.assertIn("Outer.Inner", def_names)
+        self.assertIn("Outer.Inner.inner_method", def_names)
+        self.assertIn("Outer.Inner.other_inner_method", def_names)
+        self.assertIn("Outer.outer_method", def_names)
+
+        # Verify graph node presence
+        self.assertTrue(graph.has_node("Outer"))
+        self.assertTrue(graph.has_node("Outer.Inner"))
+        self.assertTrue(graph.has_node("Outer.Inner.inner_method"))
+        self.assertTrue(graph.has_node("Outer.Inner.other_inner_method"))
+        self.assertTrue(graph.has_node("Outer.outer_method"))
+
+        # Verify calls resolution within nested class
+        self.assertTrue(
+            graph.has_edge("Outer.Inner.inner_method", "Outer.Inner.other_inner_method")
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
