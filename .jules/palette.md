@@ -102,3 +102,7 @@
 **Action:** Always add an Escape key listener to dismiss side drawers and overlays, and ensure the corresponding close button's `title` and `aria-label` are updated to explicitly indicate the shortcut (e.g., "Close Chat (Press Esc)").
 
 ## 2026-07-09 - Add Tooltip to Disabled Export Buttons\n**Learning:** When async buttons inside a dropdown lack a tooltip explaining their disabled state, users don't receive proper visual feedback. But wrapping them in a standard `<span style={{ display: 'inline-flex' }}>` to support tooltips on disabled elements preserves semantic roles like `menuitem`.\n**Action:** Apply `span` wrappers to disabled menu items to provide a title tooltip without breaking semantic accessibility structures.
+
+## 2024-07-15 - Disable Upload Demo Button While Loading
+**Learning:** Loading states for async actions (like fetching a demo project) are critical to prevent users from spam-clicking CTA buttons when the result is not instantaneous. If the demo CTA in the upload modal lacks a disabled and loading state, users might click multiple times and trigger duplicate requests.
+**Action:** When adding or maintaining interactive CTA buttons that trigger async actions, ensure that a loading flag (like `isDemoLoading`) is passed to the component, applying a spinner and a disabled attribute to the button, ensuring visual feedback and preventing multi-clicks.

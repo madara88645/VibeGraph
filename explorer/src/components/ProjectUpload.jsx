@@ -81,7 +81,7 @@ function validateGraphResult(result) {
     return result;
 }
 
-const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, onLoadDemo }, ref) => {
+const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, onLoadDemo, isDemoLoading }, ref) => {
     const showToast = useToast();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,6 +102,14 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isModalOpen, isAnalyzing]);
+
+    const prevIsDemoLoading = useRef(isDemoLoading);
+    useEffect(() => {
+        if (prevIsDemoLoading.current && !isDemoLoading && isModalOpen) {
+            setIsModalOpen(false);
+        }
+        prevIsDemoLoading.current = isDemoLoading;
+    }, [isDemoLoading, isModalOpen]);
 
     const handleDragOver = useCallback((e) => {
         e.preventDefault();
@@ -332,12 +340,13 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                                             e.stopPropagation();
                                             // Route both demo entry points through App's handleLoadDemo so
                                             // the modal demo also loads pre-baked AI content (isDemo true).
-                                            setIsModalOpen(false);
                                             onLoadDemo?.();
                                         }}
-                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%' }}
+                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                        disabled={isDemoLoading}
                                     >
-                                        Try with a Demo Project
+                                        {isDemoLoading && <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>}
+                                        {isDemoLoading ? "Loading demo..." : "Try with a Demo Project"}
                                     </button>
                                 </div>
                             )}
