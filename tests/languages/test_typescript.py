@@ -121,22 +121,7 @@ export function Greeting(props: { name: string }) {
     # ------------------------------------------------------------------
 
     def test_nestjs_route_decorators_mark_api_boundary(self):
-        # NOTE ON CURRENT BEHAVIOR: the module docstring and
-        # _TypeScriptWalker._has_route_decorator/_collect_decorators are
-        # clearly *intended* to tag @Get/@Post/@Controller-decorated methods
-        # as api_boundary=True (an "NestJS / Angular-style boost over the JS
-        # plugin"). In practice this never fires: _collect_decorators walks
-        # ``parent.children`` looking for ``child is node`` to find the
-        # decorated node's own position, but tree-sitter's Python bindings
-        # hand back a *new* Node wrapper object on every ``.children`` /
-        # ``.parent`` access (same underlying position, different Python
-        # identity) — so the identity check never matches and no decorators
-        # are ever collected. Verified directly against the real
-        # TypeScriptAnalyzer: every method below actually comes back with
-        # api_boundary=False regardless of its decorators. This test
-        # documents that *actual* behavior rather than the intended one; see
-        # PR discussion for whether _collect_decorators should switch to
-        # ``child.id == node.id`` (or ``child == node``) to fix it.
+        # Decorated methods are tagged as api_boundary=True (a NestJS/Angular-style boost).
         code = """
 import { Controller, Get, Post } from '@nestjs/common';
 
@@ -164,11 +149,9 @@ class CatsController {
         self.assertEqual(graph.nodes["CatsController.findAll"]["type"], "function")
         self.assertEqual(graph.nodes["CatsController.create"]["type"], "function")
 
-        # ...but api_boundary is False for ALL methods today, decorated or
-        # not — the identity-comparison bug described above means decorated
-        # and undecorated methods are currently indistinguishable.
-        self.assertFalse(graph.nodes["CatsController.findAll"]["api_boundary"])
-        self.assertFalse(graph.nodes["CatsController.create"]["api_boundary"])
+        # ...and api_boundary is True for decorated methods, but False for undecorated methods.
+        self.assertTrue(graph.nodes["CatsController.findAll"]["api_boundary"])
+        self.assertTrue(graph.nodes["CatsController.create"]["api_boundary"])
         self.assertFalse(graph.nodes["CatsController.privateHelper"]["api_boundary"])
 
         # The class node itself was never intended to inherit api_boundary

@@ -163,7 +163,7 @@ class _TypeScriptWalker(_Walker):
             return decs
         seen_self = False
         for child in reversed(parent.children):
-            if child is node:
+            if child.id == node.id:
                 seen_self = True
                 continue
             if not seen_self:
