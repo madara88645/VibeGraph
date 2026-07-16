@@ -2688,6 +2688,11 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes guideSlideUpCentered {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .sim-step {
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -2780,7 +2785,7 @@ body {
   padding: 6px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   min-width: 220px;
-  animation: guideSlideUp 0.2s ease-out;
+  animation: guideSlideUpCentered 0.2s ease-out;
   z-index: 500;
 }
 
@@ -2883,7 +2888,7 @@ body {
   align-items: flex-start;
   gap: 8px;
   z-index: 99;
-  animation: guideSlideUp 0.3s ease-out;
+  animation: guideSlideUpCentered 0.3s ease-out;
 }
 
 .ghost-narration-content {
@@ -2948,7 +2953,7 @@ body {
   justify-content: center;
   max-width: 500px;
   z-index: 99;
-  animation: guideSlideUp 0.25s ease-out;
+  animation: guideSlideUpCentered 0.25s ease-out;
 }
 
 .ghost-choice-btn {
@@ -3008,7 +3013,7 @@ body {
   padding: 12px 16px 10px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
   z-index: 98;
-  animation: guideSlideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: guideSlideUpCentered 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -3188,7 +3193,7 @@ body {
   min-width: 280px;
   max-width: 400px;
   z-index: 99;
-  animation: guideSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: guideSlideUpCentered 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
