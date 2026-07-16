@@ -268,4 +268,26 @@ describe('LearningPath', () => {
       screen.queryByRole('button', { name: /retry building learning path/i }),
     ).not.toBeInTheDocument();
   });
+
+  it('closes on Escape key press when panel is open', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    renderLearningPath({ isOpen: true, onToggle });
+
+    await screen.findByText('Path status');
+
+    await user.keyboard('{Escape}');
+
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close on Escape key press when panel is closed', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    renderLearningPath({ isOpen: false, onToggle });
+
+    await user.keyboard('{Escape}');
+
+    expect(onToggle).not.toHaveBeenCalled();
+  });
 });
