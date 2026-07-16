@@ -84,4 +84,53 @@ describe('SimulationControls', () => {
         render(<SimulationControls {...defaultProps} currentLabel="main" />);
         expect(screen.getByText(/main/)).toBeInTheDocument();
     });
+
+    it('closes guide when clicking outside', async () => {
+        const user = userEvent.setup();
+        render(<SimulationControls {...defaultProps} />);
+
+        const helpBtn = screen.getByLabelText('Show guide');
+        await user.click(helpBtn);
+        expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
+
+        // Perform click outside on document.body
+        await user.click(document.body);
+        expect(screen.queryByText('Ghost Runner')).not.toBeInTheDocument();
+    });
+
+    it('closes guide when pressing Escape key', async () => {
+        const user = userEvent.setup();
+        render(<SimulationControls {...defaultProps} />);
+
+        const helpBtn = screen.getByLabelText('Show guide');
+        await user.click(helpBtn);
+        expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
+
+        await user.keyboard('{Escape}');
+        expect(screen.queryByText('Ghost Runner')).not.toBeInTheDocument();
+    });
+
+    it('closes strategy picker when clicking outside', async () => {
+        const user = userEvent.setup();
+        render(<SimulationControls {...defaultProps} />);
+
+        const strategyBtn = screen.getByLabelText(/Traversal strategy:/);
+        await user.click(strategyBtn);
+        expect(screen.getByLabelText(/Smart strategy:/)).toBeInTheDocument();
+
+        await user.click(document.body);
+        expect(screen.queryByLabelText(/Smart strategy:/)).not.toBeInTheDocument();
+    });
+
+    it('closes strategy picker when pressing Escape key', async () => {
+        const user = userEvent.setup();
+        render(<SimulationControls {...defaultProps} />);
+
+        const strategyBtn = screen.getByLabelText(/Traversal strategy:/);
+        await user.click(strategyBtn);
+        expect(screen.getByLabelText(/Smart strategy:/)).toBeInTheDocument();
+
+        await user.keyboard('{Escape}');
+        expect(screen.queryByLabelText(/Smart strategy:/)).not.toBeInTheDocument();
+    });
 });
