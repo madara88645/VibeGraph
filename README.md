@@ -10,6 +10,10 @@
 
 Upload your code → explore the call graph → ask AI anything about it.
 
+<img src="docs/screenshots/vibegraph-demo.gif" alt="VibeGraph demo: exploring the call graph, opening an AI explanation for a node, and watching Ghost Runner trace the execution path" width="100%">
+
+<sub>▶ <a href="docs/screenshots/vibegraph-demo.mp4">Watch the full-motion version</a> — smoother, with scene transitions</sub>
+
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
