@@ -536,6 +536,7 @@ function AppInner() {
             uploadLimits={aiConfig.uploadLimits}
             onClearDemo={clearDemoContent}
             onLoadDemo={handleLoadDemo}
+            isDemoLoading={isDemoLoading}
           />
 
           {hasGraph ? (

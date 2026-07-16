@@ -424,11 +424,11 @@ describe('ProjectUpload', () => {
         expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
     });
 
-    it('routes the modal demo CTA through onLoadDemo and closes the modal', async () => {
+    it('routes the modal demo CTA through onLoadDemo and keeps modal open to show loading', async () => {
         const onLoadDemo = vi.fn();
         const onUploadSuccess = vi.fn();
-        renderWithToast(
-            <ProjectUpload onUploadSuccess={onUploadSuccess} onLoadDemo={onLoadDemo} />,
+        const { rerender } = renderWithToast(
+            <ProjectUpload onUploadSuccess={onUploadSuccess} onLoadDemo={onLoadDemo} isDemoLoading={false} />,
             { showToast }
         );
 
@@ -447,6 +447,38 @@ describe('ProjectUpload', () => {
         expect(onLoadDemo).toHaveBeenCalledTimes(1);
         expect(globalThis.fetch).not.toHaveBeenCalled();
         expect(onUploadSuccess).not.toHaveBeenCalled();
+
+        // Modal should remain open to show loading state (which would be activated by App.jsx setting isDemoLoading=true)
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
+
+        // Simulate App.jsx transitioning isDemoLoading to true then back to false when done
+        rerender(
+            <ToastContext.Provider value={showToast}>
+                <ProjectUpload onUploadSuccess={onUploadSuccess} onLoadDemo={onLoadDemo} isDemoLoading={true} />
+            </ToastContext.Provider>
+        );
+        rerender(
+            <ToastContext.Provider value={showToast}>
+                <ProjectUpload onUploadSuccess={onUploadSuccess} onLoadDemo={onLoadDemo} isDemoLoading={false} />
+            </ToastContext.Provider>
+        );
+
+        // Now the modal should be closed
         expect(screen.queryByText('Upload your project')).not.toBeInTheDocument();
+    });
+
+    it('disables the demo CTA button and shows loading state when isDemoLoading is true', async () => {
+        renderWithToast(
+            <ProjectUpload onUploadSuccess={vi.fn()} isDemoLoading={true} />,
+            { showToast }
+        );
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const demoBtn = screen.getByRole('button', { name: /loading demo/i });
+        expect(demoBtn).toBeInTheDocument();
+        expect(demoBtn).toBeDisabled();
     });
 });
