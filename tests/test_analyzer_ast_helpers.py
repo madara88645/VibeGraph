@@ -98,7 +98,9 @@ class TestMaxNestingDepth(unittest.TestCase):
         self.assertEqual(self.visitor._max_nesting_depth(func), 3)
 
     def test_try_except_counts_as_nesting(self):
-        source = "def f():\n    try:\n        x = 1\n    except Exception:\n        pass\n"
+        source = (
+            "def f():\n    try:\n        x = 1\n    except Exception:\n        pass\n"
+        )
         func = _parse_function_body(source)
         self.assertEqual(self.visitor._max_nesting_depth(func), 1)
 

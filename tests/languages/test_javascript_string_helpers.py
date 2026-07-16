@@ -55,7 +55,9 @@ class TestIsLocalModule(unittest.TestCase):
         self.assertTrue(_is_local_module("/src/foo", frozenset()))
 
     def test_top_level_segment_in_local_modules_is_local(self):
-        self.assertTrue(_is_local_module("components/Button", frozenset({"components"})))
+        self.assertTrue(
+            _is_local_module("components/Button", frozenset({"components"}))
+        )
 
     def test_exact_match_in_local_modules_is_local(self):
         self.assertTrue(_is_local_module("utils", frozenset({"utils"})))
