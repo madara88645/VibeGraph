@@ -22,11 +22,16 @@ marketing-plan/
 # Local Claude Code / agent config
 .claude/
 
-# Demo-recording rig + generated media (local-only marketing assets, keep out of public repo)
+# Demo-recording rig + raw captures (local-only, keep out of public repo)
 # (root package.json/lock are the Playwright demo rig — anchored with / so explorer/package.json stays tracked)
+# The Remotion rig that polishes the capture lives in /scripts/video and is ignored with it.
+# Exception: docs/screenshots/vibegraph-demo.{gif,mp4} are the finished README demo and ARE
+# committed — they do not match demo*.{gif,mp4}, so they stay tracked. Regenerate via
+# scripts/video/README.md.
 /package.json
 /package-lock.json
 /scripts/
 docs/screenshots/_video/
+docs/screenshots/_video_hd/
 docs/screenshots/demo*.gif
 docs/screenshots/demo*.mp4
