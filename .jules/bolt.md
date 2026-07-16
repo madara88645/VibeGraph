@@ -145,3 +145,6 @@
 **Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods like `.filter().map()` over large datasets causes severe performance bottlenecks by generating intermediate arrays and triggering multiple O(N) passes.
 **Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass.
 
+## 2024-07-26 - Optimized `shortenModelName` string manipulation
+**Learning:** String splitting (e.g., `str.split('/').pop()`) causes O(N) array allocation overhead and garbage collection pressure in high-frequency renders, even for small datasets.
+**Action:** Replace `split` with zero-allocation fallback methods like `lastIndexOf()` and `substring()` when rendering large numbers of strings or inside tight loops.

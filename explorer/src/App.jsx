@@ -36,7 +36,10 @@ import { loadDemoAiContent, loadDemoGraph } from './utils/loadDemoGraph';
 import { getShortName } from './utils/stringUtils';
 
 function shortenModelName(modelName) {
-  return modelName.split('/').pop() || modelName;
+  // PERFORMANCE OPTIMIZATION (Bolt): Replaced array-allocating split().pop() with zero-allocation
+  // string methods to reduce garbage collection pressure during high-frequency renders.
+  const lastSlashIndex = modelName.lastIndexOf('/');
+  return lastSlashIndex !== -1 ? modelName.substring(lastSlashIndex + 1) : modelName;
 }
 
 const EXPLANATION_PANEL_CLOSE_MS = 300;
