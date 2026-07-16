@@ -387,20 +387,27 @@ class CallGraphVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         previous_scope = self.current_scope
         class_name = node.name
+        if self.current_scope != "global" and not self.current_scope.endswith(
+            "<module>"
+        ):
+            full_name = f"{self.current_scope}.{class_name}"
+        else:
+            full_name = class_name
+
         is_top_level = previous_scope in ("global", "<module>")
-        self.current_scope = class_name
-        self.class_stack.append(class_name)
+        self.current_scope = full_name
+        self.class_stack.append(full_name)
 
         self.graph.add_node(
-            class_name,
+            full_name,
             type="class",
             lineno=node.lineno,
             docstring=ast.get_docstring(node),
             file=self.file_path,
             entry_point=False,
-            **self._metadata_for_definition(node, class_name),
+            **self._metadata_for_definition(node, full_name),
         )
-        record = {"name": class_name, "type": "class", "lineno": node.lineno}
+        record = {"name": full_name, "type": "class", "lineno": node.lineno}
         self.definitions.append(record)
         if is_top_level:
             self.top_level_definitions.append(record)
