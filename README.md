@@ -22,7 +22,7 @@ Upload your code → explore the call graph → ask AI anything about it.
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
-[![License](https://img.shields.io/badge/License-GPLv3-22C55E)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPLv3-22C55E)](LICENSE)
 [![CI](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml)
 [![Backend](https://img.shields.io/badge/Backend-Fly.io-8B5CF6)](https://fly.io)
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel-000000)](https://vercel.com)
@@ -281,4 +281,4 @@ VibeGraph is designed with complete data isolation:
 
 ## License
 
-GPLv3
+Licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
