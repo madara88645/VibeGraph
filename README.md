@@ -10,6 +10,8 @@
 
 Upload your code → explore the call graph → ask AI anything about it.
 
+### ▶️ [Try it live → vibegraph.dev](https://vibegraph.dev) — no install needed
+
 <img src="docs/screenshots/vibegraph-demo.gif" alt="VibeGraph demo: exploring the call graph, opening an AI explanation for a node, and watching Ghost Runner trace the execution path" width="100%">
 
 <sub>▶ <a href="docs/screenshots/vibegraph-demo.mp4">Watch the full-motion version</a> — smoother, with scene transitions</sub>
@@ -21,7 +23,7 @@ Upload your code → explore the call graph → ask AI anything about it.
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
 [![License](https://img.shields.io/badge/License-GPLv3-22C55E)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-320%20passing-22C55E)](tests/)
+[![CI](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml)
 [![Backend](https://img.shields.io/badge/Backend-Fly.io-8B5CF6)](https://fly.io)
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel-000000)](https://vercel.com)
 
