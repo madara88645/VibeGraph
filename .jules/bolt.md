@@ -148,3 +148,6 @@
 ## 2024-07-26 - Optimized `shortenModelName` string manipulation
 **Learning:** String splitting (e.g., `str.split('/').pop()`) causes O(N) array allocation overhead and garbage collection pressure in high-frequency renders, even for small datasets.
 **Action:** Replace `split` with zero-allocation fallback methods like `lastIndexOf()` and `substring()` when rendering large numbers of strings or inside tight loops.
+## 2025-02-20 - SSE Chunk Parsing Array Methods
+**Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
+**Action:** Use a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently in performance-critical parsing functions.
