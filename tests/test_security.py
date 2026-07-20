@@ -6,6 +6,11 @@ from unittest.mock import patch
 from app.utils.security import normalize_uploaded_filename, is_safe_path
 
 
+def test_is_safe_path_null_byte():
+    """Test is_safe_path returns False when path contains a null byte."""
+    assert is_safe_path("vibegraph_upload_123/file\0.txt") is False
+
+
 def test_is_safe_path_realpath_value_error():
     """Test is_safe_path returns False when os.path.realpath raises ValueError."""
     with patch("os.path.realpath") as mock_realpath:
@@ -73,6 +78,14 @@ def test_normalize_uploaded_filename_valid():
     # Test removal of empty parts and current directory dots
     assert normalize_uploaded_filename("foo/./bar.py") == "foo/bar.py"
     assert normalize_uploaded_filename("foo//bar.py") == "foo/bar.py"
+
+
+def test_normalize_uploaded_filename_null_byte():
+    """Test null bytes are blocked."""
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_uploaded_filename("file\0name.py")
+    assert exc_info.value.status_code == 400
+    assert "Null byte" in exc_info.value.detail
 
 
 def test_normalize_uploaded_filename_empty():
