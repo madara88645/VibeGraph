@@ -10,7 +10,10 @@ from analyst.exporter import GraphExporter
 
 
 def _edge_cycle_flags(json_output):
-    return {(e["source"], e["target"]): e["data"]["is_cycle_edge"] for e in json_output["edges"]}
+    return {
+        (e["source"], e["target"]): e["data"]["is_cycle_edge"]
+        for e in json_output["edges"]
+    }
 
 
 class TestGraphExportCycleDetection(unittest.TestCase):
