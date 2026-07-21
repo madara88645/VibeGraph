@@ -21,6 +21,7 @@ marketing-plan/
 
 # Local Claude Code / agent config
 .claude/
+.agents/
 
 # Demo-recording rig + raw captures (local-only, keep out of public repo)
 # (root package.json/lock are the Playwright demo rig — anchored with / so explorer/package.json stays tracked)
