@@ -176,7 +176,7 @@ VibeGraph runs as a hybrid deployment:
 | Component | Platform | URL |
 |-----------|----------|-----|
 | Backend API | [Fly.io](https://fly.io) | `vibegraph-api.fly.dev` |
-| Frontend SPA | [Vercel](https://vercel.com) | `vibegraph.vercel.app` |
+| Frontend SPA | [Vercel](https://vercel.com) | `vibegraph.dev` (Vercel alias: `vibegraph.vercel.app`) |
 
 ### Docker Compose (local)
 
