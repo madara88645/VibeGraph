@@ -26,7 +26,12 @@ def test_rank_topics_single_topic():
 
 def test_create_step_allocates_more_minutes_when_focus_time_is_needed():
     step = create_step("recursion", 1, "needs_focus_time")
-    assert step == {"order": 1, "topic": "recursion", "minutes": 35, "risk": "needs_focus_time"}
+    assert step == {
+        "order": 1,
+        "topic": "recursion",
+        "minutes": 35,
+        "risk": "needs_focus_time",
+    }
 
 
 def test_create_step_allocates_default_minutes_for_other_risk_levels():
