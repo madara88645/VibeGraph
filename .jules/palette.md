@@ -106,3 +106,7 @@
 ## 2024-07-15 - Disable Upload Demo Button While Loading
 **Learning:** Loading states for async actions (like fetching a demo project) are critical to prevent users from spam-clicking CTA buttons when the result is not instantaneous. If the demo CTA in the upload modal lacks a disabled and loading state, users might click multiple times and trigger duplicate requests.
 **Action:** When adding or maintaining interactive CTA buttons that trigger async actions, ensure that a loading flag (like `isDemoLoading`) is passed to the component, applying a spinner and a disabled attribute to the button, ensuring visual feedback and preventing multi-clicks.
+
+## 2024-05-18 - Escape Key Shortcuts on Side Panels
+**Learning:** Adding `Escape` key handlers to close side panels or modals is a great UX win, but it's crucial to explicitly inform users that the shortcut exists. Otherwise, only power users will discover it. Furthermore, failing to guard the `keydown` event can cause the panel to close unexpectedly when a user presses `Escape` while typing inside an active `<input>` or `<textarea>`.
+**Action:** When adding global `Escape` key listeners to dismiss panels, ensure the event handler contains a guard clause (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`). Also, always append `(Press Esc)` to the `title` and `aria-label` of the close button to ensure both visual and screen reader users are aware of the shortcut.
