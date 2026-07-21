@@ -5,16 +5,21 @@ export function consumeSseChunk(buffer, chunk) {
     const events = [];
 
     for (const segment of segments) {
-        const dataLines = segment
-            .split('\n')
-            .filter((line) => line.startsWith('data:'))
-            .map((line) => {
+        const lines = segment.split('\n');
+        const dataLines = [];
+
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced array-allocating .filter().map()
+        // chain with a single for loop to avoid intermediate array allocation
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.startsWith('data:')) {
                 let value = line.slice(5);
                 if (value.startsWith(' ')) {
                     value = value.slice(1);
                 }
-                return value;
-            });
+                dataLines.push(value);
+            }
+        }
 
         if (dataLines.length > 0) {
             events.push(dataLines.join('\n'));

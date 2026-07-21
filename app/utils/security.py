@@ -49,6 +49,9 @@ def _is_within_path(path: str, root: str) -> bool:
 
 def is_safe_path(path: str) -> bool:
     """Ensure the path is within a valid upload temp directory or bundled demo."""
+    if "\0" in path:
+        return False
+
     try:
         resolved = os.path.realpath(path)
     except ValueError:
@@ -83,6 +86,9 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
     """Normalize upload path and block path traversal / absolute paths."""
     if not raw_name:
         raise HTTPException(status_code=400, detail="Uploaded file has no filename")
+
+    if "\0" in raw_name:
+        raise HTTPException(status_code=400, detail="Null byte in filename not allowed")
 
     normalized = raw_name.replace("\\", "/")
     if os.path.isabs(normalized) or normalized.startswith("/"):

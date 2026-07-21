@@ -95,14 +95,21 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
         fetchCode();
     }, [activeNode, isOpen]);
 
-    // Close fullscreen on Escape
+    // Close fullscreen or panel on Escape
     useEffect(() => {
         const handleKey = (e) => {
-            if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
+            if (e.ctrlKey || e.metaKey || e.altKey || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+            if (e.key === 'Escape') {
+                if (isFullscreen) {
+                    setIsFullscreen(false);
+                } else if (isOpen && onToggle) {
+                    onToggle();
+                }
+            }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [isFullscreen]);
+    }, [isFullscreen, isOpen, onToggle]);
 
     // Auto-scroll to highlighted function
     useEffect(() => {
@@ -271,7 +278,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     >
                         <span aria-hidden="true">{isFullscreen ? '⊙' : '⛶'}</span>
                     </button>
-                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel" aria-label="Close Code Panel"><span aria-hidden="true">✕</span></button>
+                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel (Press Esc)" aria-label="Close Code Panel (Press Esc)"><span aria-hidden="true">✕</span></button>
                 </div>
             </div>
 

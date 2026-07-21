@@ -338,7 +338,7 @@ describe('CodePanel', () => {
         const onToggle = vi.fn();
         renderPanel({ onToggle });
 
-        await user.click(screen.getByLabelText('Close Code Panel'));
+        await user.click(screen.getByLabelText('Close Code Panel (Press Esc)'));
         expect(onToggle).toHaveBeenCalled();
     });
 
