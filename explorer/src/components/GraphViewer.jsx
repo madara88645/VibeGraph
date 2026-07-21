@@ -248,22 +248,24 @@ const GraphViewer = ({
                 </svg>
                 Upload your project
               </button>
-              <button
-                className="empty-demo-cta"
-                type="button"
-                onClick={() => onLoadDemo?.()}
-                aria-label={isDemoLoading ? "Loading demo project..." : "See a live demo"}
-                disabled={isDemoLoading}
-              >
-                {isDemoLoading ? (
-                  <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <polygon points="6 4 20 12 6 20 6 4" />
-                  </svg>
-                )}
-                {isDemoLoading ? "Loading demo..." : "See a live demo"}
-              </button>
+              <span style={{ display: 'inline-flex' }} title={isDemoLoading ? "Loading demo project..." : "See a live demo"}>
+                <button
+                  className="empty-demo-cta"
+                  type="button"
+                  onClick={() => onLoadDemo?.()}
+                  aria-label={isDemoLoading ? "Loading demo project..." : "See a live demo"}
+                  disabled={isDemoLoading}
+                >
+                  {isDemoLoading ? (
+                    <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <polygon points="6 4 20 12 6 20 6 4" />
+                    </svg>
+                  )}
+                  {isDemoLoading ? "Loading demo..." : "See a live demo"}
+                </button>
+              </span>
             </div>
             <span className="empty-shortcut">
               No upload, no API key — explore a sample project instantly.

@@ -110,3 +110,7 @@
 ## 2024-05-18 - Escape Key Shortcuts on Side Panels
 **Learning:** Adding `Escape` key handlers to close side panels or modals is a great UX win, but it's crucial to explicitly inform users that the shortcut exists. Otherwise, only power users will discover it. Furthermore, failing to guard the `keydown` event can cause the panel to close unexpectedly when a user presses `Escape` while typing inside an active `<input>` or `<textarea>`.
 **Action:** When adding global `Escape` key listeners to dismiss panels, ensure the event handler contains a guard clause (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`). Also, always append `(Press Esc)` to the `title` and `aria-label` of the close button to ensure both visual and screen reader users are aware of the shortcut.
+
+## 2024-07-23 - Wrapping disabled buttons for tooltip accessibility
+**Learning:** Disabled HTML buttons do not trigger mouse events, preventing `title` tooltips from rendering on hover.
+**Action:** To ensure users receive adequate feedback for why an action is unavailable (e.g., 'Export in progress...'), wrap the disabled button in a standard DOM element (like `<span style={{ display: 'inline-flex' }}>`) and apply the `title` attribute to the wrapper.

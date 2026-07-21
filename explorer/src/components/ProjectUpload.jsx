@@ -333,21 +333,23 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             {!isAnalyzing && (
                                 <div className="demo-upload-section" style={{ padding: '0 24px 24px 24px' }}>
                                     <div className="demo-cta-divider" style={{ margin: '0 0 16px 0', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center' }}>or</div>
-                                    <button
-                                        type="button"
-                                        className="upload-select-btn demo-load-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Route both demo entry points through App's handleLoadDemo so
-                                            // the modal demo also loads pre-baked AI content (isDemo true).
-                                            onLoadDemo?.();
-                                        }}
-                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                                        disabled={isDemoLoading}
-                                    >
-                                        {isDemoLoading && <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>}
-                                        {isDemoLoading ? "Loading demo..." : "Try with a Demo Project"}
-                                    </button>
+                                    <span style={{ display: 'flex', width: '100%' }} title={isDemoLoading ? "Loading demo project..." : "Try with a Demo Project"}>
+                                        <button
+                                            type="button"
+                                            className="upload-select-btn demo-load-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Route both demo entry points through App's handleLoadDemo so
+                                                // the modal demo also loads pre-baked AI content (isDemo true).
+                                                onLoadDemo?.();
+                                            }}
+                                            style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                            disabled={isDemoLoading}
+                                        >
+                                            {isDemoLoading && <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>}
+                                            {isDemoLoading ? "Loading demo..." : "Try with a Demo Project"}
+                                        </button>
+                                    </span>
                                 </div>
                             )}
                         </>
