@@ -561,4 +561,36 @@ describe('ChatDrawer demo mode', () => {
     expect(await screen.findByText(/add a free OpenRouter key/i)).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it('does not ask for a key that is already configured (#569)', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    render(
+      <ChatDrawer
+        selectedNode={node}
+        allNodes={[node]}
+        allEdges={[]}
+        isOpen
+        onToggle={() => {}}
+        apiKey="test-key"
+        selectedModel="anthropic/claude-haiku-4.5"
+        aiReady
+        onOpenAiSettings={() => {}}
+        isDemo
+        getCannedChats={() => []}
+      />
+    );
+
+    // Empty state must not tell a key holder to add a key either.
+    expect(screen.queryByText(/add a free OpenRouter key/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByRole('textbox'), 'my own question');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByText(/upload your own project/i)).toBeInTheDocument();
+    expect(screen.queryByText(/add a free OpenRouter key/i)).not.toBeInTheDocument();
+    // The cost behaviour is unchanged — the demo still answers locally.
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });

@@ -22,6 +22,12 @@ const NO_NODE_MESSAGE =
 const DEMO_FREEFORM_MESSAGE =
   'This is a live demo with sample answers. To ask your own questions or analyze your own code, add a free OpenRouter key.';
 
+// Same cost behaviour, but never tell someone to add a key they already added:
+// the demo answers from bundled content either way, so with a key configured
+// the missing step is a project of their own, not the key (#569).
+const DEMO_FREEFORM_MESSAGE_WITH_KEY =
+  'The demo project answers from bundled sample content, so it never spends your credit. Upload your own project to chat about it live with your key.';
+
 const NO_NODE_PLACEHOLDER = 'Select a node on the graph to ask…';
 const CHAT_STREAM_TIMEOUT_MS = 45000;
 
@@ -132,7 +138,10 @@ const ChatDrawer = ({
       const next = [
         ...messages,
         { role: 'user', content: text },
-        { role: 'assistant', content: DEMO_FREEFORM_MESSAGE },
+        {
+          role: 'assistant',
+          content: aiReady ? DEMO_FREEFORM_MESSAGE_WITH_KEY : DEMO_FREEFORM_MESSAGE,
+        },
       ];
       setMessages(next);
       persistMessages(next);
@@ -405,8 +414,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
                       main functions and classes.
                     </p>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      Add a free OpenRouter key to ask your own questions about
-                      this node.
+                      {aiReady
+                        ? 'Upload your own project to ask your own questions with your key.'
+                        : 'Add a free OpenRouter key to ask your own questions about this node.'}
                     </p>
                   </>
                 ) : (
