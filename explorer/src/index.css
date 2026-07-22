@@ -3318,7 +3318,10 @@ body {
   top: var(--explanation-panel-edge-offset);
   right: var(--explanation-panel-edge-offset);
   width: var(--explanation-panel-width);
-  max-height: calc(100vh - (var(--explanation-panel-edge-offset) * 2));
+  /* Bound by .graph-shell, not the viewport. The shell shrinks when the Code
+     Panel docks at the bottom; a viewport-based height would overflow it and
+     paint over the Code Panel header, making its buttons unclickable (#557). */
+  max-height: calc(100% - (var(--explanation-panel-edge-offset) * 2));
   background: var(--panel-gradient);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border-subtle);
