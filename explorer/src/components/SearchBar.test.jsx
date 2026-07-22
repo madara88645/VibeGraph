@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -256,5 +256,71 @@ describe('SearchBar', () => {
             button.textContent?.includes('func_')
         ));
         expect(results.length).toBeLessThanOrEqual(8);
+    });
+
+    describe('explanation panel occlusion (#560)', () => {
+        const setPanelVars = () => {
+            document.documentElement.style.setProperty('--explanation-panel-width', '330px');
+            document.documentElement.style.setProperty('--explanation-panel-edge-offset', '16px');
+        };
+        const clearPanelVars = () => {
+            document.documentElement.style.removeProperty('--explanation-panel-width');
+            document.documentElement.style.removeProperty('--explanation-panel-edge-offset');
+        };
+        const setViewportWidth = (width) => {
+            Object.defineProperty(window, 'innerWidth', {
+                configurable: true,
+                writable: true,
+                value: width,
+            });
+        };
+        const originalWidth = window.innerWidth;
+
+        beforeEach(() => {
+            setPanelVars();
+            getNodeMock.mockImplementation((id) =>
+                id === 'FileProcessor'
+                    ? { id, positionAbsolute: { x: 200, y: 100 }, width: 120, height: 40 }
+                    : undefined,
+            );
+        });
+
+        afterEach(() => {
+            clearPanelVars();
+            setViewportWidth(originalWidth);
+        });
+
+        it('offsets the target so the node does not land behind the panel', async () => {
+            setViewportWidth(1280);
+            const user = userEvent.setup();
+            renderSearchBar();
+
+            await user.type(screen.getByPlaceholderText(/Search nodes/), 'FileProcessor');
+            await user.click(screen.getByText('FileProcessor'));
+
+            await waitFor(() => {
+                expect(setCenterMock).toHaveBeenCalledTimes(1);
+            });
+            // Node center is x=260. The panel covers 330 + 16 = 346px on the
+            // right, so the camera targets half of that further right, in flow
+            // units: 260 + (346 / 2) / 1.5 = 375.33…
+            const [x, y] = setCenterMock.mock.calls[0];
+            expect(x).toBeCloseTo(375.33, 1);
+            expect(y).toBe(120);
+        });
+
+        it('does not offset below the mobile breakpoint, where the panel is a bottom sheet', async () => {
+            setViewportWidth(375);
+            const user = userEvent.setup();
+            renderSearchBar();
+
+            await user.type(screen.getByPlaceholderText(/Search nodes/), 'FileProcessor');
+            await user.click(screen.getByText('FileProcessor'));
+
+            await waitFor(() => {
+                expect(setCenterMock).toHaveBeenCalledTimes(1);
+            });
+            expect(setCenterMock.mock.calls[0][0]).toBe(260);
+        });
     });
 });
