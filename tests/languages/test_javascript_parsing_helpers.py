@@ -45,7 +45,9 @@ class TestClassifyCall(unittest.TestCase):
     def _classify(self, source: str, in_class: bool = False):
         tree = _parse(source)
         call_node = _find_first(tree.root_node, "call_expression")
-        walker = _Walker(file_path="<test>", source=source.encode("utf-8"), language_id="javascript")
+        walker = _Walker(
+            file_path="<test>", source=source.encode("utf-8"), language_id="javascript"
+        )
         if in_class:
             walker.class_stack.append("MyClass")
         return walker._classify_call(call_node)
@@ -119,7 +121,9 @@ class TestParseImportStatement(unittest.TestCase):
         self.assertEqual(entry["asnames"], ["a", "c"])
 
     def test_named_import_module_locality_depends_on_local_modules(self):
-        result = self._entries('import { a } from "pkg";', local_modules=frozenset({"pkg"}))
+        result = self._entries(
+            'import { a } from "pkg";', local_modules=frozenset({"pkg"})
+        )
         self.assertTrue(result[0]["is_local"])
         result = self._entries('import { a } from "pkg";', local_modules=frozenset())
         self.assertFalse(result[0]["is_local"])
