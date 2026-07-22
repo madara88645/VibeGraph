@@ -117,7 +117,16 @@ vi.mock('./utils/loadDemoGraph', () => ({
   loadDemoGraph: vi.fn(),
   loadDemoAiContent: vi.fn(),
 }));
-vi.mock('./components/ExplanationPanel', () => ({ default: () => null }));
+vi.mock('./components/ExplanationPanel', () => ({
+  default: ({ node, onClose }) => (
+    <div>
+      <span data-testid="explanation-node">{node ? node.id : 'none'}</span>
+      <button type="button" onClick={onClose}>
+        close-explanation
+      </button>
+    </div>
+  ),
+}));
 vi.mock('./components/FileSidebar', () => ({
   default: ({ collapsed }) => <div>FileSidebar:{collapsed ? 'collapsed' : 'expanded'}</div>,
 }));
@@ -126,7 +135,12 @@ vi.mock('./components/CodePanel', () => ({
 }));
 vi.mock('./components/SearchBar', () => ({ default: () => <div>SearchBar</div> }));
 vi.mock('./components/ChatDrawer', () => ({
-  default: ({ isOpen }) => <div>ChatDrawer:{isOpen ? 'open' : 'closed'}</div>,
+  default: ({ isOpen, selectedNode }) => (
+    <div>
+      ChatDrawer:{isOpen ? 'open' : 'closed'}
+      <span data-testid="chat-node">{selectedNode ? selectedNode.id : 'none'}</span>
+    </div>
+  ),
 }));
 vi.mock('./components/LearningPath', () => ({
   default: ({ isOpen, topOffset }) => (
@@ -442,5 +456,32 @@ describe('App upload flow', () => {
         'demo'
       )
     );
+  });
+
+  it('keeps the node selected for Chat when the explanation panel is dismissed (#559)', async () => {
+    const user = userEvent.setup();
+    // Chat only renders once a graph exists.
+    graphDataState.allNodes = [{ id: 'main', data: { label: 'main', file: 'app.py' } }];
+    graphDataState.allNodesMap = new Map([['main', graphDataState.allNodes[0]]]);
+    nodeInteractionState.selectedNode = graphDataState.allNodes[0];
+
+    try {
+      render(<App />);
+
+      expect(screen.getByTestId('chat-node')).toHaveTextContent('main');
+      expect(screen.getByTestId('explanation-node')).toHaveTextContent('main');
+
+      await user.click(screen.getByRole('button', { name: 'close-explanation' }));
+
+      // The panel hides, but the selection itself survives: the graph keeps
+      // rendering that node as selected and Chat must still answer about it.
+      expect(screen.getByTestId('explanation-node')).toHaveTextContent('none');
+      expect(screen.getByTestId('chat-node')).toHaveTextContent('main');
+      expect(nodeInteractionState.setSelectedNode).not.toHaveBeenCalled();
+    } finally {
+      nodeInteractionState.selectedNode = null;
+      graphDataState.allNodes = [];
+      graphDataState.allNodesMap = new Map();
+    }
   });
 });
