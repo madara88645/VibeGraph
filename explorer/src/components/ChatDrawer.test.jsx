@@ -467,6 +467,33 @@ describe('ChatDrawer', () => {
     expect(screen.getByText('Remember me')).toBeInTheDocument();
     expect(screen.getByText('Stored reply')).toBeInTheDocument();
   });
+
+  it('blurs the chat input when the drawer closes so hidden content cannot keep focus (#558)', () => {
+    const { rerender } = renderDrawer({ selectedNode: MOCK_NODE });
+
+    const input = screen.getByLabelText('Chat input');
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    rerender(
+      <ChatDrawer
+        selectedNode={MOCK_NODE}
+        allNodes={[]}
+        allEdges={[]}
+        isOpen={false}
+        onToggle={vi.fn()}
+        apiKey="test-key"
+        selectedModel="anthropic/claude-haiku-4.5"
+        aiReady={true}
+        onOpenAiSettings={vi.fn()}
+      />
+    );
+
+    // The drawer stays mounted while closed, so without an explicit blur the
+    // hidden textarea would remain document.activeElement and every global
+    // Escape handler that skips typing fields would go dead.
+    expect(document.activeElement).not.toBe(input);
+  });
 });
 
 const node = { id: 'n1', data: { file: 'a.py' } };

@@ -52,9 +52,19 @@ const ChatDrawer = ({
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 200);
+      const focusTimer = setTimeout(() => inputRef.current?.focus(), 200);
       messagesEndRef.current?.scrollIntoView({ block: 'nearest' });
+      return () => clearTimeout(focusTimer);
     }
+    // The drawer stays mounted when closed — it is hidden with a transform, not
+    // unmounted — so a focused input keeps document.activeElement pointing at
+    // content the user can no longer see. Global Escape handlers that skip
+    // typing fields then swallow every later keypress, which is what left the
+    // Code Panel impossible to close from the keyboard (#558).
+    if (inputRef.current && document.activeElement === inputRef.current) {
+      inputRef.current.blur();
+    }
+    return undefined;
   }, [isOpen]);
 
   useEffect(() => {
