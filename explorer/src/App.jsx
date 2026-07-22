@@ -261,7 +261,6 @@ function AppInner() {
 
   const {
     selectedNode,
-    setSelectedNode,
     explanation,
     loading,
     codePanelOpen,
@@ -278,7 +277,12 @@ function AppInner() {
     resetInteractionState,
   } = useNodeInteraction({ ...aiContext, allNodes, allEdges, getBakedExplanation });
 
-  const explanationPanelOpen = Boolean(selectedNode);
+  // Dismissing the explanation panel must not drop the node selection itself:
+  // the graph keeps rendering that node as selected, and Chat is still meant to
+  // answer questions about it. Tracking dismissal separately keeps the graph,
+  // Chat and the panel telling the user the same story (#559).
+  const [explanationDismissed, setExplanationDismissed] = useState(false);
+  const explanationPanelOpen = Boolean(selectedNode) && !explanationDismissed;
   const [explanationPanelClosing, setExplanationPanelClosing] = useState(false);
   const explanationPanelCloseTimerRef = useRef(null);
   const explanationPanelLayoutOpen = explanationPanelOpen || explanationPanelClosing;
@@ -368,8 +372,26 @@ function AppInner() {
       explanationPanelCloseTimerRef.current = null;
     }, EXPLANATION_PANEL_CLOSE_MS);
 
-    setSelectedNode(null);
-  }, [setSelectedNode]);
+    setExplanationDismissed(true);
+  }, []);
+
+  // Re-opening the panel is what selecting a node means, including selecting the
+  // same node again after dismissing it.
+  const handleSelectNodeWithExplanation = useCallback(
+    (node) => {
+      setExplanationDismissed(false);
+      handleSelectNode(node);
+    },
+    [handleSelectNode]
+  );
+
+  const handleNodeClickWithExplanation = useCallback(
+    (event, node) => {
+      setExplanationDismissed(false);
+      return onNodeClick(event, node);
+    },
+    [onNodeClick]
+  );
 
   useEffect(() => () => {
     if (explanationPanelCloseTimerRef.current) {
@@ -542,7 +564,7 @@ function AppInner() {
           {hasGraph ? (
             <SearchBar
               allNodes={allNodes}
-              onSelectNode={handleSelectNode}
+              onSelectNode={handleSelectNodeWithExplanation}
               onSelectFile={setSelectedFile}
             />
           ) : null}
@@ -558,7 +580,7 @@ function AppInner() {
               allNodes={allNodes}
               allNodesMap={allNodesMap}
               allEdges={allEdges}
-              onSelectNode={handleSelectNode}
+              onSelectNode={handleSelectNodeWithExplanation}
               onSelectFile={setSelectedFile}
               isOpen={learningPathOpen}
               onToggle={handleCloseLearningPath}
@@ -593,7 +615,7 @@ function AppInner() {
               graphMeta={graphMeta}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-              onNodeClick={onNodeClick}
+              onNodeClick={handleNodeClickWithExplanation}
               onRequestUpload={handleRequestUpload}
               onLoadDemo={handleLoadDemo}
               isDemoLoading={isDemoLoading}
@@ -641,7 +663,7 @@ function AppInner() {
 
 
           <ExplanationPanel
-            node={selectedNode}
+            node={explanationPanelOpen ? selectedNode : null}
             explanation={explanation}
             loading={loading}
             onClose={handleCloseExplanation}
