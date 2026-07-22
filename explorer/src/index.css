@@ -1296,6 +1296,19 @@ body {
   pointer-events: auto;
 }
 
+/* The drawer is anchored left while the simulation bar is centred, so on
+   narrower desktops (1440px and below) the bar reaches across the drawer's
+   right edge. Being the higher layer, it used to swallow clicks on Send —
+   the button rendered and looked enabled but did nothing (#568). While the
+   drawer is open it owns those pixels; closing it hands them straight back.
+   Kept under the desktop breakpoint because the mobile layout already moves
+   the simulation bar to bottom: 72px, clear of the drawer. */
+@media (min-width: 769px) {
+  .chat-drawer.open {
+    z-index: 110;
+  }
+}
+
 .chat-drawer-header {
   display: flex;
   align-items: center;
