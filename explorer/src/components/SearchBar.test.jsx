@@ -1,16 +1,17 @@
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // SearchBar uses useReactFlow — mock before importing component.
 // Hoisted spies so individual tests can assert how the viewport is moved.
-const { getNodeMock, setCenterMock } = vi.hoisted(() => ({
+const { getNodeMock, setCenterMock, getViewportMock } = vi.hoisted(() => ({
     getNodeMock: vi.fn(),
     setCenterMock: vi.fn(),
+    getViewportMock: vi.fn(() => ({ x: 0, y: 0, zoom: 1.5 })),
 }));
 
 vi.mock('reactflow', () => ({
-    useReactFlow: () => ({ getNode: getNodeMock, setCenter: setCenterMock }),
+    useReactFlow: () => ({ getNode: getNodeMock, setCenter: setCenterMock, getViewport: getViewportMock }),
 }));
 
 import SearchBar from './SearchBar';
@@ -321,6 +322,70 @@ describe('SearchBar', () => {
                 expect(setCenterMock).toHaveBeenCalledTimes(1);
             });
             expect(setCenterMock.mock.calls[0][0]).toBe(260);
+        });
+    });
+
+    describe('focus survives the post-selection re-fit (#566)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            getNodeMock.mockImplementation((id) =>
+                id === 'FileProcessor'
+                    ? { id, positionAbsolute: { x: 200, y: 100 }, width: 120, height: 40 }
+                    : undefined,
+            );
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+            getViewportMock.mockImplementation(() => ({ x: 0, y: 0, zoom: 1.5 }));
+        });
+
+        // fireEvent keeps this synchronous; userEvent drives its own timers and
+        // deadlocks against vi.useFakeTimers here.
+        function selectFileProcessor() {
+            renderSearchBar();
+            act(() => {
+                fireEvent.change(screen.getByPlaceholderText(/Search nodes/), {
+                    target: { value: 'FileProcessor' },
+                });
+            });
+            act(() => {
+                fireEvent.click(screen.getByText('FileProcessor'));
+            });
+        }
+
+        it('re-centers when the viewport was overridden by the re-fit', async () => {
+            // Selecting a result in another file swaps the node set; React Flow
+            // re-fits it and lands on its own zoom, discarding our camera.
+            getViewportMock.mockImplementation(() => ({ x: 0, y: 0, zoom: 1.223 }));
+
+            selectFileProcessor();
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(setCenterMock).toHaveBeenCalledTimes(2);
+            // Same target both times — we re-assert the focus, not a new place.
+            expect(setCenterMock.mock.calls[1]).toEqual(setCenterMock.mock.calls[0]);
+        });
+
+        it('does not re-center when the camera it set is still in place', async () => {
+            getViewportMock.mockImplementation(() => ({ x: 0, y: 0, zoom: 1.5 }));
+
+            selectFileProcessor();
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(3000);
+            expect(setCenterMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('gives up after a bounded number of re-asserts', async () => {
+            // A viewport that never matches must not retry forever.
+            getViewportMock.mockImplementation(() => ({ x: 0, y: 0, zoom: 0.4 }));
+
+            selectFileProcessor();
+            await vi.advanceTimersByTimeAsync(10000);
+
+            expect(setCenterMock.mock.calls.length).toBeLessThanOrEqual(3);
         });
     });
 });

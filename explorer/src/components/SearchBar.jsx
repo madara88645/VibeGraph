@@ -7,6 +7,12 @@ import { getShortName } from '../utils/stringUtils';
 const searchCache = new WeakMap();
 
 const FOCUS_ZOOM = 1.5;
+const FOCUS_DURATION_MS = 600;
+// Comfortably past the pan animation, so a mid-flight zoom is never mistaken
+// for an override.
+const FOCUS_REASSERT_DELAY_MS = 900;
+const MAX_FOCUS_REASSERTS = 2;
+const ZOOM_EPSILON = 0.01;
 // Below this width the explanation panel is a bottom sheet (see the
 // max-width: 768px block in index.css), so it covers nothing on the right.
 const PANEL_SHEET_BREAKPOINT_PX = 768;
@@ -29,7 +35,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [highlightIdx, setHighlightIdx] = useState(0);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
-    const { getNode, setCenter } = useReactFlow();
+    const { getNode, setCenter, getViewport } = useReactFlow();
 
     // Keyboard shortcut: Ctrl+K or /
     useEffect(() => {
@@ -101,6 +107,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         // space (#460). Wait until the node lands in the post-relayout store, then
         // center on its current laid-out position.
         let attempts = 0;
+        let reasserts = 0;
         const focusNode = () => {
             const laidOut = getNode(node.id);
             const position = laidOut?.positionAbsolute || laidOut?.position;
@@ -116,9 +123,22 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     position.y + height / 2,
                     {
                         zoom: FOCUS_ZOOM,
-                        duration: 600,
+                        duration: FOCUS_DURATION_MS,
                     }
                 );
+                // A result in another file swaps the whole node set, and React
+                // Flow re-fits the view for it — after this call, throwing away
+                // the camera we just set (#566). Re-assert once the swap has
+                // settled, but only when the viewport really was overridden, so
+                // a user who deliberately zoomed away is never fought.
+                if (reasserts++ < MAX_FOCUS_REASSERTS) {
+                    setTimeout(() => {
+                        const viewport = getViewport?.();
+                        if (viewport && Math.abs(viewport.zoom - FOCUS_ZOOM) > ZOOM_EPSILON) {
+                            focusNode();
+                        }
+                    }, FOCUS_REASSERT_DELAY_MS);
+                }
             } else if (attempts++ < 30) {
                 setTimeout(focusNode, 16);
             }
@@ -126,7 +146,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         focusNode();
         setIsOpen(false);
         setQuery('');
-    }, [onSelectFile, onSelectNode, getNode, setCenter]);
+    }, [onSelectFile, onSelectNode, getNode, setCenter, getViewport]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'ArrowDown') {
