@@ -305,4 +305,53 @@ describe('useGhostRunner', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(onRequireAiKey).not.toHaveBeenCalled();
   });
+
+  it.each(['smart', 'random'])(
+    'stops the %s strategy once every navigable node has been visited (#556)',
+    (strategy) => {
+      const nodes = [
+        createNode('main', { entry_point: true }),
+        createNode('helper'),
+      ];
+      const edges = [{ id: 'e1', source: 'main', target: 'helper' }];
+      const setNodes = vi.fn();
+      const setEdges = vi.fn();
+      const setCodePanelNode = vi.fn();
+      // Hoisted so its identity is stable across renders: an inline object would
+      // give the hook's callbacks a new identity every render, re-running the
+      // main loop effect and ticking outside timer control.
+      const aiContext = {
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: false,
+        onRequireAiKey: vi.fn(),
+      };
+
+      const { result } = renderHook(() =>
+        useGhostRunner(nodes, edges, setNodes, setEdges, setCodePanelNode, aiContext)
+      );
+
+      act(() => {
+        result.current.setStrategy(strategy);
+        result.current.setIsPlaying(true);
+      });
+
+      // Long enough to visit both nodes several times over.
+      act(() => {
+        vi.advanceTimersByTime(2600 * 6);
+      });
+
+      expect(result.current.visitedCount).toBe(2);
+      expect(result.current.totalNodes).toBe(2);
+      expect(result.current.isPlaying).toBe(false);
+
+      // Neither strategy returns null when everything is visited, so before the
+      // exhaustion check the runner kept stepping at 100% coverage forever.
+      const settledStepCount = result.current.stepCount;
+      act(() => {
+        vi.advanceTimersByTime(2600 * 4);
+      });
+      expect(result.current.stepCount).toBe(settledStepCount);
+    }
+  );
 });

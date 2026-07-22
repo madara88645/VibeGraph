@@ -687,6 +687,27 @@ export function useGhostRunner(
                 return; // Don't auto-advance
             }
 
+            // Stop once every navigable node has been visited. Strategies are
+            // not required to signal exhaustion: `smart` falls back to a random
+            // pick and `random` never returns null at all, so relying on a null
+            // next-node left the runner stepping forever at 100% coverage with
+            // no run summary — and, with narration on, one AI call per step
+            // against the user's own key (#556).
+            let navigableCount = 0;
+            let unvisitedNavigable = 0;
+            for (let i = 0; i < currentNodes.length; i++) {
+                if (!isNavigableNode(currentNodes[i])) continue;
+                navigableCount++;
+                if (!visitedSetRef.current.has(currentNodes[i].id)) {
+                    unvisitedNavigable++;
+                }
+            }
+            if (navigableCount > 0 && unvisitedNavigable === 0) {
+                setIsPlaying(false);
+                setAvailableNextNodes([]);
+                return;
+            }
+
             // Auto mode: use strategy
             const ctx = {
                 currentActiveId,
