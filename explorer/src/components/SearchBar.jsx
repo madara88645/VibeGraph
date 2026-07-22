@@ -6,6 +6,23 @@ import { getShortName } from '../utils/stringUtils';
 // WeakMap to cache computed search strings without mutating the original node objects
 const searchCache = new WeakMap();
 
+const FOCUS_ZOOM = 1.5;
+// Below this width the explanation panel is a bottom sheet (see the
+// max-width: 768px block in index.css), so it covers nothing on the right.
+const PANEL_SHEET_BREAKPOINT_PX = 768;
+
+// Width of the canvas the explanation panel will cover once a result is
+// selected. Read from the same custom properties the panel is laid out with so
+// the two cannot drift apart.
+function getRightOcclusion() {
+    if (typeof window === 'undefined' || window.innerWidth <= PANEL_SHEET_BREAKPOINT_PX) {
+        return 0;
+    }
+    const rootStyle = getComputedStyle(document.documentElement);
+    const readPx = (name) => parseFloat(rootStyle.getPropertyValue(name)) || 0;
+    return readPx('--explanation-panel-width') + readPx('--explanation-panel-edge-offset');
+}
+
 const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -90,10 +107,18 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
             if (position) {
                 const width = laidOut.width ?? 172;
                 const height = laidOut.height ?? 36;
-                setCenter(position.x + width / 2, position.y + height / 2, {
-                    zoom: 1.5,
-                    duration: 600,
-                });
+                // Selecting a result also opens the explanation panel over the
+                // right edge of the canvas, so centering in the FULL viewport
+                // drops the node behind it (#560). Shift the target by half the
+                // covered strip to center it in the part still visible.
+                setCenter(
+                    position.x + width / 2 + getRightOcclusion() / 2 / FOCUS_ZOOM,
+                    position.y + height / 2,
+                    {
+                        zoom: FOCUS_ZOOM,
+                        duration: 600,
+                    }
+                );
             } else if (attempts++ < 30) {
                 setTimeout(focusNode, 16);
             }
