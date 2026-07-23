@@ -2,17 +2,33 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import CodeViewer from './CodeViewer';
+import {
+    IconAlert,
+    IconBook,
+    IconClock,
+    IconClose,
+    IconCode,
+    IconEdit,
+    IconFile,
+    IconGlobe,
+    IconKey,
+    IconLightbulb,
+    IconPlug,
+    IconRefresh,
+    IconSettings,
+    NodeTypeIcon,
+} from './icons';
 
 const typeColors = {
-    'function': { accent: '#06b6d4', label: 'Function', icon: '⚡' },
-    'class': { accent: '#a855f7', label: 'Class', icon: '🏗️' },
-    'entry_point': { accent: '#22c55e', label: 'Entry Point', icon: '🚀' },
-    'builtin': { accent: '#3b82f6', label: 'Built-in', icon: '🐍' },
-    'external': { accent: '#f97316', label: 'External', icon: '📦' },
-    'imported_local': { accent: '#14b8a6', label: 'Imported', icon: '🔗' },
-    'module': { accent: '#eab308', label: 'Module', icon: '📁' },
-    'unresolved': { accent: '#94a3b8', label: 'Reference', icon: '?' },
-    'default': { accent: '#64748b', label: 'Reference', icon: '○' },
+    'function': { accent: '#06b6d4', label: 'Function' },
+    'class': { accent: '#a855f7', label: 'Class' },
+    'entry_point': { accent: '#22c55e', label: 'Entry Point' },
+    'builtin': { accent: '#3b82f6', label: 'Built-in' },
+    'external': { accent: '#f97316', label: 'External' },
+    'imported_local': { accent: '#14b8a6', label: 'Imported' },
+    'module': { accent: '#eab308', label: 'Module' },
+    'unresolved': { accent: '#94a3b8', label: 'Reference' },
+    'default': { accent: '#64748b', label: 'Reference' },
 };
 
 const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation, onOpenAiSettings }) => {
@@ -120,7 +136,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             let errorTitle = "Connection Error";
             let errorMsg = "An unexpected error occurred. Please check your connection or OpenRouter status.";
             let errorTakeaway = "Check your OpenRouter status or API key.";
-            let errorIcon = "⚠️";
+            let ErrorIcon = IconAlert;
             let showSettingsBtn = false;
             let showRetryBtn = false;
 
@@ -128,7 +144,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 errorTitle = "API Key Missing";
                 errorMsg = "You need to add a valid OpenRouter API key to enable AI explanations.";
                 errorTakeaway = "Add a valid API key in the AI Settings panel.";
-                errorIcon = "🔑";
+                ErrorIcon = IconKey;
                 showSettingsBtn = true;
             } else {
                 const analogy = aiResponse.analogy || "";
@@ -143,42 +159,42 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     errorTitle = "Invalid API Key";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "🔑";
+                    ErrorIcon = IconKey;
                     showSettingsBtn = true;
                 } else if (analogy.includes("Formatting") || analogy.includes("Biçim")) {
                     errorTitle = "AI Formatting Error";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "📝";
+                    ErrorIcon = IconEdit;
                     showRetryBtn = true;
                 } else if (analogy.includes("Limit") || analogy.includes("Sınır")) {
                     errorTitle = "Rate Limit Exceeded";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "⌛";
+                    ErrorIcon = IconClock;
                     showRetryBtn = true;
                 } else if (analogy.includes("Timeout") || analogy.includes("Zaman Aşımı")) {
                     errorTitle = "Connection Timeout";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "🔌";
+                    ErrorIcon = IconPlug;
                     showRetryBtn = true;
                 } else if (analogy.includes("Connection") || analogy.includes("Bağlantı")) {
                     errorTitle = "Connection Failed";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "🌐";
+                    ErrorIcon = IconGlobe;
                     showRetryBtn = true;
                 } else if (analogy.includes("Request") || analogy.includes("İstek")) {
                     errorTitle = "Bad Request";
                     errorMsg = technical;
                     errorTakeaway = takeaway;
-                    errorIcon = "⚙️";
+                    ErrorIcon = IconSettings;
                 } else {
                     errorTitle = analogy || "Connection Error";
                     errorMsg = technical || "An unexpected error occurred.";
                     errorTakeaway = takeaway || "Please check your internet connection or OpenRouter status.";
-                    errorIcon = "⚠️";
+                    ErrorIcon = IconAlert;
                     showRetryBtn = true;
                 }
             }
@@ -195,7 +211,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     margin: '10px 0'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '1.5rem' }} aria-hidden="true">{errorIcon}</span>
+                        <ErrorIcon size={22} style={{ color: '#fca5a5', flexShrink: 0 }} />
                         <h4 style={{ margin: 0, color: '#fca5a5', fontSize: '1rem', fontWeight: '600' }}>{errorTitle}</h4>
                     </div>
                     <div className="markdown-content" style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
@@ -210,7 +226,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                         borderLeft: '2px solid rgba(252, 165, 165, 0.3)',
                         marginBottom: '14px'
                     }}>
-                        <strong><span aria-hidden="true">💡</span> Suggestion:</strong> {errorTakeaway}
+                        <strong><IconLightbulb size={13} /> Suggestion:</strong> {errorTakeaway}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {showSettingsBtn && onOpenAiSettings && (
@@ -230,7 +246,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.filter = 'brightness(1.1)'}
                                 onMouseLeave={(e) => e.target.style.filter = 'none'}
                             >
-                                <span aria-hidden="true">⚙️</span> Open AI Settings
+                                <IconSettings size={14} /> Open AI Settings
                             </button>
                         )}
                         {showRetryBtn && (
@@ -250,7 +266,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.12)'}
                                 onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.08)'}
                             >
-                                <span aria-hidden="true">🔄</span> Retry
+                                <IconRefresh size={14} /> Retry
                             </button>
                         )}
                     </div>
@@ -277,7 +293,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 borderLeft: `3px solid ${typeConfig.accent}`,
                                 fontSize: '0.82rem',
                             }}>
-                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><IconLightbulb size={13} /> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                         </div>
                     )}
@@ -295,7 +311,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                                 fontSize: '0.82rem',
                                 marginTop: '12px',
                              }}>
-                                <strong style={{ color: 'var(--text-primary)' }}><span aria-hidden="true">💡</span> Takeaway:</strong> {aiResponse.key_takeaway}
+                                <strong style={{ color: 'var(--text-primary)' }}><IconLightbulb size={13} /> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
                                 <div style={{ marginTop: '12px' }}>
@@ -323,7 +339,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             <div className="ep-header">
                 {/* Type badge */}
                 <span className="ep-type" style={{ color: typeConfig.accent, background: `${typeConfig.accent}18`, borderColor: `${typeConfig.accent}40` }}>
-                    {typeConfig.icon} {typeConfig.label}
+                    <NodeTypeIcon type={nodeType} size={12} /> {typeConfig.label}
                 </span>
 
                 <span className="ep-title" title={activeNode.data.label}>
@@ -336,7 +352,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                     title="Close Explanation Panel (Press Esc)"
                     aria-label="Close Explanation Panel (Press Esc)"
                 >
-                    <span aria-hidden="true">✕</span>
+                    <IconClose size={14} />
                 </button>
             </div>
 
@@ -345,8 +361,8 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 {/* Tabs */}
                 <div className="ep-tabs" role="tablist" aria-label="Explanation modes">
                     {[
-                        { key: 'technical', icon: '⚙️', label: 'Technical' },
-                        { key: 'analogy', icon: '🎭', label: 'Analogy' },
+                        { key: 'technical', Icon: IconCode, label: 'Technical' },
+                        { key: 'analogy', Icon: IconBook, label: 'Analogy' },
                     ].map(t => (
                         <button
                             key={t.key}
@@ -358,7 +374,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             className={`ep-tab ${tab === t.key ? 'active' : ''}`}
                             aria-label={`Switch to ${t.label} tab`}
                         >
-                            <span aria-hidden="true">{t.icon}</span> {t.label}
+                            <t.Icon size={13} /> {t.label}
                         </button>
                     ))}
                 </div>
@@ -385,7 +401,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
             {/* Footer */}
             {(activeNode.data.file || activeNode.data.original_data?.file) && (
                 <div className="ep-footer">
-                    <span title={activeNode.data.file || activeNode.data.original_data?.file}><span aria-hidden="true">📄</span> {activeNode.data.file || activeNode.data.original_data?.file}</span>
+                    <span title={activeNode.data.file || activeNode.data.original_data?.file}><IconFile size={12} /> {activeNode.data.file || activeNode.data.original_data?.file}</span>
                     {(activeNode.data.lineno || activeNode.data.original_data?.lineno) && (
                         <span>L{activeNode.data.lineno || activeNode.data.original_data?.lineno}</span>
                     )}

@@ -5,6 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { fetchWithTimeout, getFriendlyAiErrorMessage } from '../utils/aiClient';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { getShortName } from '../utils/stringUtils';
+import { IconClose, IconCode, IconGhost, IconMaximize, IconMinimize, IconPackage, IconSearch } from './icons';
 
 const CODE_FETCH_TIMEOUT_MS = 15000;
 
@@ -151,7 +152,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 title="Open Code Panel" 
                 aria-label="Open Code Panel"
             >
-                <span aria-hidden="true">{'<>'}</span> Code
+                <IconCode size={14} /> Code
             </button>
 
             <div className={`code-panel ${isOpen ? 'open' : ''} ${isFullscreen ? 'code-panel-fullscreen' : ''}`}>
@@ -161,7 +162,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
             {/* Header */}
             <div className="code-panel-header">
                 <div className="code-panel-title">
-                    <span className="code-icon" aria-hidden="true">{'<>'}</span>
+                    <IconCode className="code-icon" size={14} />
                     <span className="code-file-name" title={codeData?.file_path || fileName || 'No file'}>
                         {fileName || 'No file'}
                     </span>
@@ -177,7 +178,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     )}
                     {isGhostRunning && (
                         <span className="code-follow-badge">
-                            <span aria-hidden="true">👻</span> Following
+                            <IconGhost size={12} /> Following
                         </span>
                     )}
                 </div>
@@ -276,9 +277,9 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         title={isFullscreen ? 'Exit fullscreen (Press Esc)' : 'Expand code'}
                         aria-label={isFullscreen ? 'Exit fullscreen (Press Esc)' : 'Expand code'}
                     >
-                        <span aria-hidden="true">{isFullscreen ? '⊙' : '⛶'}</span>
+                        {isFullscreen ? <IconMinimize size={14} /> : <IconMaximize size={14} />}
                     </button>
-                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel (Press Esc)" aria-label="Close Code Panel (Press Esc)"><span aria-hidden="true">✕</span></button>
+                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel (Press Esc)" aria-label="Close Code Panel (Press Esc)"><IconClose size={14} /></button>
                 </div>
             </div>
 
@@ -330,7 +331,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">📦</span>
+                                        <IconPackage size={18} style={{ color: '#93c5fd', flexShrink: 0 }} />
                                         <h4 style={{ margin: 0, color: '#93c5fd', fontSize: '0.9rem', fontWeight: '600' }}>External or Built-in Module</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
@@ -352,7 +353,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">🔍</span>
+                                        <IconSearch size={18} style={{ color: '#fef08a', flexShrink: 0 }} />
                                         <h4 style={{ margin: 0, color: '#fef08a', fontSize: '0.9rem', fontWeight: '600' }}>Source File Not Found</h4>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
@@ -383,7 +384,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                 {!loading && !error && !codeData && (
                     <div className="code-placeholder">
                         {isGhostRunning
-                            ? <><span aria-hidden="true">👻</span> Code will appear automatically when Ghost Runner starts...</>
+                            ? <><IconGhost size={14} /> Code will appear automatically when Ghost Runner starts...</>
                             : 'Click a node or start Ghost Runner'}
                     </div>
                 )}

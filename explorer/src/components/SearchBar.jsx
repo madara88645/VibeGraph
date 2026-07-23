@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { getShortName } from '../utils/stringUtils';
+import { IconClass, IconClose, IconEntry, IconFunction, IconSearch } from './icons';
 
 // WeakMap to cache computed search strings without mutating the original node objects
 const searchCache = new WeakMap();
@@ -161,9 +162,9 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
     };
 
     const typeIcon = (node) => {
-        if (node.data?.entry_point) return '🚀';
-        if (node.data?.type === 'class') return '🏗️';
-        return '⚡';
+        if (node.data?.entry_point) return IconEntry;
+        if (node.data?.type === 'class') return IconClass;
+        return IconFunction;
     };
 
     const listboxId = "search-results-listbox";
@@ -174,7 +175,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                 <label htmlFor="search-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: '0' }}>
                     Search nodes (Ctrl+K)
                 </label>
-                <span className="search-icon" aria-hidden="true">🔍</span>
+                <IconSearch className="search-icon" size={14} />
                 <input
                     id="search-input"
                     ref={inputRef}
@@ -198,13 +199,14 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                     </kbd>
                 )}
                 {query && (
-                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search"><span aria-hidden="true">✕</span></button>
+                    <button className="search-clear" onClick={() => { setQuery(''); setIsOpen(false); }} title="Clear Search" aria-label="Clear Search"><IconClose size={13} /></button>
                 )}
             </div>
 
             {isOpen && results.length > 0 && (
                 <div id={listboxId} role="listbox" className="search-results">
                     {results.map((node, idx) => {
+                        const ResultIcon = typeIcon(node);
                         const labelText = node.data?.file
                             ? `${node.data?.label || node.id} in ${node.data.file}`
                             : (node.data?.label || node.id);
@@ -220,7 +222,7 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
                                 onClick={() => handleSelect(node)}
                                 onMouseEnter={() => setHighlightIdx(idx)}
                             >
-                            <span className="search-result-icon" aria-hidden="true">{typeIcon(node)}</span>
+                            <ResultIcon className="search-result-icon" size={15} />
                             <div className="search-result-text">
                                 <span className="search-result-label" title={node.data?.label || node.id}>{node.data?.label || node.id}</span>
                                 {node.data?.file && (

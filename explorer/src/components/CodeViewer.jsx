@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+import { IconClose, IconMaximize } from './icons';
+
 const CodeViewer = ({ code }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -39,7 +41,7 @@ const CodeViewer = ({ code }) => {
                         title="Expand code"
                         aria-label="Expand code"
                     >
-                        <span aria-hidden="true">⛶</span>
+                        <IconMaximize size={14} />
                     </button>
                 </div>
                 {codeBlock}
@@ -57,7 +59,7 @@ const CodeViewer = ({ code }) => {
                                 title="Exit fullscreen (Press Esc)"
                                 aria-label="Exit fullscreen (Press Esc)"
                             >
-                                <span aria-hidden="true">✕</span>
+                                <IconClose size={14} />
                             </button>
                         </div>
                         {codeBlock}

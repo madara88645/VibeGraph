@@ -1,5 +1,17 @@
 import React, { useMemo, useState } from 'react';
 
+import {
+    IconClass,
+    IconEntry,
+    IconFile,
+    IconFiles,
+    IconFunction,
+    IconDot,
+    IconImport,
+    IconModule,
+    NodeTypeIcon,
+} from './icons';
+
 // PERFORMANCE OPTIMIZATION (Bolt): Zero-allocation string helpers
 // Replaces O(N) array-creating string.split(/[/\\]/).pop() / slice() logic
 // which causes massive garbage collection pressure when mapping over large node arrays.
@@ -20,18 +32,6 @@ const getDirName = (path) => {
 const pluralizeType = (type, count) => {
     if (count === 1) return type;
     return /s$/.test(type) ? `${type}es` : `${type}s`;
-};
-
-const typeIcons = {
-    function: '⚡',
-    class: '🏗️',
-    entry_point: '🚀',
-    builtin: '🐍',
-    external: '📦',
-    imported_local: '🔗',
-    module: '📁',
-    unresolved: '?',
-    default: '○',
 };
 
 const FileSidebar = ({
@@ -99,7 +99,7 @@ const FileSidebar = ({
                     className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
                     onClick={() => setActiveTab('files')}
                 >
-                    <span aria-hidden="true">📁</span> Files
+                    <IconModule size={14} /> Files
                 </button>
                 <button
                     id="tab-deps"
@@ -109,7 +109,7 @@ const FileSidebar = ({
                     className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deps')}
                 >
-                    <span aria-hidden="true">🔗</span> Deps
+                    <IconImport size={14} /> Deps
                 </button>
             </div>
 
@@ -130,7 +130,7 @@ const FileSidebar = ({
                             aria-label={`All Files, ${totalNodeCount || 0} nodes total`}
                         >
                             <div className="file-main">
-                                <span className="file-icon" aria-hidden="true">🗂️</span>
+                                <IconFiles className="file-icon" size={15} />
                                 <span className="file-name">All Files</span>
                                 <span className="file-count">{totalNodeCount || 0}</span>
                             </div>
@@ -161,7 +161,9 @@ const FileSidebar = ({
                                     aria-label={ariaLabel}
                                 >
                                     <div className="file-main">
-                                        <span className="file-icon" aria-hidden="true">{stats.hasEntry ? '🚀' : '📄'}</span>
+                                        {stats.hasEntry
+                                            ? <IconEntry className="file-icon file-icon-entry" size={15} />
+                                            : <IconFile className="file-icon" size={15} />}
                                         <span className="file-name" title={file}>{shortName}</span>
                                         <span className="file-count">{stats.count || 0}</span>
                                     </div>
@@ -176,7 +178,7 @@ const FileSidebar = ({
                                                     const count = stats.types[type];
                                                     typeBadges.push(
                                                         <span key={type} className={`type-badge type-${type}`}>
-                                                            <span aria-hidden="true">{typeIcons[type] || '○'}</span> {count}
+                                                            <NodeTypeIcon type={type} size={11} /> {count}
                                                         </span>
                                                     );
                                                 }
@@ -191,10 +193,10 @@ const FileSidebar = ({
 
                     {/* Legend */}
                     <div className="sidebar-legend">
-                        <span>⚡ fn</span>
-                        <span>🏗️ cls</span>
-                        <span>🚀 entry</span>
-                        <span>○ ref</span>
+                        <span><IconFunction size={12} /> fn</span>
+                        <span><IconClass size={12} /> cls</span>
+                        <span><IconEntry size={12} /> entry</span>
+                        <span><IconDot size={12} /> ref</span>
                     </div>
                 </div>
             )}
@@ -239,7 +241,7 @@ const FileSidebar = ({
                                         title={file}
                                         aria-label={file}
                                     >
-                                        <span className="deps-file-icon" aria-hidden="true">📄</span>
+                                        <IconFile className="deps-file-icon" size={14} />
                                         <span className="deps-file-name" title={file}>{shortName}</span>
                                     </button>
 
