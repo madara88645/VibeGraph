@@ -34,10 +34,7 @@ The `imports` record must be a mapping of `str` to `str` where the key represent
 # Example for a Ruby file containing:
 # require 'json'
 # require 'net/http'
-imports = {
-    "json": "json",
-    "net/http": "net/http"
-}
+imports = {"json": "json", "net/http": "net/http"}
 ```
 
 **`pending_calls`**
@@ -47,12 +44,10 @@ pending_calls = [
     {
         # The fully qualified context where the call occurred
         "caller": "MyApplication::User.save",
-
         # The function/method being invoked
         "callee": "puts",
-
         # The line number where the call is made (used for diagnostics)
-        "line": 42
+        "line": 42,
     }
 ]
 ```
@@ -88,14 +83,14 @@ To register your plugin, simply import your class and update the `ANALYZERS` dic
 
 from .python import PythonAnalyzer
 from .javascript import JavaScriptAnalyzer
-from .ruby import RubyAnalyzer # 1. Import your new analyzer class
+from .ruby import RubyAnalyzer  # 1. Import your new analyzer class
 
 # The central registry mapping file extensions to analyzers
 ANALYZERS = {
     ".py": PythonAnalyzer,
     ".js": JavaScriptAnalyzer,
     ".ts": JavaScriptAnalyzer,
-    ".rb": RubyAnalyzer, # 2. Map the .rb extension to your RubyAnalyzer
+    ".rb": RubyAnalyzer,  # 2. Map the .rb extension to your RubyAnalyzer
 }
 ```
 
@@ -128,10 +123,12 @@ import tree_sitter
 from analyst.languages.base import LanguageAnalyzer, FileAnalysis
 from analyst.tree_sitter_loader import get_language
 
+
 class RubyAnalyzer(LanguageAnalyzer):
     """
     Analyzer implementation for the Ruby programming language.
     """
+
     def __init__(self, workspace_root: Path):
         self.workspace_root = workspace_root
 
@@ -146,7 +143,16 @@ class RubyAnalyzer(LanguageAnalyzer):
     @property
     def builtins(self) -> Set[str]:
         """Return Ruby built-in methods and classes."""
-        return {"puts", "print", "require", "require_relative", "Array", "String", "Hash", "Object"}
+        return {
+            "puts",
+            "print",
+            "require",
+            "require_relative",
+            "Array",
+            "String",
+            "Hash",
+            "Object",
+        }
 
     @property
     def stdlib_modules(self) -> Set[str]:
@@ -164,7 +170,7 @@ class RubyAnalyzer(LanguageAnalyzer):
         """
         try:
             rel_path = file_path.relative_to(self.workspace_root)
-            return str(rel_path.with_suffix(''))
+            return str(rel_path.with_suffix(""))
         except ValueError:
             return file_path.stem
 
@@ -178,7 +184,9 @@ class RubyAnalyzer(LanguageAnalyzer):
             source_code = file_path.read_text(encoding="utf-8")
         except Exception:
             # Failsafe for unreadable files
-            return FileAnalysis(module_id=module_id, definitions=[], imports={}, pending_calls=[])
+            return FileAnalysis(
+                module_id=module_id, definitions=[], imports={}, pending_calls=[]
+            )
 
         # Parse the source code using Tree-sitter
         tree = self.parser.parse(source_code.encode("utf-8"))
@@ -192,32 +200,48 @@ class RubyAnalyzer(LanguageAnalyzer):
         def traverse(node):
             # Record Requires (Imports)
             if node.type == "method_call" and node.child_by_field_name("method"):
-                method_name_bytes = source_code[node.child_by_field_name("method").start_byte:node.child_by_field_name("method").end_byte]
+                method_name_bytes = source_code[
+                    node.child_by_field_name(
+                        "method"
+                    ).start_byte : node.child_by_field_name("method").end_byte
+                ]
 
                 if method_name_bytes in (b"require", b"require_relative"):
                     args = node.child_by_field_name("arguments")
                     if args and args.child_count > 0:
                         # Extract the string argument being required
-                        req_str = source_code[args.children[0].start_byte:args.children[0].end_byte].decode("utf-8").strip("'\"")
+                        req_str = (
+                            source_code[
+                                args.children[0].start_byte : args.children[0].end_byte
+                            ]
+                            .decode("utf-8")
+                            .strip("'\"")
+                        )
                         imports[req_str] = req_str
 
             # Record Definitions (Classes or Modules)
             if node.type in ("class", "module"):
                 name_node = node.child_by_field_name("name")
                 if name_node:
-                    name = source_code[name_node.start_byte:name_node.end_byte].decode("utf-8")
+                    name = source_code[
+                        name_node.start_byte : name_node.end_byte
+                    ].decode("utf-8")
                     definitions.append(f"{module_id}::{name}")
 
             # Record Method Calls
             if node.type == "call":
                 method_node = node.child_by_field_name("method")
                 if method_node:
-                    callee = source_code[method_node.start_byte:method_node.end_byte].decode("utf-8")
-                    pending_calls.append({
-                        "caller": module_id, # Simplified caller context for demonstration
-                        "callee": callee,
-                        "line": node.start_point[0] + 1
-                    })
+                    callee = source_code[
+                        method_node.start_byte : method_node.end_byte
+                    ].decode("utf-8")
+                    pending_calls.append(
+                        {
+                            "caller": module_id,  # Simplified caller context for demonstration
+                            "callee": callee,
+                            "line": node.start_point[0] + 1,
+                        }
+                    )
 
             # Recurse through children
             for child in node.children:
@@ -230,7 +254,7 @@ class RubyAnalyzer(LanguageAnalyzer):
             module_id=module_id,
             definitions=definitions,
             imports=imports,
-            pending_calls=pending_calls
+            pending_calls=pending_calls,
         )
 ```
 
@@ -248,6 +272,7 @@ Here is an example test verifying the core functionality of our `RubyAnalyzer`:
 import pytest
 from pathlib import Path
 from analyst.languages.ruby import RubyAnalyzer
+
 
 def test_ruby_analyzer_basic_extraction(tmp_path: Path):
     """Test that the RubyAnalyzer correctly extracts imports, definitions, and calls."""
