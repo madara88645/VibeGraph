@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { ToastContext } from '../hooks/useToast';
+import { IconAlertCircle, IconCheckCircle, IconClose, IconInfo } from './icons';
 
 let toastId = 0;
 
@@ -34,9 +35,11 @@ export function ToastProvider({ children }) {
             <div className="toast-container" aria-live="polite">
                 {toasts.map(t => (
                     <div key={t.id} className={`toast toast-${t.type}`}>
-                        <span className="toast-icon" aria-hidden="true">
-                            {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
-                        </span>
+                        {t.type === 'success'
+                            ? <IconCheckCircle className="toast-icon" size={17} />
+                            : t.type === 'error'
+                                ? <IconAlertCircle className="toast-icon" size={17} />
+                                : <IconInfo className="toast-icon" size={17} />}
                         <span className="toast-message">{t.message}</span>
                         <button
                             className="toast-close"
@@ -44,7 +47,7 @@ export function ToastProvider({ children }) {
                             aria-label="Dismiss notification"
                             title="Dismiss notification"
                         >
-                            <span aria-hidden="true">✕</span>
+                            <IconClose size={13} />
                         </button>
                     </div>
                 ))}

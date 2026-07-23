@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 
+import { IconClose } from './icons';
+
 const GhostNarration = ({ narration, isPlaying }) => {
     const [visible, setVisible] = useState(false);
     const [displayText, setDisplayText] = useState('');
@@ -64,7 +66,7 @@ const GhostNarration = ({ narration, isPlaying }) => {
                     title="Disable narration"
                     aria-label="Disable ghost narration"
                 >
-                    <span aria-hidden="true">✕</span>
+                    <IconClose size={12} />
                 </button>
             </div>
         </div>

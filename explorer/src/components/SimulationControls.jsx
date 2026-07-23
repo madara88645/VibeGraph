@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+import {
+    IconClose,
+    IconCompass,
+    IconGhost,
+    IconHelp,
+    IconModule,
+    IconNetwork,
+    IconPause,
+    IconPlay,
+    IconEntry,
+    IconReset,
+    IconShuffle,
+    IconSparkles,
+} from './icons';
+
 const speedOptions = [
     { label: 'Slow', value: 3500 },
     { label: 'Normal', value: 2500 },
@@ -7,16 +22,16 @@ const speedOptions = [
 ];
 
 const strategyOptions = [
-    { label: 'Smart', value: 'smart', icon: '🧠', hint: 'Entry points → DFS, hub pause' },
-    { label: 'Entry Flow', value: 'entryFirst', icon: '🚀', hint: 'Follow execution flow' },
-    { label: 'Hub Tour', value: 'hubsFirst', icon: '🔗', hint: 'Most connected first' },
-    { label: 'By File', value: 'byFile', icon: '📁', hint: 'File by file traversal' },
-    { label: 'Random', value: 'random', icon: '🎲', hint: 'Original random walk' },
+    { label: 'Smart', value: 'smart', Icon: IconSparkles, hint: 'Entry points → DFS, hub pause' },
+    { label: 'Entry Flow', value: 'entryFirst', Icon: IconEntry, hint: 'Follow execution flow' },
+    { label: 'Hub Tour', value: 'hubsFirst', Icon: IconNetwork, hint: 'Most connected first' },
+    { label: 'By File', value: 'byFile', Icon: IconModule, hint: 'File by file traversal' },
+    { label: 'Random', value: 'random', Icon: IconShuffle, hint: 'Original random walk' },
 ];
 
 const modeOptions = [
-    { label: 'Auto', value: 'auto', icon: '▶' },
-    { label: 'Explore', value: 'explore', icon: '🧭' },
+    { label: 'Auto', value: 'auto', Icon: IconPlay },
+    { label: 'Explore', value: 'explore', Icon: IconCompass },
 ];
 
 const SimulationControls = ({
@@ -94,7 +109,7 @@ const SimulationControls = ({
                 aria-label="Show guide"
                 aria-expanded={showGuide}
             >
-                <span aria-hidden="true">?</span>
+                <IconHelp size={15} />
             </button>
 
             {/* Guided Tour Toggle */}
@@ -106,7 +121,7 @@ const SimulationControls = ({
                     aria-label="Toggle Guided Tour Checklist"
                     aria-expanded={showTutorial}
                 >
-                    <span aria-hidden="true">👻</span>
+                    <IconGhost size={15} />
                 </button>
             )}
 
@@ -114,7 +129,7 @@ const SimulationControls = ({
             {/* Guide Popover */}
             {showGuide && (
                 <div className="sim-guide" ref={guideRef}>
-                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide" title="Close guide"><span aria-hidden="true">✕</span></button>
+                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide" title="Close guide"><IconClose size={13} /></button>
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
                     <ul>
@@ -149,7 +164,7 @@ const SimulationControls = ({
                         title={opt.value === 'auto' ? 'Ghost walks automatically' : 'You guide the ghost'}
                         aria-label={opt.value === 'auto' ? 'Auto mode: Ghost walks automatically' : 'Explore mode: You guide the ghost'}
                     >
-                        <span aria-hidden="true">{opt.icon}</span> {opt.label}
+                        <opt.Icon size={13} /> {opt.label}
                     </button>
                 ))}
             </div>
@@ -164,7 +179,7 @@ const SimulationControls = ({
                 aria-label={isPlaying ? 'Pause simulation' : 'Play simulation'}
                 aria-pressed={isPlaying}
             >
-                <span aria-hidden="true">{isPlaying ? '⏸' : '▶'}</span>
+                {isPlaying ? <IconPause size={14} /> : <IconPlay size={14} />}
             </button>
 
             {/* Reset */}
@@ -174,7 +189,7 @@ const SimulationControls = ({
                 title="Reset"
                 aria-label="Reset simulation"
             >
-                <span aria-hidden="true">↺</span>
+                <IconReset size={15} />
             </button>
 
             <div className="sim-divider" />
@@ -188,7 +203,7 @@ const SimulationControls = ({
                     aria-expanded={showStrategyPicker}
                     title={currentStrategy.hint}
                 >
-                    <span aria-hidden="true">{currentStrategy.icon}</span> {currentStrategy.label}
+                    <currentStrategy.Icon size={14} /> {currentStrategy.label}
                 </button>
 
                 {showStrategyPicker && (
@@ -204,7 +219,7 @@ const SimulationControls = ({
                                 aria-pressed={strategy === opt.value}
                                 aria-label={`${opt.label} strategy: ${opt.hint}`}
                             >
-                                <span className="sim-strategy-icon" aria-hidden="true">{opt.icon}</span>
+                                <opt.Icon className="sim-strategy-icon" size={16} />
                                 <span className="sim-strategy-label">{opt.label}</span>
                                 <span className="sim-strategy-hint">{opt.hint}</span>
                             </button>
@@ -264,7 +279,7 @@ const SimulationControls = ({
                 <>
                     <div className="sim-divider" />
                     <div className="sim-current" aria-live="polite">
-                        <span aria-hidden="true">👻</span> {currentLabel}
+                        <IconGhost size={13} /> {currentLabel}
                     </div>
                 </>
             )}

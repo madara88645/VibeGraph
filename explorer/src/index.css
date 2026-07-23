@@ -88,6 +88,30 @@
   --explanation-panel-width: 330px;
   --explanation-panel-edge-offset: 16px;
   --floating-controls-gap: 16px;
+
+  --icon-check-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m19.5 6.5-9.7 10.2L4.5 12"/></svg>') center / contain no-repeat;
+}
+
+/* ===== ICONS =====
+   Inline SVGs from components/icons.jsx. They stroke with `currentColor`, so
+   the only job here is to keep them optically aligned with adjacent text and
+   stop flex containers from squashing them. */
+.vg-icon {
+  flex-shrink: 0;
+  vertical-align: -0.145em;
+}
+
+/* Icons inside a flex row next to a label read better centred than
+   baseline-shifted. */
+button .vg-icon,
+.sidebar-legend .vg-icon,
+.type-badge .vg-icon,
+.ep-type .vg-icon,
+.ep-footer .vg-icon,
+.code-follow-badge .vg-icon,
+.sim-current .vg-icon,
+.code-placeholder .vg-icon {
+  vertical-align: middle;
 }
 
 /* ===== LIGHT THEME ===== */
@@ -743,6 +767,17 @@ body {
 .file-icon {
   font-size: 0.85rem;
   flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Files that contain an entry point get the entry accent, the way the rocket
+   emoji used to stand out from the plain document glyphs. */
+.file-icon-entry {
+  color: var(--accent-entry);
+}
+
+.sidebar-file.selected .file-icon {
+  color: var(--text-secondary);
 }
 
 .file-name {
@@ -783,6 +818,9 @@ body {
 }
 
 .type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 0.6rem;
   padding: 1px 5px;
   border-radius: 4px;
@@ -809,6 +847,12 @@ body {
   gap: 10px;
   font-size: 0.6rem;
   color: var(--text-muted);
+}
+
+.sidebar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ===== EXTERNAL REF NODES ===== */
@@ -915,6 +959,9 @@ body {
 }
 
 .code-follow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.62rem;
   color: var(--accent-ghost);
   background: rgba(244, 63, 94, 0.1);
@@ -2464,8 +2511,8 @@ body {
 }
 
 .empty-feature-icon {
-  font-size: 1.5rem;
   margin-bottom: 2px;
+  color: var(--color-accent-primary);
 }
 
 .empty-feature-title {
@@ -3137,7 +3184,7 @@ body {
 
 .ghost-tutorial-check-icon {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  margin-top: 2px;
   color: var(--text-muted);
 }
 
@@ -3364,6 +3411,9 @@ body {
 }
 
 .ep-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.64rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -4524,9 +4574,15 @@ body {
 }
 
 .custom-dropdown-item.active::after {
-  content: "✓";
-  color: #10b981;
-  font-size: 0.8rem;
+  /* Same stroked checkmark as <IconCheck>, drawn as a mask so it takes a
+     colour instead of rendering as an emoji glyph. */
+  content: "";
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  background-color: #10b981;
+  -webkit-mask: var(--icon-check-mask);
+  mask: var(--icon-check-mask);
 }
 
 .demo-chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }

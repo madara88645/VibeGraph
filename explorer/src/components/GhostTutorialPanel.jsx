@@ -1,5 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 
+import { IconCheck, IconDot, IconGhost } from './icons';
+
 const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, showTutorial = true, onClose }) => {
     const shouldShow = showTutorial && ghostTutorial && totalNodes > 0;
 
@@ -66,7 +68,7 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, sho
 
             <header className="ghost-tutorial-header">
                 <span className="ghost-tutorial-badge" aria-hidden="true">
-                    {isComplete ? '✓' : '👻'}
+                    {isComplete ? <IconCheck size={15} /> : <IconGhost size={16} />}
                 </span>
                 <div>
                     <div className="ghost-tutorial-progress">{progressLabel}</div>
@@ -88,9 +90,9 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, sho
                 <ul className="ghost-tutorial-checklist" aria-label="Tour acceptance criteria">
                     {acceptance.map(item => (
                         <li key={item.id} className={item.met ? 'ghost-tutorial-check met' : 'ghost-tutorial-check'}>
-                            <span className="ghost-tutorial-check-icon" aria-hidden="true">
-                                {item.met ? '✓' : '○'}
-                            </span>
+                            {item.met
+                                ? <IconCheck className="ghost-tutorial-check-icon" size={12} />
+                                : <IconDot className="ghost-tutorial-check-icon" size={12} />}
                             {item.label}
                         </li>
                     ))}

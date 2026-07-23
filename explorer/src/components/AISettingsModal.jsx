@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 
+import { IconChevronDown } from './icons';
+
 function shortenModelName(modelName) {
   // PERFORMANCE OPTIMIZATION (Bolt): Replaced array-allocating split().pop() with zero-allocation
   // string methods to reduce garbage collection pressure during high-frequency renders.
@@ -175,7 +177,7 @@ const AISettingsModal = ({
                 aria-labelledby="ai-settings-model-label"
               >
                 <span>{shortenModelName(draftModel)}</span>
-                <span className="custom-dropdown-arrow" aria-hidden="true">▼</span>
+                <IconChevronDown className="custom-dropdown-arrow" size={14} />
               </button>
               
               <ul

@@ -5,6 +5,7 @@ import 'reactflow/dist/style.css';
 import { useToast } from '../hooks/useToast';
 import { exportAsPng, exportAsSvg } from '../utils/exportGraph';
 import CustomNode from './CustomNode';
+import { IconChat, IconFunction, IconGhost } from './icons';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -274,17 +275,17 @@ const GraphViewer = ({
 
           <div className="empty-features">
             <div className="empty-feature-card">
-              <span className="empty-feature-icon" aria-hidden="true">⚡</span>
+              <IconFunction className="empty-feature-icon" size={24} />
               <span className="empty-feature-title">AI Explanations</span>
               <span className="empty-feature-desc">Click any node for instant, plain-language breakdowns at your level</span>
             </div>
             <div className="empty-feature-card">
-              <span className="empty-feature-icon" aria-hidden="true">👻</span>
+              <IconGhost className="empty-feature-icon" size={24} />
               <span className="empty-feature-title">Ghost Runner</span>
               <span className="empty-feature-desc">Watch an AI tracer walk through your call graph in real time</span>
             </div>
             <div className="empty-feature-card">
-              <span className="empty-feature-icon" aria-hidden="true">💬</span>
+              <IconChat className="empty-feature-icon" size={24} />
               <span className="empty-feature-title">Code Chat</span>
               <span className="empty-feature-desc">Ask follow-up questions about any function or architecture decision</span>
             </div>
