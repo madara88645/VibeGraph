@@ -27,31 +27,29 @@ import time
 _TSX_EXTENSIONS: frozenset[str] = frozenset({".tsx"})
 
 
-_TS_ROUTE_DECORATORS: frozenset[str] = frozenset(
-    {
-        # NestJS / Angular HTTP method decorators (PascalCase)
-        "Get",
-        "Post",
-        "Put",
-        "Patch",
-        "Delete",
-        "Head",
-        "Options",
-        "All",
-        "Controller",
-        "Route",
-        "Resolver",
-        "Query",
-        "Mutation",
-        # Also lowercase variants (FastAPI-on-decorators-style)
-        "get",
-        "post",
-        "put",
-        "patch",
-        "delete",
-        "route",
-    }
-)
+_TS_ROUTE_DECORATORS: frozenset[str] = frozenset({
+    # NestJS / Angular HTTP method decorators (PascalCase)
+    "Get",
+    "Post",
+    "Put",
+    "Patch",
+    "Delete",
+    "Head",
+    "Options",
+    "All",
+    "Controller",
+    "Route",
+    "Resolver",
+    "Query",
+    "Mutation",
+    # Also lowercase variants (FastAPI-on-decorators-style)
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "route",
+})
 
 
 class TypeScriptAnalyzer(JavaScriptAnalyzer):

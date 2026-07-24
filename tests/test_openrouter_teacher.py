@@ -133,22 +133,20 @@ class TestWithMockedClient:
         self.teacher._explain_cache.clear()
 
     def test_explain_code_returns_parsed(self):
-        response_json = json.dumps(
-            {
-                "analogy": "Like a recipe",
-                "key_takeaway": "Functions encapsulate logic",
-                "sections": {
-                    "What it is": "Defines a function",
-                    "Inputs/Outputs": "No input and no output",
-                    "Side effects": "No side effects",
-                    "Why this node exists": "Serves as simple behavior",
-                    "Common bugs": "None here",
-                    "References": "Selected node: foo",
-                    "Unknowns": "Unknown (not in provided code context).",
-                },
-                "unknowns": ["Unknown (not in provided code context)."],
-            }
-        )
+        response_json = json.dumps({
+            "analogy": "Like a recipe",
+            "key_takeaway": "Functions encapsulate logic",
+            "sections": {
+                "What it is": "Defines a function",
+                "Inputs/Outputs": "No input and no output",
+                "Side effects": "No side effects",
+                "Why this node exists": "Serves as simple behavior",
+                "Common bugs": "None here",
+                "References": "Selected node: foo",
+                "Unknowns": "Unknown (not in provided code context).",
+            },
+            "unknowns": ["Unknown (not in provided code context)."],
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -167,33 +165,31 @@ class TestWithMockedClient:
         ExplanationDetail that preserves the structured details."""
         from app.models import ExplanationDetail
 
-        response_json = json.dumps(
-            {
-                "analogy": "handle_export is like a gatekeeper that bridges results.",
-                "technical": {
-                    "origin": "External (likely defined in dependency package 'analyst')",
-                    "signature": "Callable[[...], Any] (exact signature unknown)",
-                    "callers": ["main", "module:main"],
-                    "callees": ["external:rich.panel.Panel", "unresolved:print"],
-                },
-                "key_takeaway": "Orchestrates exporting analysis results to React Flow.",
-                "sections": {
-                    "What it is": "A function that coordinates exporting analysis data.",
-                    "Inputs/Outputs": "Inputs: Unknown. Outputs: Unknown.",
-                    "Side effects": "Likely prints to stdout and displays a Panel.",
-                    "Why this node exists": "To decouple analysis from export.",
-                    "Common bugs": [
-                        "Unresolved callees may cause runtime ImportError",
-                        "No explicit error handling could lead to unhandled exceptions",
-                    ],
-                    "References": [
-                        "Callers: main, module:main",
-                        "Neighbors: print, Panel, CodeAnalyzer",
-                    ],
-                },
-                "unknowns": ["Exact signature of handle_export."],
-            }
-        )
+        response_json = json.dumps({
+            "analogy": "handle_export is like a gatekeeper that bridges results.",
+            "technical": {
+                "origin": "External (likely defined in dependency package 'analyst')",
+                "signature": "Callable[[...], Any] (exact signature unknown)",
+                "callers": ["main", "module:main"],
+                "callees": ["external:rich.panel.Panel", "unresolved:print"],
+            },
+            "key_takeaway": "Orchestrates exporting analysis results to React Flow.",
+            "sections": {
+                "What it is": "A function that coordinates exporting analysis data.",
+                "Inputs/Outputs": "Inputs: Unknown. Outputs: Unknown.",
+                "Side effects": "Likely prints to stdout and displays a Panel.",
+                "Why this node exists": "To decouple analysis from export.",
+                "Common bugs": [
+                    "Unresolved callees may cause runtime ImportError",
+                    "No explicit error handling could lead to unhandled exceptions",
+                ],
+                "References": [
+                    "Callers: main, module:main",
+                    "Neighbors: print, Panel, CodeAnalyzer",
+                ],
+            },
+            "unknowns": ["Exact signature of handle_export."],
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -235,13 +231,11 @@ class TestWithMockedClient:
         assert "Coordinates the analysis pipeline" in result["technical"]
 
     def test_explain_code_caches_results(self):
-        response_json = json.dumps(
-            {
-                "analogy": "cached",
-                "technical": "cached",
-                "key_takeaway": "cached",
-            }
-        )
+        response_json = json.dumps({
+            "analogy": "cached",
+            "technical": "cached",
+            "key_takeaway": "cached",
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -254,13 +248,11 @@ class TestWithMockedClient:
         assert self.mock_client.chat.completions.create.call_count == 1
 
     def test_narrate_step_returns_narration_dict(self):
-        response_json = json.dumps(
-            {
-                "narration": "This function initializes the app",
-                "relationship": "calls",
-                "importance": "high",
-            }
-        )
+        response_json = json.dumps({
+            "narration": "This function initializes the app",
+            "relationship": "calls",
+            "importance": "high",
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -275,13 +267,11 @@ class TestWithMockedClient:
         assert result["importance"] == "high"
 
     def test_narrate_step_repairs_invalid_importance(self):
-        response_json = json.dumps(
-            {
-                "narration": "This function initializes the app",
-                "relationship": "calls helper",
-                "importance": "critical",
-            }
-        )
+        response_json = json.dumps({
+            "narration": "This function initializes the app",
+            "relationship": "calls helper",
+            "importance": "critical",
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -309,14 +299,12 @@ class TestWithMockedClient:
         assert result["importance"] == "low"
 
     def test_refine_learning_path_prompt_constrains_allowed_nodes(self):
-        response_json = json.dumps(
-            {
-                "steps": [
-                    {"node_id": "helper", "reason": "Read helper second"},
-                    {"node_id": "main", "reason": "Entry point"},
-                ]
-            }
-        )
+        response_json = json.dumps({
+            "steps": [
+                {"node_id": "helper", "reason": "Read helper second"},
+                {"node_id": "main", "reason": "Entry point"},
+            ]
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -384,20 +372,18 @@ class TestWithMockedClient:
         assert result == []
 
     def test_chat_normalizes_sections_and_unknowns(self):
-        response_json = json.dumps(
-            {
-                "sections": {
-                    "What it is": "This node validates payloads.",
-                    "Inputs/Outputs": "Input request -> validated object",
-                    "Side effects": "No external side effects",
-                    "Why this node exists": "Central validation logic",
-                    "Common bugs": "Missing required keys",
-                    "References": "Selected node: validate_request",
-                    "Unknowns": "",
-                },
-                "unknowns": [],
-            }
-        )
+        response_json = json.dumps({
+            "sections": {
+                "What it is": "This node validates payloads.",
+                "Inputs/Outputs": "Input request -> validated object",
+                "Side effects": "No external side effects",
+                "Why this node exists": "Central validation logic",
+                "Common bugs": "Missing required keys",
+                "References": "Selected node: validate_request",
+                "Unknowns": "",
+            },
+            "unknowns": [],
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )
@@ -421,14 +407,12 @@ class TestWithMockedClient:
         assert "Selected node: validate_request" in answer
 
     def test_suggest_learning_path_filters_unknown_node_ids(self):
-        response_json = json.dumps(
-            {
-                "steps": [
-                    {"step": 1, "node_id": "fake", "reason": "invented"},
-                    {"step": 2, "node_id": "main", "reason": "entry point"},
-                ]
-            }
-        )
+        response_json = json.dumps({
+            "steps": [
+                {"step": 1, "node_id": "fake", "reason": "invented"},
+                {"step": 2, "node_id": "main", "reason": "entry point"},
+            ]
+        })
         self.mock_client.chat.completions.create.return_value = _mock_completion(
             response_json
         )

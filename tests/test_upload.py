@@ -303,12 +303,10 @@ def test_cleanup_expired_upload_dirs_error_handling(mock_scandir, mock_safe_rmtr
     # Rmtree should be called for entry 1 and 3, bypassing the error on entry 2
     from unittest.mock import call
 
-    mock_safe_rmtree.assert_has_calls(
-        [
-            call("mock_upload_dir_1"),
-            call("mock_upload_dir_3"),
-        ]
-    )
+    mock_safe_rmtree.assert_has_calls([
+        call("mock_upload_dir_1"),
+        call("mock_upload_dir_3"),
+    ])
     assert mock_safe_rmtree.call_count == 2
 
 

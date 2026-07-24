@@ -47,9 +47,12 @@ def test_create_step_allocates_default_minutes_for_other_risk_levels():
 
 
 def test_build_plan_ranks_topics_and_caps_at_three_steps():
-    planner = LearningPlanner(
-        {"loops": 1, "recursion": 4, "closures": 3, "generators": 2}
-    )
+    planner = LearningPlanner({
+        "loops": 1,
+        "recursion": 4,
+        "closures": 3,
+        "generators": 2,
+    })
     sessions = [
         {"minutes": 30, "completed": True},
         {"minutes": 30, "completed": True},

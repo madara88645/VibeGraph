@@ -140,13 +140,11 @@ class GraphExporter:
                 source_file = dep_info.get("file", "unknown")
                 for dep in dep_info.get("dependencies", []):
                     if dep.get("is_local"):
-                        file_deps.append(
-                            {
-                                "source_file": source_file,
-                                "target_file": dep["module"],
-                                "imports": dep["names"],
-                            }
-                        )
+                        file_deps.append({
+                            "source_file": source_file,
+                            "target_file": dep["module"],
+                            "imports": dep["names"],
+                        })
             output_data["file_dependencies"] = file_deps
 
         if output_path:

@@ -10,20 +10,22 @@ UPLOAD_PREFIX = "vibegraph_upload_"
 PROJECT_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DEMO_PROJECT_DIR = os.path.join(PROJECT_ROOT, "app", "demo_project")
 
-SENSITIVE_HIDDEN_SEGMENTS = frozenset(
-    {
-        ".env",
-        ".git",
-        ".ssh",
-        ".aws",
-        ".npmrc",
-        ".pypirc",
-        ".netrc",
-    }
-)
-SENSITIVE_KEY_FILENAMES = frozenset(
-    {"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "identity"}
-)
+SENSITIVE_HIDDEN_SEGMENTS = frozenset({
+    ".env",
+    ".git",
+    ".ssh",
+    ".aws",
+    ".npmrc",
+    ".pypirc",
+    ".netrc",
+})
+SENSITIVE_KEY_FILENAMES = frozenset({
+    "id_rsa",
+    "id_dsa",
+    "id_ecdsa",
+    "id_ed25519",
+    "identity",
+})
 
 
 def _contains_sensitive_segment(rel_path: str) -> bool:

@@ -11,17 +11,15 @@ import networkx as nx
 from typing import Any
 
 
-IGNORED_DIRS = frozenset(
-    {
-        ".git",
-        "node_modules",
-        "site-packages",
-        "venv",
-        "env",
-        ".venv",
-        "__pycache__",
-    }
-)
+IGNORED_DIRS = frozenset({
+    ".git",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "env",
+    ".venv",
+    "__pycache__",
+})
 
 MAX_FILE_SIZE = 1024 * 1024  # 1MB per-file limit to prevent Asymmetric DoS
 
@@ -30,26 +28,30 @@ _ROUTE_DECORATOR_SUFFIXES = (".get", ".post", ".put", ".patch", ".delete", ".rou
 # HTTP verb names (get/post/put/patch/delete) are intentionally excluded — they
 # collide with `dict.get`, `cache.get`, `os.environ.get`, etc. API boundary
 # detection via decorators already covers FastAPI/Flask routes.
-_SIDE_EFFECT_CALLS = frozenset(
-    {
-        "open",
-        "read",
-        "write",
-        "remove",
-        "unlink",
-        "rmtree",
-        "copy",
-        "move",
-        "request",
-        "run",
-        "popen",
-        "connect",
-        "execute",
-    }
-)
-_SIDE_EFFECT_MODULES = frozenset(
-    {"os", "shutil", "subprocess", "requests", "httpx", "boto3", "socket"}
-)
+_SIDE_EFFECT_CALLS = frozenset({
+    "open",
+    "read",
+    "write",
+    "remove",
+    "unlink",
+    "rmtree",
+    "copy",
+    "move",
+    "request",
+    "run",
+    "popen",
+    "connect",
+    "execute",
+})
+_SIDE_EFFECT_MODULES = frozenset({
+    "os",
+    "shutil",
+    "subprocess",
+    "requests",
+    "httpx",
+    "boto3",
+    "socket",
+})
 _NESTING_NODE_TYPES = (
     ast.If,
     ast.For,
@@ -72,50 +74,48 @@ PY_BUILTINS = frozenset(name for name in dir(_py_builtins) if not name.startswit
 # import in the file, we still tag it as external rather than unresolved. The
 # set is intentionally narrow — only well-known modules — to avoid mis-tagging
 # user variables.
-STDLIB_MODULES = frozenset(
-    {
-        "os",
-        "sys",
-        "json",
-        "re",
-        "math",
-        "time",
-        "random",
-        "collections",
-        "itertools",
-        "functools",
-        "typing",
-        "pathlib",
-        "datetime",
-        "logging",
-        "asyncio",
-        "threading",
-        "subprocess",
-        "shutil",
-        "tempfile",
-        "io",
-        "string",
-        "csv",
-        "argparse",
-        "abc",
-        "copy",
-        "enum",
-        "hashlib",
-        "uuid",
-        "base64",
-        "warnings",
-        "contextlib",
-        "dataclasses",
-        "inspect",
-        "ast",
-        "traceback",
-        "weakref",
-        "operator",
-        "socket",
-        "urllib",
-        "http",
-    }
-)
+STDLIB_MODULES = frozenset({
+    "os",
+    "sys",
+    "json",
+    "re",
+    "math",
+    "time",
+    "random",
+    "collections",
+    "itertools",
+    "functools",
+    "typing",
+    "pathlib",
+    "datetime",
+    "logging",
+    "asyncio",
+    "threading",
+    "subprocess",
+    "shutil",
+    "tempfile",
+    "io",
+    "string",
+    "csv",
+    "argparse",
+    "abc",
+    "copy",
+    "enum",
+    "hashlib",
+    "uuid",
+    "base64",
+    "warnings",
+    "contextlib",
+    "dataclasses",
+    "inspect",
+    "ast",
+    "traceback",
+    "weakref",
+    "operator",
+    "socket",
+    "urllib",
+    "http",
+})
 
 # Content-hash AST cache. Skips repeat ast.parse() on identical bytes across
 # uploads, identical files (e.g. empty __init__.py), and CI re-runs. Cache the
@@ -215,30 +215,26 @@ def _extract_imports(tree: ast.Module, local_modules: frozenset[str]) -> list[di
             for alias in node.names:
                 module = alias.name
                 top = module.split(".")[0]
-                out.append(
-                    {
-                        "kind": "import",
-                        "module": module,
-                        "names": [module],
-                        "asnames": [alias.asname or module],
-                        "is_local": module in local_modules or top in local_modules,
-                        "level": 0,
-                    }
-                )
+                out.append({
+                    "kind": "import",
+                    "module": module,
+                    "names": [module],
+                    "asnames": [alias.asname or module],
+                    "is_local": module in local_modules or top in local_modules,
+                    "level": 0,
+                })
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
             top = module.split(".")[0] if module else ""
             is_local = node.level > 0 or module in local_modules or top in local_modules
-            out.append(
-                {
-                    "kind": "from",
-                    "module": module,
-                    "names": [a.name for a in node.names],
-                    "asnames": [a.asname or a.name for a in node.names],
-                    "is_local": is_local,
-                    "level": node.level,
-                }
-            )
+            out.append({
+                "kind": "from",
+                "module": module,
+                "names": [a.name for a in node.names],
+                "asnames": [a.asname or a.name for a in node.names],
+                "is_local": is_local,
+                "level": node.level,
+            })
 
         queue.extend(ast.iter_child_nodes(node))
     return out
@@ -606,14 +602,12 @@ class CodeAnalyzer:
                 if analysis is None:
                     self.errors.append(f"Could not parse {safe_name}")
                     continue
-                per_file.append(
-                    {
-                        "file_path": file_path,
-                        "safe_name": safe_name,
-                        "analysis": analysis,
-                        "analyzer": language_analyzer,
-                    }
-                )
+                per_file.append({
+                    "file_path": file_path,
+                    "safe_name": safe_name,
+                    "analysis": analysis,
+                    "analyzer": language_analyzer,
+                })
                 for d in analysis.top_level_definitions:
                     # First definition wins on collision (deterministic by walk order).
                     symbol_table.setdefault(d["name"], d["name"])
