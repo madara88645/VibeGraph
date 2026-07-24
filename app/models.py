@@ -2,11 +2,10 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from app.ai_models import DEFAULT_OPENROUTER_MODEL
 from app.utils.sanitize import sanitize_llm_input
-
 
 MAX_FILE_PATH_LENGTH = 1000
 MAX_NODE_ID_LENGTH = 255
@@ -57,14 +56,18 @@ class ExplainRequest(BaseModel):
 
     @field_validator("node_id", "file_path", mode="before", check_fields=False)
     @classmethod
-    def sanitize_explain_identifiers(cls, value: str | None, info: ValidationInfo) -> str | None:
+    def sanitize_explain_identifiers(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
         if isinstance(value, str):
-            max_length = MAX_NODE_ID_LENGTH if info.field_name == "node_id" else MAX_FILE_PATH_LENGTH
+            max_length = (
+                MAX_NODE_ID_LENGTH
+                if info.field_name == "node_id"
+                else MAX_FILE_PATH_LENGTH
+            )
             if len(value) > max_length:
                 raise ValueError(f"String should have at most {max_length} characters")
-            return sanitize_llm_input(
-                value, max_length=max_length, truncate=False
-            )
+            return sanitize_llm_input(value, max_length=max_length, truncate=False)
         return value
 
     @field_validator("callers", "callees", "neighbors")
@@ -98,14 +101,18 @@ class SnippetRequest(BaseModel):
 
     @field_validator("node_id", "file_path", mode="before", check_fields=False)
     @classmethod
-    def sanitize_snippet_identifiers(cls, value: str | None, info: ValidationInfo) -> str | None:
+    def sanitize_snippet_identifiers(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
         if isinstance(value, str):
-            max_length = MAX_NODE_ID_LENGTH if info.field_name == "node_id" else MAX_FILE_PATH_LENGTH
+            max_length = (
+                MAX_NODE_ID_LENGTH
+                if info.field_name == "node_id"
+                else MAX_FILE_PATH_LENGTH
+            )
             if len(value) > max_length:
                 raise ValueError(f"String should have at most {max_length} characters")
-            return sanitize_llm_input(
-                value, max_length=max_length, truncate=False
-            )
+            return sanitize_llm_input(value, max_length=max_length, truncate=False)
         return value
 
 
@@ -168,14 +175,18 @@ class ChatRequest(BaseModel):
 
     @field_validator("node_id", "file_path", mode="before", check_fields=False)
     @classmethod
-    def sanitize_chat_identifiers(cls, value: str | None, info: ValidationInfo) -> str | None:
+    def sanitize_chat_identifiers(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
         if isinstance(value, str):
-            max_length = MAX_NODE_ID_LENGTH if info.field_name == "node_id" else MAX_FILE_PATH_LENGTH
+            max_length = (
+                MAX_NODE_ID_LENGTH
+                if info.field_name == "node_id"
+                else MAX_FILE_PATH_LENGTH
+            )
             if len(value) > max_length:
                 raise ValueError(f"String should have at most {max_length} characters")
-            return sanitize_llm_input(
-                value, max_length=max_length, truncate=False
-            )
+            return sanitize_llm_input(value, max_length=max_length, truncate=False)
         return value
 
     @field_validator("question", mode="before")
@@ -248,7 +259,9 @@ class LearningPathRequest(BaseModel):
     def sanitize_learning_identifiers(cls, value: str | None) -> str | None:
         if isinstance(value, str):
             if len(value) > MAX_FILE_PATH_LENGTH:
-                raise ValueError(f"String should have at most {MAX_FILE_PATH_LENGTH} characters")
+                raise ValueError(
+                    f"String should have at most {MAX_FILE_PATH_LENGTH} characters"
+                )
             return sanitize_llm_input(
                 value, max_length=MAX_FILE_PATH_LENGTH, truncate=False
             )
@@ -299,14 +312,18 @@ class GhostNarrateRequest(BaseModel):
         "node_id", "file_path", "previous_node_id", mode="before", check_fields=False
     )
     @classmethod
-    def sanitize_ghost_identifiers(cls, value: str | None, info: ValidationInfo) -> str | None:
+    def sanitize_ghost_identifiers(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
         if isinstance(value, str):
-            max_length = MAX_FILE_PATH_LENGTH if info.field_name == "file_path" else MAX_NODE_ID_LENGTH
+            max_length = (
+                MAX_FILE_PATH_LENGTH
+                if info.field_name == "file_path"
+                else MAX_NODE_ID_LENGTH
+            )
             if len(value) > max_length:
                 raise ValueError(f"String should have at most {max_length} characters")
-            return sanitize_llm_input(
-                value, max_length=max_length, truncate=False
-            )
+            return sanitize_llm_input(value, max_length=max_length, truncate=False)
         return value
 
 
