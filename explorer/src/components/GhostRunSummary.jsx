@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 
 const GhostRunSummary = ({ runSummary, isPlaying }) => {
     const [isDismissed, setIsDismissed] = useState(false);
@@ -6,6 +6,28 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
 
     // Show summary only when paused and there's data
     const shouldShow = !isPlaying && runSummary && runSummary.visitedCount > 0;
+
+    const handleClose = useCallback(() => {
+        setIsDismissed(true);
+        setTimeout(() => {
+            setIsRendered(false);
+        }, 250);
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (e.ctrlKey || e.altKey || e.metaKey) return;
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+                if (isRendered && !isDismissed) {
+                    handleClose();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleClose, isRendered, isDismissed]);
 
     useEffect(() => {
         let activeTimer;
@@ -44,13 +66,6 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
     } = runSummary || {};
     const coveragePercent = totalNodes > 0 ? Math.round((visitedCount / totalNodes) * 100) : 0;
 
-    const handleClose = () => {
-        setIsDismissed(true);
-        setTimeout(() => {
-            setIsRendered(false);
-        }, 250);
-    };
-
     return (
         <div 
             className={`ghost-run-summary ${isDismissed ? 'dismissed' : ''}`} 
@@ -60,8 +75,8 @@ const GhostRunSummary = ({ runSummary, isPlaying }) => {
             <button 
                 className="ghost-summary-close-btn" 
                 onClick={handleClose}
-                aria-label="Close summary"
-                title="Close summary"
+                aria-label="Close summary (Press Esc)"
+                title="Close summary (Press Esc)"
             >
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>

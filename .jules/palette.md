@@ -114,3 +114,7 @@
 ## 2024-07-23 - Wrapping disabled buttons for tooltip accessibility
 **Learning:** Disabled HTML buttons do not trigger mouse events, preventing `title` tooltips from rendering on hover.
 **Action:** To ensure users receive adequate feedback for why an action is unavailable (e.g., 'Export in progress...'), wrap the disabled button in a standard DOM element (like `<span style={{ display: 'inline-flex' }}>`) and apply the `title` attribute to the wrapper.
+
+## 2024-07-24 - Hooks Placement in Overlay Components
+**Learning:** When adding event listeners (like Escape key handlers) via hooks to overlay components (e.g., `GhostTutorialPanel` or `GhostRunSummary`), the new `useEffect` and `useCallback` hooks must be placed above early returns (like `if (!isRendered) return null;`) to comply with React's Rules of Hooks.
+**Action:** Always verify the structure of a component before introducing new hooks and ensure they are top-level.

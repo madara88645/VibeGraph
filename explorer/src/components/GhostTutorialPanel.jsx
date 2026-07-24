@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 
 import { IconCheck, IconDot, IconGhost } from './icons';
 
@@ -8,6 +8,33 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, sho
     const [isDismissed, setIsDismissed] = useState(!shouldShow);
     const [isRendered, setIsRendered] = useState(shouldShow);
 
+
+    const handleClose = useCallback(() => {
+        setIsDismissed(true);
+        if (onClose) {
+            onClose();
+        } else {
+            setTimeout(() => {
+                setIsRendered(false);
+            }, 250);
+        }
+    }, [onClose]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (e.ctrlKey || e.altKey || e.metaKey) return;
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+                // Only trigger close if the component is actually visible
+                if (isRendered && !isDismissed) {
+                    handleClose();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleClose, isRendered, isDismissed]);
 
     useEffect(() => {
         let activeTimer;
@@ -37,18 +64,6 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, sho
 
     const { runState, currentPhase, acceptance, progressLabel, isComplete } = ghostTutorial || {};
 
-    const handleClose = () => {
-        setIsDismissed(true);
-        if (onClose) {
-            onClose();
-        } else {
-            setTimeout(() => {
-                setIsRendered(false);
-            }, 250);
-        }
-    };
-
-
     return (
         <section
             className={`ghost-tutorial-panel ghost-tutorial-${runState} ${isDismissed ? 'dismissed' : ''}`}
@@ -57,8 +72,8 @@ const GhostTutorialPanel = ({ ghostTutorial, stepSummaries = [], totalNodes, sho
             <button 
                 className="ghost-tutorial-close-btn" 
                 onClick={handleClose}
-                aria-label="Close guided tour"
-                title="Close guided tour"
+                aria-label="Close guided tour (Press Esc)"
+                title="Close guided tour (Press Esc)"
             >
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
