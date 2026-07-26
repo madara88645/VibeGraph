@@ -235,11 +235,13 @@ class RubyAnalyzer(LanguageAnalyzer):
                     callee = source_code[
                         method_node.start_byte : method_node.end_byte
                     ].decode("utf-8")
-                    pending_calls.append({
-                        "caller": module_id,  # Simplified caller context for demonstration
-                        "callee": callee,
-                        "line": node.start_point[0] + 1,
-                    })
+                    pending_calls.append(
+                        {
+                            "caller": module_id,  # Simplified caller context for demonstration
+                            "callee": callee,
+                            "line": node.start_point[0] + 1,
+                        }
+                    )
 
             # Recurse through children
             for child in node.children:
