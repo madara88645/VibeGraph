@@ -152,3 +152,7 @@
 ## 2024-05-31 - Array filter/map iteration in parsing utilities
 **Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
 **Action:** Replace `.filter().map()` chains with a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently, eliminating intermediate array allocations.
+
+## 2024-05-19 - Replace forEach with for loops
+**Learning:** In high-frequency React components and hooks, functional array methods like `.forEach()` create unnecessary callback overhead compared to standard `for` loops. When used on large arrays (e.g. large graphs), this causes a measurable performance degradation.
+**Action:** Replace `.forEach()` iterations with standard imperative `for` loops to eliminate functional callback overhead and improve overall iteration speed when processing large datasets.

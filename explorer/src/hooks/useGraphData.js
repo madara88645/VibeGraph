@@ -117,14 +117,17 @@ export function useGraphData(setNodes, setEdges) {
     // Compute file list and stats
     const { files, nodeStats } = useMemo(() => {
         const statsMap = {};
-        allNodes.forEach(n => {
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced array forEach() with a fast for loop
+        // to eliminate functional callback overhead during large graph renders.
+        for (let i = 0; i < allNodes.length; i++) {
+            const n = allNodes[i];
             const f = n.data?.file || '_external';
             if (!statsMap[f]) statsMap[f] = { count: 0, hasEntry: false, types: {} };
             statsMap[f].count++;
             if (n.data?.entry_point) statsMap[f].hasEntry = true;
             const t = n.data?.type || 'default';
             statsMap[f].types[t] = (statsMap[f].types[t] || 0) + 1;
-        });
+        }
 
         const fileList = Object.keys(statsMap).sort((a, b) => {
             if (statsMap[a].hasEntry && !statsMap[b].hasEntry) return -1;
@@ -171,9 +174,11 @@ export function useGraphData(setNodes, setEdges) {
 
         // Auto-select the first file from the new project
         const filesSet = new Set();
-        customNodes.forEach(n => {
-            if (n.data.file) filesSet.add(n.data.file);
-        });
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced array forEach() with a fast for loop
+        // to eliminate functional callback overhead.
+        for (let i = 0; i < customNodes.length; i++) {
+            if (customNodes[i].data.file) filesSet.add(customNodes[i].data.file);
+        }
 
         const newFiles = [...filesSet];
         setSelectedFile(newFiles[0] || null);
