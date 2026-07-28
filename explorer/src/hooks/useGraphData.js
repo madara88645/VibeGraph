@@ -24,19 +24,17 @@ function getInitialSelectedFile(nodes) {
     const filesSet = new Set();
     let entryFile = null;
 
-    // PERFORMANCE OPTIMIZATION (Bolt): Replace .forEach() with imperative for loop to eliminate callback overhead
-    for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
+    nodes.forEach((node) => {
         const file = node.data?.file;
         if (!file) {
-            continue;
+            return;
         }
 
         filesSet.add(file);
         if (node.data?.entry_point && !entryFile) {
             entryFile = file;
         }
-    }
+    });
 
     return entryFile || [...filesSet][0] || null;
 }
@@ -119,16 +117,14 @@ export function useGraphData(setNodes, setEdges) {
     // Compute file list and stats
     const { files, nodeStats } = useMemo(() => {
         const statsMap = {};
-        // PERFORMANCE OPTIMIZATION (Bolt): Replace .forEach() with imperative for loop to eliminate callback overhead
-        for (let i = 0; i < allNodes.length; i++) {
-            const n = allNodes[i];
+        allNodes.forEach(n => {
             const f = n.data?.file || '_external';
             if (!statsMap[f]) statsMap[f] = { count: 0, hasEntry: false, types: {} };
             statsMap[f].count++;
             if (n.data?.entry_point) statsMap[f].hasEntry = true;
             const t = n.data?.type || 'default';
             statsMap[f].types[t] = (statsMap[f].types[t] || 0) + 1;
-        }
+        });
 
         const fileList = Object.keys(statsMap).sort((a, b) => {
             if (statsMap[a].hasEntry && !statsMap[b].hasEntry) return -1;
@@ -175,11 +171,9 @@ export function useGraphData(setNodes, setEdges) {
 
         // Auto-select the first file from the new project
         const filesSet = new Set();
-        // PERFORMANCE OPTIMIZATION (Bolt): Replace .forEach() with imperative for loop to eliminate callback overhead
-        for (let i = 0; i < customNodes.length; i++) {
-            const n = customNodes[i];
+        customNodes.forEach(n => {
             if (n.data.file) filesSet.add(n.data.file);
-        }
+        });
 
         const newFiles = [...filesSet];
         setSelectedFile(newFiles[0] || null);
