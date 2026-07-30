@@ -152,3 +152,15 @@
 ## 2024-05-31 - Array filter/map iteration in parsing utilities
 **Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
 **Action:** Replace `.filter().map()` chains with a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently, eliminating intermediate array allocations.
+
+## 2024-07-30 - O(N) Array Loops in Game Tick Simulation
+**Learning:** Checking for game state exhaustion (like "are all nodes visited?") inside a high-frequency simulation loop like `setInterval` or `setTimeout` by iterating over a large array (O(N) operation) blocks the main thread and introduces significant CPU overhead.
+**Action:** Pre-compute the total expected size (e.g. `totalNodes`) and use an O(1) comparison against an accumulated `Set.size` (e.g. `visitedSet.size >= totalNodes`) inside the tick function.
+
+## 2024-07-30 - Replace .forEach with for loop for dependency generation
+**Learning:** Using an O(N) `.forEach()` over `fileDependencies` within `useMemo` introduces array method callback overhead, which can degrade performance during graph loading/rendering for large graphs.
+**Action:** Replace `.forEach()` calls with an imperative `for` loop to eliminate callback overhead during dependency map generation and other iterative processes in React hooks.
+
+## 2024-07-30 - Array iteration and Set allocation overhead in find operations
+**Learning:** In operations that aim to find a specific element or a fallback (like an entry point or the first file), iterating over the entire array with `.forEach()` and constructing a `Set` of all files to pick the first one (`[...set][0]`) incurs massive overhead (O(N) iterations, Set allocations, and array spreading).
+**Action:** Replace these operations with an imperative `for` loop that records the fallback value on the first pass and uses an early `break` immediately when the primary target is found, avoiding unnecessary iterations and allocations completely.
