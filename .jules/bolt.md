@@ -152,3 +152,7 @@
 ## 2024-05-31 - Array filter/map iteration in parsing utilities
 **Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
 **Action:** Replace `.filter().map()` chains with a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently, eliminating intermediate array allocations.
+
+## 2024-05-18 - Avoid Constructing Full Sets for First Match in Arrays
+**Learning:** In high-frequency React contexts, creating full `Set` instances from large arrays merely to find a single entry point or fallback node (using chained iterations like `forEach`) causes redundant iterations and unnecessary intermediate memory allocations. This is specifically problematic during graph initialization when looping through thousands of nodes.
+**Action:** Replace `Array.prototype.forEach()` and `Set` collections with simple, imperative `for` loops that use an early `break` or `return` as soon as the target element is found. This eliminates all intermediate object allocations and O(N) penalties.
