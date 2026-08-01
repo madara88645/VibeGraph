@@ -21,22 +21,25 @@ function normalizeGraphMeta(meta) {
 }
 
 function getInitialSelectedFile(nodes) {
-    const filesSet = new Set();
     let entryFile = null;
+    let firstFile = null;
 
-    nodes.forEach((node) => {
-        const file = node.data?.file;
-        if (!file) {
-            return;
-        }
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) .forEach and Set construction
+    // with an imperative for-loop that breaks early once the entry_point is found.
+    // This avoids iterating the entire array and prevents unnecessary memory allocations.
+    for (let i = 0; i < nodes.length; i++) {
+        const file = nodes[i].data?.file;
+        if (!file) continue;
 
-        filesSet.add(file);
-        if (node.data?.entry_point && !entryFile) {
+        if (!firstFile) firstFile = file;
+
+        if (nodes[i].data?.entry_point) {
             entryFile = file;
+            break;
         }
-    });
+    }
 
-    return entryFile || [...filesSet][0] || null;
+    return entryFile || firstFile || null;
 }
 
 function readCachedGraph(cacheKey) {
@@ -170,13 +173,16 @@ export function useGraphData(setNodes, setEdges) {
         }));
 
         // Auto-select the first file from the new project
-        const filesSet = new Set();
-        customNodes.forEach(n => {
-            if (n.data.file) filesSet.add(n.data.file);
-        });
-
-        const newFiles = [...filesSet];
-        setSelectedFile(newFiles[0] || null);
+        let firstFile = null;
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) Set construction over all nodes
+        // with an imperative for-loop that breaks early upon finding the first valid file.
+        for (let i = 0; i < customNodes.length; i++) {
+            if (customNodes[i].data.file) {
+                firstFile = customNodes[i].data.file;
+                break;
+            }
+        }
+        setSelectedFile(firstFile);
 
         setAllNodes(customNodes);
         setAllEdges(safeEdges);
