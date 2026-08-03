@@ -38,7 +38,7 @@ jobs:
       - name: Install Bandit
         run: pip install bandit
       - name: Run Security Check
-        run: bandit -r . -x tests/,explorer/,node_modules/ -ll -ii
+        run: bandit -r . -x ./tests,./explorer,./node_modules -ll -ii
 
   test-backend:
     name: Backend Tests & Coverage
