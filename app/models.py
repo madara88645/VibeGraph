@@ -85,7 +85,9 @@ class ExplainRequest(BaseModel):
                     f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
             sanitized_values.append(
-                sanitize_llm_input(cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False)
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
             )
         return sanitized_values
 
@@ -234,7 +236,9 @@ class ChatRequest(BaseModel):
                     f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
             sanitized_values.append(
-                sanitize_llm_input(cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False)
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
             )
         return sanitized_values
 
@@ -303,7 +307,9 @@ class GhostNarrateRequest(BaseModel):
                     f"context node length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
             sanitized_values.append(
-                sanitize_llm_input(cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False)
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
             )
         return sanitized_values
 
