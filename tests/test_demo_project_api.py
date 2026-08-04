@@ -18,7 +18,11 @@ def test_build_daily_plan_ranks_topics_by_weight_and_marks_on_track_risk():
     plan = build_daily_plan("alice")
 
     assert plan["user_id"] == "alice"
-    assert [step["topic"] for step in plan["steps"]] == ["python", "typescript", "graphs"]
+    assert [step["topic"] for step in plan["steps"]] == [
+        "python",
+        "typescript",
+        "graphs",
+    ]
     assert [step["order"] for step in plan["steps"]] == [1, 2, 3]
     assert all(step["risk"] == "on_track" for step in plan["steps"])
     assert all(step["minutes"] == 25 for step in plan["steps"])
