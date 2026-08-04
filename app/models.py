@@ -73,6 +73,7 @@ class ExplainRequest(BaseModel):
     @field_validator("callers", "callees", "neighbors")
     @classmethod
     def validate_explain_node_context_lists(cls, values: list[str]) -> list[str]:
+        sanitized_values = []
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
@@ -83,7 +84,12 @@ class ExplainRequest(BaseModel):
                 raise ValueError(
                     f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
-        return values
+            sanitized_values.append(
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
+            )
+        return sanitized_values
 
 
 class SnippetRequest(BaseModel):
@@ -218,6 +224,7 @@ class ChatRequest(BaseModel):
     @field_validator("callers", "callees", "neighbors")
     @classmethod
     def validate_chat_node_context_lists(cls, values: list[str]) -> list[str]:
+        sanitized_values = []
         for value in values:
             if not isinstance(value, str):
                 raise ValueError("context values must be strings")
@@ -228,7 +235,12 @@ class ChatRequest(BaseModel):
                 raise ValueError(
                     f"context value length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
-        return values
+            sanitized_values.append(
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
+            )
+        return sanitized_values
 
 
 class LearningPathRequest(BaseModel):
@@ -285,14 +297,21 @@ class GhostNarrateRequest(BaseModel):
     @field_validator("context_nodes")
     @classmethod
     def validate_context_nodes(cls, v: list[str]) -> list[str]:
+        sanitized_values = []
         for node in v:
-            if not node.strip():
+            cleaned = node.strip()
+            if not cleaned:
                 raise ValueError("context node must not be empty")
-            if len(node) > MAX_NODE_ID_LENGTH:
+            if len(cleaned) > MAX_NODE_ID_LENGTH:
                 raise ValueError(
                     f"context node length cannot exceed {MAX_NODE_ID_LENGTH}"
                 )
-        return v
+            sanitized_values.append(
+                sanitize_llm_input(
+                    cleaned, max_length=MAX_NODE_ID_LENGTH, truncate=False
+                )
+            )
+        return sanitized_values
 
     @field_validator("strategy", mode="before")
     @classmethod
