@@ -156,3 +156,7 @@
 ## 2024-08-01 - Optimize fallback searches with early break
 **Learning:** In operations that search for a specific target element or a fallback (e.g., finding an entry file or any file), iterating over the entire array to construct a `Set` just to get the first fallback is highly inefficient. It forces O(N) iterations and unnecessary memory allocations even when the target is found early.
 **Action:** Replace full array iterations and `Set` allocations with an imperative `for` loop that captures the first valid element as a fallback and uses an early `break` to exit immediately once the specific target is found. This eliminates unnecessary O(N) iterations and memory allocation overhead.
+
+## 2024-08-01 - Avoid premature micro-optimizations in cold paths
+**Learning:** The `getInitialSelectedFile` function runs only once per graph load, not in a high-frequency render or tick path. Micro-optimizing array iterations here (e.g., removing `Set` allocations) yields no measurable performance gain and has been repeatedly rejected.
+**Action:** Focus optimizations strictly on hot paths (e.g., render loops, simulation ticks) and always verify that a bottleneck exists via profiling before attempting to optimize cold paths like initialization logic.
