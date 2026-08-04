@@ -118,3 +118,7 @@
 ## 2024-07-23 - Escape Key Handlers and Rules of Hooks
 **Learning:** When adding keyboard shortcuts to conditional overlay components (like GhostTutorialPanel or GhostRunSummary), defining the `useEffect` or `useCallback` below early returns (like `if (!isRendered) return null;`) violates React's Rules of Hooks. This can cause the app to crash when the overlay state changes.
 **Action:** Always define `useCallback` and `useEffect` for keyboard shortcuts (or any hook) above any conditional render returns in React components to ensure compliance with the Rules of Hooks.
+
+## 2026-07-29 - Extract interactive buttons outside dropzones
+**Learning:** Placing interactive `<button>` elements inside a parent `<div>` that has `role="button"` and `tabIndex={0}` (like a file upload dropzone) creates a severe accessibility anti-pattern. Screen readers and keyboard navigation struggle to differentiate or activate nested interactive elements, violating WCAG semantics.
+**Action:** Always extract interactive elements outside of parent containers that define their own `role="button"` or `tabIndex`. Ensure alternative actions are siblings, not children, of a clickable dropzone area to preserve clear focus order and semantic boundaries.
