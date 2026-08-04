@@ -152,3 +152,7 @@
 ## 2024-05-31 - Array filter/map iteration in parsing utilities
 **Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
 **Action:** Replace `.filter().map()` chains with a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently, eliminating intermediate array allocations.
+
+## 2024-08-04 - Optimizing Find or Fallback Operations
+**Learning:** In high-frequency or large-scale initializations (like finding an initial selected file from a list of nodes), iterating over the entire array to construct a `Set` just to get the first file as a fallback creates unnecessary O(N) memory allocations and iteration overhead.
+**Action:** Use an imperative `for` loop that stores the first valid element encountered (as a fallback) and uses an early `break` or `return` as soon as the target specific element (like an entry file) is found. This avoids building large unused objects and exits exactly when the answer is known.

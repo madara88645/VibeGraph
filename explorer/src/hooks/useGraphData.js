@@ -20,23 +20,25 @@ function normalizeGraphMeta(meta) {
     };
 }
 
+// PERFORMANCE OPTIMIZATION (Bolt): Replaced .forEach() and Set construction with
+// an imperative for-loop that immediately returns upon finding an entry point,
+// avoiding O(N) iterations and memory allocations on large graphs.
 function getInitialSelectedFile(nodes) {
-    const filesSet = new Set();
-    let entryFile = null;
+    let firstFile = null;
 
-    nodes.forEach((node) => {
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
         const file = node.data?.file;
-        if (!file) {
-            return;
-        }
+        if (!file) continue;
 
-        filesSet.add(file);
-        if (node.data?.entry_point && !entryFile) {
-            entryFile = file;
-        }
-    });
+        if (!firstFile) firstFile = file;
 
-    return entryFile || [...filesSet][0] || null;
+        if (node.data?.entry_point) {
+            return file; // early exit when entry point is found
+        }
+    }
+
+    return firstFile;
 }
 
 function readCachedGraph(cacheKey) {
