@@ -152,3 +152,7 @@
 ## 2024-05-31 - Array filter/map iteration in parsing utilities
 **Learning:** In high-frequency text parsing functions, such as Server-Sent Events (SSE) chunk processing, chaining array methods like `.filter().map()` after a `.split()` creates unnecessary intermediate arrays and induces severe garbage collection overhead.
 **Action:** Replace `.filter().map()` chains with a single imperative `for` loop to filter, transform, and accumulate the parsed strings efficiently, eliminating intermediate array allocations.
+
+## 2024-05-32 - Array map over-fetching overhead in useGraphData.js
+**Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods or `Set` constructors (e.g. `const set = new Set(); arr.forEach()`) over large datasets causes severe performance bottlenecks by generating intermediate objects and triggering multiple O(N) passes.
+**Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass, specifically when trying to find an entry or a fallback (e.g., `getInitialSelectedFile`).
