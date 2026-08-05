@@ -21,22 +21,30 @@ function normalizeGraphMeta(meta) {
 }
 
 function getInitialSelectedFile(nodes) {
-    const filesSet = new Set();
+    let firstFile = null;
     let entryFile = null;
 
-    nodes.forEach((node) => {
+    // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) .forEach and Set construction
+    // with an imperative loop that breaks early once an entry point is found.
+    const len = nodes.length;
+    for (let i = 0; i < len; i++) {
+        const node = nodes[i];
         const file = node.data?.file;
         if (!file) {
-            return;
+            continue;
         }
 
-        filesSet.add(file);
-        if (node.data?.entry_point && !entryFile) {
+        if (!firstFile) {
+            firstFile = file;
+        }
+
+        if (node.data?.entry_point) {
             entryFile = file;
+            break; // We found the entry point, no need to keep searching
         }
-    });
+    }
 
-    return entryFile || [...filesSet][0] || null;
+    return entryFile || firstFile || null;
 }
 
 function readCachedGraph(cacheKey) {
