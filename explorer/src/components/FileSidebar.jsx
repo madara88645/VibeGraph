@@ -96,6 +96,7 @@ const FileSidebar = ({
                     role="tab"
                     aria-selected={activeTab === 'files'}
                     aria-controls="panel-files"
+                    aria-label="Files tab"
                     className={`sidebar-tab ${activeTab === 'files' ? 'active' : ''}`}
                     onClick={() => setActiveTab('files')}
                 >
@@ -106,6 +107,7 @@ const FileSidebar = ({
                     role="tab"
                     aria-selected={activeTab === 'deps'}
                     aria-controls="panel-deps"
+                    aria-label="Dependencies tab"
                     className={`sidebar-tab ${activeTab === 'deps' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deps')}
                 >
