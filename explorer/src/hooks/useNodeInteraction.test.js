@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as aiClient from '../utils/aiClient';
 import { useNodeInteraction } from './useNodeInteraction';
 
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('useNodeInteraction - explanation cache', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -245,6 +255,64 @@ describe('useNodeInteraction - onNodeClick', () => {
       callers: ['caller_fn'],
       callees: ['callee_fn'],
       neighbors: ['caller_fn', 'callee_fn'],
+    });
+  });
+
+  it('keeps the latest selected node explanation when an earlier request resolves last', async () => {
+    const firstResponse = deferred();
+    const secondResponse = deferred();
+    vi.spyOn(globalThis, 'fetch')
+      .mockReturnValueOnce(firstResponse.promise)
+      .mockReturnValueOnce(secondResponse.promise);
+
+    const secondNode = {
+      id: 'second_func',
+      data: { file: 'second.py', label: 'second_func' },
+    };
+    const { result } = renderHook(() =>
+      useNodeInteraction({
+        aiApiKey: 'user-key',
+        selectedModel: 'anthropic/claude-haiku-4.5',
+        aiReady: true,
+        onRequireAiKey: vi.fn(),
+        allNodes: [...graphNodes, secondNode],
+        allEdges: graphEdges,
+      })
+    );
+
+    act(() => {
+      result.current.onNodeClick({}, mockNode);
+    });
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.onNodeClick({}, secondNode);
+    });
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+
+    secondResponse.resolve({
+      ok: true,
+      json: () => Promise.resolve({ explanation: { technical: 'second explanation' } }),
+    });
+    await waitFor(() =>
+      expect(result.current.explanation).toEqual({
+        explanation: { technical: 'second explanation' },
+      })
+    );
+
+    await act(async () => {
+      firstResponse.resolve({
+        ok: true,
+        json: () => Promise.resolve({ explanation: { technical: 'stale first explanation' } }),
+      });
+      await firstResponse.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.selectedNode).toEqual(secondNode);
+    expect(result.current.explanation).toEqual({
+      explanation: { technical: 'second explanation' },
     });
   });
 

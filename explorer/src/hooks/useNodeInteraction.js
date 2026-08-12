@@ -7,6 +7,7 @@ import {
 } from '../utils/aiClient';
 import { buildNodeGroundingContext } from '../utils/graphContext';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
+import { useLatestRequestGuard } from './useLatestRequestGuard';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key to unlock explanations.';
@@ -42,11 +43,19 @@ export function useNodeInteraction({
   allEdges = [],
   getBakedExplanation = null,
 } = {}) {
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedNode, setSelectedNodeState] = useState(null);
   const [explanation, setExplanation] = useState(null);
   const [loading, setLoading] = useState(false);
   const explanationCacheRef = useRef(null);
   const lastFetchedRef = useRef(null);
+  const { beginRequest, isLatestRequest, invalidateRequests } = useLatestRequestGuard();
+  const setSelectedNode = useCallback(
+    (nextNode) => {
+      invalidateRequests();
+      setSelectedNodeState(nextNode);
+    },
+    [invalidateRequests]
+  );
   if (explanationCacheRef.current === null) {
     try {
       const saved = localStorage.getItem('vg_v1_explanationCache');
@@ -70,6 +79,7 @@ export function useNodeInteraction({
         return;
       }
       lastFetchedRef.current = cacheKey;
+      const requestId = beginRequest();
 
       const cached = explanationCacheRef.current.get(cacheKey);
       if (cached) {
@@ -128,9 +138,14 @@ export function useNodeInteraction({
         } catch {
           // Ignore localStorage write errors.
         }
-        setExplanation(result);
-        onAuthCleared?.();
+        if (isLatestRequest(requestId)) {
+          setExplanation(result);
+          onAuthCleared?.();
+        }
       } catch (error) {
+        if (!isLatestRequest(requestId)) {
+          return;
+        }
         const message =
           error instanceof DOMException && error.name === 'AbortError'
             ? EXPLAIN_TIMEOUT_MESSAGE
@@ -141,7 +156,9 @@ export function useNodeInteraction({
         }
         setExplanation(message);
       } finally {
-        setLoading(false);
+        if (isLatestRequest(requestId)) {
+          setLoading(false);
+        }
       }
     },
     [
@@ -150,6 +167,8 @@ export function useNodeInteraction({
       allEdges,
       allNodes,
       getBakedExplanation,
+      beginRequest,
+      isLatestRequest,
       onAuthCleared,
       onAuthError,
       onRequireAiKey,
@@ -157,10 +176,13 @@ export function useNodeInteraction({
     ]
   );
 
-  const handleSelectNode = useCallback((node) => {
-    setSelectedNode(node);
-    setCodePanelNode(node);
-  }, []);
+  const handleSelectNode = useCallback(
+    (node) => {
+      setSelectedNode(node);
+      setCodePanelNode(node);
+    },
+    [setSelectedNode]
+  );
 
   const onNodeClick = useCallback(
     async (event, node) => {
@@ -184,7 +206,7 @@ export function useNodeInteraction({
     } catch {
       // Ignore localStorage remove errors.
     }
-  }, []);
+  }, [setSelectedNode]);
 
   return {
     selectedNode,
