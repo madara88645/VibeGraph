@@ -156,3 +156,7 @@
 ## 2024-05-32 - Array map over-fetching overhead in useGraphData.js
 **Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods or `Set` constructors (e.g. `const set = new Set(); arr.forEach()`) over large datasets causes severe performance bottlenecks by generating intermediate objects and triggering multiple O(N) passes.
 **Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass, specifically when trying to find an entry or a fallback (e.g., `getInitialSelectedFile`).
+
+## 2024-08-05 - C-optimized dictionary initialization
+**Learning:** In performance-critical Python code, initializing dictionaries with a single default value using the C-optimized `dict.fromkeys(keys, default_value)` is significantly faster and has lower memory overhead than using a dictionary comprehension (e.g., `{k: default_value for k in keys}`), especially for large graph structures.
+**Action:** Replace Python-level dictionary comprehensions that initialize to a static value with `dict.fromkeys()` to reduce initialization overhead.
