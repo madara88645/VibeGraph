@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock useToast — hook returns showToast directly (not an object)
@@ -21,6 +21,16 @@ import CodePanel from './CodePanel';
 const mockAddToast = vi.fn();
 // Stable clipboard mock to avoid spy detection issues
 const mockWriteText = vi.fn().mockResolvedValue(undefined);
+
+function deferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve, reject };
+}
 
 beforeAll(() => {
     Object.defineProperty(window.navigator, 'clipboard', {
@@ -260,6 +270,142 @@ describe('CodePanel', () => {
         await waitFor(() => {
             expect(screen.getByText(/No source code available/)).toBeInTheDocument();
         });
+    });
+
+    it('keeps the latest node code when an earlier snippet response resolves last', async () => {
+        const firstResponse = deferred();
+        const secondResponse = deferred();
+        globalThis.fetch
+            .mockReturnValueOnce(firstResponse.promise)
+            .mockReturnValueOnce(secondResponse.promise);
+
+        const { rerender } = renderPanel({
+            activeNode: {
+                id: 'old_function',
+                data: { label: 'old_function', file: 'old.py' },
+            },
+        });
+
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+
+        rerender(
+            <CodePanel
+                activeNode={{
+                    id: 'new_function',
+                    data: { label: 'new_function', file: 'new.py' },
+                }}
+                isGhostRunning={false}
+                isOpen={true}
+                onToggle={vi.fn()}
+            />
+        );
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+
+        secondResponse.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+                snippet: 'def new_function(): pass',
+                file_path: 'new.py',
+                start_line: 1,
+                end_line: 1,
+                full_source: null,
+            }),
+        });
+        expect(await screen.findByText(/def new_function/)).toBeInTheDocument();
+
+        await act(async () => {
+            firstResponse.resolve({
+                ok: true,
+                json: () => Promise.resolve({
+                    snippet: 'def old_function(): pass',
+                    file_path: 'old.py',
+                    start_line: 1,
+                    end_line: 1,
+                    full_source: null,
+                }),
+            });
+            await firstResponse.promise;
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText(/def new_function/)).toBeInTheDocument();
+        expect(screen.queryByText(/def old_function/)).not.toBeInTheDocument();
+    });
+
+    it('does not restore stale code after the issue #437 clear, restore, and select flow', async () => {
+        const staleResponse = deferred();
+        globalThis.fetch.mockReturnValueOnce(staleResponse.promise);
+
+        const previousNode = {
+            id: 'round',
+            data: { label: 'round', file: 'builtins.py' },
+        };
+        const KeyLifecycleHarness = ({ apiKey, activeNode }) => (
+            <div data-key-present={Boolean(apiKey)}>
+                <CodePanel
+                    activeNode={activeNode}
+                    isGhostRunning={false}
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                />
+            </div>
+        );
+
+        const { rerender } = render(
+            <KeyLifecycleHarness apiKey="old-key" activeNode={previousNode} />
+        );
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+
+        // CodePanel is intentionally independent of the AI key, but it still
+        // rerenders while the key is cleared and restored in issue #437.
+        rerender(<KeyLifecycleHarness apiKey="" activeNode={previousNode} />);
+        rerender(<KeyLifecycleHarness apiKey="restored-key" activeNode={previousNode} />);
+
+        // After restoring the key, selecting a source function must win even when
+        // the previous node's request finishes later.
+        globalThis.fetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                snippet: 'def summarize_progress(): pass',
+                file_path: 'analytics.py',
+                start_line: 4,
+                end_line: 10,
+                full_source: null,
+            }),
+        });
+        rerender(
+            <KeyLifecycleHarness
+                apiKey="restored-key"
+                activeNode={{
+                    id: 'summarize_progress',
+                    data: { label: 'summarize_progress', file: 'analytics.py' },
+                }}
+            />
+        );
+
+        expect(await screen.findByText(/def summarize_progress/)).toBeInTheDocument();
+        expect(screen.getByText('analytics.py')).toBeInTheDocument();
+        expect(screen.getByText('L4–10')).toBeInTheDocument();
+
+        await act(async () => {
+            staleResponse.resolve({
+                ok: true,
+                json: () => Promise.resolve({
+                    snippet: '// External: round\n// No source code available',
+                    file_path: null,
+                    start_line: null,
+                    end_line: null,
+                    full_source: null,
+                }),
+            });
+            await staleResponse.promise;
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText(/def summarize_progress/)).toBeInTheDocument();
+        expect(screen.queryByText(/External: round/)).not.toBeInTheDocument();
     });
 
     it('copy button triggers clipboard write and shows success toast', async () => {

@@ -12,6 +12,7 @@ import {
 import { buildNodeGroundingContext } from '../utils/graphContext';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { consumeSseChunk } from '../utils/sse';
+import { useLatestRequestGuard } from '../hooks/useLatestRequestGuard';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key before starting a chat.';
@@ -49,6 +50,9 @@ const ChatDrawer = ({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const selectedNodeIdRef = useRef(selectedNode?.id || null);
+  selectedNodeIdRef.current = selectedNode?.id || null;
+  const { beginRequest, isLatestRequest, invalidateRequests } = useLatestRequestGuard();
 
   useEffect(() => {
     if (isOpen) {
@@ -84,6 +88,8 @@ const ChatDrawer = ({
   }, [isOpen, onToggle]);
 
   useEffect(() => {
+    invalidateRequests();
+    setLoading(false);
     if (!selectedNode?.id) {
       setMessages([]);
       return;
@@ -95,7 +101,7 @@ const ChatDrawer = ({
     } catch {
       setMessages([]);
     }
-  }, [selectedNode?.id]);
+  }, [invalidateRequests, selectedNode?.id]);
 
   const persistMessages = useCallback(
     (nextMessages) => {
@@ -171,6 +177,11 @@ const ChatDrawer = ({
       setInputText('');
       return;
     }
+
+    const requestNodeId = selectedNode.id;
+    const requestId = beginRequest();
+    const canApplyResponse = () =>
+      isLatestRequest(requestId) && selectedNodeIdRef.current === requestNodeId;
 
     const userMsg = { role: 'user', content: text };
     const nextMessages = [...messages, userMsg];
@@ -258,8 +269,10 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
           fallbackData.message ||
           'No response.';
         const updatedMessages = [...nextMessages, { role: 'assistant', content: aiContent }];
-        setMessages(updatedMessages);
-        persistMessages(updatedMessages);
+        if (canApplyResponse()) {
+          setMessages(updatedMessages);
+          persistMessages(updatedMessages);
+        }
       } else {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -269,6 +282,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
 
         while (true) {
           const { done, value } = await reader.read();
+          if (!canApplyResponse()) {
+            return;
+          }
           if (done) {
             break;
           }
@@ -284,7 +300,9 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             }
 
             assistantContent += eventData;
-            setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
+            if (canApplyResponse()) {
+              setMessages([...nextMessages, { role: 'assistant', content: assistantContent }]);
+            }
           }
 
           if (streamDone) {
@@ -308,10 +326,15 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         const finalMessages = assistantContent
           ? [...nextMessages, { role: 'assistant', content: assistantContent }]
           : nextMessages;
-        setMessages(finalMessages);
-        persistMessages(finalMessages);
+        if (canApplyResponse()) {
+          setMessages(finalMessages);
+          persistMessages(finalMessages);
+        }
       }
     } catch (error) {
+      if (!canApplyResponse()) {
+        return;
+      }
       const errorMessage = getFriendlyAiErrorMessage(
         error,
         'Could not reach the backend. Is serve.py running?'
@@ -329,15 +352,19 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       setMessages(updatedMessages);
       persistMessages(updatedMessages);
     } finally {
-      setLoading(false);
+      if (canApplyResponse()) {
+        setLoading(false);
+      }
     }
   }, [
     aiReady,
     allNodes,
     allEdges,
     apiKey,
+    beginRequest,
     inputText,
     isDemo,
+    isLatestRequest,
     loading,
     messages,
     onOpenAiSettings,

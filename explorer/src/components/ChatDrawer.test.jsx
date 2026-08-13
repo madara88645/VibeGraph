@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('react-markdown', () => ({
@@ -23,6 +23,16 @@ const MOCK_NODE = {
   id: 'main',
   data: { label: 'main', type: 'function', file: 'app.py' },
 };
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 function renderDrawer(props = {}) {
   const defaults = {
@@ -359,6 +369,71 @@ describe('ChatDrawer', () => {
     );
 
     expect(screen.queryByText('hello')).not.toBeInTheDocument();
+  });
+
+  it('keeps the latest selected node history when an earlier stream resolves later', async () => {
+    const user = userEvent.setup();
+    const firstRead = deferred();
+    const reader = {
+      read: vi
+        .fn()
+        .mockReturnValueOnce(firstRead.promise)
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    const encoder = new TextEncoder();
+    const latestStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: Latest helper answer\n\n'));
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
+      },
+    });
+    globalThis.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        body: { getReader: () => reader },
+      })
+      .mockResolvedValueOnce({ ok: true, body: latestStream });
+
+    const { rerender } = renderDrawer({ selectedNode: MOCK_NODE });
+    await user.type(screen.getByPlaceholderText('Ask a question...'), 'Explain main');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(reader.read).toHaveBeenCalledTimes(1));
+
+    const helperNode = {
+      id: 'helper',
+      data: { label: 'helper', type: 'function', file: 'utils.py' },
+    };
+    rerender(
+      <ChatDrawer
+        selectedNode={helperNode}
+        allNodes={[]}
+        allEdges={[]}
+        isOpen={true}
+        onToggle={vi.fn()}
+        apiKey="test-key"
+        selectedModel="anthropic/claude-haiku-4.5"
+        aiReady={true}
+        onOpenAiSettings={vi.fn()}
+      />
+    );
+    await user.type(screen.getByPlaceholderText('Ask a question...'), 'Explain helper');
+    await user.click(await screen.findByRole('button', { name: 'Send message' }));
+    expect(await screen.findByText('Latest helper answer')).toBeInTheDocument();
+
+    await act(async () => {
+      firstRead.resolve({
+        done: false,
+        value: new TextEncoder().encode('data: Stale main answer\n\n'),
+      });
+      await firstRead.promise;
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Latest helper answer')).toBeInTheDocument();
+    expect(screen.getByText('Explain helper')).toBeInTheDocument();
+    expect(screen.queryByText('Stale main answer')).not.toBeInTheDocument();
+    expect(screen.queryByText('Explain main')).not.toBeInTheDocument();
   });
 
   // Regression coverage for #436: the user's own message must stay in the

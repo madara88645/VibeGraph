@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useToast } from '../hooks/useToast';
+import { useLatestRequestGuard } from '../hooks/useLatestRequestGuard';
 import { fetchWithTimeout, getFriendlyAiErrorMessage } from '../utils/aiClient';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { getShortName } from '../utils/stringUtils';
@@ -41,17 +42,24 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const highlightRef = useRef(null);
     const lastFetchedId = useRef(null);
+    const { beginRequest, isLatestRequest, invalidateRequests } = useLatestRequestGuard();
 
     // Fetch code when active node changes
     useEffect(() => {
         if (!activeNode) {
             setCodeData(null);
             setError(null);
+            setLoading(false);
             lastFetchedId.current = null;
             return;
         }
         if (!isOpen) return;
-        if (lastFetchedId.current === activeNode.id) return;
+
+        const requestId = beginRequest();
+        if (lastFetchedId.current === activeNode.id) {
+            setLoading(false);
+            return;
+        }
 
         const fetchCode = async () => {
             const nodeContext = buildNodeCodeContext(activeNode);
@@ -64,6 +72,9 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     end_line: null,
                     full_source: null,
                 });
+                lastFetchedId.current = activeNode.id;
+                setLoading(false);
+                setError(null);
                 return;
             }
 
@@ -83,18 +94,23 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
 
                 if (!response.ok) throw new Error(await readSnippetError(response));
                 const data = await response.json();
+                if (!isLatestRequest(requestId)) return;
                 setCodeData(data);
                 lastFetchedId.current = activeNode.id;
             } catch (err) {
+                if (!isLatestRequest(requestId)) return;
                 setError(getFriendlyAiErrorMessage(err, 'Could not connect to backend'));
                 console.error(err);
             } finally {
-                setLoading(false);
+                if (isLatestRequest(requestId)) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchCode();
-    }, [activeNode, isOpen]);
+        return invalidateRequests;
+    }, [activeNode, beginRequest, invalidateRequests, isLatestRequest, isOpen]);
 
     // Close fullscreen or panel on Escape
     useEffect(() => {
