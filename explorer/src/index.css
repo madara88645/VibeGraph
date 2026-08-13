@@ -238,6 +238,7 @@ body {
   left: 1rem;
   z-index: 10;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
@@ -355,8 +356,13 @@ body {
 
 @media (min-width: 769px) {
   .vibe-header-panel-open {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     max-width: calc(100% - 1rem - var(--explanation-panel-width) - var(--explanation-panel-edge-offset) - var(--floating-controls-gap));
+    gap: 0.3rem;
+  }
+
+  .vibe-header-panel-open .current-file-badge {
+    max-width: 9rem;
   }
 
   .graph-shell-panel-open .export-controls {
@@ -1151,6 +1157,9 @@ body {
 .search-bar {
   position: relative;
   margin-left: auto;
+  flex: 1 1 10rem;
+  min-width: 0;
+  max-width: 12.5rem;
 }
 
 .search-input-wrapper {
@@ -1161,6 +1170,8 @@ body {
   border-radius: 8px;
   padding: 0 10px;
   gap: 6px;
+  min-width: 0;
+  width: 100%;
   transition: all 0.2s ease;
 }
 
@@ -1186,8 +1197,8 @@ body {
   font-size: 0.75rem;
   font-family: inherit;
   padding: 5px 0;
-  width: 160px;
-  min-width: 120px;
+  width: 100%;
+  min-width: 0;
 }
 
 .search-input::placeholder {
@@ -3586,7 +3597,12 @@ body {
 
   .vibe-header {
     right: 16px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+  }
+
+  .current-file-badge {
+    max-width: 9rem;
   }
 
   .chat-drawer,
