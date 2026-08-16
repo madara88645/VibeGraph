@@ -82,7 +82,10 @@ def _normalize_graph(
         normalized_nodes[node_id] = _node_data(raw_node)
 
     outgoing: dict[str, list[str]] = defaultdict(list)
-    incoming_count = {node_id: 0 for node_id in normalized_nodes}
+    # PERFORMANCE OPTIMIZATION (Bolt): Initialize dictionary with a single default value
+    # using the C-optimized dict.fromkeys() instead of a dictionary comprehension
+    # to significantly reduce initialization overhead.
+    incoming_count = dict.fromkeys(normalized_nodes, 0)
     seen_edges: set[tuple[str, str]] = set()
     for raw_edge in edges:
         source = raw_edge.get("source")
