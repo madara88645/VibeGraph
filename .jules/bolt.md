@@ -160,3 +160,6 @@
 ## 2024-08-16 - Optimize dictionary default initialization with fromkeys
 **Learning:** In performance-critical Python code, initializing dictionaries with a single default value using a dictionary comprehension (e.g., `{k: default_value for k in keys}`) incurs unnecessary overhead due to Python-level loops.
 **Action:** Replace dictionary comprehensions with the C-optimized `dict.fromkeys(keys, default_value)` to significantly reduce initialization overhead, especially when initializing values for thousands of graph nodes.
+## 2024-08-14 - React Flow Tick Simulation Re-renders
+**Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
+**Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
