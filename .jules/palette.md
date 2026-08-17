@@ -125,3 +125,7 @@
 ## 2024-06-25 - Add aria-label to FileSidebar tabs
 **Learning:** For accessibility, interactive elements such as tabs (`<button role="tab">`) missing accessible names should have `aria-label` attributes to be properly announced by screen readers.
 **Action:** When creating custom tabs or interactive elements without clear text labels or when utilizing icons predominantly, always add a descriptive `aria-label` to ensure they are accessible to users with screen readers.
+
+## 2024-08-01 - Escape Key Shortcut on LearningPath
+**Learning:** The Learning Path panel had an Escape key listener but the close button's `title` and `aria-label` did not reflect this affordance. Screen reader and hover users might miss this shortcut. Additionally, the event handler lacked guard clauses for modifiers and active input elements.
+**Action:** When adding global `Escape` key listeners to dismiss panels, ensure the event handler contains a guard clause. Always append `(Press Esc)` to the `title` and `aria-label` of the close button to ensure both visual and screen reader users are aware of the shortcut.
