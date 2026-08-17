@@ -122,3 +122,6 @@
 ## 2026-07-29 - Extract interactive buttons outside dropzones
 **Learning:** Placing interactive `<button>` elements inside a parent `<div>` that has `role="button"` and `tabIndex={0}` (like a file upload dropzone) creates a severe accessibility anti-pattern. Screen readers and keyboard navigation struggle to differentiate or activate nested interactive elements, violating WCAG semantics.
 **Action:** Always extract interactive elements outside of parent containers that define their own `role="button"` or `tabIndex`. Ensure alternative actions are siblings, not children, of a clickable dropzone area to preserve clear focus order and semantic boundaries.
+## 2024-06-25 - Add aria-label to FileSidebar tabs
+**Learning:** For accessibility, interactive elements such as tabs (`<button role="tab">`) missing accessible names should have `aria-label` attributes to be properly announced by screen readers.
+**Action:** When creating custom tabs or interactive elements without clear text labels or when utilizing icons predominantly, always add a descriptive `aria-label` to ensure they are accessible to users with screen readers.

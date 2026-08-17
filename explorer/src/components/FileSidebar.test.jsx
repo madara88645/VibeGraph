@@ -30,7 +30,7 @@ describe('FileSidebar', () => {
       />
     );
 
-    await user.click(screen.getByRole('tab', { name: /deps/i }));
+    await user.click(screen.getByRole('tab', { name: /dependencies tab/i }));
 
     expect(
       screen.getByText('Dependency view appears after you upload and analyze a project.')
@@ -62,7 +62,7 @@ describe('FileSidebar', () => {
       />
     );
 
-    await user.click(screen.getByRole('tab', { name: /deps/i }));
+    await user.click(screen.getByRole('tab', { name: /dependencies tab/i }));
 
     expect(screen.getAllByText('main.py').length).toBe(2);
     expect(screen.getAllByText('utils.py').length).toBe(2);
