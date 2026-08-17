@@ -297,4 +297,8 @@ const SimulationControls = ({
     );
 };
 
-export default SimulationControls;
+// PERFORMANCE OPTIMIZATION (Bolt):
+// Wrap SimulationControls in React.memo() to prevent it from re-rendering
+// unnecessarily on every tick when its static/primitive props don't change,
+// reducing React render overhead during high-frequency simulation steps.
+export default React.memo(SimulationControls);

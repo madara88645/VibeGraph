@@ -156,3 +156,6 @@
 ## 2024-05-32 - Array map over-fetching overhead in useGraphData.js
 **Learning:** In React hooks (e.g., `useGraphData.js`), calculating derived array state by chaining functional array methods or `Set` constructors (e.g. `const set = new Set(); arr.forEach()`) over large datasets causes severe performance bottlenecks by generating intermediate objects and triggering multiple O(N) passes.
 **Action:** Replace these chains with a single imperative `for` loop with an early `break` condition to eliminate intermediate allocations and reduce iteration overhead to a single O(N) pass, specifically when trying to find an entry or a fallback (e.g., `getInitialSelectedFile`).
+## 2024-08-14 - React Flow Tick Simulation Re-renders
+**Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
+**Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
