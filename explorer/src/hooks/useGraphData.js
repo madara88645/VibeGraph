@@ -178,13 +178,18 @@ export function useGraphData(setNodes, setEdges) {
         }));
 
         // Auto-select the first file from the new project
-        const filesSet = new Set();
-        customNodes.forEach(n => {
-            if (n.data.file) filesSet.add(n.data.file);
-        });
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced Set allocation and .forEach() chain with a
+        // single imperative for-loop with an early break. This avoids allocating a Set and
+        // multiple intermediate objects while reducing iteration overhead to a single fast search.
+        let firstFile = null;
+        for (let i = 0; i < customNodes.length; i++) {
+            if (customNodes[i].data.file) {
+                firstFile = customNodes[i].data.file;
+                break;
+            }
+        }
 
-        const newFiles = [...filesSet];
-        setSelectedFile(newFiles[0] || null);
+        setSelectedFile(firstFile);
 
         setAllNodes(customNodes);
         setAllEdges(safeEdges);

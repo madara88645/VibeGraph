@@ -163,3 +163,6 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+## 2024-08-18 - Avoid Set allocation for single value fallback
+**Learning:** In React hooks (e.g., `useGraphData.js`), calculating a fallback file selection by constructing a full `Set` of all file paths via `.forEach()` causes severe performance bottlenecks. It allocates a Set, generates multiple intermediate objects, and triggers a full O(N) pass, even when we only need the very first match.
+**Action:** Replace `Set` allocations used solely for finding an entry or a fallback with a single imperative `for` loop with an early `break` condition. This reduces iteration overhead to a single fast search and eliminates all intermediate allocations.
