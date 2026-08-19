@@ -93,7 +93,9 @@ def _get_parsed_ast(
         location = f" ({', '.join(location_parts)})" if location_parts else ""
         return source, None, None, None, f"# Syntax error in file{location}."
 
-    lines = source.splitlines()
+    # PERFORMANCE OPTIMIZATION (Bolt): Removed `lines = source.splitlines()` since `lines` is
+    # already computed and returned by `_get_source_text()` earlier in this function. This eliminates
+    # redundant O(N) array allocation overhead and garbage collection pressure when parsing large files.
     nodes = {}
 
     # PERFORMANCE OPTIMIZATION (Bolt): Replaced ast.walk (which visits all leaves)
