@@ -163,3 +163,7 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+
+## 2024-08-20 - Replace `.forEach` with Standard `for` loop in React components
+**Learning:** In high-frequency React contexts (like the VibeGraph frontend, which processes many file dependencies on load or interaction), functional array methods like `.forEach` introduce unnecessary callback overhead.
+**Action:** When micro-optimizing existing high-frequency JavaScript loops, replace `.forEach` on large arrays with standard imperative `for` loops.
