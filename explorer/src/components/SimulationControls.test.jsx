@@ -53,8 +53,26 @@ describe('SimulationControls', () => {
         await user.click(screen.getByLabelText('Show guide'));
         expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
 
-        await user.click(screen.getByLabelText('Close guide'));
+        await user.click(screen.getByLabelText('Close guide (Press Esc)'));
         expect(screen.queryByText('Ghost Runner')).not.toBeInTheDocument();
+    });
+
+    it('does not close guide on Escape when typing in input', async () => {
+        const user = userEvent.setup();
+        render(<SimulationControls />);
+
+        await user.click(screen.getByLabelText('Show guide'));
+        expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
+
+        // Simulate focusing an input
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        input.focus();
+
+        await user.keyboard('{Escape}');
+        expect(screen.getByText('Ghost Runner')).toBeInTheDocument();
+
+        document.body.removeChild(input);
     });
 
     it('toggles guide on repeated clicks', async () => {

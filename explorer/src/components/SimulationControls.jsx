@@ -77,6 +77,7 @@ const SimulationControls = ({
 
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
                 if (showGuide) {
                     setShowGuide(false);
                 }
@@ -129,7 +130,7 @@ const SimulationControls = ({
             {/* Guide Popover */}
             {showGuide && (
                 <div className="sim-guide" ref={guideRef}>
-                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide" title="Close guide"><IconClose size={13} /></button>
+                    <button className="sim-guide-close" onClick={() => setShowGuide(false)} aria-label="Close guide (Press Esc)" title="Close guide (Press Esc)"><IconClose size={13} /></button>
                     <h4 className="sim-guide-title">Ghost Runner</h4>
                     <p>An intelligent code tracer that <strong>walks through your call graph</strong> using different strategies, highlighting functions and their connections in real time.</p>
                     <ul>
