@@ -48,6 +48,7 @@ const LearningPath = ({
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
         onToggle();
       }
     };
@@ -230,8 +231,8 @@ const LearningPath = ({
           <button
             className="lp-bar-close"
             onClick={onToggle}
-            title="Close Learning Path"
-            aria-label="Close Learning Path"
+            title="Close Learning Path (Press Esc)"
+            aria-label="Close Learning Path (Press Esc)"
           >
             <span aria-hidden="true">x</span>
           </button>
