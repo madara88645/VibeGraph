@@ -51,7 +51,10 @@ const FileSidebar = ({
         }
 
         const grouped = {};
-        fileDependencies.forEach((dependency) => {
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced .forEach()
+        // with a single for loop to avoid function callback execution overhead during iteration.
+        for (let i = 0; i < fileDependencies.length; i++) {
+            const dependency = fileDependencies[i];
             const sourceFile = dependency.source_file || 'unknown';
             const targetFile = dependency.target_file || 'unknown';
 
@@ -79,7 +82,7 @@ const FileSidebar = ({
             if (!grouped[targetFile].imported_by.includes(sourceFile)) {
                 grouped[targetFile].imported_by.push(sourceFile);
             }
-        });
+        }
 
         return grouped;
     }, [fileDependencies]);
