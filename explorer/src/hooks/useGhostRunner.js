@@ -431,7 +431,14 @@ export function useGhostRunner(
     // over all nodes. Since only navigable nodes are added to visitedSetRef, we can simply
     // use its size, eliminating CPU overhead on every simulation tick.
     const visitedCount = useMemo(() => {
-        return visitedSetRef.current.size;
+        let count = 0;
+        const visited = visitedSetRef.current;
+        for (let i = 0; i < nodes.length; i++) {
+            if (isNavigableNode(nodes[i]) && visited.has(nodes[i].id)) {
+                count++;
+            }
+        }
+        return count;
     }, [stepCount]); // eslint-disable-line react-hooks/exhaustive-deps -- stepCount is an intentional reactive trigger to re-read visitedSetRef.current after each step advance
 
     // PERFORMANCE OPTIMIZATION (Bolt): Replace expensive navigableNodesKey string-building

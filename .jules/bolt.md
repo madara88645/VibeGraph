@@ -163,3 +163,7 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+
+## 2026-08-24 - Calculating Visited Navigable Nodes Safely
+**Learning:** In the `useGhostRunner` hook, an earlier optimization attempted to replace an O(N) array iteration for `visitedCount` by simply using `visitedSetRef.current.size`. However, `visitedSetRef` can sometimes include node IDs that are later filtered out or not strictly considered navigable by `isNavigableNode` depending on graph changes or specific placeholder tracking, leading to discrepancies between `visitedCount` and `totalNodes` that break termination conditions (like the random strategy exhaustion).
+**Action:** Always compute `visitedCount` by explicitly counting nodes that satisfy `isNavigableNode(n) && visitedSetRef.current.has(n.id)`. Using a fast imperative `for` loop over `nodes` restores safety while maintaining O(N) performance without array allocations.
