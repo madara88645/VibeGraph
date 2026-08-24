@@ -114,7 +114,7 @@ describe('LearningPath', () => {
   it('positions the panel using the provided top offset', () => {
     renderLearningPath({ allNodes: [], topOffset: 132 });
 
-    expect(screen.getByLabelText('Close Learning Path').closest('#learning-path-panel')).toHaveStyle({
+    expect(screen.getByLabelText('Close Learning Path (Press Esc)').closest('#learning-path-panel')).toHaveStyle({
       top: '132px',
     });
   });
@@ -150,7 +150,7 @@ describe('LearningPath', () => {
 
     expect(screen.getByLabelText('Previous step')).toBeVisible();
     expect(screen.getByLabelText('Next step')).toBeVisible();
-    expect(screen.getByLabelText('Close Learning Path')).toBeVisible();
+    expect(screen.getByLabelText('Close Learning Path (Press Esc)')).toBeVisible();
     expect(metadata).toHaveTextContent('main');
     expect(metadata).toHaveTextContent('main.py');
     expect(description).toHaveTextContent('Start at the real entry point.');

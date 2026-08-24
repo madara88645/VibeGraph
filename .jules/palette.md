@@ -125,3 +125,7 @@
 ## 2024-06-25 - Add aria-label to FileSidebar tabs
 **Learning:** For accessibility, interactive elements such as tabs (`<button role="tab">`) missing accessible names should have `aria-label` attributes to be properly announced by screen readers.
 **Action:** When creating custom tabs or interactive elements without clear text labels or when utilizing icons predominantly, always add a descriptive `aria-label` to ensure they are accessible to users with screen readers.
+
+## 2024-05-18 - Escape Key Shortcuts on Side Panels
+**Learning:** Adding `Escape` key handlers to close side panels or modals is a great UX win, but it's crucial to explicitly inform users that the shortcut exists. Otherwise, only power users will discover it. Furthermore, failing to guard the `keydown` event can cause the panel to close unexpectedly when a user presses `Escape` while typing inside an active `<input>` or `<textarea>`.
+**Action:** When adding global `Escape` key listeners to dismiss panels, ensure the event handler contains a guard clause (`['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)`). Also, always append `(Press Esc)` to the `title` and `aria-label` of the close button to ensure both visual and screen reader users are aware of the shortcut.
