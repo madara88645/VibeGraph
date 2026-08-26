@@ -163,3 +163,6 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+## 2025-02-12 - FileSidebar array lookup optimization
+**Learning:** Replacing `Array.forEach` with a `for` loop in modern JS engines is a micro-optimization with zero practical performance difference and reduces code readability. However, algorithmic improvements, such as replacing an O(N) array `.includes()` with an O(1) `Set.has()` lookup within a loop (making an O(N^2) operation O(N)), provides a real, measurable performance benefit for large datasets.
+**Action:** When searching for performance wins, prioritize algorithmic complexity (e.g. replacing array searches with Sets/Maps) over syntax micro-optimizations (like swapping loop types) unless explicitly proven necessary by profiling.

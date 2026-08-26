@@ -51,6 +51,7 @@ const FileSidebar = ({
         }
 
         const grouped = {};
+
         fileDependencies.forEach((dependency) => {
             const sourceFile = dependency.source_file || 'unknown';
             const targetFile = dependency.target_file || 'unknown';
@@ -60,6 +61,8 @@ const FileSidebar = ({
                     imports: [],
                     imports_from: [],
                     imported_by: [],
+                    // PERFORMANCE OPTIMIZATION (Bolt): Used a Set for O(1) lookups to avoid O(N^2) array .includes check overhead
+                    _imported_by_set: new Set(),
                 };
             }
 
@@ -68,6 +71,7 @@ const FileSidebar = ({
                     imports: [],
                     imports_from: [],
                     imported_by: [],
+                    _imported_by_set: new Set(),
                 };
             }
 
@@ -76,7 +80,8 @@ const FileSidebar = ({
                 names: dependency.imports || [],
             });
 
-            if (!grouped[targetFile].imported_by.includes(sourceFile)) {
+            if (!grouped[targetFile]._imported_by_set.has(sourceFile)) {
+                grouped[targetFile]._imported_by_set.add(sourceFile);
                 grouped[targetFile].imported_by.push(sourceFile);
             }
         });
