@@ -125,3 +125,6 @@
 ## 2024-06-25 - Add aria-label to FileSidebar tabs
 **Learning:** For accessibility, interactive elements such as tabs (`<button role="tab">`) missing accessible names should have `aria-label` attributes to be properly announced by screen readers.
 **Action:** When creating custom tabs or interactive elements without clear text labels or when utilizing icons predominantly, always add a descriptive `aria-label` to ensure they are accessible to users with screen readers.
+## 2026-08-27 - Wrap disabled buttons in spans for tooltips
+**Learning:** Disabled HTML buttons do not trigger mouse events, preventing `title` tooltips from rendering on hover.
+**Action:** Wrap disabled buttons in a standard DOM element (like `<span style={{ display: 'inline-flex' }}>`) and apply the `title` attribute to the wrapper so that users receive adequate feedback for why an action is unavailable.
