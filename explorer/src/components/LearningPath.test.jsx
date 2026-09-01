@@ -114,7 +114,7 @@ describe('LearningPath', () => {
   it('positions the panel using the provided top offset', () => {
     renderLearningPath({ allNodes: [], topOffset: 132 });
 
-    expect(screen.getByLabelText('Close Learning Path').closest('#learning-path-panel')).toHaveStyle({
+    expect(screen.getByLabelText('Close Learning Path (Press Esc)').closest('#learning-path-panel')).toHaveStyle({
       top: '132px',
     });
   });
@@ -150,7 +150,7 @@ describe('LearningPath', () => {
 
     expect(screen.getByLabelText('Previous step')).toBeVisible();
     expect(screen.getByLabelText('Next step')).toBeVisible();
-    expect(screen.getByLabelText('Close Learning Path')).toBeVisible();
+    expect(screen.getByLabelText('Close Learning Path (Press Esc)')).toBeVisible();
     expect(metadata).toHaveTextContent('main');
     expect(metadata).toHaveTextContent('main.py');
     expect(description).toHaveTextContent('Start at the real entry point.');
@@ -279,6 +279,26 @@ describe('LearningPath', () => {
     await user.keyboard('{Escape}');
 
     expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close on Escape key press when user is typing in an input', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    renderLearningPath({ isOpen: true, onToggle });
+
+    await screen.findByText('Path status');
+
+    // Create a dummy input and focus it to simulate the guard clause
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    await user.keyboard('{Escape}');
+
+    expect(onToggle).not.toHaveBeenCalled();
+
+    // Cleanup
+    document.body.removeChild(input);
   });
 
   it('does not close on Escape key press when panel is closed', async () => {
