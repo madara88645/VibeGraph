@@ -163,3 +163,6 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+## 2024-09-04 - Remove redundant string splits in large Python functions
+**Learning:** In performance-critical Python AST parsing code, `source.splitlines()` was being called unnecessarily despite the line array already being computed during the file read phase. This creates a hidden O(N) memory allocation and triggers aggressive garbage collection spikes when processing large codebases.
+**Action:** When working on parsing loops or high-frequency string operations, always check if line arrays or parsed strings have already been returned by preceding functions before indiscriminately calling `.split()` or `.splitlines()`.
