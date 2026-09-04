@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useI
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
+import { IconFiles, IconPackage } from './icons';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable code found. Try a Python, JavaScript, or TypeScript project.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
@@ -327,8 +328,12 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             </div>
 
                             <div className="upload-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px', marginBottom: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                <button type="button" className="upload-select-btn" aria-label="Browse Folder for upload" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <IconFiles size={16} style={{ marginRight: '6px' }} /> Browse Folder
+                                </button>
+                                <button type="button" className="upload-select-btn" aria-label="Browse ZIP for upload" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <IconPackage size={16} style={{ marginRight: '6px' }} /> Browse ZIP
+                                </button>
                             </div>
 
                             {!isAnalyzing && (
