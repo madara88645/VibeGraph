@@ -327,8 +327,28 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             </div>
 
                             <div className="upload-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px', marginBottom: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Analysis in progress..." : "Select a local project folder"}>
+                                    <button
+                                        type="button"
+                                        className="upload-select-btn"
+                                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                                        style={{ minHeight: '44px', minWidth: '120px' }}
+                                        disabled={isAnalyzing}
+                                    >
+                                        Browse Folder
+                                    </button>
+                                </span>
+                                <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Analysis in progress..." : "Select a local project ZIP file"}>
+                                    <button
+                                        type="button"
+                                        className="upload-select-btn"
+                                        onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }}
+                                        style={{ minHeight: '44px', minWidth: '120px' }}
+                                        disabled={isAnalyzing}
+                                    >
+                                        Browse ZIP
+                                    </button>
+                                </span>
                             </div>
 
                             {!isAnalyzing && (
