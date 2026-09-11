@@ -327,8 +327,12 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             </div>
 
                             <div className="upload-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px', marginBottom: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Upload in progress..." : "Browse for a local folder"}>
+                                    <button type="button" aria-label={isAnalyzing ? "Upload in progress..." : "Browse Folder"} disabled={isAnalyzing} className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
+                                </span>
+                                <span style={{ display: 'inline-flex' }} title={isAnalyzing ? "Upload in progress..." : "Browse for a ZIP file"}>
+                                    <button type="button" aria-label={isAnalyzing ? "Upload in progress..." : "Browse ZIP"} disabled={isAnalyzing} className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                </span>
                             </div>
 
                             {!isAnalyzing && (
