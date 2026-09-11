@@ -76,7 +76,9 @@ const SearchBar = ({ allNodes, onSelectNode, onSelectFile }) => {
         const matches = [];
         // PERFORMANCE OPTIMIZATION (Bolt): Use a for-loop with early exit instead of .filter().slice(0, 8)
         // This avoids O(N) string processing across potentially thousands of nodes once we have our 8 results.
-        for (let i = 0; i < allNodes.length; i++) {
+        // PERFORMANCE OPTIMIZATION (Bolt): Caching array length to reduce property access overhead in loop.
+        const len = allNodes.length;
+        for (let i = 0; i < len; i++) {
             if (matches.length >= 8) break;
             const n = allNodes[i];
 
