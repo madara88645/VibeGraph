@@ -138,6 +138,8 @@ def test_normalize_uploaded_filename_blocks_sensitive_hidden_names_case_insensit
         ".NPMRC",
         ".PyPiRc",
         ".NETRC",
+        "id_rsa",
+        "test.pem",
     ]:
         with pytest.raises(HTTPException) as exc_info:
             normalize_uploaded_filename(raw_name)
