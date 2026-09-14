@@ -163,6 +163,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
     return (
         <>
             <button 
+                type="button"
                 className={`code-panel-toggle ${isOpen ? 'hidden' : ''}`} 
                 onClick={onToggle} 
                 title="Open Code Panel" 
@@ -222,6 +223,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                         style={{ display: 'inline-flex' }}
                     >
                         <button
+                            type="button"
                             onClick={() => {
                             const text = codeData?.full_source || codeData?.snippet;
                             if (!text) {
@@ -288,6 +290,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     </button>
                     </span>
                     <button
+                        type="button"
                         className="code-panel-close"
                         onClick={() => setIsFullscreen(prev => !prev)}
                         title={isFullscreen ? 'Exit fullscreen (Press Esc)' : 'Expand code'}
@@ -295,7 +298,7 @@ const CodePanel = ({ activeNode, isGhostRunning, isOpen, onToggle }) => {
                     >
                         {isFullscreen ? <IconMinimize size={14} /> : <IconMaximize size={14} />}
                     </button>
-                    <button className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel (Press Esc)" aria-label="Close Code Panel (Press Esc)"><IconClose size={14} /></button>
+                    <button type="button" className="code-panel-close" onClick={() => { setIsFullscreen(false); onToggle(); }} title="Close Code Panel (Press Esc)" aria-label="Close Code Panel (Press Esc)"><IconClose size={14} /></button>
                 </div>
             </div>
 
