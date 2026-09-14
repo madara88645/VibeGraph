@@ -92,6 +92,7 @@ const FileSidebar = ({
             {/* Tabs */}
             <div className="sidebar-tabs" role="tablist" aria-label="Sidebar views">
                 <button
+                    type="button"
                     id="tab-files"
                     role="tab"
                     aria-selected={activeTab === 'files'}
@@ -103,6 +104,7 @@ const FileSidebar = ({
                     <IconModule size={14} /> Files
                 </button>
                 <button
+                    type="button"
                     id="tab-deps"
                     role="tab"
                     aria-selected={activeTab === 'deps'}
@@ -125,6 +127,7 @@ const FileSidebar = ({
                 >
                     <div className="sidebar-content">
                         <button
+                            type="button"
                             className={`sidebar-file all-files-btn ${!selectedFile ? 'selected' : ''}`}
                             onClick={() => onSelectFile(null)}
                             aria-current={!selectedFile ? 'true' : undefined}
@@ -155,6 +158,7 @@ const FileSidebar = ({
 
                             return (
                                 <button
+                                    type="button"
                                     key={file}
                                     className={`sidebar-file ${isSelected ? 'selected' : ''}`}
                                     onClick={() => onSelectFile(file)}
@@ -238,6 +242,7 @@ const FileSidebar = ({
                             depElements.push(
                                 <div key={file} className={`deps-file ${isSelected ? 'selected' : ''}`}>
                                     <button
+                                        type="button"
                                         className="deps-file-header"
                                         onClick={() => onSelectFile(file)}
                                         title={file}
@@ -283,6 +288,7 @@ const FileSidebar = ({
                                                     const ref = importedBy[i];
                                                     refElements.push(
                                                         <button
+                                                            type="button"
                                                             key={i}
                                                             className="deps-item deps-item-clickable"
                                                             onClick={() => onSelectFile(typeof ref === 'string' ? ref : ref.file)}
