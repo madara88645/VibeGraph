@@ -128,3 +128,7 @@
 ## 2026-08-27 - Wrap disabled buttons in spans for tooltips
 **Learning:** Disabled HTML buttons do not trigger mouse events, preventing `title` tooltips from rendering on hover.
 **Action:** Wrap disabled buttons in a standard DOM element (like `<span style={{ display: 'inline-flex' }}>`) and apply the `title` attribute to the wrapper so that users receive adequate feedback for why an action is unavailable.
+
+## 2026-09-15 - Add explicit type to action buttons
+**Learning:** Generic action buttons in React components (such as file upload triggers) should explicitly declare `type="button"`. If they omit it, they default to `type="submit"`. If the component containing them is ever wrapped in a `<form>`, clicking these buttons will inadvertently trigger a form submission or page reload instead of the intended JavaScript action.
+**Action:** Always explicitly specify `type="button"` on non-submit buttons in React to prevent unintended default form submissions and ensure robust behavior in any context.
