@@ -163,3 +163,7 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+
+## 2024-11-09 - Avoid redundant splitlines
+**Learning:** Re-evaluating .splitlines() on source strings that were already split creates redundant O(N) allocation overhead.
+**Action:** Always pass and reuse previously computed line arrays.
