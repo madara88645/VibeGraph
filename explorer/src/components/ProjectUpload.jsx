@@ -227,6 +227,7 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
     return (
         <div className="project-upload-container">
             <button
+                type="button"
                 className="header-action-btn upload-btn"
                 onClick={() => setIsModalOpen(true)}
                 title="Upload new project for analysis"
@@ -327,8 +328,8 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
                             </div>
 
                             <div className="upload-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px', marginBottom: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
-                                <button className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
+                                <button type="button" aria-label="Browse for a project folder" className="upload-select-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse Folder</button>
+                                <button type="button" aria-label="Browse for a ZIP file" className="upload-select-btn" onClick={(e) => { e.stopPropagation(); zipInputRef.current?.click(); }} style={{ minHeight: '44px', minWidth: '120px' }}>Browse ZIP</button>
                             </div>
 
                             {!isAnalyzing && (
