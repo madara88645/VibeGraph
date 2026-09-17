@@ -60,6 +60,7 @@ const FileSidebar = ({
                     imports: [],
                     imports_from: [],
                     imported_by: [],
+                    _imported_by_set: new Set(),
                 };
             }
 
@@ -68,6 +69,7 @@ const FileSidebar = ({
                     imports: [],
                     imports_from: [],
                     imported_by: [],
+                    _imported_by_set: new Set(),
                 };
             }
 
@@ -76,7 +78,9 @@ const FileSidebar = ({
                 names: dependency.imports || [],
             });
 
-            if (!grouped[targetFile].imported_by.includes(sourceFile)) {
+            // PERFORMANCE OPTIMIZATION (Bolt): Replaced O(N) array .includes() check with O(1) Set.has() to prevent O(N^2) behavior in large dependency graphs.
+            if (!grouped[targetFile]._imported_by_set.has(sourceFile)) {
+                grouped[targetFile]._imported_by_set.add(sourceFile);
                 grouped[targetFile].imported_by.push(sourceFile);
             }
         });
