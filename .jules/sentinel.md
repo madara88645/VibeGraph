@@ -77,3 +77,7 @@
 **Vulnerability:** The `ExplainRequest`, `ChatRequest`, and `GhostNarrateRequest` Pydantic models lacked LLM input sanitization (`sanitize_llm_input`) for the string list parameters (`callers`, `callees`, `neighbors`, `context_nodes`). These fields were only validated for maximum length. Without applying standard regex filtering via `sanitize_llm_input`, an attacker could potentially execute a prompt injection attack through these context node identifiers when they are serialized into backend LLM prompts.
 **Learning:** Pydantic validators (`@field_validator`) for complex types (like lists of strings) must iterate and individually apply sanitization filters to every element, just as scalar string fields do. Relying solely on `max_length` prevents DoS but does not prevent logic/injection attacks if special characters remain unsanitized.
 **Prevention:** Always apply the standard `sanitize_llm_input` function to every string passed into LLM prompts, even if those strings are nested inside list or dictionary parameters.
+## 2024-03-01 - Duplicate Path Validation Logic Allows Sensitive File Exposure
+**Vulnerability:** `normalize_uploaded_filename` used an incomplete, hardcoded list of sensitive files, allowing uploads of `.pem` or `id_rsa` files despite `_contains_sensitive_segment` existing.
+**Learning:** Duplicating path validation logic creates security gaps when one list is updated but the other isn't.
+**Prevention:** Always use centralized, comprehensive path validation utilities (like `_contains_sensitive_segment`) instead of inline hardcoded lists.
