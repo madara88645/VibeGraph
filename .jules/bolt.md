@@ -163,3 +163,7 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+
+## 2024-05-18 - Fast graph dependency aggregation with Sets
+**Learning:** In large scale file graphs, aggregating inbound edge lists (`imported_by`) using an array `.includes()` check inside a `.forEach` loop creates severe O(N^2) time complexity and massive function callback overhead.
+**Action:** Replace `Array.prototype.forEach` with a standard `for` loop to eliminate callback allocations, and replace `.includes()` deduplication arrays with JavaScript `Set`s for O(1) insertions. Always batch object mutations to a single reference lookup per loop iteration, then use `Array.from()` once at the end if the downstream components expect an array.

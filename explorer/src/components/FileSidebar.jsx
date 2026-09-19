@@ -51,35 +51,47 @@ const FileSidebar = ({
         }
 
         const grouped = {};
-        fileDependencies.forEach((dependency) => {
+        // PERFORMANCE OPTIMIZATION (Bolt): Replaced array .forEach() with a standard for loop
+        // to avoid callback allocation overhead. Replaced O(N) .includes() array checks with
+        // O(1) Set lookups to significantly speed up processing of large dependency arrays.
+        for (let i = 0; i < fileDependencies.length; i++) {
+            const dependency = fileDependencies[i];
             const sourceFile = dependency.source_file || 'unknown';
             const targetFile = dependency.target_file || 'unknown';
 
-            if (!grouped[sourceFile]) {
-                grouped[sourceFile] = {
+            let sourceGroup = grouped[sourceFile];
+            if (!sourceGroup) {
+                sourceGroup = {
                     imports: [],
                     imports_from: [],
-                    imported_by: [],
+                    imported_by: new Set(),
                 };
+                grouped[sourceFile] = sourceGroup;
             }
 
-            if (!grouped[targetFile]) {
-                grouped[targetFile] = {
+            let targetGroup = grouped[targetFile];
+            if (!targetGroup) {
+                targetGroup = {
                     imports: [],
                     imports_from: [],
-                    imported_by: [],
+                    imported_by: new Set(),
                 };
+                grouped[targetFile] = targetGroup;
             }
 
-            grouped[sourceFile].imports.push({
+            sourceGroup.imports.push({
                 module: targetFile,
                 names: dependency.imports || [],
             });
 
-            if (!grouped[targetFile].imported_by.includes(sourceFile)) {
-                grouped[targetFile].imported_by.push(sourceFile);
-            }
-        });
+            targetGroup.imported_by.add(sourceFile);
+        }
+
+        const keys = Object.keys(grouped);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            grouped[key].imported_by = Array.from(grouped[key].imported_by);
+        }
 
         return grouped;
     }, [fileDependencies]);
