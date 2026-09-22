@@ -163,3 +163,6 @@
 ## 2024-08-14 - React Flow Tick Simulation Re-renders
 **Learning:** High-frequency simulation loops (like React Flow ticks or ghost runners) constantly update parent states. Child components with static or strictly primitive props (like playback controls or configuration widgets) will inherently re-render on every single tick, inducing severe CPU overhead and stalling the main thread.
 **Action:** Always strictly wrap pure/static UI child components residing in high-frequency simulation or animation contexts in `React.memo()` to short-circuit the O(N) update cascade.
+## YYYY-MM-DD - O(N²) Array Lookups in Graph Hubs
+**Learning:** Code dependency graphs naturally feature 'hub' files (like utilities) which are imported hundreds of times. When parsing graph dependencies, naive `Array.prototype.includes()` deduplication checks on these hubs degrade to O(N²) and block the main thread.
+**Action:** Always use a `Set` for deduplicating references in graph/dependency structures, converting back to an array post-traversal if necessary.
