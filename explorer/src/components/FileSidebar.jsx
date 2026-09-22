@@ -76,10 +76,20 @@ const FileSidebar = ({
                 names: dependency.imports || [],
             });
 
-            if (!grouped[targetFile].imported_by.includes(sourceFile)) {
-                grouped[targetFile].imported_by.push(sourceFile);
+            // PERFORMANCE OPTIMIZATION (Bolt): Use a Set to avoid O(N²) CPU overhead on highly connected utility files (hubs).
+            if (!grouped[targetFile].imported_by_set) {
+                grouped[targetFile].imported_by_set = new Set();
             }
+            grouped[targetFile].imported_by_set.add(sourceFile);
         });
+
+        // Convert Sets back to arrays
+        for (const file in grouped) {
+            if (grouped[file].imported_by_set) {
+                grouped[file].imported_by = Array.from(grouped[file].imported_by_set);
+                delete grouped[file].imported_by_set;
+            }
+        }
 
         return grouped;
     }, [fileDependencies]);
