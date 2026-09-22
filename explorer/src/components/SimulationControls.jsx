@@ -114,17 +114,17 @@ const SimulationControls = ({
             </button>
 
             {/* Guided Tour Toggle */}
-            {totalNodes > 0 && (
+            <span style={{ display: 'inline-flex' }} title={totalNodes === 0 ? "Upload a project to use the Guided Tour" : "Toggle Guided Tour Checklist"}>
                 <button
                     onClick={() => onToggleTutorial && onToggleTutorial()}
                     className={`sim-btn sim-btn-tour ${showTutorial ? 'active' : ''}`}
-                    title="Toggle Guided Tour Checklist"
                     aria-label="Toggle Guided Tour Checklist"
                     aria-expanded={showTutorial}
+                    disabled={totalNodes === 0}
                 >
                     <IconGhost size={15} />
                 </button>
-            )}
+            </span>
 
 
             {/* Guide Popover */}
