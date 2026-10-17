@@ -13,6 +13,7 @@ import { buildNodeGroundingContext } from '../utils/graphContext';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
 import { consumeSseChunk } from '../utils/sse';
 import { useLatestRequestGuard } from '../hooks/useLatestRequestGuard';
+import { IconChat, IconClose } from './icons';
 
 const MISSING_KEY_MESSAGE =
   'Open AI Settings and add your OpenRouter key before starting a chat.';
@@ -402,7 +403,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
         title="Open Chat"
         aria-label="Open Chat"
       >
-        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
       </button>
@@ -410,7 +411,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
       <div className={`chat-drawer ${isOpen ? 'open' : ''}`}>
         <div className="chat-drawer-header">
           <div className="chat-drawer-title">
-            <span aria-hidden="true">{'Chat'}</span>
+            <IconChat size={15} />
             <span>Vibe Chat</span>
           </div>
           {hasSelectedNode ? (
@@ -421,7 +422,7 @@ Key functions/classes: ${coreNodes}${allNodes.length > 20 ? '...' : ''}`;
             <span className="chat-context-badge chat-no-node-badge">No node selected</span>
           )}
           <button className="chat-drawer-close" onClick={onToggle} title="Close Chat (Press Esc)" aria-label="Close Chat (Press Esc)">
-            <span aria-hidden="true">x</span>
+            <IconClose size={14} />
           </button>
         </div>
 

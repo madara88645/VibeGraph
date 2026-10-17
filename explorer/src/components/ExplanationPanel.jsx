@@ -19,16 +19,18 @@ import {
     NodeTypeIcon,
 } from './icons';
 
+// Accents are theme tokens (index.css → --node-*); the panel exposes the
+// active one as --ep-accent for its type label and takeaway rule.
 const typeColors = {
-    'function': { accent: '#06b6d4', label: 'Function' },
-    'class': { accent: '#a855f7', label: 'Class' },
-    'entry_point': { accent: '#22c55e', label: 'Entry Point' },
-    'builtin': { accent: '#3b82f6', label: 'Built-in' },
-    'external': { accent: '#f97316', label: 'External' },
-    'imported_local': { accent: '#14b8a6', label: 'Imported' },
-    'module': { accent: '#eab308', label: 'Module' },
-    'unresolved': { accent: '#94a3b8', label: 'Reference' },
-    'default': { accent: '#64748b', label: 'Reference' },
+    'function': { accent: 'var(--node-fn)', label: 'Function' },
+    'class': { accent: 'var(--node-class)', label: 'Class' },
+    'entry_point': { accent: 'var(--node-entry)', label: 'Entry point' },
+    'builtin': { accent: 'var(--node-builtin)', label: 'Built-in' },
+    'external': { accent: 'var(--node-external)', label: 'External' },
+    'imported_local': { accent: 'var(--node-import)', label: 'Imported' },
+    'module': { accent: 'var(--node-module)', label: 'Module' },
+    'unresolved': { accent: 'var(--node-ref)', label: 'Reference' },
+    'default': { accent: 'var(--node-ref)', label: 'Reference' },
 };
 
 const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanation, onOpenAiSettings }) => {
@@ -110,7 +112,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '30px 0', gap: '12px' }}>
                     <div style={{
                         width: '24px', height: '24px',
-                        border: `2px solid ${typeConfig.accent}33`,
+                        border: '2px solid var(--border-light)',
                         borderTopColor: typeConfig.accent,
                         borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite'
@@ -277,22 +279,16 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
         if (typeof aiResponse === 'object' && aiResponse !== null && aiResponse.technical) {
             return (
                 <div
-                    className="fade-in"
-                    style={{ fontSize: '0.88rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}
+                    className="fade-in ep-copy"
+                    style={{ fontSize: '0.875rem', lineHeight: '1.65', color: 'var(--text-secondary)' }}
                     role="tabpanel"
                     id={`panel-${tab}`}
                     aria-labelledby={`tab-${tab}`}
                 >
                     {tab === 'analogy' && (
                         <div>
-                            <p style={{ margin: '0 0 12px' }}>{aiResponse.analogy}</p>
-                            <div style={{
-                                background: `${typeConfig.accent}12`,
-                                padding: '10px 12px',
-                                borderRadius: '8px',
-                                borderLeft: `3px solid ${typeConfig.accent}`,
-                                fontSize: '0.82rem',
-                            }}>
+                            <p className="ep-analogy">{aiResponse.analogy}</p>
+                            <div className="ep-takeaway">
                                 <strong style={{ color: 'var(--text-primary)' }}><IconLightbulb size={13} /> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                         </div>
@@ -303,14 +299,7 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             <div className="markdown-content">
                                 <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{aiResponse.technical}</ReactMarkdown>
                             </div>
-                            <div style={{
-                                background: `${typeConfig.accent}12`,
-                                padding: '10px 12px',
-                                borderRadius: '8px',
-                                borderLeft: `3px solid ${typeConfig.accent}`,
-                                fontSize: '0.82rem',
-                                marginTop: '12px',
-                             }}>
+                            <div className="ep-takeaway">
                                 <strong style={{ color: 'var(--text-primary)' }}><IconLightbulb size={13} /> Takeaway:</strong> {aiResponse.key_takeaway}
                             </div>
                             {codeSnippet && (
@@ -334,12 +323,15 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
     };
 
     return (
-        <div className={`explanation-panel ${isOpen ? 'open' : ''}`}>
+        <div
+            className={`explanation-panel ${isOpen ? 'open' : ''}`}
+            style={{ '--ep-accent': typeConfig.accent }}
+        >
             {/* Header */}
             <div className="ep-header">
-                {/* Type badge */}
-                <span className="ep-type" style={{ color: typeConfig.accent, background: `${typeConfig.accent}18`, borderColor: `${typeConfig.accent}40` }}>
-                    <NodeTypeIcon type={nodeType} size={12} /> {typeConfig.label}
+                {/* Type label */}
+                <span className="ep-type">
+                    <NodeTypeIcon type={nodeType} size={13} /> {typeConfig.label}
                 </span>
 
                 <span className="ep-title" title={activeNode.data.label}>
@@ -388,7 +380,6 @@ const ExplanationPanel = ({ node, explanation, loading, onClose, fetchExplanatio
                             aria-pressed={level === lvl}
                             className={`ep-level ${level === lvl ? 'active' : ''}`}
                             aria-label={`Set difficulty level to ${lvl}`}
-                            style={level === lvl ? { borderColor: `${typeConfig.accent}44`, background: `${typeConfig.accent}12`, color: typeConfig.accent } : undefined}
                         >
                             {lvl}
                         </button>

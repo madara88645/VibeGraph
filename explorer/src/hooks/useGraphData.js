@@ -277,14 +277,14 @@ export function useGraphData(setNodes, setEdges) {
             const isCycle = e.data?.is_cycle_edge === true;
 
             if (isCycle) {
-                const style = { stroke: '#f97316', strokeWidth: 3, strokeDasharray: '8 4' };
+                const style = { stroke: 'var(--edge-cycle)', strokeWidth: 2, strokeDasharray: '8 4' };
                 styledEdges.push({
                     ...e,
                     style,
                     animated: true,
                     className: 'cycle-edge',
                     label: '\u27F3',
-                    labelStyle: { fill: '#f97316', fontSize: 12 },
+                    labelStyle: { fill: 'var(--edge-cycle)', fontSize: 12 },
                     data: {
                         ...e.data,
                         ghostBaseClassName: 'cycle-edge',
@@ -293,9 +293,10 @@ export function useGraphData(setNodes, setEdges) {
                     },
                 });
             } else {
+                // Theme tokens (index.css → --edge-*), so edges follow light/dark.
                 const style = isInternal
-                    ? { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 }
-                    : { stroke: 'rgba(148, 163, 184, 0.25)', strokeWidth: 2, strokeDasharray: '6 4' };
+                    ? { stroke: 'var(--edge-internal)', strokeWidth: 2 }
+                    : { stroke: 'var(--edge-external)', strokeWidth: 1.5, strokeDasharray: '5 5' };
                 const className = isInternal ? '' : 'external-edge';
                 styledEdges.push({
                     ...e,

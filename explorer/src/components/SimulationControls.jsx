@@ -232,7 +232,7 @@ const SimulationControls = ({
             <div className="sim-divider" />
 
             {/* Speed Selector */}
-            <div role="group" aria-label="Simulation speed">
+            <div role="group" aria-label="Simulation speed" className="sim-speed-group">
                 {speedOptions.map(opt => (
                     <button
                         key={opt.value}

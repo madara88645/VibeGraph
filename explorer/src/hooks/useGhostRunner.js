@@ -5,9 +5,9 @@ import { buildAiHeaders, fetchWithTimeout } from '../utils/aiClient';
 import { buildNodeCodeContext } from '../utils/nodeMetadata';
 
 const TRAIL_LENGTH = 4;
-const DEFAULT_EDGE_STYLE = { stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 3.5 };
-const GHOST_ACTIVE_EDGE_STYLE = { stroke: '#f43f5e', strokeWidth: 7 };
-const GHOST_TRAIL_EDGE_STYLE = { stroke: 'rgba(244, 63, 94, 0.5)', strokeWidth: 4 };
+const DEFAULT_EDGE_STYLE = { stroke: 'var(--edge-internal)', strokeWidth: 2 };
+const GHOST_ACTIVE_EDGE_STYLE = { stroke: 'var(--ghost-edge)', strokeWidth: 3.5 };
+const GHOST_TRAIL_EDGE_STYLE = { stroke: 'var(--ghost-edge-trail)', strokeWidth: 2.5 };
 const GHOST_NARRATION_TIMEOUT_MS = 20000;
 
 function isNavigableNode(node) {
