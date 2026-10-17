@@ -11,21 +11,23 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
+// The minimap paints these as SVG fill attributes, which cannot read CSS
+// variables, so they mirror the dark-theme --node-* tokens in index.css.
 const minimapNodeColor = (node) => {
-  if (node.data?.entry_point) return '#22c55e';
+  if (node.data?.entry_point) return '#6ee7b7';
   switch (node.data?.type) {
     case 'function':
-      return '#06b6d4';
+      return '#7dd3fc';
     case 'class':
-      return '#a855f7';
+      return '#c4b5fd';
     default:
-      return '#334155';
+      return 'rgba(167, 243, 208, 0.22)';
   }
 };
 
 const defaultEdgeOptions = {
   type: 'default',
-  style: { strokeWidth: 2, stroke: 'rgba(148, 163, 184, 0.4)' },
+  style: { strokeWidth: 1.5, stroke: 'var(--edge-internal)' },
 };
 const GraphViewer = ({
   nodes,
@@ -119,13 +121,17 @@ const GraphViewer = ({
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
         >
-          <MiniMap
-            nodeColor={minimapNodeColor}
-            maskColor="rgba(0, 0, 0, 0.76)"
-            style={{ borderRadius: '12px' }}
-          />
-          <Controls />
-          <Background variant="dots" color="rgba(16, 185, 129, 0.15)" gap={24} size={1} />
+          {hasGraph ? (
+            <>
+              <MiniMap
+                nodeColor={minimapNodeColor}
+                nodeBorderRadius={3}
+                maskColor="rgba(3, 8, 6, 0.6)"
+              />
+              <Controls showInteractive={false} />
+            </>
+          ) : null}
+          <Background variant="dots" color="rgba(110, 231, 183, 0.13)" gap={24} size={1} />
         </ReactFlow>
       </div>
       {hasGraph ? (
@@ -216,19 +222,27 @@ const GraphViewer = ({
       {!hasGraph ? (
         <div className="graph-empty-state" aria-live="polite">
           <div className="empty-hero">
-            <div className="empty-orb" aria-hidden="true">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <circle cx="5" cy="6" r="2" />
-                <circle cx="19" cy="6" r="2" />
-                <circle cx="5" cy="18" r="2" />
-                <circle cx="19" cy="18" r="2" />
-                <line x1="9.5" y1="10.5" x2="6.5" y2="7.5" />
-                <line x1="14.5" y1="10.5" x2="17.5" y2="7.5" />
-                <line x1="9.5" y1="13.5" x2="6.5" y2="16.5" />
-                <line x1="14.5" y1="13.5" x2="17.5" y2="16.5" />
-              </svg>
-            </div>
+            {/* A miniature of what the tool draws: a real slice of the demo
+                project — an entry point calling a class and a method. */}
+            <svg className="empty-figure" viewBox="0 0 384 132" aria-hidden="true">
+              <path className="empty-figure-edge" d="M192 40 C192 70, 95 62, 95 92" />
+              <path className="empty-figure-edge" d="M192 40 C192 70, 289 62, 289 92" />
+              <g className="empty-figure-node empty-figure-node-entry" transform="translate(110 8)">
+                <rect width="164" height="32" rx="8" />
+                <circle cx="16" cy="16" r="3" />
+                <text x="28" y="20.5">build_daily_plan</text>
+              </g>
+              <g className="empty-figure-node empty-figure-node-class" transform="translate(14 92)">
+                <rect width="162" height="32" rx="8" />
+                <circle cx="16" cy="16" r="3" />
+                <text x="28" y="20.5">LearningPlanner</text>
+              </g>
+              <g className="empty-figure-node" transform="translate(222 92)">
+                <rect width="134" height="32" rx="8" />
+                <circle cx="16" cy="16" r="3" />
+                <text x="28" y="20.5">build_plan</text>
+              </g>
+            </svg>
 
             <h2>Understand any codebase in minutes</h2>
             <p className="empty-subtitle">
@@ -260,7 +274,7 @@ const GraphViewer = ({
                   {isDemoLoading ? (
                     <div className="vibe-spinner" style={{ width: '16px', height: '16px', borderTopColor: 'currentColor', marginRight: '8px' }} aria-hidden="true"></div>
                   ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <polygon points="6 4 20 12 6 20 6 4" />
                     </svg>
                   )}
@@ -275,17 +289,17 @@ const GraphViewer = ({
 
           <div className="empty-features">
             <div className="empty-feature-card">
-              <IconFunction className="empty-feature-icon" size={24} />
+              <IconFunction className="empty-feature-icon" size={16} />
               <span className="empty-feature-title">AI Explanations</span>
               <span className="empty-feature-desc">Click any node for instant, plain-language breakdowns at your level</span>
             </div>
             <div className="empty-feature-card">
-              <IconGhost className="empty-feature-icon" size={24} />
+              <IconGhost className="empty-feature-icon" size={16} />
               <span className="empty-feature-title">Ghost Runner</span>
               <span className="empty-feature-desc">Watch an AI tracer walk through your call graph in real time</span>
             </div>
             <div className="empty-feature-card">
-              <IconChat className="empty-feature-icon" size={24} />
+              <IconChat className="empty-feature-icon" size={16} />
               <span className="empty-feature-title">Code Chat</span>
               <span className="empty-feature-desc">Ask follow-up questions about any function or architecture decision</span>
             </div>

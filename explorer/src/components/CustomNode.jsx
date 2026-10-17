@@ -4,16 +4,18 @@ import { Handle, Position } from 'reactflow';
 import { getShortName } from '../utils/stringUtils';
 import { IconFile, NodeTypeIcon } from './icons';
 
+// Accents are theme tokens (index.css → --node-*), so the light theme gets
+// deeper hues without a second map here.
 const typeConfig = {
-    'function': { accent: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'fn' },
-    'class': { accent: '#a855f7', bg: 'rgba(168, 85, 247, 0.08)', label: 'cls' },
-    'entry_point': { accent: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', label: 'entry' },
-    'builtin': { accent: '#3b82f6', bg: 'rgba(59, 130, 246, 0.08)', label: 'builtin' },
-    'external': { accent: '#f97316', bg: 'rgba(249, 115, 22, 0.08)', label: 'ext' },
-    'imported_local': { accent: '#14b8a6', bg: 'rgba(20, 184, 166, 0.08)', label: 'import' },
-    'module': { accent: '#eab308', bg: 'rgba(234, 179, 8, 0.10)', label: 'mod' },
-    'unresolved': { accent: '#94a3b8', bg: 'rgba(148, 163, 184, 0.08)', label: 'ref' },
-    'default': { accent: '#64748b', bg: 'rgba(100, 116, 139, 0.06)', label: 'ref' },
+    'function': { accent: 'var(--node-fn)', label: 'fn' },
+    'class': { accent: 'var(--node-class)', label: 'cls' },
+    'entry_point': { accent: 'var(--node-entry)', label: 'entry' },
+    'builtin': { accent: 'var(--node-builtin)', label: 'builtin' },
+    'external': { accent: 'var(--node-external)', label: 'ext' },
+    'imported_local': { accent: 'var(--node-import)', label: 'import' },
+    'module': { accent: 'var(--node-module)', label: 'mod' },
+    'unresolved': { accent: 'var(--node-ref)', label: 'ref' },
+    'default': { accent: 'var(--node-ref)', label: 'ref' },
 };
 
 const CustomNode = ({ data, selected }) => {
@@ -26,107 +28,50 @@ const CustomNode = ({ data, selected }) => {
     // Language-aware logic. Defaults are Python (PY); JS/TS override below.
     const lang = data.language || 'python';
     let langPill = 'PY';
-    let langColor = '#3b82f6'; // Match builtin python accent
     // Built-ins are language-owned, so tint their icon with the language colour
     // instead of the node-type accent to keep the JS/TS distinction visible.
     let iconColor = config.accent;
 
     if (lang === 'javascript') {
         langPill = 'JS';
-        langColor = '#eab308'; // JS yellow
-        if (nodeType === 'builtin') iconColor = langColor;
+        if (nodeType === 'builtin') iconColor = 'var(--node-module)';
     } else if (lang === 'typescript') {
         langPill = 'TS';
-        langColor = '#3b82f6'; // TS blue
-        if (nodeType === 'builtin') iconColor = langColor;
+        if (nodeType === 'builtin') iconColor = 'var(--node-fn)';
     }
-
 
     return (
         <div
             className={`vg-node ${selected ? 'vg-node-selected' : ''}`}
-            style={{
-                '--node-accent': config.accent,
-                '--node-bg': config.bg,
-            }}
+            style={{ '--node-accent': config.accent }}
         >
-            <Handle
-                type="target"
-                position={Position.Top}
-                style={{ background: config.accent, width: 6, height: 6, border: 'none' }}
-            />
+            <Handle type="target" position={Position.Top} />
 
-            {/* Header Row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <NodeTypeIcon type={nodeType} size={14} style={{ color: iconColor }} />
-                <span
-                    title={data.label}
-                    style={{
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        flex: 1,
-                    }}
-                >
+            <div className="vg-node-head">
+                <NodeTypeIcon type={nodeType} size={14} className="vg-node-icon" style={{ color: iconColor }} />
+                <span className="vg-node-label" title={data.label} style={{ color: 'var(--text-primary)' }}>
                     {data.label}
-                </span>
-
-                {/* Language pill */}
-                <span
-                    style={{
-                        fontSize: '0.6rem',
-                        fontWeight: 500,
-                        color: langColor,
-                        background: `${langColor}22`,
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        letterSpacing: '0.02em',
-                        textTransform: 'uppercase',
-                    }}
-                >
-                    {langPill}
-                </span>
-                {/* Type badge */}
-                <span
-                    style={{
-                        fontSize: '0.6rem',
-                        fontWeight: 500,
-                        color: config.accent,
-                        background: `${config.accent}22`,
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        letterSpacing: '0.02em',
-                        textTransform: 'uppercase',
-                    }}
-                >
-                    {config.label}
                 </span>
             </div>
 
-            {/* Meta Row */}
-            {(fileName || data.lineno) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                    {fileName && (
-                        <span title={fileName} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <IconFile size={11} /> {fileName}
-                        </span>
-                    )}
-                    {data.lineno && (
-                        <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                            L{data.lineno}
-                        </span>
-                    )}
-                </div>
-            )}
+            <div className="vg-node-meta">
+                {fileName && (
+                    <span className="vg-node-file" title={fileName} style={{ color: 'var(--text-secondary)' }}>
+                        <IconFile size={11} /> {fileName}
+                    </span>
+                )}
+                {data.lineno && (
+                    <span className="vg-node-line" style={{ color: 'var(--text-muted)' }}>
+                        L{data.lineno}
+                    </span>
+                )}
+                <span className="vg-node-tags">
+                    <span className="vg-node-lang">{langPill}</span>
+                    <span className="vg-node-type">{config.label}</span>
+                </span>
+            </div>
 
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                style={{ background: config.accent, width: 6, height: 6, border: 'none' }}
-            />
+            <Handle type="source" position={Position.Bottom} />
         </div>
     );
 };
