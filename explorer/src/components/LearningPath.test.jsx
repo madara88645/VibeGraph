@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -58,6 +59,31 @@ function renderLearningPath(props = {}) {
     onOpenAiSettings: vi.fn(),
   };
   return render(<LearningPath {...defaults} {...props} />);
+}
+
+// Mirrors App: onSelectFile feeds straight back into the selectedFile prop, so
+// stepping into a node from another file re-renders the panel with a new file.
+function LiveSelectedFileHarness(props) {
+  const [selectedFile, setSelectedFile] = useState('repo/main.py');
+  return (
+    <LearningPath
+      allNodes={NODES}
+      allEdges={EDGES}
+      onSelectNode={vi.fn()}
+      isOpen
+      onToggle={vi.fn()}
+      apiKey=""
+      {...props}
+      selectedFile={selectedFile}
+      onSelectFile={setSelectedFile}
+    />
+  );
+}
+
+async function waitForPathToSettle() {
+  await waitFor(() => {
+    expect(screen.queryByText('Building learning path...')).not.toBeInTheDocument();
+  });
 }
 
 describe('LearningPath', () => {
@@ -135,6 +161,65 @@ describe('LearningPath', () => {
     expect(onSelectFile).toHaveBeenCalledWith('repo/utils.py');
     expect(onSelectNode).toHaveBeenCalledWith(NODES[1]);
     expect(screen.getByText('Then follow the call to helper.')).toBeInTheDocument();
+  });
+
+  it('moves the step label together with the focused node on the first Next press', async () => {
+    const user = userEvent.setup();
+    const onSelectNode = vi.fn();
+
+    render(<LiveSelectedFileHarness onSelectNode={onSelectNode} />);
+
+    expect(await screen.findByText('Step 1 of 2')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Next step'));
+    await waitForPathToSettle();
+
+    expect(onSelectNode).toHaveBeenLastCalledWith(NODES[1]);
+    expect(screen.getByText('Step 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Then follow the call to helper.')).toBeInTheDocument();
+    // Stepping into another file must not rebuild the path and reset the step.
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the step label and focused node in sync when going back across files', async () => {
+    const user = userEvent.setup();
+    const onSelectNode = vi.fn();
+    const viewNode = {
+      id: 'render',
+      data: { label: 'render', file: 'repo/view.py', type: 'function' },
+    };
+    globalThis.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          steps: [
+            { step: 1, node_id: 'main', node_name: 'main', file_path: 'repo/main.py', reason: 'Entry.' },
+            { step: 2, node_id: 'helper', node_name: 'helper', file_path: 'repo/utils.py', reason: 'Helper.' },
+            { step: 3, node_id: 'render', node_name: 'render', file_path: 'repo/view.py', reason: 'View.' },
+          ],
+        }),
+    });
+
+    render(
+      <LiveSelectedFileHarness allNodes={[...NODES, viewNode]} onSelectNode={onSelectNode} />
+    );
+
+    expect(await screen.findByText('Step 1 of 3')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Next step'));
+    await user.click(screen.getByLabelText('Next step'));
+    await waitForPathToSettle();
+
+    expect(onSelectNode).toHaveBeenLastCalledWith(viewNode);
+    expect(screen.getByText('Step 3 of 3')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Previous step'));
+    await waitForPathToSettle();
+
+    expect(onSelectNode).toHaveBeenLastCalledWith(NODES[1]);
+    expect(screen.getByText('Step 2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Helper.')).toBeInTheDocument();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('renders separate controls, metadata, and description regions for the active step', async () => {
