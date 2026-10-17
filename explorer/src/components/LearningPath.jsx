@@ -62,6 +62,14 @@ const LearningPath = ({
   // Monotonic id so a superseded or unmounted request never applies its result.
   const requestIdRef = useRef(0);
 
+  // The path is repo-wide and the API only echoes selected_file back, so read it
+  // from a ref: goToStep() changes the selected file, and rebuilding the path on
+  // that change would reset the step index right after the user moved.
+  const selectedFileRef = useRef(selectedFile);
+  useEffect(() => {
+    selectedFileRef.current = selectedFile;
+  }, [selectedFile]);
+
   const runFetch = useCallback(async () => {
     const requestId = (requestIdRef.current += 1);
     setLoading(true);
@@ -77,7 +85,7 @@ const LearningPath = ({
         body: {
           nodes: allNodes,
           edges: allEdges || [],
-          selected_file: selectedFile,
+          selected_file: selectedFileRef.current,
           model: selectedModel || null,
         },
       });
@@ -98,7 +106,7 @@ const LearningPath = ({
         setLoading(false);
       }
     }
-  }, [allEdges, allNodes, apiKey, selectedFile, selectedModel]);
+  }, [allEdges, allNodes, apiKey, selectedModel]);
 
   useEffect(() => {
     if (!isOpen || allNodes.length === 0) {
