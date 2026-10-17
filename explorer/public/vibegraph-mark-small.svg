@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>VibeGraph</title>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#0B1411" stroke="#A7F3D0" stroke-opacity="0.25"/>
+  <path d="M18 20.5 L32 44 L46 20.5" stroke="#6EE7B7" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="20.5" r="5.5" fill="#0B1411" stroke="#6EE7B7" stroke-width="4"/>
+  <circle cx="46" cy="20.5" r="5.5" fill="#0B1411" stroke="#6EE7B7" stroke-width="4"/>
+  <circle cx="32" cy="44" r="7" fill="#6EE7B7"/>
+</svg>

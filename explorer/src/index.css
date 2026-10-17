@@ -322,11 +322,12 @@ textarea {
   box-shadow: var(--shadow-soft);
 }
 
+/* The V-graph mark carries its own dark tile, so it reads the same on the
+   dark and light header. */
 .header-logo {
+  display: block;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
-  object-fit: cover;
   flex-shrink: 0;
 }
 
