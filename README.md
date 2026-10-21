@@ -61,7 +61,7 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
   <tr>
     <td align="center" width="50%">
       <img src="docs/screenshots/03-chat-drawer.png" alt="AI chat drawer" width="100%">
-      <sub><b>AI chat</b> — multi-turn conversation with full code context</sub>
+      <sub><b>AI chat</b> — multi-turn conversation about the selected node's code</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/04-deps-view.png" alt="Dependency map view" width="100%">
@@ -80,7 +80,7 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
 | 👻 | **Ghost Runner v2** | Intelligent code traversal with 5 strategies (Smart, Entry Flow, Hub Tour, By File, Random), AI narration, Explore mode, progress tracking, and run summaries |
 | 🔍 | **Node Search** | Fuzzy search across all nodes with `Ctrl+K` — instantly zooms and highlights |
 | 💬 | **AI Chat** | Multi-turn conversation about any node, with that node's source code and its callers/callees as context |
-| 🎓 | **Learning Path** | AI-suggested study order: start here, then go here, for any file |
+| 🎓 | **Learning Path** | Suggested study order for the whole project: start here, then go here. Built from the call graph and refined by AI when a key is available |
 | 📝 | **Code Panel** | Source code with line numbers for every selected node |
 | 💡 | **AI Explanations** | Beginner / Intermediate / Advanced levels, Technical or Analogy mode |
 | 📤 | **Upload a Project** | Drop a project folder or a `.zip` containing Python, JavaScript or TypeScript files — the graph is built on upload |
@@ -126,14 +126,14 @@ cd explorer && npm install && cd ..
 
 By default the app asks for an OpenRouter key in **AI Settings** in the browser, and the backend uses that key for each AI request.
 
-To have the backend use its own key instead, create a `.env` file in the project root (see `.env.example`):
+To let the backend use its own key when no key is entered in AI Settings, create a `.env` file in the project root (see `.env.example`):
 
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 ALLOW_SERVER_FALLBACK_KEY=true
 ```
 
-Without `ALLOW_SERVER_FALLBACK_KEY=true`, the server key is ignored and a key entered in AI Settings is still required.
+A key entered in AI Settings is still used first. Without `ALLOW_SERVER_FALLBACK_KEY=true`, the server key is ignored and a key entered in AI Settings is required.
 
 ### 4. Run
 
@@ -245,7 +245,7 @@ VibeGraph/
 | `POST` | `/api/explain` | AI explanation for a node |
 | `POST` | `/api/chat` | Multi-turn AI conversation |
 | `POST` | `/api/chat/stream` | SSE streaming AI conversation |
-| `POST` | `/api/learning-path` | AI-suggested learning order |
+| `POST` | `/api/learning-path` | Learning order built from the graph, refined by AI when a key is available |
 | `POST` | `/api/ghost-narrate` | Ghost Runner AI narration |
 
 ---
@@ -281,9 +281,9 @@ cd explorer && npx vitest run
 
 VibeGraph has no user accounts and no database. This is what happens to your code and your key:
 
-- **Uploaded files stay on the server for at least an hour (by default)** — The backend writes your files to a temporary folder (`vibegraph_upload_*` in the system temp directory) and keeps it after analysis, so the code panel, AI explanations and chat can read source snippets later. If an upload fails, its folder is deleted right away.
-- **Old uploads are removed by a cleanup that runs on later uploads** — After each successful upload, the backend runs a background cleanup that deletes upload folders older than one hour (`VIBEGRAPH_UPLOAD_RETENTION_SECONDS`, default `3600`). There is no separate timer, so a folder stays longer than an hour if no further upload succeeds on that server.
-- **Recently read files can stay in server memory** — To speed up snippet requests, the backend caches up to 128 recently read source files in memory. The cache is cleared when the server process restarts.
+- **Uploaded files are kept on the server after analysis** — The backend writes your files to a temporary folder (`vibegraph_upload_*` in the system temp directory) and keeps it, so the code panel, AI explanations, chat and Ghost Runner can read source snippets later. If an upload fails, the files written for it are deleted right away.
+- **Old uploads are removed by a cleanup that runs on later uploads** — After each successful upload, the backend runs a background cleanup that deletes upload folders older than one hour (`VIBEGRAPH_UPLOAD_RETENTION_SECONDS`, default `3600`). There is no separate timer, so a folder stays longer than an hour if no further upload succeeds on that server. There is no guaranteed minimum either: if the files are gone, the code panel asks you to upload the project again.
+- **Recently read files can stay in server memory** — To speed up snippet requests, the backend keeps a limited number of recently read source files in an in-memory cache. The cache is cleared when the server process restarts.
 - **Uploads are not listed or shared** — Each upload gets a randomly named folder, and its path is returned only to the browser that uploaded it. No endpoint lists uploads.
 - **What is sent to OpenRouter** — When you use an AI feature, the backend sends the relevant code snippet, related context (such as file paths, callers and callees) and, for chat, your messages to OpenRouter, which passes it to the model you selected. OpenRouter's and the model provider's own policies apply to that data.
 - **Your OpenRouter key** — The key you enter in AI Settings is kept in your browser's `sessionStorage` (cleared when you close the tab) and sent as an `Authorization` header with each AI request to the VibeGraph backend (on vibegraph.dev, through Vercel's `/api` rewrite to Fly.io), which uses it to call OpenRouter. The backend does not save the key or write request headers to its logs.
