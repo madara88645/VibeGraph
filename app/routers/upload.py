@@ -8,10 +8,13 @@ import tempfile
 import time
 import zipfile
 import sys
+from collections.abc import AsyncGenerator, AsyncIterator
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from starlette.datastructures import UploadFile
+from starlette.formparsers import MultiPartException, MultiPartParser
 
 import app.dependencies as deps
 from analyst.analyzer import CodeAnalyzer
@@ -28,6 +31,33 @@ UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "
 # Cap exported graph size to protect JSON payload, Dagre layout, and ReactFlow
 # render cost. Overridable per-deployment for experimentation.
 GRAPH_NODE_BUDGET = int(os.getenv("VIBEGRAPH_GRAPH_NODE_BUDGET", "1500"))
+
+MAX_UPLOAD_FILES = 10000
+
+# Raw multipart bytes allowed per file on top of its contents: the boundary
+# line plus the Content-Disposition (relative path) and Content-Type headers.
+MULTIPART_OVERHEAD_PER_FILE = 1024
+
+_UPLOAD_REQUEST_BODY = {
+    "required": True,
+    "content": {
+        "multipart/form-data": {
+            "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "contentMediaType": "application/octet-stream",
+                        },
+                    }
+                },
+            }
+        }
+    },
+}
 
 
 def _format_upload_limit(byte_count: int) -> str:
@@ -113,16 +143,80 @@ def cleanup_expired_upload_dirs(
         logger.error(f"Error scanning temp directory for expired uploads: {e}")
 
 
+def _upload_too_large(max_upload_size: int) -> HTTPException:
+    return HTTPException(
+        status_code=413,
+        detail=(
+            "Upload too large. Max total upload size is "
+            f"{_format_upload_limit(max_upload_size)}."
+        ),
+    )
+
+
+async def read_upload_files(request: Request) -> AsyncIterator[List[UploadFile]]:
+    """Parse the multipart upload body and close its files after the request.
+
+    FastAPI's File(...) parsing stops at Starlette's default of 1000 files,
+    below MAX_UPLOAD_FILES. Raising that cap alone would let thousands of
+    parts pile up in memory before upload_project's size check runs, so the
+    raw body is counted against a byte budget while it streams in.
+    """
+    media_type = request.headers.get("content-type", "").partition(";")[0]
+    if media_type.strip().lower() != "multipart/form-data":
+        raise HTTPException(
+            status_code=400, detail="Expected a multipart/form-data upload."
+        )
+
+    max_upload_size = deps.get_max_upload_bytes()
+    byte_budget = max_upload_size + MAX_UPLOAD_FILES * MULTIPART_OVERHEAD_PER_FILE
+    content_length = request.headers.get("content-length", "")
+    if content_length.isdecimal() and int(content_length) > byte_budget:
+        raise _upload_too_large(max_upload_size)
+
+    async def counted_stream() -> AsyncGenerator[bytes, None]:
+        received = 0
+        async for chunk in request.stream():
+            received += len(chunk)
+            if received > byte_budget:
+                raise _upload_too_large(max_upload_size)
+            yield chunk
+
+    # The frontend sends only file parts, so plain fields get a small cap.
+    parser = MultiPartParser(
+        request.headers, counted_stream(), max_files=MAX_UPLOAD_FILES, max_fields=16
+    )
+    try:
+        form = await parser.parse()
+    except MultiPartException as exc:
+        raise HTTPException(status_code=400, detail=exc.message)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # Same fallback FastAPI uses when it parses File(...) bodies itself.
+        raise HTTPException(
+            status_code=400, detail="There was an error parsing the body"
+        ) from exc
+
+    try:
+        files = [item for item in form.getlist("files") if isinstance(item, UploadFile)]
+        if not files:
+            raise HTTPException(status_code=400, detail="No files uploaded.")
+        yield files
+    finally:
+        await form.close()
+
+
 @router.post(
     "/upload-project",
     response_model=UploadResponse,
     summary="Upload and analyse a project",
+    openapi_extra={"requestBody": _UPLOAD_REQUEST_BODY},
 )
 @limiter.limit(UPLOAD_LIMIT)
 def upload_project(
     request: Request,
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
+    files: List[UploadFile] = Depends(read_upload_files, scope="function"),
 ):
     """
     Receives dynamic uploads (single .py, multiple files, or .zip), saves to a
@@ -134,7 +228,6 @@ def upload_project(
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
     max_upload_size = deps.get_max_upload_bytes()
     MAX_ZIP_FILES = 10000
-    MAX_UPLOAD_FILES = 10000
 
     if len(files) > MAX_UPLOAD_FILES:
         raise HTTPException(

@@ -73,12 +73,9 @@ def test_upload_safe_zip():
 def test_upload_too_many_multipart_files():
     """Ensure that uploading too many files directly via multipart is rejected."""
     # MAX_UPLOAD_FILES is 10000, so we create 10001 mock files
-    # Note: Starlette has a built-in max_files default of 1000 which will reject this
-    # with a 400 Bad Request before it reaches our endpoint logic, which is also
-    # an acceptable and secure behavior.
     files = [
         ("files", (f"file_{i}.py", b"print('hello')", "text/x-python"))
-        for i in range(1001)
+        for i in range(10001)
     ]
 
     response = client.post("/api/upload-project", files=files)
