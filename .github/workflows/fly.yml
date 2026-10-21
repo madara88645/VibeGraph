@@ -55,3 +55,10 @@ jobs:
 
       - name: Deploy app
         run: flyctl deploy --remote-only --config fly.toml
+
+      # Machines auto-stop (min_machines_running = 0), so allow for a cold start.
+      - name: Check health after deploy
+        run: |
+          curl --fail --silent --show-error \
+            --retry 6 --retry-delay 10 --retry-all-errors --max-time 15 \
+            https://vibegraph-api.fly.dev/api/health
