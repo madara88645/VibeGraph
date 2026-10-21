@@ -324,7 +324,9 @@ def upload_project(
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
 
-                        if _is_skipped_zip_member(safe_filename, member.is_dir()):
+                        # Read before member.filename loses its trailing "/".
+                        is_dir = member.is_dir()
+                        if _is_skipped_zip_member(safe_filename, is_dir):
                             continue
 
                         if sensitive_upload_segment(safe_filename) is not None:
@@ -352,14 +354,14 @@ def upload_project(
                             )
 
                         member.filename = safe_filename
-                        safe_members.append((member, extracted_path))
+                        safe_members.append((member, extracted_path, is_dir))
 
                     # PERFORMANCE OPTIMIZATION (Bolt): Cache created directories
                     # during ZIP extraction to avoid redundant O(N) os.makedirs syscalls,
                     # which reduces directory creation overhead by >90% for large archives.
                     created_dirs = set()
-                    for member, extracted_path in safe_members:
-                        if member.is_dir():
+                    for member, extracted_path, is_dir in safe_members:
+                        if is_dir:
                             if extracted_path not in created_dirs:
                                 os.makedirs(extracted_path, exist_ok=True, mode=0o700)
                                 created_dirs.add(extracted_path)

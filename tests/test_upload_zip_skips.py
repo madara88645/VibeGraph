@@ -244,3 +244,52 @@ def test_total_zip_entries_are_capped_even_when_skipped(monkeypatch, upload_dirs
     assert at_cap.status_code == 200, at_cap.text
     assert over_cap.status_code == 400
     assert over_cap.json()["detail"] == "Too many entries in zip archive (max 50)"
+
+
+def test_zip_with_directory_entries_is_extracted(upload_dirs):
+    response = _post(
+        _zip(
+            [
+                ("pkg/", ""),
+                ("pkg/sub/", ""),
+                ("pkg/sub/app.py", APP_SOURCE),
+            ]
+        )
+    )
+
+    assert response.status_code == 200, response.text
+    root = upload_dirs[0]
+    assert os.path.isdir(os.path.join(root, "pkg", "sub"))
+    assert _on_disk(root) == {"pkg", "pkg/sub", "pkg/sub/app.py"}
+
+
+def test_real_project_archive_is_analyzed(tmp_path, upload_dirs):
+    """shutil.make_archive, like zip -r and Finder, stores folder entries."""
+    project = tmp_path / "proj"
+    for rel, text in {
+        "src/app.py": APP_SOURCE,
+        "src/web.js": "export const a = 1;\n",
+        ".gitignore": "node_modules/\n",
+        ".env.example": "API_KEY=changeme\n",
+        ".git/config": "[core]\n",
+        ".git/refs/heads/main": "0" * 40 + "\n",
+        "node_modules/left-pad/index.js": "module.exports = 1;\n",
+        "venv/lib/site.py": "def site():\n    pass\n",
+    }.items():
+        path = project / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    archive_path = shutil.make_archive(str(tmp_path / "proj"), "zip", tmp_path, "proj")
+
+    with open(archive_path, "rb") as archive:
+        response = _post(archive)
+
+    assert response.status_code == 200, response.text
+    assert {"run", "helper"} <= _node_ids(response)
+    assert _on_disk(upload_dirs[0]) == {
+        "proj",
+        "proj/.gitignore",
+        "proj/src",
+        "proj/src/app.py",
+        "proj/src/web.js",
+    }
