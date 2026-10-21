@@ -9,7 +9,7 @@ setup, and deployment, see the [root README](../README.md).
 
 ## Prerequisites
 
-- **Node.js 18+**
+- **Node.js 20.19+ or 22.12+** (required by Vite 7; CI uses Node 20)
 
 ## Getting started
 

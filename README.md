@@ -6,7 +6,7 @@
 
 # VibeGraph
 
-**Turn any codebase into an interactive, AI-powered learning experience.**
+**Turn a Python, JavaScript or TypeScript codebase into an interactive, AI-powered learning experience.**
 
 Upload your code → explore the call graph → ask AI anything about it.
 
@@ -17,10 +17,10 @@ Upload your code → explore the call graph → ask AI anything about it.
 <sub>▶ <a href="docs/screenshots/vibegraph-demo.mp4">Watch the full-motion version</a> — smoother, with scene transitions</sub>
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![AI](https://img.shields.io/badge/AI-OpenRouter%20Multi--Model-FF6B35)](https://openrouter.ai)
 [![License](https://img.shields.io/badge/License-AGPLv3-22C55E)](LICENSE)
 [![CI](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/madara88645/VibeGraph/actions/workflows/ci.yml)
@@ -39,9 +39,9 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
 
 ### Supported languages
 
-- **Python**: Deep AST parsing for full call graph visualization.
-- **JavaScript**: Full support for ES6 modules and relationships.
-- **TypeScript**: Full support including types and interfaces.
+- **Python** (`.py`): parsed with Python's built-in `ast` module.
+- **JavaScript** (`.js`, `.jsx`, `.mjs`, `.cjs`): parsed with tree-sitter. Functions, classes, ES module imports, `require()` and calls become graph nodes and edges.
+- **TypeScript** (`.ts`, `.tsx`): parsed with tree-sitter using the same rules as JavaScript. Type-only imports are skipped; interfaces and type aliases are not shown as nodes.
 
 ---
 
@@ -61,7 +61,7 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
   <tr>
     <td align="center" width="50%">
       <img src="docs/screenshots/03-chat-drawer.png" alt="AI chat drawer" width="100%">
-      <sub><b>AI chat</b> — multi-turn conversation with full code context</sub>
+      <sub><b>AI chat</b> — multi-turn conversation about the selected node's code</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/04-deps-view.png" alt="Dependency map view" width="100%">
@@ -79,11 +79,11 @@ Built for people who learn by exploring — vibe coders, junior devs, or anyone 
 | 🧬 | **Interactive Call Graph** | Functions, classes, and relationships as a zoomable, pannable graph |
 | 👻 | **Ghost Runner v2** | Intelligent code traversal with 5 strategies (Smart, Entry Flow, Hub Tour, By File, Random), AI narration, Explore mode, progress tracking, and run summaries |
 | 🔍 | **Node Search** | Fuzzy search across all nodes with `Ctrl+K` — instantly zooms and highlights |
-| 💬 | **AI Chat** | Multi-turn conversation about any node — AI holds the full source as context |
-| 🎓 | **Learning Path** | AI-suggested study order: start here, then go here, for any file |
+| 💬 | **AI Chat** | Multi-turn conversation about any node, with that node's source code and its callers/callees as context |
+| 🎓 | **Learning Path** | Suggested study order for the whole project: start here, then go here. Built from the call graph and refined by AI when a key is available |
 | 📝 | **Code Panel** | Source code with line numbers for every selected node |
 | 💡 | **AI Explanations** | Beginner / Intermediate / Advanced levels, Technical or Analogy mode |
-| 📤 | **Upload Any Project** | Drop source files (like `.py`, `.js`, `.ts`) or a `.zip` of your whole project — graph appears instantly |
+| 📤 | **Upload a Project** | Drop a project folder or a `.zip` containing Python, JavaScript or TypeScript files — the graph is built on upload |
 
 ### Ghost Runner v2
 
@@ -102,8 +102,8 @@ The Ghost Runner has been upgraded from a simple random walk to an intelligent, 
 ### Prerequisites
 
 - **Python 3.10+**
-- **Node.js 18+**
-- **OpenRouter API key** — free at [openrouter.ai](https://openrouter.ai) (no credit card required)
+- **Node.js 20.19+ or 22.12+** (required by Vite 7; CI uses Node 20)
+- **OpenRouter API key** from [openrouter.ai](https://openrouter.ai) — needed for the AI features
 
 ### 1. Clone
 
@@ -122,13 +122,18 @@ pip install -r requirements.txt
 cd explorer && npm install && cd ..
 ```
 
-### 3. Configure
+### 3. Configure (optional)
 
-Create a `.env` file in the project root:
+By default the app asks for an OpenRouter key in **AI Settings** in the browser, and the backend uses that key for each AI request.
+
+To let the backend use its own key when no key is entered in AI Settings, create a `.env` file in the project root (see `.env.example`):
 
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key_here
+ALLOW_SERVER_FALLBACK_KEY=true
 ```
+
+A key entered in AI Settings is still used first. Without `ALLOW_SERVER_FALLBACK_KEY=true`, the server key is ignored and a key entered in AI Settings is required.
 
 ### 4. Run
 
@@ -159,7 +164,7 @@ Open **[http://localhost:8000](http://localhost:8000)**
 
 ### 5. Use it
 
-**Upload your project** — click **Upload Project** in the top bar, select source files (like `.py`, `.js`, `.ts`) or a `.zip` archive. The graph appears automatically.
+**Upload your project** — click **Upload Project** in the top bar and choose a project folder or a `.zip` archive with Python, JavaScript or TypeScript files. The graph appears when analysis finishes.
 
 **Analyze via CLI** (optional, for local files):
 
@@ -179,6 +184,8 @@ VibeGraph runs as a hybrid deployment:
 | Frontend SPA | [Vercel](https://vercel.com) | `vibegraph.dev` (Vercel alias: `vibegraph.vercel.app`) |
 
 ### Docker Compose (local)
+
+`docker-compose.yml` reads `.env`, so create one first (for example `cp .env.example .env`).
 
 ```bash
 docker compose up
@@ -208,13 +215,14 @@ VibeGraph/
 │   ├── dependencies.py    # AI provider config (OpenRouter)
 │   └── rate_limit.py      # Rate limiting configuration
 ├── analyst/
-│   ├── analyzer.py        # AST parser → NetworkX graph
+│   ├── analyzer.py        # Python AST analysis + project walk → NetworkX graph
+│   ├── languages/         # Language plugins: Python (ast), JavaScript/TypeScript (tree-sitter)
 │   └── exporter.py        # NetworkX → React Flow JSON
 ├── teacher/
 │   └── openrouter_teacher.py  # OpenRouter AI: explain / chat / ghost narration
 ├── explorer/              # React 19 + Vite frontend
 │   └── src/components/    # GraphViewer, ChatDrawer, CodePanel, ProjectUpload, ...
-├── tests/                 # 128+ pytest backend tests
+├── tests/                 # pytest backend tests
 ├── .github/workflows/     # CI/CD (lint, security, tests, deploy)
 ├── fly.toml               # Fly.io deployment config
 ├── Dockerfile.fly         # Backend container
@@ -231,12 +239,13 @@ VibeGraph/
 |--------|----------|-------------|
 | `GET` | `/api/health` | Health check |
 | `GET` | `/api/ai-config` | AI provider configuration discovery |
-| `POST` | `/api/upload-project` | Upload `.py`/`.zip`, returns graph JSON |
+| `GET` | `/api/languages` | Languages and file extensions the analyzer supports |
+| `POST` | `/api/upload-project` | Upload a project folder (as files) or a `.zip` of Python/JS/TS code, returns graph JSON |
 | `POST` | `/api/snippet` | Extract source code for a node |
 | `POST` | `/api/explain` | AI explanation for a node |
 | `POST` | `/api/chat` | Multi-turn AI conversation |
 | `POST` | `/api/chat/stream` | SSE streaming AI conversation |
-| `POST` | `/api/learning-path` | AI-suggested learning order |
+| `POST` | `/api/learning-path` | Learning order built from the graph, refined by AI when a key is available |
 | `POST` | `/api/ghost-narrate` | Ghost Runner AI narration |
 
 ---
@@ -245,11 +254,12 @@ VibeGraph/
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python 3.12, FastAPI, NetworkX, `ast` stdlib |
-| AI | OpenRouter — DeepSeek V4 Flash, Qwen3 Coder 30B, Gemini 3.1 Flash Lite, Claude Sonnet 4.6 |
-| Frontend | React 19, React Flow, Vite 7 |
+| Backend | Python 3.12, FastAPI, NetworkX |
+| Parsing | Python: stdlib `ast` · JavaScript/TypeScript: tree-sitter |
+| AI | OpenRouter models; the list is configured on the server and shown in AI Settings |
+| Frontend | React 19, React Flow (graph rendering), dagre (layout), Vite 7 |
 | Styling | Custom CSS — dark/light themes, glassmorphism |
-| Testing | pytest (128 tests), Vitest (80 tests) |
+| Testing | pytest (backend), Vitest (frontend) |
 | Deploy | Fly.io (backend), Vercel (frontend) |
 | Security | Rate limiting, path traversal protection, zip bomb prevention, prompt sanitization |
 
@@ -258,24 +268,26 @@ VibeGraph/
 ## Tests
 
 ```bash
-# Backend (128 tests)
+# Backend
 python -m pytest tests/ -v
 
-# Frontend (80 tests)
+# Frontend
 cd explorer && npx vitest run
 ```
 
 ---
 
-## Privacy & Data Isolation
+## Privacy & Data Handling
 
-VibeGraph is designed with complete data isolation:
+VibeGraph has no user accounts and no database. This is what happens to your code and your key:
 
-- **No database** — No user accounts, no persistent storage on the server
-- **Ephemeral uploads** — Files are analyzed in a temporary directory and deleted immediately after processing
-- **Client-side persistence** — Analysis results are stored only in your browser's `localStorage`
-- **No cross-user visibility** — Each user's data is completely isolated; no one else can see your uploads
-- **Automatic cleanup** — Temporary upload directories are purged after 1 hour
+- **Uploaded files are kept on the server after analysis** — The backend writes your files to a temporary folder (`vibegraph_upload_*` in the system temp directory) and keeps it, so the code panel, AI explanations, chat and Ghost Runner can read source snippets later. If an upload fails, the files written for it are deleted right away.
+- **Old uploads are removed by a cleanup that runs on later uploads** — After each successful upload, the backend runs a background cleanup that deletes upload folders older than one hour (`VIBEGRAPH_UPLOAD_RETENTION_SECONDS`, default `3600`). There is no separate timer, so a folder stays longer than an hour if no further upload succeeds on that server. There is no guaranteed minimum either: if the files are gone, the code panel asks you to upload the project again.
+- **Recently read files can stay in server memory** — To speed up snippet requests, the backend keeps a limited number of recently read source files in an in-memory cache. The cache is cleared when the server process restarts.
+- **Uploads are not listed or shared** — Each upload gets a randomly named folder, and its path is returned only to the browser that uploaded it. No endpoint lists uploads.
+- **What is sent to OpenRouter** — When you use an AI feature, the backend sends the relevant code snippet, related context (such as file paths, callers and callees) and, for chat, your messages to OpenRouter, which passes it to the model you selected. OpenRouter's and the model provider's own policies apply to that data.
+- **Your OpenRouter key** — The key you enter in AI Settings is kept in your browser's `sessionStorage` (cleared when you close the tab) and sent as an `Authorization` header with each AI request to the VibeGraph backend (on vibegraph.dev, through Vercel's `/api` rewrite to Fly.io), which uses it to call OpenRouter. The backend does not save the key or write request headers to its logs.
+- **What stays in your browser** — The graph, chat history, AI explanations, theme and model choice are saved in your browser's `localStorage`.
 
 ---
 
