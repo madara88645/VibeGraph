@@ -17,10 +17,15 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException, MultiPartParser
 
 import app.dependencies as deps
-from analyst.analyzer import CodeAnalyzer
+from analyst.analyzer import IGNORED_DIRS, CodeAnalyzer
 from app.models import UploadResponse
 from app.rate_limit import UPLOAD_LIMIT, limiter
-from app.utils.security import UPLOAD_PREFIX, normalize_uploaded_filename
+from app.utils.security import (
+    UPLOAD_PREFIX,
+    normalize_uploaded_filename,
+    normalize_zip_member_path,
+    sensitive_upload_segment,
+)
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
@@ -33,6 +38,16 @@ UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "
 GRAPH_NODE_BUDGET = int(os.getenv("VIBEGRAPH_GRAPH_NODE_BUDGET", "1500"))
 
 MAX_UPLOAD_FILES = 10000
+
+# MAX_ZIP_FILES caps the zip members we extract. Members we skip (.git,
+# node_modules, ...) are free, so MAX_ZIP_ENTRIES caps every entry we scan.
+MAX_ZIP_FILES = 10000
+MAX_ZIP_ENTRIES = 10 * MAX_ZIP_FILES
+
+# .env templates hold placeholders, not code, so zips may carry them.
+ENV_TEMPLATE_NAMES = frozenset(
+    {".env.example", ".env.sample", ".env.template", ".env.dist"}
+)
 
 # Raw multipart bytes allowed per file on top of its contents: the boundary
 # line plus the Content-Disposition (relative path) and Content-Type headers.
@@ -110,6 +125,17 @@ def contains_supported_file(path: str) -> bool:
         except OSError:
             continue
     return False
+
+
+def _is_skipped_zip_member(safe_filename: str, is_dir: bool) -> bool:
+    """Return True for zip members the analyzer would never read: anything
+    inside an IGNORED_DIRS folder, a git submodule's ``.git`` file, or an
+    .env template such as .env.example."""
+    parts = safe_filename.split("/")
+    folders = parts if is_dir else parts[:-1]
+    if any(part in IGNORED_DIRS for part in folders):
+        return True
+    return parts[-1] == ".git" or parts[-1].lower() in ENV_TEMPLATE_NAMES
 
 
 # Backwards-compat shim — older external scripts may still import the
@@ -227,7 +253,6 @@ def upload_project(
 
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
     max_upload_size = deps.get_max_upload_bytes()
-    MAX_ZIP_FILES = 10000
 
     if len(files) > MAX_UPLOAD_FILES:
         raise HTTPException(
@@ -242,6 +267,7 @@ def upload_project(
         total_upload_size = 0
         total_uncompressed_header_size = 0
         total_extracted_size = 0
+        total_zip_entries = 0
         total_zip_files = 0
         for file in files:
             safe_name = normalize_uploaded_filename(file.filename)
@@ -267,20 +293,21 @@ def upload_project(
             if safe_name.endswith(".zip"):
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     tmp_dir_real = os.path.realpath(tmp_dir)
-                    safe_members = []
-                    for member in zip_ref.infolist():
-                        total_zip_files += 1
-                        if total_zip_files > MAX_ZIP_FILES:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Too many files in zip archive (max {MAX_ZIP_FILES})",
-                            )
+                    members = zip_ref.infolist()
+                    total_zip_entries += len(members)
+                    if total_zip_entries > MAX_ZIP_ENTRIES:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Too many entries in zip archive (max {MAX_ZIP_ENTRIES})",
+                        )
 
+                    safe_members = []
+                    for member in members:
                         try:
                             if stat.S_ISLNK(member.external_attr >> 16):
                                 raise ValueError("Symlink in zip file detected")
 
-                            safe_filename = normalize_uploaded_filename(member.filename)
+                            safe_filename = normalize_zip_member_path(member.filename)
                             target_path = os.path.join(tmp_dir_real, safe_filename)
                             extracted_path = os.path.realpath(target_path)
 
@@ -295,6 +322,26 @@ def upload_project(
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Unsafe zip file detected: {safe_name}",
+                            )
+
+                        if _is_skipped_zip_member(safe_filename, member.is_dir()):
+                            continue
+
+                        if sensitive_upload_segment(safe_filename) is not None:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=(
+                                    f"Unsafe zip file detected: {safe_name} contains "
+                                    "a secrets file or folder such as .env or .ssh. "
+                                    "Remove it and zip the project again."
+                                ),
+                            )
+
+                        total_zip_files += 1
+                        if total_zip_files > MAX_ZIP_FILES:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Too many files in zip archive (max {MAX_ZIP_FILES})",
                             )
 
                         total_uncompressed_header_size += member.file_size
