@@ -81,6 +81,24 @@ describe('readDroppedEntries', () => {
     expect(root.readers[0].readEntries).toHaveBeenCalledTimes(3);
   });
 
+  it('reads a folder that comes back in one very large batch', async () => {
+    // Firefox and Safari can return every child from the first readEntries()
+    // call, e.g. a dataset folder with 150k images.
+    const file = new File(['content'], 'img.png');
+    const children = Array.from({ length: 150_000 }, (_, i) => ({
+      isFile: true,
+      isDirectory: false,
+      name: `${i}.png`,
+      fullPath: `/myproj/data/${i}.png`,
+      file: (resolve) => resolve(file),
+    }));
+
+    const collected = await readDroppedEntries([directoryEntry('/myproj/data', children)]);
+
+    expect(collected).toHaveLength(150_000);
+    expect(collected[149_999].path).toBe('myproj/data/149999.png');
+  });
+
   it('never opens folders the upload would skip', async () => {
     const nodeModules = directoryEntry('/myproj/node_modules', [fileEntry('/myproj/node_modules/react/index.js')]);
     const nestedNodeModules = directoryEntry('/myproj/packages/web/node_modules', [

@@ -43,12 +43,16 @@ function makeDirectoryEntry(fullPath, children, { readError } = {}) {
     };
 }
 
-// Browsers put one zero-length File named after the folder in dataTransfer.files.
-function folderDropData(rootEntry) {
-    return {
+// Browsers put one zero-length File named after the folder in dataTransfer.files,
+// and empty the drag data store as soon as the drop handler yields.
+function fireFolderDrop(target, rootEntry) {
+    const dataTransfer = {
         items: [{ kind: 'file', webkitGetAsEntry: () => rootEntry }],
         files: [new File([], rootEntry.name)],
     };
+    fireEvent.drop(target, { dataTransfer });
+    dataTransfer.items.length = 0;
+    dataTransfer.files.length = 0;
 }
 
 describe('ProjectUpload', () => {
@@ -528,7 +532,7 @@ describe('ProjectUpload', () => {
 
         const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
         await act(async () => {
-            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+            fireFolderDrop(uploadZone, root);
         });
 
         expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -559,7 +563,7 @@ describe('ProjectUpload', () => {
 
         const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
         await act(async () => {
-            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+            fireFolderDrop(uploadZone, root);
         });
 
         expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -584,7 +588,7 @@ describe('ProjectUpload', () => {
 
         const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
         await act(async () => {
-            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+            fireFolderDrop(uploadZone, root);
         });
 
         expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -594,6 +598,31 @@ describe('ProjectUpload', () => {
         );
         expect(screen.getByText('Upload your project')).toBeInTheDocument();
         consoleSpy.mockRestore();
+    });
+
+    it('still rejects a drop of loose non-zip files', async () => {
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const entry = makeFileEntry('/main.py');
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        await act(async () => {
+            fireEvent.drop(uploadZone, {
+                dataTransfer: {
+                    items: [{ kind: 'file', webkitGetAsEntry: () => entry }],
+                    files: [new File(['content'], 'main.py', { type: 'text/plain' })],
+                },
+            });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Please drop a project folder or a .zip file, not individual files.',
+            'error'
+        );
     });
 
     it('shows an info toast when upload succeeds with warnings', async () => {

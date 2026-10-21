@@ -15,14 +15,15 @@ function readBatch(reader) {
 }
 
 // Chromium returns at most 100 entries per readEntries() call, so keep reading
-// until an empty batch says the folder is done.
+// until an empty batch says the folder is done. Other browsers can return a
+// whole folder in one batch, too large to spread into push().
 async function readChildren(directoryEntry) {
   const reader = directoryEntry.createReader();
   const children = [];
   for (;;) {
     const batch = await readBatch(reader);
     if (batch.length === 0) return children;
-    children.push(...batch);
+    for (const child of batch) children.push(child);
   }
 }
 
