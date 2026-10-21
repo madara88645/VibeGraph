@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { shouldSkipUploadPath } from './uploadFilter';
+import { shouldSkipUploadDirectory, shouldSkipUploadPath } from './uploadFilter';
 
 describe('shouldSkipUploadPath', () => {
   it('keeps a normal source file under the top-level folder', () => {
@@ -86,5 +86,34 @@ describe('shouldSkipUploadPath', () => {
     expect(shouldSkipUploadPath('main.py')).toBe(false);
     expect(shouldSkipUploadPath('')).toBe(false);
     expect(shouldSkipUploadPath(undefined)).toBe(false);
+  });
+});
+
+describe('shouldSkipUploadDirectory', () => {
+  it('skips analyzer-ignored and sensitive folders at any depth', () => {
+    expect(shouldSkipUploadDirectory('myproj/node_modules')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/packages/web/node_modules/react')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/.git')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/.Git')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/.venv')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/config/.env.production')).toBe(true);
+    expect(shouldSkipUploadDirectory('myproj/.ssh')).toBe(true);
+    expect(shouldSkipUploadDirectory('node_modules')).toBe(true);
+  });
+
+  it('keeps folders whose files may still be uploaded', () => {
+    expect(shouldSkipUploadDirectory('myproj')).toBe(false);
+    expect(shouldSkipUploadDirectory('myproj/src')).toBe(false);
+    expect(shouldSkipUploadDirectory('myproj/.github/workflows')).toBe(false);
+    expect(shouldSkipUploadDirectory('myproj/Node_Modules')).toBe(false);
+    expect(shouldSkipUploadDirectory('myproj/certs/server.pem')).toBe(false);
+    expect(shouldSkipUploadDirectory('')).toBe(false);
+  });
+
+  it('agrees with shouldSkipUploadPath for files inside the folder', () => {
+    const folders = ['myproj/node_modules', 'myproj/.git', 'myproj/.env.local', 'myproj/src', 'myproj/Node_Modules'];
+    for (const folder of folders) {
+      expect(shouldSkipUploadPath(`${folder}/app.py`)).toBe(shouldSkipUploadDirectory(folder));
+    }
   });
 });

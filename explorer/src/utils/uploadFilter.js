@@ -27,24 +27,37 @@ function isPrivateKeyName(fileName) {
   return PRIVATE_KEY_NAMES.has(lower) || PRIVATE_KEY_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
+function splitUploadPath(relativePath) {
+  return String(relativePath ?? '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((segment) => segment !== '' && segment !== '.');
+}
+
+function hasSkippedDirectory(directories) {
+  return directories.some((dir) => ANALYZER_IGNORED_DIRS.has(dir) || isSensitiveSegment(dir));
+}
+
 /**
  * Returns true when a file at this upload path should stay in the browser:
  * it lives in a folder the analyzer ignores, or it is a secret the backend
  * refuses (or should never receive).
  */
 export function shouldSkipUploadPath(relativePath) {
-  const segments = String(relativePath ?? '')
-    .replace(/\\/g, '/')
-    .split('/')
-    .filter((segment) => segment !== '' && segment !== '.');
+  const segments = splitUploadPath(relativePath);
   if (segments.length === 0) return false;
 
   const fileName = segments[segments.length - 1];
   const directories = segments.slice(0, -1);
 
-  return (
-    directories.some((dir) => ANALYZER_IGNORED_DIRS.has(dir)) ||
-    segments.some(isSensitiveSegment) ||
-    isPrivateKeyName(fileName)
-  );
+  return hasSkippedDirectory(directories) || isSensitiveSegment(fileName) || isPrivateKeyName(fileName);
+}
+
+/**
+ * Returns true when shouldSkipUploadPath would skip every file under this
+ * folder, so a folder walk can leave it unread (node_modules can hold 100k+
+ * entries).
+ */
+export function shouldSkipUploadDirectory(relativePath) {
+  return hasSkippedDirectory(splitUploadPath(relativePath));
 }
