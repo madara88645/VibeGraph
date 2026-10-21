@@ -79,6 +79,7 @@ def test_git_folder_and_submodule_git_file_are_skipped(upload_dirs):
                 (".git/config", "[core]\n"),
                 (".git/HEAD", "ref: refs/heads/main\n"),
                 (".git/objects/ab/cdef", "blob"),
+                (".git\\hooks\\pre-commit", "#!/bin/sh\n"),
                 ("vendor/lib/.git", "gitdir: ../../.git/modules/lib\n"),
                 ("vendor/lib/util.py", "def util():\n    return 2\n"),
                 ("app.py", APP_SOURCE),
@@ -181,6 +182,20 @@ def test_real_secrets_still_reject_the_zip_next_to_a_template(upload_dirs, secre
     assert not os.path.exists(upload_dirs[0])
 
 
+@pytest.mark.parametrize(
+    "look_alike",
+    [".env.example.local", ".env.sample.bak", ".env.example/.env", ".GIT/config"],
+)
+def test_look_alikes_of_skipped_names_still_reject_the_zip(upload_dirs, look_alike):
+    """Only exact template names and exact IGNORED_DIRS names are skipped."""
+    response = _post(_zip([(look_alike, "API_KEY=real\n"), ("app.py", APP_SOURCE)]))
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert detail.startswith("Unsafe zip file detected: project.zip")
+    assert not os.path.exists(upload_dirs[0])
+
+
 def test_secrets_rejection_does_not_echo_the_member_path():
     response = _post(
         _zip([("deep/private_dir_x/.env.local", "KEY=1\n"), ("app.py", APP_SOURCE)])
@@ -196,6 +211,7 @@ def test_secrets_rejection_does_not_echo_the_member_path():
         "../evil.py",
         "node_modules/../../evil.py",
         ".git/../../evil.py",
+        "node_modules\\..\\..\\evil.py",
         "/node_modules/pkg/index.js",
         "/tmp/.git/config",
     ],
