@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useI
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
+import { readDroppedEntries } from '../utils/readDroppedEntries';
 import { shouldSkipUploadPath } from '../utils/uploadFilter';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable code found. Try a Python, JavaScript, or TypeScript project.';
@@ -219,15 +220,43 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
         e.stopPropagation();
         setIsDragging(false);
 
-        const items = e.dataTransfer.items;
-        if (items && items.length > 0) {
-            const entry = items[0].webkitGetAsEntry();
-            if (entry && !entry.isDirectory) {
-                const isZip = entry.name && entry.name.toLowerCase().endsWith('.zip');
-                if (!isZip) {
-                    showToast('Please drop a project folder or a .zip file, not individual files.', 'error');
-                    return;
-                }
+        // DataTransferItemList is only readable during the drop event, so take
+        // every entry before the first await.
+        const entries = Array.from(e.dataTransfer.items ?? [], (item) => item.webkitGetAsEntry?.() ?? null);
+
+        if (entries.some((entry) => entry?.isDirectory)) {
+            // dataTransfer.files only holds an empty File per dropped folder, so
+            // read folders through their entries. A drop that contains a folder is
+            // treated as a project: loose files next to it (e.g. everything
+            // selected inside a project root) are uploaded too, at their own name.
+            setIsAnalyzing(true);
+            let dropped;
+            try {
+                dropped = await readDroppedEntries(entries.filter(Boolean));
+            } catch (error) {
+                console.error('Reading dropped folder failed:', error);
+                showToast('Upload failed: Could not read the dropped folder. Try Browse Folder instead.', 'error');
+                return;
+            } finally {
+                setIsAnalyzing(false);
+            }
+
+            if (dropped.length === 0) {
+                showToast(`Upload failed: ${EMPTY_GRAPH_MESSAGE}`, 'error');
+                return;
+            }
+
+            const paths = new Map(dropped.map(({ file, path }) => [file, path]));
+            await uploadFiles(dropped.map(({ file }) => file), (file) => paths.get(file));
+            return;
+        }
+
+        const entry = entries[0];
+        if (entry && !entry.isDirectory) {
+            const isZip = entry.name && entry.name.toLowerCase().endsWith('.zip');
+            if (!isZip) {
+                showToast('Please drop a project folder or a .zip file, not individual files.', 'error');
+                return;
             }
         }
 

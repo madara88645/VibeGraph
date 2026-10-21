@@ -13,6 +13,44 @@ function renderWithToast(ui, { showToast = vi.fn() } = {}) {
     );
 }
 
+// Minimal FileSystemEntry fakes for drops; the walker itself is covered in
+// utils/readDroppedEntries.test.js.
+function makeFileEntry(fullPath) {
+    const name = fullPath.split('/').pop();
+    const file = new File(['content'], name, { type: 'text/plain' });
+    return { isFile: true, isDirectory: false, name, fullPath, file: (resolve) => resolve(file) };
+}
+
+function makeDirectoryEntry(fullPath, children, { readError } = {}) {
+    return {
+        isFile: false,
+        isDirectory: true,
+        name: fullPath.split('/').pop(),
+        fullPath,
+        createReader: vi.fn(() => {
+            let done = false;
+            return {
+                readEntries: (resolve, reject) => {
+                    if (readError) {
+                        reject(readError);
+                        return;
+                    }
+                    resolve(done ? [] : children);
+                    done = true;
+                },
+            };
+        }),
+    };
+}
+
+// Browsers put one zero-length File named after the folder in dataTransfer.files.
+function folderDropData(rootEntry) {
+    return {
+        items: [{ kind: 'file', webkitGetAsEntry: () => rootEntry }],
+        files: [new File([], rootEntry.name)],
+    };
+}
+
 describe('ProjectUpload', () => {
     let showToast;
 
@@ -460,6 +498,102 @@ describe('ProjectUpload', () => {
             'Upload failed: Upload too large. Max total upload size is 25 MB.',
             'error'
         );
+    });
+
+    it('uploads the files inside a dropped folder with their relative paths', async () => {
+        const mockResult = { nodes: [{ id: '1' }], edges: [] };
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(mockResult),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const nodeModules = makeDirectoryEntry('/myproj/node_modules', [
+            makeFileEntry('/myproj/node_modules/react/index.js'),
+        ]);
+        const root = makeDirectoryEntry('/myproj', [
+            makeFileEntry('/myproj/main.py'),
+            makeDirectoryEntry('/myproj/src', [makeFileEntry('/myproj/src/app.py')]),
+            nodeModules,
+            makeFileEntry('/myproj/.env'),
+        ]);
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        await act(async () => {
+            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+        });
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        const body = globalThis.fetch.mock.calls[0][1].body;
+        expect(body.getAll('files').map((file) => file.name)).toEqual([
+            'myproj/main.py',
+            'myproj/src/app.py',
+        ]);
+        expect(nodeModules.createReader).not.toHaveBeenCalled();
+        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
+        expect(showToast).toHaveBeenCalledWith(
+            "Skipped 1 file (.git, node_modules, .env and similar) — they aren't analyzed.",
+            'info'
+        );
+        expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
+    });
+
+    it('does not call the backend when a dropped folder has nothing to upload', async () => {
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const root = makeDirectoryEntry('/myproj', [
+            makeDirectoryEntry('/myproj/node_modules', [makeFileEntry('/myproj/node_modules/x/index.js')]),
+        ]);
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        await act(async () => {
+            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: No analyzable code found. Try a Python, JavaScript, or TypeScript project.',
+            'error'
+        );
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
+    });
+
+    it('shows an error when a dropped folder cannot be read', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const root = makeDirectoryEntry('/myproj', [], {
+            readError: new DOMException('Folder went away', 'NotFoundError'),
+        });
+
+        const uploadZone = screen.getByRole('button', { name: /select a project folder/i });
+        await act(async () => {
+            fireEvent.drop(uploadZone, { dataTransfer: folderDropData(root) });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: Could not read the dropped folder. Try Browse Folder instead.',
+            'error'
+        );
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
+        consoleSpy.mockRestore();
     });
 
     it('shows an info toast when upload succeeds with warnings', async () => {
