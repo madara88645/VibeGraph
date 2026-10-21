@@ -143,6 +143,7 @@ describe('ProjectUpload', () => {
 
         expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
         expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
+        expect(showToast).not.toHaveBeenCalledWith(expect.stringMatching(/^Skipped /), 'info');
     });
 
     it('blocks oversized file picker uploads before calling fetch', async () => {

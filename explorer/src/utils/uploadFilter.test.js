@@ -17,6 +17,7 @@ describe('shouldSkipUploadPath', () => {
   it('skips .git contents under the top-level folder prefix', () => {
     expect(shouldSkipUploadPath('myproj/.git/config')).toBe(true);
     expect(shouldSkipUploadPath('myproj/.git/objects/ab/cdef')).toBe(true);
+    expect(shouldSkipUploadPath('myproj/vendor/lib/.git')).toBe(true);
   });
 
   it('skips files in analyzer-ignored folders at any depth', () => {
