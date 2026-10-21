@@ -82,8 +82,30 @@ def is_safe_path(path: str) -> bool:
     return False
 
 
+def sensitive_upload_segment(rel_path: str) -> str | None:
+    """Return the first segment of a normalized upload path that names a
+    secrets file or folder (.env*, .git, .ssh, ...), or None."""
+    sensitive_names = {".env", ".git", ".ssh", ".aws", ".npmrc", ".pypirc", ".netrc"}
+    for part in rel_path.split("/"):
+        part_lower = part.lower()
+        if part_lower.startswith(".env") or part_lower in sensitive_names:
+            return part
+    return None
+
+
 def normalize_uploaded_filename(raw_name: str | None) -> str:
     """Normalize upload path and block path traversal / absolute paths."""
+    return _normalize_upload_path(raw_name, reject_sensitive=True)
+
+
+def normalize_zip_member_path(raw_name: str | None) -> str:
+    """Like normalize_uploaded_filename, but leaves sensitive names to the
+    caller, which must skip or reject them (see sensitive_upload_segment)
+    before anything is written to disk."""
+    return _normalize_upload_path(raw_name, reject_sensitive=False)
+
+
+def _normalize_upload_path(raw_name: str | None, reject_sensitive: bool) -> str:
     if not raw_name:
         raise HTTPException(status_code=400, detail="Uploaded file has no filename")
 
@@ -101,16 +123,15 @@ def normalize_uploaded_filename(raw_name: str | None) -> str:
     if ".." in parts:
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
 
-    sensitive_names = {".env", ".git", ".ssh", ".aws", ".npmrc", ".pypirc", ".netrc"}
-    for part in parts:
-        part_lower = part.lower()
-        if part_lower.startswith(".env") or part_lower in sensitive_names:
+    safe_rel = "/".join(parts)
+    if reject_sensitive:
+        sensitive = sensitive_upload_segment(safe_rel)
+        if sensitive is not None:
             raise HTTPException(
                 status_code=400,
-                detail=f"Sensitive hidden file or directory not allowed: {part}",
+                detail=f"Sensitive hidden file or directory not allowed: {sensitive}",
             )
 
-    safe_rel = "/".join(parts)
     if os.path.isabs(safe_rel):
         raise HTTPException(status_code=400, detail=f"Unsafe upload path: {raw_name}")
 
