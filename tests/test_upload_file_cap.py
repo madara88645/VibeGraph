@@ -219,6 +219,20 @@ def test_multipart_without_file_parts_returns_400():
     assert response.json()["detail"] == "No files uploaded."
 
 
+def test_plain_form_fields_are_capped():
+    # Starlette's default is 1000 fields; the frontend sends none.
+    response = client.post(
+        "/api/upload-project",
+        data={f"field_{i}": "x" for i in range(17)},
+        files=_py_files(1),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Too many fields. Maximum number of fields is 16."
+    )
+
+
 def test_openapi_documents_multipart_files_field():
     operation = client.get("/openapi.json").json()["paths"]["/api/upload-project"][
         "post"
