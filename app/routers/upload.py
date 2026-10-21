@@ -138,6 +138,16 @@ def _is_skipped_zip_member(safe_filename: str, is_dir: bool) -> bool:
     return parts[-1] == ".git" or parts[-1].lower() in ENV_TEMPLATE_NAMES
 
 
+def _is_skipped_zip_symlink(safe_filename: str, is_dir: bool) -> bool:
+    """Return True for a symlink inside an IGNORED_DIRS folder, such as
+    node_modules/.bin/tsc. Stricter than _is_skipped_zip_member: only the
+    folders above the link count, so a link that is itself node_modules,
+    .git or an .env template, or that claims to be a folder, is not skipped."""
+    if is_dir:
+        return False
+    return any(part in IGNORED_DIRS for part in safe_filename.split("/")[:-1])
+
+
 # Backwards-compat shim — older external scripts may still import the
 # original name. The check is now multi-language.
 contains_python_file = contains_supported_file
@@ -303,10 +313,10 @@ def upload_project(
 
                     safe_members = []
                     for member in members:
+                        # Read before member.filename loses its trailing "/".
+                        is_dir = member.is_dir()
+                        is_symlink = stat.S_ISLNK(member.external_attr >> 16)
                         try:
-                            if stat.S_ISLNK(member.external_attr >> 16):
-                                raise ValueError("Symlink in zip file detected")
-
                             safe_filename = normalize_zip_member_path(member.filename)
                             target_path = os.path.join(tmp_dir_real, safe_filename)
                             extracted_path = os.path.realpath(target_path)
@@ -317,6 +327,13 @@ def upload_project(
                             ):
                                 raise ValueError("Path traversal detected")
 
+                            # zip -ry and Finder keep node_modules/.bin links;
+                            # those are skipped below, every other link rejects.
+                            if is_symlink and not _is_skipped_zip_symlink(
+                                safe_filename, is_dir
+                            ):
+                                raise ValueError("Symlink in zip file detected")
+
                         except (HTTPException, ValueError):
                             # Let's not expose the exact reason to avoid information disclosure, just standard Unsafe zip file.
                             raise HTTPException(
@@ -324,9 +341,7 @@ def upload_project(
                                 detail=f"Unsafe zip file detected: {safe_name}",
                             )
 
-                        # Read before member.filename loses its trailing "/".
-                        is_dir = member.is_dir()
-                        if _is_skipped_zip_member(safe_filename, is_dir):
+                        if is_symlink or _is_skipped_zip_member(safe_filename, is_dir):
                             continue
 
                         if sensitive_upload_segment(safe_filename) is not None:
