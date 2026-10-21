@@ -123,14 +123,18 @@ def create_app() -> FastAPI:
         title="VibeGraph API",
         version="1.0.0",
         description=(
-            "VibeGraph transforms Python codebases into interactive call graphs "
-            "and provides AI-powered explanations, chat, and learning paths via OpenRouter."
+            "VibeGraph turns Python, JavaScript and TypeScript projects into "
+            "interactive call graphs and provides AI explanations, chat, Ghost Runner "
+            "narration and learning paths via OpenRouter."
         ),
         contact={
             "name": "VibeGraph",
             "url": "https://github.com/madara88645/VibeGraph",
         },
-        license_info={"name": "MIT"},
+        license_info={
+            "name": "AGPL-3.0",
+            "url": "https://github.com/madara88645/VibeGraph/blob/main/LICENSE",
+        },
     )
 
     # Rate limiting
