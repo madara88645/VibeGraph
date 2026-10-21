@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, memo, forwardRef, useI
 import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/useToast';
 import { DEFAULT_AI_CONFIG } from '../utils/aiClient';
+import { shouldSkipUploadPath } from '../utils/uploadFilter';
 
 const EMPTY_GRAPH_MESSAGE = 'No analyzable code found. Try a Python, JavaScript, or TypeScript project.';
 const NETWORK_ERROR_MESSAGE = 'Backend is not reachable. Start the backend or check deployment.';
@@ -47,6 +48,11 @@ function buildWarningToastMessage(warnings) {
     }
 
     return `Project analyzed with warnings: ${firstWarning} (+${remainingWarnings.length} more skipped files)`;
+}
+
+function buildSkippedFilesToastMessage(skippedCount) {
+    const noun = skippedCount === 1 ? 'file' : 'files';
+    return `Skipped ${skippedCount} ${noun} (.git, node_modules, .env and similar) — they aren't analyzed.`;
 }
 
 async function readUploadError(response) {
@@ -125,8 +131,22 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
     const uploadFiles = useCallback(async (files, getPath) => {
         if (!files || files.length === 0) return;
 
+        // A lone .zip is unpacked and checked by the backend, so it is sent as-is.
+        const isSingleZip = files.length === 1 && getPath(files[0]).toLowerCase().endsWith('.zip');
+        const uploadableFiles = isSingleZip
+            ? Array.from(files)
+            : Array.from(files).filter((file) => !shouldSkipUploadPath(getPath(file)));
+        const skippedFileCount = files.length - uploadableFiles.length;
+
+        if (uploadableFiles.length === 0) {
+            showToast(`Upload failed: ${EMPTY_GRAPH_MESSAGE}`, 'error');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (zipInputRef.current) zipInputRef.current.value = '';
+            return;
+        }
+
         const effectiveUploadLimits = normalizeUploadLimits(uploadLimits);
-        if (getTotalUploadSize(files) > effectiveUploadLimits.maxTotalBytes) {
+        if (getTotalUploadSize(uploadableFiles) > effectiveUploadLimits.maxTotalBytes) {
             showToast(
                 `Upload failed: Upload too large. Max total upload size is ${formatUploadLimit(effectiveUploadLimits.maxTotalBytes)}.`,
                 'error',
@@ -139,8 +159,8 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
         setIsAnalyzing(true);
         const formData = new FormData();
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+        for (let i = 0; i < uploadableFiles.length; i++) {
+            const file = uploadableFiles[i];
             formData.append('files', file, getPath(file));
         }
 
@@ -169,6 +189,9 @@ const ProjectUpload = forwardRef(({ onUploadSuccess, uploadLimits, onClearDemo, 
             onClearDemo?.();
             if (onUploadSuccess) onUploadSuccess(result);
             setIsModalOpen(false);
+            if (skippedFileCount > 0) {
+                showToast(buildSkippedFilesToastMessage(skippedFileCount), 'info');
+            }
             const warningToastMessage = buildWarningToastMessage(result.warnings);
             if (warningToastMessage) {
                 showToast(warningToastMessage, 'info');

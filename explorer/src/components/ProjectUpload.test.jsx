@@ -167,6 +167,78 @@ describe('ProjectUpload', () => {
         );
     });
 
+    it('skips ignored and secret files before the size check and upload', async () => {
+        const mockResult = { nodes: [{ id: '1' }], edges: [] };
+        globalThis.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(mockResult),
+            })
+        );
+
+        const onUploadSuccess = vi.fn();
+        renderWithToast(<ProjectUpload onUploadSuccess={onUploadSuccess} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const makeFile = (relativePath, size) => {
+            const file = new File(['content'], relativePath.split('/').pop(), { type: 'text/plain' });
+            Object.defineProperty(file, 'webkitRelativePath', { value: relativePath });
+            if (size !== undefined) Object.defineProperty(file, 'size', { value: size });
+            return file;
+        };
+        const files = [
+            makeFile('myproj/src/app.py'),
+            makeFile('myproj/.gitignore'),
+            makeFile('myproj/.git/objects/pack/big.pack', 25 * 1024 * 1024 + 1),
+            makeFile('myproj/node_modules/react/index.js', 25 * 1024 * 1024 + 1),
+            makeFile('myproj/.env.local'),
+        ];
+
+        const fileInput = document.querySelector('input[type="file"]');
+        await act(async () => {
+            fireEvent.change(fileInput, { target: { files } });
+        });
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        const body = globalThis.fetch.mock.calls[0][1].body;
+        expect(body.getAll('files').map((file) => file.name)).toEqual([
+            'myproj/src/app.py',
+            'myproj/.gitignore',
+        ]);
+        expect(onUploadSuccess).toHaveBeenCalledWith(mockResult);
+        expect(showToast).toHaveBeenCalledWith(
+            "Skipped 3 files (.git, node_modules, .env and similar) — they aren't analyzed.",
+            'info'
+        );
+        expect(showToast).toHaveBeenCalledWith('Project analyzed successfully!', 'success');
+    });
+
+    it('does not call the backend when every selected file is skipped', async () => {
+        renderWithToast(<ProjectUpload onUploadSuccess={vi.fn()} />, { showToast });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /upload new project/i }));
+        });
+
+        const file = new File(['content'], 'index.js', { type: 'text/plain' });
+        Object.defineProperty(file, 'webkitRelativePath', { value: 'myproj/node_modules/x/index.js' });
+
+        const fileInput = document.querySelector('input[type="file"]');
+        await act(async () => {
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        });
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(showToast).toHaveBeenCalledWith(
+            'Upload failed: No analyzable code found. Try a Python, JavaScript, or TypeScript project.',
+            'error'
+        );
+        expect(screen.getByText('Upload your project')).toBeInTheDocument();
+    });
+
     it('handles upload errors gracefully', async () => {
         globalThis.fetch = vi.fn(() =>
             Promise.resolve({
