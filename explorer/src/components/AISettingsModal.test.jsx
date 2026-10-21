@@ -31,12 +31,12 @@ describe('AISettingsModal', () => {
     );
 
     expect(
-      screen.getByText('Your OpenRouter key stays in this browser session only.')
+      screen.getByText(
+        'Your OpenRouter key is kept in this browser tab and sent with each AI request to the VibeGraph server, which passes it to OpenRouter. The server does not store it.'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('Production requires your own key.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Supported fast defaults only. Deprecated models like Grok fast are intentionally excluded.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Available models are configured on the server.')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Supported now: deepseek-v4-flash, qwen3-coder-30b-a3b-instruct, gemini-3.1-flash-lite, claude-sonnet-4.6'

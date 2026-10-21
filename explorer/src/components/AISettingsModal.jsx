@@ -108,7 +108,9 @@ const AISettingsModal = ({
           <div>
             <h2 id="ai-settings-title">AI Settings</h2>
             <p className="ai-settings-subtitle">
-              Your OpenRouter key stays in this browser session only.
+              Your OpenRouter key is kept in this browser tab and sent with each AI request
+              to the VibeGraph server, which passes it to OpenRouter. The server does not
+              store it.
             </p>
           </div>
           <button
@@ -201,7 +203,7 @@ const AISettingsModal = ({
               </ul>
             </div>
             <p className="ai-settings-help">
-              Supported fast defaults only. Deprecated models like Grok fast are intentionally excluded.
+              Available models are configured on the server.
             </p>
             {supportedModelsLabel ? (
               <p className="ai-settings-help">
