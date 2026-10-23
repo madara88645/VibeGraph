@@ -1,11 +1,14 @@
 """VibeGraph FastAPI application factory."""
 
+import asyncio
 import json
 import logging
 import os
 import time
 import urllib.parse
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -115,6 +118,23 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    """Delete expired uploads at startup, then keep sweeping them in the
+    background until shutdown, so they are deleted on a quiet server too."""
+    await upload.sweep_expired_uploads()
+    cleanup_task = asyncio.create_task(
+        upload.run_upload_cleanup_periodically(), name="upload-cleanup"
+    )
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        # gather() returns the task's CancelledError instead of raising it,
+        # but still raises if this shutdown is itself cancelled.
+        await asyncio.gather(cleanup_task, return_exceptions=True)
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     configure_logging()
@@ -135,6 +155,7 @@ def create_app() -> FastAPI:
             "name": "AGPL-3.0",
             "url": "https://github.com/madara88645/VibeGraph/blob/main/LICENSE",
         },
+        lifespan=lifespan,
     )
 
     # Rate limiting

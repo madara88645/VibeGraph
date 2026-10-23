@@ -1,5 +1,6 @@
 """Routes for project file upload and analysis."""
 
+import asyncio
 import logging
 import os
 import shutil
@@ -31,7 +32,38 @@ router = APIRouter(prefix="/api", tags=["upload"])
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_UPLOAD_CLEANUP_INTERVAL_SECONDS = 300
+
+
+def _read_upload_cleanup_interval() -> int:
+    """Read VIBEGRAPH_UPLOAD_CLEANUP_INTERVAL_SECONDS. A value that is not a
+    positive whole number of seconds (such as "abc", "1.5", "0" or "-5") is
+    ignored with a warning and the default is used, so a typo can neither
+    switch the sweep off nor turn it into a busy loop."""
+    raw = os.getenv("VIBEGRAPH_UPLOAD_CLEANUP_INTERVAL_SECONDS")
+    if raw is None:
+        return DEFAULT_UPLOAD_CLEANUP_INTERVAL_SECONDS
+    try:
+        interval = int(raw)
+    except ValueError:
+        interval = 0
+    if interval <= 0:
+        logger.warning(
+            "Ignoring invalid VIBEGRAPH_UPLOAD_CLEANUP_INTERVAL_SECONDS=%r; "
+            "using %d seconds",
+            raw,
+            DEFAULT_UPLOAD_CLEANUP_INTERVAL_SECONDS,
+        )
+        return DEFAULT_UPLOAD_CLEANUP_INTERVAL_SECONDS
+    return interval
+
+
 UPLOAD_RETENTION_SECONDS = int(os.getenv("VIBEGRAPH_UPLOAD_RETENTION_SECONDS", "3600"))
+
+# Expired uploads are swept when the server starts, every
+# UPLOAD_CLEANUP_INTERVAL_SECONDS while it runs, and after each successful
+# upload, so they are deleted even when no further upload arrives.
+UPLOAD_CLEANUP_INTERVAL_SECONDS = _read_upload_cleanup_interval()
 
 # Cap exported graph size to protect JSON payload, Dagre layout, and ReactFlow
 # render cost. Overridable per-deployment for experimentation.
@@ -177,6 +209,23 @@ def cleanup_expired_upload_dirs(
                     continue
     except Exception as e:
         logger.error(f"Error scanning temp directory for expired uploads: {e}")
+
+
+async def sweep_expired_uploads() -> None:
+    """Run cleanup_expired_upload_dirs in a worker thread so the filesystem
+    work never blocks the event loop. Errors are logged, not raised."""
+    try:
+        await asyncio.to_thread(cleanup_expired_upload_dirs)
+    except Exception:
+        logger.exception("Upload cleanup failed")
+
+
+async def run_upload_cleanup_periodically() -> None:
+    """Sweep expired uploads every UPLOAD_CLEANUP_INTERVAL_SECONDS until the
+    task is cancelled. A failed sweep does not stop later ones."""
+    while True:
+        await asyncio.sleep(UPLOAD_CLEANUP_INTERVAL_SECONDS)
+        await sweep_expired_uploads()
 
 
 def _upload_too_large(max_upload_size: int) -> HTTPException:
