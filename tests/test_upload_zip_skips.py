@@ -1,8 +1,9 @@
 """Zip members the analyzer never reads are skipped instead of failing the upload.
 
-.git, node_modules and the other IGNORED_DIRS folders, a git submodule's
-``.git`` file and .env templates are left out of the extraction, while
-traversal, symlinks and real secrets files still reject the whole zip.
+.git, node_modules and the other IGNORED_DIRS folders (symlinks inside them
+included), a git submodule's ``.git`` file and .env templates are left out of
+the extraction, while traversal, symlinks anywhere else and real secrets files
+still reject the whole zip.
 """
 
 import os
@@ -232,7 +233,7 @@ def test_traversal_and_absolute_paths_still_win_over_skipping(upload_dirs, unsaf
     assert not os.path.exists(upload_dirs[0])
 
 
-def test_symlink_inside_node_modules_still_rejects_the_zip(upload_dirs):
+def test_symlink_inside_node_modules_is_skipped(upload_dirs):
     archive = BytesIO()
     with zipfile.ZipFile(archive, "w") as zf:
         link = zipfile.ZipInfo("node_modules/.bin/tool")
@@ -244,8 +245,146 @@ def test_symlink_inside_node_modules_still_rejects_the_zip(upload_dirs):
 
     response = _post(archive)
 
+    assert response.status_code == 200, response.text
+    assert {"run", "helper"} <= _node_ids(response)
+    assert _on_disk(upload_dirs[0]) == {"app.py"}
+
+
+def _zip_with_symlinks(*link_names):
+    """app.py plus one Unix symlink member per name, each pointing at /etc/passwd."""
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w") as zf:
+        for name in link_names:
+            link = zipfile.ZipInfo(name)
+            link.create_system = 3  # Unix
+            link.external_attr = (stat.S_IFLNK | 0o777) << 16
+            zf.writestr(link, "/etc/passwd")
+        zf.writestr("app.py", APP_SOURCE)
+    archive.seek(0)
+    return archive
+
+
+@pytest.mark.parametrize(
+    "link_name",
+    [
+        "pkg/node_modules/.bin/x",
+        "pkg/node_modules/x/.bin/y",
+        ".git/hooks/x",
+        ".venv/bin/python",
+        "node_modules\\.bin\\tool",
+    ],
+)
+def test_symlinks_inside_ignored_dirs_are_skipped(upload_dirs, link_name):
+    response = _post(_zip_with_symlinks(link_name))
+
+    assert response.status_code == 200, response.text
+    assert {"run", "helper"} <= _node_ids(response)
+    assert _on_disk(upload_dirs[0]) == {"app.py"}
+
+
+@pytest.mark.parametrize(
+    "link_name",
+    [
+        "link",
+        "src/link.py",
+        # The link is the ignored folder itself, not something inside it.
+        "node_modules",
+        "pkg/node_modules",
+        ".git",
+        ".venv",
+        ".env.example",
+        # IGNORED_DIRS matching is case-sensitive.
+        "Node_Modules/.bin/tool",
+        ".GIT/hooks/pre-commit",
+        # A symlink that claims to be a folder entry.
+        "node_modules/.bin/",
+    ],
+)
+def test_symlinks_outside_ignored_dirs_still_reject_the_zip(upload_dirs, link_name):
+    response = _post(_zip_with_symlinks(link_name))
+
     assert response.status_code == 400
     assert response.json()["detail"] == "Unsafe zip file detected: project.zip"
+    assert not os.path.exists(upload_dirs[0])
+
+
+@pytest.mark.parametrize(
+    "link_name",
+    [
+        "node_modules/../../x",
+        "node_modules\\..\\..\\x",
+        "/node_modules/x",
+        "node_modules/.bin/../../../x",
+    ],
+)
+def test_traversal_symlinks_still_reject_the_zip(upload_dirs, link_name):
+    response = _post(_zip_with_symlinks(link_name))
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Unsafe zip file detected: project.zip"
+    assert not os.path.exists(upload_dirs[0])
+
+
+def test_skipped_symlinks_do_not_count_toward_the_zip_file_cap(
+    monkeypatch, upload_dirs
+):
+    monkeypatch.setattr(upload, "MAX_ZIP_FILES", 1)
+    links = [f"node_modules/.bin/tool_{i}" for i in range(3)]
+
+    response = _post(_zip_with_symlinks(*links))
+
+    assert response.status_code == 200, response.text
+    assert _on_disk(upload_dirs[0]) == {"app.py"}
+
+
+def test_zip_ry_style_js_project_is_analyzed(upload_dirs):
+    """zip -ry (and Finder/ditto) store folder entries and keep the
+    node_modules/.bin symlinks as links instead of following them."""
+
+    def entry(name, mode):
+        info = zipfile.ZipInfo(name)
+        info.create_system = 3  # Unix
+        info.external_attr = mode << 16
+        if stat.S_ISDIR(mode):
+            info.external_attr |= 0x10  # MS-DOS directory flag
+        return info
+
+    folder = stat.S_IFDIR | 0o755
+    regular = stat.S_IFREG | 0o644
+    symlink = stat.S_IFLNK | 0o755
+    run_js = "export function run() {\n  return helper();\n}\n"
+    helper_js = "export function helper() {\n  return 1;\n}\n"
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name, mode, data in [
+            ("proj/", folder, ""),
+            ("proj/node_modules/", folder, ""),
+            ("proj/node_modules/.bin/", folder, ""),
+            ("proj/node_modules/.bin/tsc", symlink, "../typescript/bin/tsc"),
+            ("proj/node_modules/.bin/eslint", symlink, "../eslint/bin/eslint.js"),
+            ("proj/node_modules/typescript/", folder, ""),
+            ("proj/node_modules/typescript/bin/", folder, ""),
+            ("proj/node_modules/typescript/bin/tsc", regular, ""),
+            ("proj/node_modules/eslint/bin/eslint.js", regular, ""),
+            ("proj/package.json", regular, '{"name": "proj"}\n'),
+            ("proj/src/", folder, ""),
+            ("proj/src/index.js", regular, run_js),
+            ("proj/src/util.js", regular, helper_js),
+        ]:
+            zf.writestr(entry(name, mode), data)
+    archive.seek(0)
+
+    response = _post(archive)
+
+    assert response.status_code == 200, response.text
+    assert {"run", "helper"} <= _node_ids(response)
+    assert _on_disk(upload_dirs[0]) == {
+        "proj",
+        "proj/package.json",
+        "proj/src",
+        "proj/src/index.js",
+        "proj/src/util.js",
+    }
 
 
 def test_total_zip_entries_are_capped_even_when_skipped(monkeypatch, upload_dirs):
