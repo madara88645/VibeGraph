@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import tempfile
+import threading
 import time
 import uuid
 
@@ -93,6 +94,52 @@ def test_failed_sweep_is_logged_and_later_sweeps_still_run(monkeypatch, caplog):
 
     failures = [r for r in caplog.records if r.getMessage() == "Upload cleanup failed"]
     assert len(failures) == 2
+
+
+def test_sweep_runs_in_a_worker_thread(monkeypatch):
+    threads = []
+    monkeypatch.setattr(
+        upload,
+        "cleanup_expired_upload_dirs",
+        lambda: threads.append(threading.get_ident()),
+    )
+
+    async def scenario():
+        await upload.sweep_expired_uploads()
+        return threading.get_ident()
+
+    loop_thread = asyncio.run(scenario())
+    # The filesystem work must not run on the event loop's thread.
+    assert len(threads) == 1
+    assert threads[0] != loop_thread
+
+
+def test_cancelling_the_task_during_a_sweep_stops_it(monkeypatch):
+    in_sweep = threading.Event()
+    release = threading.Event()
+
+    def blocking_cleanup():
+        in_sweep.set()
+        release.wait(5)
+
+    monkeypatch.setattr(upload, "cleanup_expired_upload_dirs", blocking_cleanup)
+    monkeypatch.setattr(upload, "UPLOAD_CLEANUP_INTERVAL_SECONDS", 0.01)
+
+    async def scenario():
+        task = asyncio.create_task(upload.run_upload_cleanup_periodically())
+        try:
+            assert await asyncio.to_thread(in_sweep.wait, 5)
+            task.cancel()
+            await asyncio.wait({task}, timeout=1)
+            # A swallowed CancelledError would leave the task running.
+            assert task.cancelled()
+        finally:
+            release.set()
+            while not task.done():
+                task.cancel()
+                await asyncio.wait({task}, timeout=0.1)
+
+    asyncio.run(scenario())
 
 
 def test_leaving_the_client_cancels_the_cleanup_task(monkeypatch, caplog):
