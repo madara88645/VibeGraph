@@ -110,3 +110,50 @@ jobs:
           name: frontend-build
           path: explorer/dist/
           retention-days: 14
+
+  backend-changes:
+    name: Detect backend changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      deploy: ${{ steps.detect.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for deploy-relevant paths
+        id: detect
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          # What the Fly image is built from (Dockerfile.fly) plus the deploy config.
+          paths=(app teacher analyst serve.py main.py requirements.txt Dockerfile.fly fly.toml .github/workflows/fly.yml)
+          deploy=true
+          if [[ -z "$BEFORE" || "$BEFORE" =~ ^0+$ ]]; then
+            echo "No previous commit for this push; deploying."
+          elif ! git merge-base --is-ancestor "$BEFORE" "$AFTER"; then
+            echo "$BEFORE is unknown or not an ancestor of $AFTER (force push?); deploying."
+          else
+            changed=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- "${paths[@]}")
+            if [[ -n "$changed" ]]; then
+              echo "Deploy-relevant changes in $BEFORE..$AFTER:"
+              echo "$changed"
+            else
+              deploy=false
+              echo "No deploy-relevant changes in $BEFORE..$AFTER; skipping deploy."
+            fi
+          fi
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+
+  # Pull requests skip this job, because backend-changes only runs on main.
+  deploy-backend:
+    name: Deploy backend
+    needs: [lint-backend, security-backend, test-backend, typecheck-backend, frontend, backend-changes]
+    if: success() && needs.backend-changes.outputs.deploy == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/fly.yml
+    secrets: inherit

@@ -1,18 +1,10 @@
 name: Fly Deploy
 
+# Called by the deploy-backend job in ci.yml after every CI job on main has
+# passed and the push touched backend files. Manual runs stay available for
+# emergencies.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app/**"
-      - "teacher/**"
-      - "analyst/**"
-      - "serve.py"
-      - "main.py"
-      - "requirements.txt"
-      - "Dockerfile.fly"
-      - "fly.toml"
-      - ".github/workflows/fly.yml"
+  workflow_call:
   workflow_dispatch:
 
 jobs:
